@@ -1,0 +1,83 @@
+*** UQLX Copyright ***
+
+=====================================================
+Some parts were changed recently to move the project
+more into accordance with Open Source philosophy
+=====================================================
+
+Make sure you read this copyright carefully before you use, modify
+or distribute this product or parts of it.
+
+This copyright covers all parts of the UQLX distribution with the
+exception of files copyrighted by "others".
+All rights not explicitly vowed by this copyright notice remain
+reserved to the author(s).
+
+The JSROM image is copyrighted by others, distribution in North America 
+with kind permission of Frank Davis and Paul Holmgren who own the copyright 
+in this region. In Europe the JSROM copyright seems to be owned by
+Amstrad.
+
+This copyright also covers all software written as enhancement for
+this product or designed to make use of features that are special
+to this product.
+
+Copyright owner is Richard Zidlicky with permission from Daniele Terdina
+to include his Q-emulator files.
+
+ALL algorithms used or included in this product are herewith published 
+and can be patented only by their respective author.
+
+Copying, distribution:
+Copying for personal use is not restricted, maximum commercial copying 
+fee must not exceed DM 10 or 5 GBP. 
+Posting or uploading the product on the Internet and other forms of 
+online distribution is allowed.
+Inclusion on CD ROMS is subject to separate agreement.
+
+Use:
+By using this product or parts of it covered by this copyright you 
+fully acknowledge the conditions of this copyright notice including the
+DISCLAIMER - whether or not legal in your country.
+Free use is granted to persons or organizations developing software
+for QDOS or compatible systems, and for testing the product.
+Fee may be required for use for other purposes - see LICENSING
+
+** CHANGE **: no fee will be ever required, UQLX will move towards
+GPL style licensing as far as possible.
+
+Changing or modifying the product:
+No restriction for private use. The distribution of the changed
+product is not restricted as long as
+        a) this copyright applies to the distribution and this
+           copyright notice is preserved and included
+        b) the distribution will be made available through the internet
+        c) programs and/or files added to the distribution do not belong 
+	   to a commercial product.
+        d) the copyright of any programs added to the distribution does not 
+	   conflict with this copyright
+	e) you do not add any restrictions on the code and its use
+
+**CHANGE**: (e) added
+
+
+Disclaimer:
+THIS PRODUCT IS PROVIDED ''AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+IN NO EVENT WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED
+TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY
+YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
+PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+
+Several subjects are not explicitly mentioned in this copyright notice, contact 
+the Author if not sure.
+
+LICENSING
+**SCRATCHED**
+

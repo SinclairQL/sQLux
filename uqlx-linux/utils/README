@@ -1,0 +1,14 @@
+Here are some program written by Jonathan Hudson to manipulate
+QDOS file headers for UQLX, more detailed instructions are in the
+programs itself or in the documentation.
+Check Jonathans site for some more utilities!
+
+xheader:
+  perl script, adjust first line to `which perl`,
+  copy UQLX executables and/or set dataspace
+
+qcp.c:
+  set header
+
+qls.c:
+  list files and their headers

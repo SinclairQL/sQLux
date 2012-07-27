@@ -1,0 +1,3239 @@
+<HTML>
+<HEAD>
+<!-- Created by texi2html 1.56k from uqlx.texi on 22 October 2002 -->
+
+<TITLE>UQLX</TITLE>
+</HEAD>
+<BODY>
+<H1>UQLX</H1>
+<ADDRESS>Richard Zidlicky</ADDRESS>
+<P>
+<P><HR><P>
+
+
+<H1><A NAME="SEC1" HREF="uqlx_toc.html#TOC1">Introduction</A></H1>
+
+<P>
+UQLX is an software emulator emulating a Sinclair QL on UNIX and similar systems.
+It works by emulating the 68000 CPU and some hardware. It can handle original 
+JS roms, Minerva roms and many nationalized roms. The focus is more on providing 
+useful extensions than exact emulation of antique hardware. Nevertheless it
+works well enough even for most games.
+
+
+<P>
+UQLX is designed to cooperate neatly with the underlying OS, some of the
+features and possibilities are:
+
+
+
+<UL>
+
+<LI>
+
+        don't waste CPU time when not needed by QDOS programs. Can save
+        you some trouble with the sysadmin if you start it on a Cray
+        accidentally
+
+<LI>
+
+        launch and control of UNIX programs by the use of the <CODE>pty</CODE>
+        device
+
+<LI>
+
+        support for use of QDOS in UNIX scripts, screen IO redirection
+
+<LI>
+
+        the emulator can fork (clone) itself
+
+<LI>
+
+        access to every unix file - long filenames
+
+<LI>
+
+        TCP/IP device for QDOS
+
+<LI>
+
+        simple GUI with pasting into QL keyboard buffer and some more exotic features
+ 
+</UL>
+
+
+
+<H2><A NAME="SEC2" HREF="uqlx_toc.html#TOC2">System Requirements</A></H2>
+
+<P>
+Nearly any UNIX or similar system will do, provided you have gcc and X11
+installed. UQLX even works with OS/2, however this port was not maintained
+for some time.
+
+
+<P>
+<STRONG>When I say <CODE>gcc</CODE>, I mean it! You may try pgcc but you have been
+warned.</STRONG> 
+
+
+<P>
+Typically any improved c compiler couldn't optimize anything measurable.
+
+
+
+<UL>
+
+<LI>
+
+between 2 and 32 MB SWAP for UQLX at runtime, may require much more for compilation.
+Contact me if this is a problem.
+
+<LI>
+
+gcc, X and GNU make. At least gcc versions 2.7.2.*,2.8.*,2.91 and 2.95.[12] work,
+some broken versions require additional defines to compile. egcs generally works
+well, 2.91.66 does even work with the -DUSE_AREGP option.
+
+</UL>
+
+
+
+<H2><A NAME="SEC3" HREF="uqlx_toc.html#TOC3">COPYRIGHT</A></H2>
+
+<P>
+Make sure you read the copyright notice carefully before you use, modify
+or distribute this product or parts of it.
+
+
+<P>
+The copyright notice can be found in the file <TT>`COPYRIGHT'</TT> -- if not
+try to  email me at <CODE>rdzidlic@geocities.com</CODE> <A NAME="DOCF1" HREF="uqlx_foot.html#FOOT1">(1)</A>.
+
+
+
+
+<H1><A NAME="SEC4" HREF="uqlx_toc.html#TOC4">Compiling</A></H1>
+
+<P>
+Several machines/OS versions are directly supported, others may need a little
+guessing. Even if your machine is in the list of supported types, you may consider
+using the section <A HREF="uqlx.html#SEC6">Compiling Preferences</A>.
+ 
+
+
+<P>
+So far the supported machines/OS are:
+
+
+
+<UL>
+
+<LI>SUN with Solaris
+
+<LI>Linux on i486 or better, Power PC, Alpha, m68k
+
+<LI>NetBSD
+
+<LI>FreeBSD
+
+<LI>SGI with IRIX,
+
+traditionally the most difficult one to compile for
+
+<LI>SUN running old SunOS,
+
+not tested for a long time
+
+<LI>HP PA with HP-UX,
+
+not much tested lately
+
+<LI>OS/2,
+
+not tested for a long time
+</UL>
+
+<P>
+If your machine is not yet supported, section <A HREF="uqlx.html#SEC9">Unsupported Machines</A>.
+
+
+<P>
+To make it on Linux, type 
+
+<PRE>
+./MK.all
+make install
+</PRE>
+
+<P>
+other Unices make sure you use gnu-make (called eg gmake on Suns)
+and
+
+
+
+<PRE>
+make config     # 
+make
+make install
+</PRE>
+
+<P>
+Do not delete the directory where you compiled it unless you know what you
+are doing.
+
+
+<P>
+If you build for Linux-x86 then <CODE>-DUSE_VM</CODE> is enabled by default. This
+means that for every new combination of ROMs a patch database must be built.
+This happens automatically but can be rather irritating in some circumstances.
+
+
+<P>
+The name of the executable will be 'qm' resp. 'qm-aw', depending on the target 
+and preferences.
+
+
+<P>
+If there are any complications like libraries not found, try 
+section <A HREF="uqlx.html#SEC6">Compiling Preferences</A>.
+
+
+<P>
+There are some other interesting targets,
+
+
+
+<UL>
+
+<LI><CODE>make gui</CODE>
+
+will create a simple GUI for UQLX, only non-aw versions. A much better (nicer) GUI is
+available from Jonathan Hudson's Homepage  <CODE>http://www.jrhudson.demon.co.uk</CODE>
+
+<LI><CODE>make xaw</CODE>
+
+<EM>Currently not supported.</EM>
+Will build the qm-aw version. This version is a bit 
+slower (5-20% ) than the <CODE>noaw</CODE> version. Also some features like 
+<CODE>Fork_UQLX</CODE> will probably
+never get implemented in the <CODE>xaw</CODE> version.
+
+<LI><CODE>make noaw</CODE>
+
+will always build the qm version, on most systems this executes a bit better
+than the <CODE>xaw</CODE> version
+
+<LI><CODE>make tags</CODE>
+
+build emacs TAG table
+
+<LI><CODE>make docs</CODE>
+
+will build <TT>`docs/uqlx.dvi'</TT> and <TT>`docs/uqlx.info'</TT>
+</UL>
+
+
+
+<H3><A NAME="SEC5" HREF="uqlx_toc.html#TOC5">Misc Hints</A></H3>
+
+<P>
+As it turns out, it is always worth to check your <CODE>gcc</CODE> configuration.
+<TT>`gcc -v'</TT> will give you the name of specification file.
+
+
+<P>
+Recently SUN made some incompatible changes to Solaris, this results in
+compiling errors. Newer gcc is the best solution, otherwise patches are
+available from me. 'Recently' was sometimes around 1996 so this is a bit
+old news by now.
+
+
+<P>
+Some Linux/PC systems have not the correct CPU settings in this specification
+file. If your system is Linux and the CPU i486 or better, it is advisable
+to define '__i486__'.
+You can also do this easily by an addition to your <TT>`~/uqlx_cprefs'</TT>:
+
+
+
+<PRE>
+BUILD_SPECIALFLAGS= -D__i486__
+</PRE>
+
+<P>
+The REGP and AREGP compiling options are incompatible to profiling, use this
+to disable them. This also helps if your compiler exits with signal 11..
+
+
+
+<PRE>
+BUILD_SPECIALFLAGS= -DNO_REGP
+# or
+BUILD_SPECIALFLAGS= -DNO_AREGP
+</PRE>
+
+<P>
+On the other hand if you are very confident about your gcc version you may
+explicitly enable some trickier things like <CODE>USE_AREGP</CODE>. Normally this
+is enabled only for known well behaved gcc versions and matters only for
+the ix86 architecture anyway.
+
+
+<P>
+Specifying compiler version may work like this:
+
+
+
+<PRE>
+make CC="gcc -V 2.7.2.3" config    #compiles with gcc 2.7.2.3 (if installed)
+make CC="gcc272" config            #another version of it..
+</PRE>
+
+
+
+<H3><A NAME="SEC6" HREF="uqlx_toc.html#TOC6">Compiling Preferences</A></H3>
+
+<P>
+are stored in the file <TT>`~/.uqlx_cprefs'</TT>
+
+
+<P>
+Following variables can be set:
+
+
+
+<PRE>
+   PREFIX=/usr                          # install here
+   DEF_CPU="-mcpu=i586"                 # use if automatic config didn't work
+   DEF_CPU= -m68040                     # old style def..
+   GENERIC_CPU=yes                      # don't do special optimizations for
+# eg Pentium, Cypress or V9 chips, compile generic code (as regarded by gcc..)
+# unless this or DEF_CPU set some CPU is guessed
+   BUILD_SPECIALFLAGS= -Dxx             # need some strange define flags ?
+   LOCAL_LIBPATHS= -L /amd/hx/lib/X11/
+   LOCAL_INCLUDES= -I /usr/include/
+   DEBUG_FILES= xqlkey.c                # use no optimization for this file(s)
+   LOCAL_OPTFLAGS= -O2 -no-strength-reduce
+# xqlmouse.c and unixstuff.c don't follow this rule
+   BUILD_SPECIALFLAGS= -DNO_REGP -DNO_AREGP # inhibit certain optimization
+# especially AREGP can break many gcc versions
+   USE_XAW= yes                         # or no - not supported right now
+</PRE>
+
+<P>
+The <CODE>DEBUG_FILES</CODE> has no effect on certain special files, you have to change
+the <TT>`Makefile'</TT> by hand.
+                       
+
+
+<H3><A NAME="SEC7" HREF="uqlx_toc.html#TOC7">Further Options</A></H3>
+
+<P>
+Some compiling options which are considered generally useful but for some
+reasons may not be defined as default for your architecture. 
+You may enable any of this options by adding '-Doption' to the BUILD_SPECIALFLAGS
+line as described in the previous section.
+
+
+<DL COMPACT>
+
+<DT><CODE>XSCREEN</CODE>
+<DD>
+        enable big screen support.(enabled as default)
+
+<DT><CODE>IPDEV</CODE>
+<DD>
+        add TCP/IP devices for QDOS. (enabled on most architectures)
+
+<DT><CODE>QVFS</CODE>
+<DD>
+        enable direct access to unix-fs using unix-like infinite long 
+        pathnames!(enabled as default). Also allows access to device special
+        and /proc files.
+
+<DT><CODE>XVIS</CODE>
+<DD>
+        useful for xlib version only, chooses visual to minimize memory waste
+        and improve performance. Best selection policy still to be found - 
+        choosing some other than default visual often has sideffects like flashing
+        color pallete.
+
+<DT><CODE>U_NODDOT</CODE>
+<DD>
+        don't show '.' and '..' in directory listings, still accessible
+
+<DT><CODE>DEBUG_ROM</CODE>
+<DD>
+        enable breakpoints in ROM [0-64K], also enables many sorts of beautiful 
+        crashes. Not very useful anymore because GUI allows this interactively.
+
+</DL>
+
+
+
+<H3><A NAME="SEC8" HREF="uqlx_toc.html#TOC8">Adding CPU specific optimizations</A></H3>
+
+<P>
+So far there is special treatment for these CPUs/architectures:
+
+
+<DL COMPACT>
+
+<DT><CODE>SPARC</CODE>
+<DD>
+        make sure to compile for the right submodel though, use <CODE>DEF_CPU</CODE>.
+        I would love to know how to guess this automagically!
+
+<DT><CODE>ix86</CODE>
+<DD>
+<DT><CODE>HP-PA RISC</CODE>
+<DD>
+<DT><CODE>MIPS</CODE>
+<DD>
+<DT><CODE>m68k</CODE>
+<DD>
+</DL>
+
+<P>
+For RISC CPUs defining global register variables is the easiest optimization,
+all I need to know is a list of register names and their typical usage - this
+simple trick often improves performance by &#62;10%.
+
+
+
+
+<H3><A NAME="SEC9" HREF="uqlx_toc.html#TOC9">Unsupported Machines</A></H3>
+
+<P>
+Try to make it, if this fails due to some library or includes not found try 
+section <A HREF="uqlx.html#SEC6">Compiling Preferences</A>. Also see section <A HREF="uqlx.html#SEC10">Obscure <CODE>BUILDFLAGS</CODE></A>
+
+
+<P>
+If UQLX compiles fine, but doesn't execute properly than chances are good that
+you have a really exotic CPU not yet known to me. In this case try to define
+<CODE>BIG_ENDIAN</CODE> and <CODE>HOST_ALIGN</CODE> in <TT>`QL68000.h'</TT> to match your
+CPU.
+
+
+<P>
+Contact me so that I can add support for your machines; I need the following 
+information:
+
+
+
+<UL>
+<LI>
+
+output of the 'uname' cmd or other safe way to recognize this architecture
+
+<LI>
+
+any special compile flags, libraries etc ...
+</UL>
+
+
+
+<H3><A NAME="SEC10" HREF="uqlx_toc.html#TOC10">Obscure <CODE>BUILDFLAGS</CODE></A></H3>
+
+<P>
+Usually it is not wise to change <CODE>BUILDFLAGS</CODE>, but if you want to do it, here is
+some info:
+
+
+<DL COMPACT>
+
+<DT><CODE>SERIAL</CODE>
+<DD>
+enables ser and pty drivers for Linux. On other OS's you may need
+  to define <CODE>-NO_FIONREAD</CODE> if <CODE>FIONREAD</CODE> is not supported. You should also
+  define <CODE>NEWSERIAL</CODE> and <CODE>NEWPTY</CODE>
+
+<DT><CODE>NEWSERIAL</CODE>
+<DD>
+<DT><CODE>NEWPTY</CODE>
+<DD>
+somewhat changed serial ports, this is required to get them work
+  with Minerva ROMs. Can't be defined independently
+
+<DT><CODE>USE_IPC</CODE>
+<DD>
+enable ipc communication, this is needed for GUI.
+
+<DT><CODE>XAW</CODE>
+<DD>
+use Xt/Athena Frame around UQLX main window. The problems with SUNs OpenWindow
+  now disappeared. This flag is now easier controlled by make's <CODE>target</CODE> and
+  compiling preferences.
+
+<DT><CODE>DO_GRAB</CODE>
+<DD>
+useful to keep window managers from snatching away alt- and ctrl- key
+  combinations. Disables ALL WM hotkeys -- you must move the pointer out of the
+  QL window to have the WM hotkey available again.
+  Currently this is the default behavior, unfortunately it interacts badly
+  with the broken by design XKB extension. See keyboard for more info.
+
+<DT><CODE>SH_MEM</CODE>
+<DD>
+use MIT Shared memory to speed up screen conversion. Obviously this works 
+  only for local screens. While most Xserver/Xlib combinations are clever enough to 
+  figure this out, other need to disable <CODE>SH_MEM</CODE>.
+  This <CODE>X</CODE> extension is not very well standardized and therefore good for all
+  kinds of trouble..
+
+<DT><CODE>VM_SCR</CODE>
+<DD>
+use virtual memory tricks to detect screen changes, this is recommended
+  with SYSV systems that support it - your compiler will complain if it isn't. 
+  Strangely the XAW appears to use up most of the speed advantage...
+
+<DT><CODE>USE_VM</CODE>
+<DD>
+detect r/w to QL hardware registers and screen change by doing nasty VM
+tricks. Supported on Solaris and Linux ix86 2.0.x - 2.2.x
+
+<DT><CODE>BSD</CODE>
+<DD>
+some BSD related hacks, avoids compile time errors in pty.c
+  SunOS&#60;5 needs this as well as the next 2 defines.
+  Worth a try for any BSD like systems if it doesn't compile.
+
+<DT><CODE>NO_MEMMOVE if memmove() is missing, try this</CODE>
+<DD>
+<DT><CODE>NO_GETOPT  .. getopt() .... Actually you would better get and compile</CODE>
+<DD>
+  the getopt() library.
+
+</DL>
+
+<P>
+Debugging flags:
+
+
+<DL COMPACT>
+
+<DT><CODE>VTIME</CODE>
+<DD>
+simulate a virtual time/interrupts by instruction counting, useful to get
+  exactly reproducible results with <CODE>TRACE</CODE>
+
+<DT><CODE>TRACE</CODE>
+<DD>
+output loads of information for each instruction executed. Regions of code
+  to be traced must be specified in <TT>`trace.c'</TT>.
+
+<DT><CODE>DEBUG_ROM</CODE>
+<DD>
+enable breakpoints in ROM, also enables many sorts of beautiful 
+  crashes
+
+</DL>
+
+
+
+<H1><A NAME="SEC11" HREF="uqlx_toc.html#TOC11">Installation</A></H1>
+
+
+<PRE>
+make install
+</PRE>
+
+<P>
+This will create the qm, qmin, qjs, qx, qxx, qxxx symlinks to the executable. 
+The links are created as specified by <CODE>PREFIX</CODE> which can be environment 
+var or  specified in <TT>`~/.uqlx_cprefs'</TT> - <TT>`/usr/local/bin'</TT> resp. 
+<CODE>~/bin</CODE>is used as last resort.
+
+
+<P>
+The compilation directory should be preserved because thats where all 
+symlinks point to :)
+
+
+<P>
+Upon first invocation <CODE>qm</CODE> will attempt to create a <TT>`~/.uqlxrc'</TT>
+file.
+
+
+<P>
+Some more caution must be used for systemwide installations, QDOS software
+does not expect concurrent access to files and thus all systemwide QDOS
+resources should be readonly. Beware, not many QDOS program's handle it 
+gracefully if they encounter a readonly file.
+
+
+<P>
+Thus all filesystems except floppy and CD are created private per user by 
+default
+
+
+
+
+<H1><A NAME="SEC12" HREF="uqlx_toc.html#TOC12">Customization</A></H1>
+
+<P>
+There are several configuration files, <TT>`~/.uqlxrc'</TT> is by far the most important
+one.
+It is used to configure QL filesystems, rom, ram and diverse other features.
+
+
+<P>
+The other configuration files are <TT>`~/.uqlx_cprefs'</TT> section <A HREF="uqlx.html#SEC6">Compiling Preferences</A>,
+<TT>`Xql'</TT> used by the standard GUI and <TT>`Xqlaw'</TT>, the qm-aw application defaults file.
+The later two should be copied to your application defaults directory, you will probably 
+also want to change the button names.
+
+
+
+
+<H2><A NAME="SEC13" HREF="uqlx_toc.html#TOC13">About .uqlxrc files</A></H2>
+
+<P>
+   
+ 
+     uqlx looks for an options file <TT>`~/.uqlxrc'</TT> This file describes all other
+     settings uqlx requires; thus uqlx can exist in any directory as long as 
+     <TT>`.uqlxrc'</TT> is setup properly.
+     The default name <TT>`~/.uqlxrc'</TT> can be overridden by specifying the <CODE>-f</CODE>
+     option at startup.
+ 
+     At first installation 'make install' will create a simple <TT>`~/.uqlxrc'</TT>,
+     you may edit it by hand or use Jonathan Hudson's fantastic GUI. Get it from
+     <CODE>http://www.jrhudson.demon.co.uk</CODE>
+
+
+<P>
+     The uqlx options  file  uses  a  <CODE>KEY = VALUE</CODE>  format.  The '<CODE>#</CODE>'
+     character can be used to start comments, rest of the line is not evaluated.
+
+
+<P>
+     The keys available are:
+ 
+<DL COMPACT>
+
+ 
+<DT><CODE>SYSROM</CODE>
+<DD>
+ 
+     The name of the QDOS ROM to boot.
+ 
+
+<PRE>
+         SYSROM = js_rom
+</PRE>
+
+ 
+ 
+ 
+<DT><CODE>ROMDIR</CODE>
+<DD>
+ 
+     The directory where 'SYSROM' (and other ROMS) may be found.
+
+
+<PRE>
+         ROMDIR = /ql/ROMS/
+</PRE>
+
+ 
+ 
+<DT><CODE>RAMTOP</CODE>
+<DD>
+ 
+     The upper limit of memory; usual QDOS rules apply. The value is  in
+     kB.   Be  warned that large values for this will cause long startup
+     delays unless FAST_START is enabled. I  have  largely  tested  UQLX
+     with  4MB, but at least Minerva should handle 16MB. Currently UQLX
+     won't allow more than 16MB, but this could be easily changed if you 
+     need more. If a larger screen size is used it has to fit into this
+     value.
+
+
+<PRE>
+         RAMTOP = 4096
+</PRE>
+
+ 
+
+<DT><CODE>COLOUR</CODE>
+<DD>
+ 
+     The usage of a colour or mono display. Values are 0 for mono, 1 for colour.
+     This may be used to simulate grayscale on a color monitor, not the opposite
+     unfortunately. This option may get overridden to mono if a specific visual
+     or visual class is requested as specified below.
+
+<PRE>
+         COLOUR = 1
+</PRE>
+
+<DT><CODE>XVID</CODE>
+<DD>
+     specify X visual ID to be used. Overrides <CODE>XDEPTH</CODE> and <CODE>XVIS_CLASS</CODE>.
+     See `xdpyinfo` for list of available visuals.
+
+
+<PRE>
+        XVID = 0x24
+</PRE>
+
+     
+<DT><CODE>XVIS_CLASS</CODE>
+<DD>
+     Specify preferred XVisualClass. This will affect whether color or mono
+     is used and color cell allocation policy. Try experimenting if you have
+     color palette flashing.
+
+
+<PRE>
+        XVIS_CLASS = StaticColor
+</PRE>
+
+<DT><CODE>XDEPTH</CODE>
+<DD>
+     Specify preferred display depth to be used. Should be 8 where possible 
+ 
+
+<DT><CODE>REAL_WHITE</CODE>
+<DD>
+     Set to 0 if you prefer greyish screens like me - useful with bad VUD's
+     with insufficient refresh rates..
+     Redefines QL white to Gray95
+
+<DT><CODE>SIZE_1</CODE>
+<DD>
+<DT><CODE>SIZE_2</CODE>
+<DD>
+<DT><CODE>SIZE_3</CODE>
+<DD>
+     Screen size definitions to be used for fast selection via program name
+     argument('x','xx','xx'). See Program Name.
+
+
+<PRE>
+         SIZE_1 = 640x400
+         SIZE_2 = 1024x768
+         SIZE_3 = 4096x4096  
+</PRE>
+
+ 
+<DT><CODE>SER1</CODE>
+<DD>
+ 
+     The Unix device used for QDOS ser1. 
+ 
+
+<PRE>
+         SER1 = /dev/ttyS0
+</PRE>
+
+ 
+ 
+<DT><CODE>SER2</CODE>
+<DD>
+ 
+     The Unix device used for QDOS ser2.
+ 
+
+<PRE>
+         SER1 = /dev/ttyS1
+</PRE>
+
+ 
+ 
+<DT><CODE>PRINT</CODE>
+<DD>
+ 
+     The Unix command used to queue print jobs, it used to  output  data
+     sent to the PRT device. popen() is used to send the data, so you may
+     specify options, flags etc.
+
+
+<PRE>
+         PRINT = lpr -Pmy_printer
+</PRE>
+
+ 
+ 
+<DT><CODE>CPU_HOG</CODE>
+<DD>
+ 
+     Define it 0 to make UQLX try to behave  multitasking  friendly,  it
+     will  go sleeping when it believes that QDOS is idle. The detection
+     whether QDOS is idle usually works pretty well, but in  some  cases
+     it  may  get  fooled  by  very frequent IO, eg an high speed serial
+     connection - in this case define it to 1 to get all time UNIX  will
+     give  us.   Alternatively  the  <CODE>-h</CODE>  option can be used to enforce
+     CPU_HOG mode.
+     Largely obsolete now as it may be toggled through GUI.
+ 
+
+<PRE>
+         CPU_HOG = 1
+</PRE>
+
+ 
+ 
+<DT><CODE>FAST_START</CODE>
+<DD>
+ 
+     Set to 1 if you want to skip the usual RAM test(default), or set it
+     to 0 if you want to enjoy the Ram test pattern.  
+
+
+<PRE>
+         FAST_START=1
+</PRE>
+
+<DT><CODE>ROMIMG</CODE>
+<DD>
+ 
+     The ROMIMG option defines additional ROMS to be loaded at  specific
+     addresses. These should include TK2 if required.
+ 
+
+<PRE>
+         ROMIMG = tk2_rom,0xc000
+</PRE>
+
+ 
+     It is assumed that the  ROM  image  can  be  found  in  the  ROMDIR
+     directory. The address should be specified in 'C' numeric format.
+ 
+<DT><CODE>XKEY_ON</CODE>
+<DD>
+      A value of 1 can be used to indicate that qm should start with the
+      alternative input method. This involves using ungrabbed keyboard (if
+      configured) and preferring the X11 input method over QDOS translation 
+      of key events See section <A HREF="uqlx.html#SEC23">Keyboard</A>. You might prefer this when you have a 
+      non-english keyboard and don't use many special QL key combinations. 
+      The downside is that typical QL hotkeys are very often interpreted by 
+      window managers - these won't be available for QDOS programs and may 
+      additionally screw up your desktop or even kill applications.
+      Default is 0.
+
+<DT><CODE>XKEY_SWITCH</CODE>
+<DD>
+      Defines Keysym to be used to switch keyboard input method 
+      See section <A HREF="uqlx.html#SEC23">Keyboard</A>. The Keysym name should be in the form returned
+      by 'xev', ie without the leading 'XK_'. It should be accessible
+      without modifiers. Default is to use the "F11" key.
+
+
+<PRE>
+         XKEY_SWITCH = F16      
+</PRE>
+
+<DT><CODE>DO_GRAB</CODE>
+<DD>
+      Whether to do keyboard grabbing. This is used to avoid confusion
+      when window manager would try to interpret QDOS key like ALT-F1.
+      Proper fix is to disable it and get a ICCM compliant wm (eg. windowmaker)
+      Enabling it will interfere with the broken Xkb extension See section <A HREF="uqlx.html#SEC23">Keyboard</A>
+
+
+<PRE>
+         DO_GRAB = 0
+</PRE>
+
+<DT><CODE>XKEY_ALT</CODE>
+<DD>
+      Defines Keysym to be used as (additional) alternative to the Alt keys
+      to simulate QDOS ALT. Reason for this is that many window managers catch
+      away the Alt keys to use them as their hotkeys. Should be accessible 
+      without modifiers. Default "F12"
+
+
+<PRE>
+        XKEY_ALT = Mode_switch  ## frequently this is Alt_R
+</PRE>
+
+<DT><CODE>STRICT_LOCK</CODE>
+<DD>
+      Controls whether strict locking applies for disk image files, the
+      alternative being advisory locking. True by default, disable if you hate
+      the ugly warnings. BTW never rely on locking in UNIX anyway.
+
+
+<PRE>
+         STRICT_LOCK=1
+</PRE>
+
+<DT><CODE>DEVICE</CODE>
+<DD>
+ 
+     All directory devices may be  defined in the  options  file.  The
+     format  is
+  
+
+<PRE>
+DEVICE = QDOS_name,  UNIX_pathname[,  flags]
+</PRE>
+
+     <CODE>QDOS_name</CODE> is the name of the QDOS volume to be defined, eg <CODE>FLP1</CODE>,
+     <CODE>WIN6</CODE>, <CODE>QXL1</CODE>. Currently <CODE>RAMx</CODE> is the only name that
+     receives special attention. UQLX does not enforce any further
+     naming conventions, however most QDOS software requires a 3 chars
+     name length.
+
+     <CODE>UNIX_pathname</CODE> refers to a file, directory or device used to
+     simulate the QDOS device.
+
+     The optional <CODE>flags</CODE> field supports this options.
+ 
+<DL COMPACT>
+
+<DT><CODE>clean</CODE>
+<DD>
+          clean together with a "%x" in the unix pathname can be used to
+          simulate  RAMdisk. The "%x" is replaced with the process number
+          at runtime so that multitasking QMs don't disturb  each  other
+          and after killing QM the directory is deleted.
+ 
+<DT><CODE>qdos-fs</CODE>
+<DD>
+<DT><CODE>native</CODE>
+<DD>
+          Both flags are synonyms. The qdos-fs option indicates that 
+          <CODE>UNIX_pathname</CODE> is the name of a file or device in the
+          QDOS floppy disk or QXL.WIN formats; otherwise a Unix directory 
+          is assumed.
+ 
+<DT><CODE>qdos-like</CODE>
+<DD>
+          applicable only to non-<CODE>qdos-fs</CODE>. Filenames are not case
+          sensitive and (sub)directory creation mimics SMSQ behaviour.
+
+</DL>
+</DL>
+<P>
+ 
+     Devices may be removed from the device list by not supplying a unit
+     (volume) number. This is useful if some devices that are defined by 
+      default, eg 'mdv','flp' are unused.
+ 
+
+<PRE>
+         DEVICE = CD
+</PRE>
+
+<P>
+ 
+     Would remove the above default CDROM specification.
+ 
+     Some device mapping and other options are supplied as default; in
+     addition, the following defaults are also set.
+ 
+
+<PRE>
+         SYSROM = jsrom
+         ROMDIR = /ql/
+         RAMTOP = 4096
+         COLOUR = 1
+
+         PRINT = /usr/bin/lpr 
+         CPU_HOG = 1
+</PRE>
+
+<P>
+ 
+     Note that no additional ROM (tk2) is defined by default.
+
+
+<P>
+and here is the example of an actual .uqlxrc file. You will find more recent
+versions of it with every UQLX distribution.
+
+
+
+<PRE>
+SYSROM = js_rom                         # default ROM to use
+ROMIM = tk2_rom,0xc000                  # extra ROM
+ROMDIR = ~/qm/romdir/                   # ...search them here
+RAMTOP = 16384
+DEVICE = MDV1,~/qm/qldata/              # this directory will be accessible as 'mdv1_'
+DEVICE = MDV2,~/qm/qlsoft/
+DEVICE = FLP1,~/qm/DiskImage2,qdos-fs   # 'flp1_' is the image of a real QL floppy..
+DEVICE = FLP2,~/qm/DiskImage,qdos-fs
+DEVICE = FLP3,~/qm/DiskImage3,qdos-fs
+DEVICE = WIN1,~/
+DEVICE = WIN2,/
+DEVICE = WIN3,~/PiQ/
+DEVICE = RAM1,/tmp/.ram1-%x/,clean      # temporay dirs, cleared after exit
+DEVICE = RAM2,/tmp/.ram2-%x/,clean
+DEVICE = RAM3,/tmp/.ram3-%x/,clean
+DEVICE = RAM4,/tmp/.ram4-%x/,clean
+DEVICE = RAM5,/tmp/.ram5-%x/,clean
+DEVICE = RAM6,/tmp/.ram6-%x/,clean
+DEVICE = RAM7,/tmp/.ram7-%x/,clean
+DEVICE = RAM8,/tmp/.ram8-%x/,clean
+DEVICE = CD1                            # devices we don't want
+DEVICE = MS1
+COLOUR = 0                              # simulate MONO, 1=COLOR monitor
+
+PRINT = lpr                    # printer spooler prog used by PRT port
+CPU_HOG = 0                    # don't burn CPU power in QDOS scheduler loop
+FAST_START = 1                 # skip ramtest
+
+</PRE>
+
+
+
+<H1><A NAME="SEC14" HREF="uqlx_toc.html#TOC14">Program Invocation</A></H1>
+
+<P>
+If compiled with <CODE>-DUSE_VM</CODE> - currently Linux-x86 and SPARC, a patch
+database must be built on first startup. This is usually done automatically.
+
+
+<P>
+UQLX often prints diagnostic messages to <CODE>stdout</CODE> and <CODE>stderr</CODE>, so
+start it in its own xterm.
+
+
+<P>
+During startup, the emulator will attempt to boot from <TT>`mdv1_BOOT'</TT>
+(Case sensitive !!) or read commands from the <CODE>BOOT</CODE> device if one was 
+specified with the '<CODE>-s</CODE>' or '<CODE>-b</CODE>' option.
+
+
+<P>
+It appears that in Minerva 1.98 the name of the default <CODE>BOOT</CODE> file
+changed from <TT>`mdv1_BOOT'</TT> to <TT>`mdv1_boot'</TT>!! To keep compatibility
+with other ROMS I would recommend  a soft link like 
+
+
+
+<PRE>
+ln -s BOOT boot         # in mdv1_
+</PRE>
+
+
+
+<H2><A NAME="SEC15" HREF="uqlx_toc.html#TOC15">Program Name</A></H2>
+<P>
+ 
+     <TT>`qm'</TT> is the recommended name for normal usage. A different name will be interpreted  as
+     follows:   if  either '<CODE>min</CODE>' or '<CODE>js</CODE>' is part of the program name, <CODE>qm</CODE>
+     will  attempt  to  use  a  <TT>`minerva_rom'</TT>  resp  <TT>`js_rom'</TT> for the
+     emulation, overriding any options or defaults.
+ 
+     Thus if you often need to switch between Minerva and JS roms, or even 
+     want to have
+     both running at the same time, the
+     easiest  way  to manage is to arrange some soft links approximately
+     like this:
+ 
+
+<PRE>
+         ln -s qm qjs
+         ln -s qm qmin
+</PRE>
+
+<P>
+     If the program name contains an '<CODE>x</CODE>', 'SIZE_X' and <TT>`minerva_rom'</TT> will
+     OVERRIDE other defaults. Likewise, '<CODE>xx</CODE>' will trigger 'SIZE_XX' and '<CODE>xxx</CODE>'
+     'SIZE_XXX'. The current compiled in defaults for screen size are 
+         
+
+<PRE>
+         SIZE_X   = 632x400
+         SIZE_XX  = 720x512
+         SIZE_XXX = 800x600
+</PRE>
+
+<P>
+ 
+
+
+
+
+<H2><A NAME="SEC16" HREF="uqlx_toc.html#TOC16">Command Line options</A></H2>
+
+<P>
+ 
+     uqlx supports the following command line  options;  these  override
+     settings in <TT>`~/.uqlxrc.'</TT>
+     Note that options in turn can be overridden by program name as described
+     above.
+
+
+
+<PRE>
+         qm [-r RAMTOP] [-i] [[-c][-m]] [-f file] [-h] [-o romname] 
+            [-s [string]] [-b [string]]
+</PRE>
+
+<P>
+ 
+     where:
+
+
+<DL COMPACT>
+
+<DT><CODE>-r RAMTOP</CODE>
+<DD>
+Defines the RAMTOP value in kB. Any enlarged screen also has to fit into
+this value.
+ 
+<DT><CODE>-c</CODE>
+<DD>
+Forces colour mode.
+ 
+<DT><CODE>-m</CODE>
+<DD>
+Forces mono mode (even on a colour X display).
+
+<DT><CODE>-g nXm</CODE>
+<DD>
+Start with screen size nXm, effective only with Minerva roms. 
+<STRONG>See big screen</STRONG>
+ 
+<DT><CODE>-f file</CODE>
+<DD>
+Defines an alternative options file.
+ 
+<DT><CODE>-h</CODE>
+<DD>
+Force CPU_HOG mode,  take  all  available  CPU  time  for  the
+emulator.
+
+<DT><CODE>-o romname</CODE>
+<DD>
+Use romname instead of ROM defined in <TT>`.uqlxrc'</TT> file
+
+<DT><CODE>-s boot_cmd</CODE>
+<DD>
+No attempt is made to make a connection to the Xserver, See section <A HREF="uqlx.html#SEC24">Scripting</A>.
+<CODE>boot_cmd</CODE> must be present, it defines a QDOS 'BOOT' device to be used, 
+see <CODE>-b</CODE> option.
+
+<DT><CODE>-b boot_cmd</CODE>
+<DD>
+Define QDOS 'BOOT' device that will return the <CODE>boot_cmd</CODE> string on 
+read.
+The <CODE>boot_cmd</CODE> should be a string of the form
+<CODE>"10 lrun mdv1_progxx"</CODE> or similar; quoting newlines is tricky
+and therefore only 1 line expressions are recommended. A QDOS newline
+char is automatically appended to the string.
+
+<DT><CODE>-i</CODE>
+<DD>
+Start with UQLX window iconised - if supported by window manager
+
+</DL>
+
+
+
+<H2><A NAME="SEC17" HREF="uqlx_toc.html#TOC17">BOOT Files</A></H2>
+
+<P>
+Usually there are no special requirements for UQLX boot files, just
+remember to store it as <TT>`mdv1_BOOT'</TT> - case will be significant 
+in the default installation.
+
+
+<P>
+There seems to be a problem with some versions of <CODE>Ptr_gen</CODE>. If
+your boot file fails with random errors near the place where it is loaded,
+try inserting this after <CODE>LRESPR Ptr_gen</CODE>:
+
+
+
+<PRE>
+PAUSE#2,1
+</PRE>
+
+<P>
+This will not work with JS ROMS, use a for loop or similar to cause the 
+delay there..
+
+
+<P>
+You may query the UNIX environment variables and the startup parameters
+of the emulator from your bootfile - section <A HREF="uqlx.html#SEC35">SuperBasic Extensions</A>
+
+
+
+
+<H2><A NAME="SEC18" HREF="uqlx_toc.html#TOC18">GUI</A></H2>
+
+<P>
+The supplied GUI is intentionally very simple - it is supposed to
+compile and work on every system with X without requiring additional
+toolkits etc. Seems only the old Athena Widget set meets this
+requirement :-(
+
+
+<P>
+Resources are in <TT>`Xql'</TT>, you may change button
+names, fonts or even use own graphics.
+
+
+<P>
+The GUI supports this actions:
+
+
+<DL COMPACT>
+
+<DT><CODE>Paste to keyboard Queue</CODE>
+<DD>
+.. should be obvious.
+
+<DT><CODE>Clone UQLX</CODE>
+<DD>
+Create an exact copy of this UQLX program, complete with jobs etc.
+Files are kept open mainly for the UnixFS, accessing same floppy
+or QXL devices from two applications will cause problems.
+
+<DT><CODE>ROM breakpoints</CODE>
+<DD>
+Toggle whether setting ROM breakpoints is possible. This will completely
+remove ROM protection so use only when needed. 
+
+<DT><CODE>Redraw QL screen</CODE>
+<DD>
+May be useful in some circumstances..
+
+<DT><CODE>XKeyLookup</CODE>
+<DD>
+Switch whether X or QDOS key translation method is applied, similar as
+<CODE>XKEY_ON</CODE> in <TT>`~/.uqlxrc'</TT> resp. the key configured by <CODE>XKEY_SWITCH</CODE>
+
+<DT><CODE>cpu hog</CODE>
+<DD>
+Toggle CPU saving mode, similar to <CODE>-h</CODE> or <CODE>CPU_HOG</CODE>
+
+</DL>
+
+
+
+<H2><A NAME="SEC19" HREF="uqlx_toc.html#TOC19">Signals - Terminating UQLX</A></H2>
+
+<P>
+UQLX handles all signals, currently they will have this effect:
+
+
+<DL COMPACT>
+
+<DT><CODE>SIGINT</CODE>
+<DD>
+typically bound to <CODE>^C</CODE> will do a 'soft termination', cleaning up all
+temporary files and directories.
+<DT><CODE>SIGQUIT</CODE>
+<DD>
+typically bound to <CODE>^\</CODE> will cause an immediate exit, this is useful
+in the unlikely case that <CODE>SIGINT</CODE> fails due to some recursive error.
+<DT><CODE>SIGABRT</CODE>
+<DD>
+is generated internally for debugging reasons when UQLX encounters an virtual 
+memory error it is unable to handle.
+</DL>
+
+
+
+<H2><A NAME="SEC20" HREF="uqlx_toc.html#TOC20">ROM Images</A></H2>
+
+<P>
+Thanks to Tony Firshman, Minerva v1.89 is now PD and can be bundled
+with UQLX - it is <TT>`romdir/min.189'</TT>.
+
+
+<P>
+For various reasons you may run into some trouble when trying romimages other
+than the supplied js_rom or min.189. Roughly, the known causes are:
+
+
+
+<UL>
+<LI>
+
+rom image not supported by UQLX. Maybe some old, never tested  QDOS roms
+
+<LI>
+
+rom image has been patched by GC, SGC or similar. All QL extensions that have
+something better than a 68008 CPU are likely to do this.
+
+On a SGC, according to Zeljko Nastasic you may retrieve the original ROM by
+this command:
+
+
+<PRE>
+SBYTES &#60;device&#62;&#60;filename&#62;,hex('400000'),48*1024
+</PRE>
+
+<LI>
+
+some TK2 roms fail possibly because they get confused by the UQLX filesystem
+which is a mix of the basic and FS II. Use some older rom if possible, 2.10
+works very well for me.
+</UL>
+
+
+
+<H2><A NAME="SEC21" HREF="uqlx_toc.html#TOC21">The big screen feature</A></H2>
+
+<P>
+If you choose to work with a screen bigger than 512x256, there are a few
+important points.
+
+
+<P>
+<STRONG>Warning: it is possible to define screens bigger than the physical
+screen - make sure that you know how to move around by your virtual screen
+manager in this case. Beware that UQLX captures all key events.</STRONG>
+
+
+<P>
+The maximum useable screen size depends on available RAM and X server habits.
+If at all possible try to run UQLX with 8bit depth - see customisation. For
+8bit depth the memory requirements will be approximately x*y*1.25 bytes + whatever
+the Xserver allocates. This can be quite a lot because UQLX uses backing store
+and shared memory when available, thus turning of this features in the Makefile
+or Xserver may improve performance for very big screen sizes by a factor of 2.
+
+
+<P>
+If you are an extremist, there are several window managers that will allow
+you to have rather big screen sizes, eg fvwm.
+The maximum I have tested so far is 8192x4096 with SunOS/Solaris. The theoretical 
+limit is - because of Pointer Environment's bad habits that the screen must fit
+with all RAM into 16 MB
+
+
+<P>
+Pointer Environment is patched when activated to recognise the new screen
+parameters - there are 'cleaner' solutions, unfortunately with severe side
+effects. If you receive the warning "could not patch PE", you are in serious
+trouble..
+
+
+<P>
+Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel
+ratio. Length of screen buffer must always be truncated nearest 32K boundary,
+therefore some screen sizes may result in a certain waste of memory.
+
+
+
+
+<H2><A NAME="SEC22" HREF="uqlx_toc.html#TOC22">X Window Managers</A></H2>
+
+<P>
+Some of them work better than others, and some don't work at all.
+UQLX is slightly more demanding on them because it has to do keyboard
+grabbing and warps the mouse pointer. ICCM compliant wm's (those that
+don't grab events from clients) should be preferred where possible.
+
+
+<P>
+Enlightenment with gnome is reported to freeze (pretty old report by now).
+
+
+<P>
+Tested to work: olvwm, fvwm2, afterstep, windowmaker. Many of these have 
+settings which can make a big improvement.
+
+
+
+
+<H2><A NAME="SEC23" HREF="uqlx_toc.html#TOC23">Keyboard</A></H2>
+
+<P>
+There are 2 points of concern when emulating a QDOS type keyboard
+under X11:
+
+
+<P>
+First, many window managers try to interpret key events that are
+meaningful for QDOS programs and invoke their own actions - this
+is almost always undesired. To resolve the conflict I have implemented
+keyboard grabbing. Unfortunately, due to a design flaw of the X11/XKB
+extension, keyboard grabbing doesn't work with many non-us keyboards.
+Typically some keys accessed by AltGr or similar do no longer give
+correct results in UQLX. 
+
+
+<P>
+Best cure is do NOT use XKB. Despite what many national-howtos say
+Xkb is completely optional and only wastes resources.
+To disable it,add following lines in <TT>`/etc/XF86Config'</TT>
+
+
+
+<PRE>
+XkbDisable
+RightAlt    ModeShift
+</PRE>
+
+<P>
+You can then safely set <CODE>DO_GRAB = 0</CODE> in the config file.
+To get exactly the same bindings with or without Xkb you need to use 
+<TT>`~/.Xmodmap'</TT>. Create it in a xkb-enabled session like this:
+
+
+
+<PRE>
+xmodmap -pke &#62;~/.Xmodmap
+</PRE>
+
+<P>
+Second problem, there are often key combination for which both QDOS and 
+X11 have meaningful interpretations and that are difficult to generate
+otherwise.
+
+
+<P>
+To resolve the problems, I have added a switch, switching this states:
+
+
+
+<UL>
+
+<LI>
+
+        default state: [grabbed keyboard] &#38; preferred QDOS interpretation of key events,
+        indicated by arrow mouse cursor (indication only when PE cursor inactive!)
+<LI>
+
+        [ungrabbed keyboard] &#38; preferred X11 interpretation of key events,
+        indicated by crossbar mouse cursor. All characters returned by
+        'xev' should be available in this state.
+</UL>
+
+<P>
+The switch is bound to a key, F11 by default and in default state unless
+configured otherwise See section <A HREF="uqlx.html#SEC13">About .uqlxrc files</A> <CODE>XKEY_SWITCH</CODE>. Switching
+the keyboard mode can be also done using the GUI
+
+
+<P>
+To make life with XkB easier, it is also possible to define a special key that 
+is interpreted as QDOS' Alt key by the emulator.
+
+
+<P>
+Be warned, that when the keyboard is ungrabbed, the X11 window manager
+may react strangely to some of your hotkeys. Perhaps the easiest way to 
+avoid clashes in this case would be to redefine the 'meta' modifier to 
+something completely unusual like F13.
+
+
+<P>
+Here is a short description what the xql_key() approximately does
+in case you want to mess around with it.
+
+
+<P>
+X itself is pretty straightforward but the code is a bit complicated
+for the reasons outlined above. Additionally I am trying to circumvent 
+some problems with vendor specific keyboards. Eg some
+SUN keyboards return Keysyms like 'F35' instead of XK_Next - not even
+programs like Netscape or Xemacs can cope with it without being hacked
+(which is far easier with Xemacs btw). And don't even mention SGI keyboards
+and WIN95 X emulation to me ...
+
+
+<P>
+The result is a 3 level key-combination translation scheme:
+
+
+
+<PRE>
+X defines:
+1) keycodes - each keyboard button has a number that is completely OS dependent
+   This number is only useful to find out what KeySyms are associated with the
+   button as I do in keycode_from_XKeycode()
+   keycodes are used to see how X translates them - if the same result could 
+   be achieved with "less" modifiers, a QDOS translation is preferred.
+
+   state - is a value indicating which modifiers are to be applied to the 
+   keycode. Unfortunately state is wrong when keyboard is grabbed and XKB 
+   being used.
+
+2) keysyms - gives some portable name to keycodes and is to some extent 
+   in an 'unportable way' dependent on the modifiers (shift, ctrl, meta).
+   The Keysym data type is an integer that is associated to the keysymname by 
+   XKeysymToString().
+   Keysyms associated with ASCII chars have the ASCII value of the char - some
+   tests in the code are based on this.
+
+3) XLookupString is basically the default ASCII/ISO value associated with the key
+   combination described by the XEvent. Unfortunately XlookupString is no 
+   longer supported - it is not politically correct in the days of i18n.
+   The advertised replacements for it are not only complete overkill for 
+   a QDOS emulator that understands less than the ISO-1 charset by definition 
+   - they would also increase the complexity of this 3 level translation 
+   scheme to ludicrous levels.
+
+</PRE>
+
+
+
+<H2><A NAME="SEC24" HREF="uqlx_toc.html#TOC24">Scripting</A></H2>
+
+<P>
+<CODE>qm</CODE> can now be used to run QDOS programs as scripts. This feature
+is not yet completed but I already used it in some <CODE>cron</CODE> commands.
+With the <CODE>pty_</CODE> device and this facility QDOS will soon rival <CODE>perl</CODE>
+as an extension language.
+
+
+<P>
+Both the <CODE>-b</CODE> and <CODE>-s</CODE> options can be used to pass a command string
+that overrides the usual <TT>`mdv1_BOOT'</TT> actions.
+<CODE>-s</CODE> additionally inhibits any attempt to open an X window to display the
+QL screen. 
+
+
+<P>
+With the <CODE>-s</CODE> option, screen IO will be redirected to fd 0 for input,
+fd 1 for output. Piping input into UQLX is somewhat difficult, not only aren't
+special codes (^C,break) working, also very strange things may happen at eof.
+Currently piping input to Minerva doesn't work reliably.
+
+
+<P>
+Since it turns out that quoting SuperBasic characters or newlines can be
+extremely complex I would recommend passing only very simple  command 
+strings, something like
+
+
+
+<PRE>
+qm -s "10 lrun mdv1_prog"
+</PRE>
+
+<P>
+should work without any problems with any shell, a single chr$(10) is appended
+to each command string.
+
+
+<P>
+There are a few SuperBasic extensions provided to pass arguments to scripts
+and access environment variables, namely
+<CODE>getXargc</CODE>, <CODE>getXarg$</CODE> and <CODE>getXenv$</CODE>.
+see section <A HREF="uqlx.html#SEC35">SuperBasic Extensions</A>
+
+
+
+
+<H1><A NAME="SEC25" HREF="uqlx_toc.html#TOC25">Filesystems</A></H1>
+
+<P>
+Both QDOS/SMSQ diskimages and the UNIX host filesystem can be accessed,
+for configuration details see the <TT>`.uqlxrc'</TT> file. 
+
+
+<P>
+It is also possible to use real QDOS floppies, but some care must be taken. 
+Especially disk swaps will only be recognised when all files are closed.
+
+
+<P>
+There is no file locking for the UnixFS. QDOS diskimages and QXL.WIN files
+are locked before accessed, because the potential for damage is much greater.
+However not every Unix will support locking block devices - test this if you
+intend to run more than 1 emulators at a time.
+
+
+<P>
+<STRONG>File locking is mandatory ONLY when the mode (chmod(2)) of the file is
+set accordingly. This is what UQLX does by default - see customisation. However
+with the strict locking enabled some problems remain, eg if some another
+program opens the image file before UQLX. It seems file locking can never
+be done absolutely foolproof in Unix, the results may depend on the particular
+brand of Unix.</STRONG>
+
+
+<P>
+<STRONG>When UQLX fails to establish a lock for some reason it will proceed
+with a warning.</STRONG>
+
+
+<P>
+Readonly access is implemented for all types of filesystems simply by
+respecting the UNIX file modes and returning <CODE>ERR.RO</CODE>. In UnixFS this
+is on a per file basis, whereas on floppy/QXL.WIN this controls the
+whole volume. Most QDOS programs seem to ignore ERR.RO btw which can
+be a problem.
+
+
+<P>
+The Unix Filesystem can be accessed both translated and untranslated. The
+translated version is used in the default configuration to host 'mdv1_'
+and some other devices.
+
+
+<P>
+The untranslated version is accessed as the uQVFSx Filesystem, see that
+section.
+The uQVFSx Filesystem is good if you want to access a Unix file of which
+you know the (Unix)filename or simply need very long pathnames.
+It can be also used to access raw and special devices, eg the /proc
+filesystem.
+
+
+
+
+<H2><A NAME="SEC26" HREF="uqlx_toc.html#TOC26">UNIX Filesystem Interface</A></H2>
+
+<P>
+The UNIX FS Interface provides access to the underlying UNIX (or similar)
+host filesystem. Standard QDOS and most QDOS-FS II file operations are mapped
+to UNIX calls, full (sub-)directory access is provided.
+
+
+<P>
+This means that whatever filesystems are accessible from Unix (CD, MSDOS, Amiga
+partitions, ZIP drives ....) are accessible to QDOS programs.
+
+
+<P>
+The filenames are translated to a QDOS like syntax, <TT>`/'</TT> maps to
+<TT>`_'</TT>. Unfortunately this means, that in very rare situations a file
+may shadow some subdirectory. UNIX names are therefore supported as
+well, this looks like <TT>`mdv1_c68/INCLUDE/stdio_h'</TT>.<A NAME="DOCF2" HREF="uqlx_foot.html#FOOT2">(2)</A>
+
+
+<P>
+The <CODE>qdos-like</CODE> flag selects whether the filenames are case-sensitive
+and whether (sub)directory creation will have Unix or SMSQ semantics.
+
+
+<P>
+Using the <CODE>qdos-like</CODE> flag should be restricted to directories
+reserved for UQLX. If programs other than UQLX create files with names
+that are not distinguishable in case-insensitive mode the results
+will be undefined.
+
+
+<P>
+The default Unix FS is case-sensitive which can be a real pain with 
+SuperBasic, but works quite good with most other software. Beware that 
+QDOS will attempt to boot from <TT>`mdv1_BOOT'</TT> !
+
+
+<P>
+ Another lovely source of confusion is using SuperBasic symbols as filenames
+-- SB always remembers the case of the symbol when seen first time
+and converts to this case subsequently. 
+
+
+<P>
+Thus
+
+
+
+<PRE>
+open#6,mdv1_BoOt
+open#4,mdv1_BOOT      REM still accessing mdv1_BoOt !!
+</PRE>
+
+<P>
+Data-type, -space and file version are stored in an one per directory 
+<TT>`.-UQLX-'</TT> file. This means that UNIX hard and soft links for QDOS 
+executables, as well as moving or copying them around by <CODE>mv</CODE> will fail.
+There are some utilities in the <TT>`utils'</TT> subdirectory that can be
+used to manipulate the entries. Depending on the underlying Unix filesystem
+there may be problems to create or access a file <TT>`.-UQLX-'</TT>, so exotic
+filesystems like 'umsdos' are only very limited QDOS compatible.
+
+
+<P>
+The UNIX directories are visible to QDOS like normal FileSystem II
+directories. Since QDOS doesn't use a distinct directory separator,
+this resulted in a rather complex algorithm for finding files, and
+in pathologic cases may result in certain files being shadowed.
+
+
+<P>
+The <TT>`.'</TT> and <TT>`..'</TT> directories are accessible just like that
+in QDOS but aren't listed in directories anymore.
+
+
+
+
+<H2><A NAME="SEC27" HREF="uqlx_toc.html#TOC27">QDOS floppy and QXL.WIN</A></H2>
+
+<P>
+QXL.WIN files are now supported as well as direct use of floppy/QXL.WIN devices.
+Currently, <CODE>disk swaps are only recognised when all files on that device are closed!</CODE>
+
+
+<P>
+UQLX can use <TT>`DD'</TT> or <TT>`HD'</TT> diskimages.<A NAME="DOCF3" HREF="uqlx_foot.html#FOOT3">(3)</A> It should be noted that
+UQLX does not yet work well with unusual floppy formats, even when the files are
+listed correctly caution is recommended.
+
+
+<P>
+Floppy-Diskimages can be taken by 'dd', although 'cat' usually works as well 
+(and much faster on SUN). On SUNOS the exact syntax is
+
+
+
+<PRE>
+dd if=/dev/rfd0 of=DiskImagename
+</PRE>
+
+<P>
+- unfortunately it does rarely work as easily on Solaris.
+
+
+<P>
+Man pages of <TT>`dd'</TT> or <TT>`tar'</TT> usually give good hints about the floppy 
+names, one possible complication is Volume Management, refer to 'man vold'.
+
+
+<P>
+On Linux anything works, unless you have a very special floppy use <CODE>/dev/fd0</CODE>
+as filename.
+
+
+
+
+<H3><A NAME="SEC28" HREF="uqlx_toc.html#TOC28">qxl_fschk</A></H3>
+
+<P>
+This program is now supplied in the <TT>`utils'</TT> subdirectory. It should
+be run before exchanging QXL.WIN filesystems images with SMSQ software,
+it will spot some potential compatibility problems and detect many types
+of filesystem damage.
+
+
+
+
+<H2><A NAME="SEC29" HREF="uqlx_toc.html#TOC29">uQVFSx Filesystem</A></H2>
+
+<P>
+UQLX now offers access to (almost) unlimited pathname lengths. So far I have tested
+pathnames up to 1017 bytes which appears to be some limit in Solaris, 4000 being 
+the supposed limit of the current UQLX implementation. However you should be warned
+that TK2 and/or maybe some QDOS versions might mess up and fail to report
+ERR_NF when you are trying to access a long pathname that can't be opened.
+
+
+<P>
+The syntax has some similarities with QVFS (also many differences), and if practical 
+I intend to make it QVFS compatible in the future.
+QVFS is a new filesystem (c) by Hans-Peter Recktenwald - see
+<CODE>http://www.snafu.de/~phpr/qhpqvfs.html</CODE> for more info.
+
+
+<P>
+To access a unix file through uQVFSx specify its full pathname in unix
+syntax. Sometimes uQVFSx will also replace '_' by '/' if it matches
+this way - this is only intended as an compatibility hack to make some
+antiqued programs work with it.
+
+
+<P>
+A leading '/' or 'XVFS_' is enforced to recognise an
+uQVFSx name.
+
+
+<P>
+Also, if for some reason you are not sure the filename is unique within 
+QDOS devices, prefix
+it with 'XVFS_'
+
+
+<P>
+Examples:
+
+
+
+<PRE>
+view '/etc/motd'
+view 'XVFS_/etc/motd'
+view '/usr/include/sys/signal.h'
+view '/usr_include_sys_signal.h'
+</PRE>
+
+<P>
+You should be able to do all file operations defined for normal UQLX
+filesystems except directory operations.
+Hoping that QVFS becomes stable and widely accepted, I will add 
+directories etc.
+
+
+<P>
+For now, getting directories works like this:
+
+
+
+<PRE>
+copy 'pty_ls -a /usr/include' to con_
+spl 'pty_ls -a /usr/lib',#1
+</PRE>
+
+<P>
+Of course any options <TT>`ls'</TT> recognizes can be used, the <CODE>-a</CODE>
+option is essential otherwise you could trigger a <CODE>SPL</CODE> bug that
+closes <CODE>#1</CODE> in the 2nd example! See section <A HREF="uqlx.html#SEC32">pty device</A> for details.
+
+
+<P>
+When this filesystem is used to access special files (devices), only a restricted
+set of <CODE>trap#3</CODE> commands will work for this file.
+
+
+
+
+<H1><A NAME="SEC30" HREF="uqlx_toc.html#TOC30">Other Devices</A></H1>
+
+<P>
+Here is a description of the <CODE>TCP/IP</CODE>,<CODE>pty</CODE>,<CODE>ser</CODE> and 
+<CODE>prt</CODE> devices.
+
+
+
+
+<H2><A NAME="SEC31" HREF="uqlx_toc.html#TOC31">TCP/IP</A></H2>
+
+<P>
+The <CODE>TCP/IP</CODE> features are described in the files <TT>`docs/socket.*'</TT> that
+came with this UQLX distribution or here: 
+
+
+
+<PRE>
+http://www.geocities.com/SiliconValley/rdzidlic/socket_main.html
+</PRE>
+
+
+
+<H2><A NAME="SEC32" HREF="uqlx_toc.html#TOC32">pty device</A></H2>
+
+<P>
+<CODE>pty</CODE><EM>jt</EM><CODE>_program name</CODE> <EM>par1</EM> ....
+
+
+<DL COMPACT>
+
+<DT><EM>j</EM>
+<DD>
+        job control options
+
+<DL COMPACT>
+
+<DT><CODE>i</CODE>
+<DD>
+don't care if child process exits. Default behaviour is to indicate EOF on
+read after the child process exited and all buffers were read, but theoretically
+someone might reconnect the tty.
+
+<DT><CODE>k</CODE>
+<DD>
+kill child job after closing the QDOS channel. Default is don't care.
+</DL>
+
+<DT><EM>t</EM>
+<DD>
+        translation options
+<DL COMPACT>
+
+<DT><CODE>c</CODE>
+<DD>
+translate carriage returns
+
+<DT><CODE>z</CODE>
+<DD>
+translate char 26 (<CODE>^Z</CODE>)as end of file
+
+<DT><CODE>t</CODE>
+<DD>
+translate QDOS &#60;--&#62; ISO-8859-1 font
+
+</DL>
+
+<DT><EM>program name</EM>
+<DD>
+name of program to be executed and parameters
+
+<DT><EM>parn</EM>
+<DD>
+arguments to be passed to the invoked program. This can be unix-style
+options, filenames etc.
+
+A special syntax allows the specification of UQLX filenames
+and redirection:
+[following stuff isn't yet implemented at all]
+
+<DL COMPACT>
+
+<DT><CODE>' (single quote,\')</CODE>
+<DD>
+can be used avoid expansion of the following symbols
+
+<DT><CODE>'#name'</CODE>
+<DD>
+denotes a QDOS filename. The path of the underlying Unix file is looked
+up and passed as argument to the program.
+
+The next example will run german ispell on the file <TT>`mdv1_kant.tex'</TT>.
+Note that even though the <EM>t</EM> flag is selected it applies only to
+the <CODE>pty</CODE> I/O - thus if <TT>`mdv1_kant.tex'</TT> contains any non
+ASCII codes a separate translation is required.
+
+
+<PRE>
+open#4,"ptyt_ispell -d #mdv1_kant.tex"
+</PRE>
+
+<DT><CODE>[n]&#62;</CODE>
+<DD>
+<DT><CODE>[n]&#62;&#62;</CODE>
+<DD>
+<DT><CODE>[n]&#60;</CODE>
+<DD>
+redirects stdin/out/err or fd <CODE>n</CODE> when given
+
+</DL>
+</DL>
+
+<P>
+ A pty is a pseudo-terminal that enables you to run a program as if it
+were connected to a real tty. The terminal output of the program is 
+is available as input from the connected QDOS channel, likewise output
+into the QDOS channel appears as input from its terminal to the program.
+The pty device works similarly as a pair of pipes, with the difference
+that the launched program believes to execute on a real terminal, and
+the same channel is used for i/o and error output.
+
+
+<P>
+examples:
+
+
+
+<PRE>
+open#6,pty_date     REM get unix time and date
+input$#6,a$         REM should be same like QDOS date
+print a$:close#6
+</PRE>
+
+<P>
+A bit more complicated example, <CODE>'pty_ls -al'</CODE> would do the same
+easier.
+
+
+
+<PRE>
+10 open#6,pty_csh
+20 print#6,"ls -al"
+30 print#6,"exit"       rem otherwise we can't detect the end!
+40 repeat xx
+    if eof(#6) :exit xx
+50  input#6,a$:print a$
+60 end repeat xx
+70 close#6
+</PRE>
+
+<P>
+Connect to an NNTP server and post a test message. Most likely you
+will have to use another NNTP server and change the "From:" to contain
+a legal address.
+
+
+
+<PRE>
+100 PRINT "NNTP Posting software"
+110 PRINT
+120 OPEN#6,'pty_telnet  rznews.rrze.uni-erlangen.de 119'
+130 get_resp
+140 get_resp
+150 get_resp
+160 get_resp
+170 PRINT "** Connected **"
+180 PRINT#6,"post"
+190 get_resp
+200 PRINT#6,"Newsgroups: alt.test"
+210 PRINT#6,"Subject: test"
+220 PRINT#6,"From: test@alt.test"
+230 PRINT#6
+240 PRINT#6,"test"
+250 PRINT#6,"test"
+260 PRINT#6,"test"
+270 PRINT#6
+280 PRINT#6,"."
+290 PRINT#6
+300 get_resp
+310 PRINT#6,"quit"
+315 REPeat xx:get_resp:IF EOF(#6) :EXIT xx
+320 CLOSE#6
+330 DEFine PROCedure get_resp
+340  INPUT#6,c$:PRINT c$
+350 END DEFine 
+360 DEFine PROCedure sa
+370 SAVE_O mdv1_script
+380 END DEFine 
+</PRE>
+
+<P>
+If the pty driver (pty.c) compiles on your system; try setting
+the QTPI "Comm Dev" setting to 'pty_/bin/login' (or, better,
+"pty_/sbin/agetty -L -h 38400 -" on a Linux box). The pty
+device takes one parameter, the Unix command to run. If no command is
+given, it tries /bin/sh as a login shell. Usually it is not even
+necessary to give the full path of the command as above.
+
+
+<P>
+The pty code is taken from the 'emu' X Window terminal program; the
+original archive contains many clues on getting it to work on
+different platforms. You can find out about 'emu' from emu@pcs.com.
+
+
+<P>
+<EM>In this context, beware of an</EM><CODE> TK2</CODE><EM> bug - </EM><CODE> SPL </CODE>
+<EM>may accidentally close a basic channel passed as </EM><CODE>#ch </CODE>
+<EM>if the channel returns an immediate </EM><CODE>EOF </CODE>
+<EM>as the </EM><CODE>pty </CODE><EM>device can do</EM>
+
+
+
+<PRE>
+SPL 'pty_ls emptydir',#1        REM #1 gets closed! (-:
+</PRE>
+
+
+
+<H2><A NAME="SEC33" HREF="uqlx_toc.html#TOC33">ser device</A></H2>
+
+<P>
+<CODE>ser</CODE><EM>npht</EM><CODE>_</CODE><EM>b</EM>baudrate
+
+
+<P>
+except for the <CODE>_baudrate</CODE>, the options have the same meaning as in QDOS
+where applicable.
+
+
+<DL COMPACT>
+
+<DT><EM>n</EM>
+<DD>
+        unit number, currently 1,2
+<DT><EM>p</EM>
+<DD>
+parity
+<DL COMPACT>
+
+<DT><CODE>O</CODE>
+<DD>
+<DT><CODE>E</CODE>
+<DD>
+<DT><CODE>M</CODE>
+<DD>
+<DT><CODE>S</CODE>
+<DD>
+</DL>
+<DT><EM>h</EM>
+<DD>
+        handshake
+<DL COMPACT>
+
+<DT><CODE>H</CODE>
+<DD>
+        use handshake
+<DT><CODE>I</CODE>
+<DD>
+        ignore handshake
+</DL>
+<DT><EM>t</EM>
+<DD>
+        translation
+<DL COMPACT>
+
+<DT><CODE>R</CODE>
+<DD>
+        no translation
+<DT><CODE>Z</CODE>
+<DD>
+        recognise <CODE>^Z</CODE> as EOF
+<DT><CODE>C</CODE>
+<DD>
+        carriage return
+</DL>
+</DL>
+
+<P>
+Here is some documentation for <CODE>ser</CODE> and <CODE>pty</CODE> devices, originally
+compiled by Jonathan Hudson
+
+
+<P>
+WARNING: this implementation is tested only on Linux, implementing it for
+other OS/architectures may require nontrivial changes. The <CODE>pty</CODE>
+drivers are also tested on Solaris.
+
+
+<P>
+Serial and pty (pseudo terminal drivers) are available for uqlx. Due
+to the machine specific nature of these devices, some work may be
+required to make them work on non-Linux systems. In particular, the
+<CODE>ioctl(..,FIONREAD,..)</CODE> call may not be supported.
+
+
+<P>
+The serial device (1 and 2) takes an extra parameter, the baud
+rate. <CODE>MT.BAUD</CODE> is also supported, but as it only works to 19200 baud,
+it is not much use. The extended syntax is, for example:
+
+
+
+<PRE>
+        ser2hr_b57600   (57600 baud)
+</PRE>
+
+<P>
+The data transfer rate appears CPU bound, but 5100 cps TX and 4800 cps
+RX are achievable for  QTPI/ZMODEM.
+
+
+<P>
+The serial device names should be specified in the <TT>`.uqlxrc'</TT> file,
+good choice for Linux is <TT>`/dev/ttyS0'</TT> and <TT>`/dev/ttyS1'</TT>.
+
+
+
+
+<H1><A NAME="SEC34" HREF="uqlx_toc.html#TOC34">Printing</A></H1>
+
+<P>
+The <CODE>prt</CODE> device can be used for printing. The data sent to <CODE>prt</CODE>
+is piped to the printer command specified in <TT>`.~/.uqlxrc'</TT> which may
+be overridden or modified by providing additional arguments to the <CODE>prt</CODE>
+device.
+
+
+<P>
+<CODE>prt</CODE><EM>ft</EM><CODE>_</CODE><EM>add_options</EM><CODE>!</CODE><EM>alt_command</EM>
+
+
+<DL COMPACT>
+
+<DT><EM>f</EM>
+<DD>
+        ignore for QDOS compatibility
+<DT><EM>t</EM>
+<DD>
+        translation: use active TRA table
+
+<DL COMPACT>
+
+<DT><CODE>add_options</CODE>
+<DD>
+        specify additional options to be passed to default printer
+        command
+
+<DT><CODE>alt_command</CODE>
+<DD>
+        specify alternative command to be executed
+</DL>
+</DL>
+
+<P>
+Data sent to the <CODE>prt</CODE> device is piped to the specified filter.
+If you have QDOS printer drivers for the printer in use, try to send your 
+output to <CODE>lpr</CODE>. If this doesn't work, try following definition in 
+<TT>`.~/.uqlxrc'</TT>:
+
+
+
+<PRE>
+PRINT = lpr -Praw
+</PRE>
+
+<P>
+If your system doesn't have a <CODE>-Praw</CODE> you can add it by editing <TT>`/etc/printcap'</TT> or as a quick hack, just defining 
+
+
+
+<PRE>
+PRINT = cat &#62;/dev/lp0
+</PRE>
+
+<P>
+For this to work you will probably need to change <TT>`/dev/lp0'</TT> permissions.
+Obviously this should not be used together with a standard lpd..
+
+
+<P>
+<EM>
+Some care must be used when specifying printer/filter commands: when closing
+the printer channel uqlx calls <CODE>pclose</CODE> which waits until the command(s)
+exits -- in this situation uqlx may appear to hang.
+</EM>
+
+
+<P>
+If this happens, kill the filter process from another xterm.
+
+
+
+
+<H1><A NAME="SEC35" HREF="uqlx_toc.html#TOC35">SuperBasic Extensions</A></H1>
+
+<P>
+<DL>
+<DT><U>Procedure:</U> <B>Kill_UQLX</B> <I>result</I>
+<DD><A NAME="IDX1"></A>
+Kill the emulator returning <VAR>result</VAR> to the calling program
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>UQLX_RELEASE$</B>
+<DD><A NAME="IDX2"></A>
+Returns release identification as string
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>getXenv$</B> <I>name</I>
+<DD><A NAME="IDX3"></A>
+Returns value of the (UNIX) environment variable <VAR>name</VAR> as string
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>Fork_UQLX</B>
+<DD><A NAME="IDX4"></A>
+Create an exact copy of this UQLX process. A new Xwindow is created,
+files on directory device drivers recreated. However beware that a
+file that remained opened during a fork may now be writable by two or
+more UQLX instances. 
+Also using same stream i/o channel from both instances of the 
+process will result in chaos, especially <CODE>pty</CODE> channels have to loose
+EOF.
+
+
+<P>
+It appears as if UQLX and/or X can get easily confused when <CODE>Fork_UQLX</CODE>
+is applied while the mouse pointer/focus is in the UQLX window. This doesn't
+seem to be a serious problem, as forking should be most useful when used
+in scripts anyway.
+
+
+<P>
+Returns <CODE>pid</CODE> for the parent process, <CODE>0</CODE> for its child.
+
+
+<P>
+An utterly useful example program is:
+
+
+
+<PRE>
+10 for i=1 to 4
+20 print Fork_UQLX
+30 end for i
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>getXargc</B>
+<DD><A NAME="IDX5"></A>
+Returns the number of arguments that were given to the emulator at
+startup, options or arguments that have been consumed away by Xtk
+not counted.
+
+
+
+<PRE>
+qm -m -r 1024 arg1 arg2 arg3
+
+PRINT getXargc          =&#62; 4   (arg0=qm !)
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>getXarg$</B> <I>nth</I>
+<DD><A NAME="IDX6"></A>
+Returns the <VAR>nth</VAR> argument, continuing from above example
+
+
+
+<PRE>
+for i=0 to getXargc-1 : PRINT i, getXarg$(i)
+</PRE>
+
+<P>
+results in
+
+
+
+<PRE>
+0       /user80/rdzidlic/qm/qm
+1       arg1
+2       arg2
+3       arg3
+4       arg4
+5       arg5
+
+</PRE>
+
+</DL>
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>getXres</B>
+<DD><A NAME="IDX7"></A>
+Returns x-size of screen
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>getYres</B>
+<DD><A NAME="IDX8"></A>
+Returns y-size of screen
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>scr_xlim</B>
+<DD><A NAME="IDX9"></A>
+same as <CODE>getXres</CODE>
+</DL>
+
+
+<P>
+<DL>
+<DT><U>Function:</U> <B>scr_ylim</B>
+<DD><A NAME="IDX10"></A>
+same as <CODE>getYres</CODE>
+</DL>
+
+
+
+
+<H1><A NAME="SEC36" HREF="uqlx_toc.html#TOC36">TECHREF</A></H1>
+
+<P>
+For a general overview of the Emulator see also Daniele's original
+QM.README. 
+
+
+
+
+<H2><A NAME="SEC37" HREF="uqlx_toc.html#TOC37">ByteOrder Issues</A></H2>
+
+
+
+<H3><A NAME="SEC38" HREF="uqlx_toc.html#TOC38">Memory</A></H3>
+
+<P>
+QDOS memory is always in 68k format, that is big-endian.
+There are some possible ways access memory:
+
+
+
+<OL>
+<LI>raw
+
+ always takes absolute (host) address, only byte order conversion is done 
+ here.
+
+
+<PRE>
+        RW(),WW()       read,write 16bit word
+        RL(),WL()                  32bit
+</PRE>
+
+<LI>cooked
+
+ always takes QL address, checks bounds, adds QLmem base and determines
+ what sort of memory is used(ROM.screen,RAM,hardware)
+
+
+<PRE>
+        w8 ReadHWByte(w32 addr);
+        w8 ReadByte(w32 addr);
+        w16 ReadWord(w32 addr);
+        w32 ReadLong(w32 addr);
+        void WriteByte(w32 addr,w8 d);
+        void WriteWord(w32 addr,w16 d);
+        void WriteLong(w32 addr,w32 d);
+</PRE>
+
+ This must be done only in a very controlled way, bad alignment or other errors 
+ may cause very hard to debug m68k exceptions
+
+<LI>arbitrary, eg strcpy() or read() into QL memory
+
+ you must carefully obey all restrictions and call ChangedMemory(from,to) to 
+ indicate the change to screen-flush manager
+
+</OL>
+
+
+
+<H3><A NAME="SEC39" HREF="uqlx_toc.html#TOC39">PC - the program counter</A></H3>
+
+<P>
+the <CODE>pc</CODE> is a global variable used as program counter; it is somewhat special 
+in that it already has the base of QL memory, "theROM" added to it. Thus if you
+need the QL-relative pc value <CODE>((long)pc-(long)theROM)</CODE> will do.
+
+
+
+
+<H3><A NAME="SEC40" HREF="uqlx_toc.html#TOC40">Registers</A></H3>
+
+<P>
+are an array of w32's, always stored in host format byte order.
+<CODE>reg[8]</CODE>,<CODE>*(reg+8)</CODE>,<CODE>aReg[0]</CODE> all refer to A0
+
+
+<P>
+byte and word access to registers is done using address calculation,
+thus
+
+<PRE>
+        *(uw8*)((Ptr)reg+RBO)           is d0.b
+        *(uw16*)((Ptr)(reg+1)+RWO)      is d1.w
+</PRE>
+
+<P>
+A more complicated example is:
+
+<PRE>
+        (w32)*(((w16*)((Ptr)reg+RWO+((displ&#62;&#62;10)&#38;60))))+
+                        aReg[code&#38;7]+(w32)((w8)displ));
+</PRE>
+
+<P>
+this will compute the the xx(An,Rn.w) address, <CODE>code</CODE>, is the first instruction
+word and <CODE>displ</CODE> the extend instruction code.
+
+
+
+
+<H2><A NAME="SEC41" HREF="uqlx_toc.html#TOC41">Debugging</A></H2>
+
+<P>
+It is recommended to compile with the <TT>`-ggdb3'</TT> option if you use 
+gdb, this flag can be set eg by setting <TT>`LOCAL_OPTFLAGS'</TT>.
+Older gcc versions only support <TT>`-ggdb'</TT>
+
+
+<P>
+If you are interested in a certain file, set 'DEBUG_FILES = file.c'
+in ~/.uqlx_cprefs so that this file is compiled for debugging.
+If you think you might want to debug UQLX, but don't know what
+exactly, you may need to compile without the '-fomit-frame-pointer', 
+otherwise <CODE>bt</CODE> (backtrace) won't work.
+
+
+<P>
+To work with <CODE>gdb</CODE> you should ensure that the <TT>`.gdbinit'</TT> file 
+supplied with UQLX is used.
+
+
+<P>
+start qm within gdb:
+
+
+
+<PRE>
+&#62;gdb qm
+gdb&#62;run
+</PRE>
+
+<P>
+if you run into an exception,
+
+
+
+<PRE>
+gdb&#62; call DbgInfo()
+</PRE>
+
+<P>
+will give me an idea what is happening.
+
+
+<P>
+It is also possible to disable the ROM protection (See section <A HREF="uqlx.html#SEC18">GUI</A>) to allow breakpoints in
+ROM, See section <A HREF="uqlx.html#SEC18">GUI</A>
+
+
+<P>
+It is possible to activate normal QL debuggers from <CODE>gdb</CODE> by typing
+
+
+
+<PRE>
+qldbg
+continue
+</PRE>
+
+<P>
+This causes UQLX to generate a <CODE>trap# $e</CODE> exception with the current
+<CODE>PC</CODE> as "breakpoint address"(usually this points 2 bytes before you
+would expect!).
+This is useful if you wish to see what happens after a certain UQLX
+function (eg driver call) returns to normal 68K execution mode.
+
+
+<P>
+If you suspect a certain function or region of code of causing some trouble,
+email me the TRACE output with exact description of how it was generated
+(including modified tracetable and software used) - see next section.
+
+
+
+
+<H3><A NAME="SEC42" HREF="uqlx_toc.html#TOC42">Trace</A></H3>
+
+<P>
+I have added selective tracing, if you want to activate just add the
+<CODE>-DTRACE</CODE> in Makefile, recompile everything and customise tracetable in 
+trace.c to suit your needs.
+For technical reasons all values are printed before the instruction
+is executed. This means that "code" and "PC" are not sync.
+Thus if you get output like this
+
+
+
+<PRE>
+DebugInfo: PC=48de, code=4eba, SupervisorMode: no USP=fffbc SSp=28480 A7=fffc8
+Register Dump:   Dn             An
+0                      0             107
+1               50000000             d88
+2                      0            8d2b
+3               a0000000             186
+4                      0             ce8
+5                     df            8cee
+6                      1           ff068
+7                      0           fffc8
+Trace : RI.MULT+4
+DebugInfo: PC=48e2, code=48e7, SupervisorMode: no USP=fffbc SSp=28480 A7=fffbc
+Register Dump:   Dn             An
+0                      0             107
+1               50000000             d88
+2                      0            8d2b
+3               a0000000             186
+4                      0             ce8
+5                     df            8cee
+6                      1           ff068
+7                      0           fffbc
+</PRE>
+
+<P>
+beware that code=48e7 belongs to PC=48de and to find the instruction;
+gdb&#62; print table[0x48e7]
+however the program must have been started before this, otherwise
+'table' would not have been initialised.
+
+
+
+
+<H2><A NAME="SEC43" HREF="uqlx_toc.html#TOC43">ROMs and Patching</A></H2>
+<P>
+ 
+the supplied JS_ROM is original. The patching process is implemented in
+QL_configure.c and is designed to work for many js-similar ROMS without 
+change.
+
+
+<P>
+The patches are:
+
+<UL>
+<LI>
+
+correct some table access routine at 0x250 that apparently causes
+          crashes of QLs &#62;2MB
+
+<LI>
+
+        install special handlers for IPC access and MDV vectors
+</UL>
+
+<P>
+Installing handlers is done by overwriting the ROM at a suitable address
+with a specific A-line opcode and modifying the emulators instruction table
+to call a specified handler function (instead of just initiating an A-line 
+exception).
+
+
+<P>
+This handler function is then responsible to check that indeed it was called
+from a well defined location and not just by accident - this usually is a statement
+in the form
+
+
+
+<PRE>
+if((long)gPC-(long)theROM-2==EMUL_IPC_LOC)
+{      if(IPC_Command()) rts();
+        else table[code=0x40e7]();
+}
+else
+{      exception=4;
+        extraFlag=true;
+        nInst2=nInst;
+        nInst=0;
+        }
+</PRE>
+
+<P>
+where <CODE>EMUL_IPC_LOC</CODE> is the stored address of the patch. If it is indeed the location,
+the handler function can access QL memory and registers using the techniques outlined
+above, or if a special condition is not met proceed emulation as if there was no
+patch at all - this technique is demonstrated in QL_hardware:QL_KeyTrans
+
+
+<P>
+Note that if there is an rts() in any routine, this will modify the emulators
+A7 and PC but not do any other action (as returning from the c-function itself).
+Thus you might write 'rts();rts();rts(); return;' and it may make perfectly sense,
+depending on the context of the patch.
+
+
+
+
+<H2><A NAME="SEC44" HREF="uqlx_toc.html#TOC44">Calling 68K code from the emulator</A></H2>
+
+<P>
+this is perfectly possible, provided QDOS is an a state where it allows this
+particular request. A trap#0 call may be done as
+
+
+
+<PRE>
+savedA0=*aReg;
+QLtrap(1,0,20000l);
+printf("QDOS vars at %x, trap res=%d, RTOP=%d\n",aReg[0],reg[0],RTOP);
+*aReg=savedA0;
+</PRE>
+
+<P>
+The 200000l is the instruction-count limit may be chosen arbitrarily - but must 
+not be exceeded. Similarly, the following will do a vector call:
+
+
+
+<PRE>
+QLvector(0xd0,200000);
+</PRE>
+
+<P>
+However not all vectors may be safely called, those that manipulate its return 
+point may fail.
+
+
+<P>
+Following must be arranged:
+
+<UL>
+<LI>saving and restoring all registers
+
+<LI>ensuring no QDOS context switch happens within the code
+
+</UL>
+
+<P>
+The risk of encountering a context switch is reduced by switching off the 50Hz
+interrupts in such calls, often other precautions may be wise (clearing SV.POLM 
+or entering SU mode)
+
+
+
+
+<H2><A NAME="SEC45" HREF="uqlx_toc.html#TOC45">Directory Device Drivers</A></H2>
+
+<P>
+are defined in QL_files.h and designed to serve every kind of filling systems
+attached to UQLX. Currently the code is very messy so don't bother to understand
+it.
+
+
+
+
+<H2><A NAME="SEC46" HREF="uqlx_toc.html#TOC46">Patch Database</A></H2>
+
+<P>
+This is stored in <CODE>~/.uqlxpatch</CODE> directory if the emulator was compiled with 
+<CODE>-DUSE_VM</CODE>.
+There is a checksum to identify a ROM (everything from 0 to 96K is checksummed) 
+and entries to mark from where this ROM accesses the QL HW registers.
+
+
+<P>
+The files must be writable! UQLX usually takes care of that, just don't
+try neat tricks like <CODE>'umask 222'</CODE>.
+
+
+<P>
+This files are not meant to be user editable but can be deleted anytime - in fact
+this may be necessary if something went seriously wrong.
+
+
+
+
+<H2><A NAME="SEC47" HREF="uqlx_toc.html#TOC47">Device Drivers</A></H2>
+
+<P>
+simple (nondir) devices like the printer "PRT" are handled in QL_driver.c The 
+attempted approach is to have a single generic driver handling all simple device 
+drivers which can then be written in C without detailed knowledge of how QDOS 
+drivers actually work and without having to care about alignment and/or byte order
+problems when accessing QL memory.
+
+
+<P>
+To add a new driver, add an entry to the <CODE>QL_driver.c:Drivers[]</CODE> table.
+The definition should include the open/io/close routines and information
+about name decoding.
+
+
+<P>
+The members of 'struct DRV':
+
+
+<DL COMPACT>
+
+<DT><CODE>ref</CODE>
+<DD>
+        intern use only
+
+<DT><CODE>init</CODE>
+<DD>
+        pointer to an init routine that will be called at the time
+                        the driver is linked into QDOS.
+
+<DT><CODE>open_test</CODE>
+<DD>
+        routine to test whether <CODE>'name'</CODE> is a legal channel name
+                        for this channel.
+
+ should return:
+
+<DL COMPACT>
+
+<DT><CODE>0</CODE>
+<DD>
+        not this device
+<DT><CODE>1</CODE>
+<DD>
+        ok, name fully decoded
+<DT><CODE>-1</CODE>
+<DD>
+        bad name
+</DL>
+                        If NAME_PARS points to an appropriate structure the 'decode_name'
+                        utility can be used to do the decoding.
+                        The open_test routine should not itself allocate any memory,
+                        decoded parameters might be passed in an array of global values
+                        to the 'open' routine that gets called subsequently.
+
+<DT><CODE>open:</CODE>
+<DD>
+        this routine should do the actual open and allocate memory for
+        status information. See section <A HREF="uqlx.html#SEC48">Memory Management</A>
+
+        returns:
+
+<DL COMPACT>
+
+<DT><CODE>0</CODE>
+<DD>
+        success
+
+<DT><CODE>&#60;&#62;0 &#38; reg[0]= QDOS_ERR set:</CODE>
+<DD>
+        error
+
+</DL>
+
+<DT><CODE>close</CODE>
+<DD>
+                may return memory allocated by open etc.
+<DT><CODE>io</CODE>
+<DD>
+        routine to do QDOS io,See section <A HREF="uqlx.html#SEC49">io_handle</A>
+
+<DT><CODE>slot</CODE>
+<DD>
+                        not yet used
+
+</DL>
+
+
+
+<H3><A NAME="SEC48" HREF="uqlx_toc.html#TOC48">Memory Management</A></H3>
+
+<P>
+The <CODE>open</CODE> routine should malloc() a block of memory for each channel it 
+manages, it  should return a pointer at this block via its second parameter.
+Subsequent calls to dev.io and dev.close will receive this pointer as an argument
+(observe the ** in the declaration!)
+The driver should not attempt to store anything in the QDOS channel definition block!
+
+
+
+
+<H3><A NAME="SEC49" HREF="uqlx_toc.html#TOC49">io_handle</A></H3>
+
+<P>
+is designed to ease the task of writing dev.io routines, very similar to QDOS
+io.serio vector. Calls that may block must be handled specifically. Also, be 
+warned that most unix io calls can get interrupted by the SIGALRM used for
+emulating interrupts.
+
+
+
+
+<H3><A NAME="SEC50" HREF="uqlx_toc.html#TOC50">decode_name</A></H3>
+
+<P>
+is an utility function similar to io.name. 
+
+
+
+<PRE>
+int decode_name(char *name, struct NAME_PARS *ndescr, open_arg *parblk)
+</PRE>
+
+<DL COMPACT>
+
+<DT><CODE>ndescr</CODE>
+<DD>
+is description of the channel name synatx
+<DT><CODE>parblk</CODE>
+<DD>
+points to an array of (long long) that should be large enough 
+        for all parameters.
+
+<DT><CODE>open_arg</CODE>
+<DD>
+is union used to store either char * or int type arguments
+</DL>
+
+
+
+<H3><A NAME="SEC51" HREF="uqlx_toc.html#TOC51">Name Description</A></H3>
+
+<P>
+see examples.
+
+
+<P>
+There are a few extensions, most notably <CODE>parse_nseparator</CODE> provides a way
+to parse text delimited by 2 characters or one character and end of name.
+
+
+<P>
+Care should be taken not to take certain chars as delimiters and/or options
+that are differently mapped in Unix and QDOS, eg backtick and pound.
+
+
+<P>
+Also consider that for option letters and separators upper and lower case is not
+distinguished for alphabetic characters.
+
+
+
+
+<H3><A NAME="SEC52" HREF="uqlx_toc.html#TOC52">Examples</A></H3>
+
+<P>
+'PRT' is a simple example driver, if you want to study the channel
+opening syntax consider the example <CODE>'bg'</CODE> bogus driver(#define TEST
+in QL_driver.c)
+
+
+<P>
+An example call to open a 'bg' channel is:
+
+<PRE>
+open#4,'bg299F_119/999x333-string 1 ****xxx++++-,string====,,,,,,'
+</PRE>
+
+
+
+<H1><A NAME="SEC53" HREF="uqlx_toc.html#TOC53">FAQ</A></H1>
+
+<P>
+I have just started it so there is not yet any structure in it, just a 
+few points that did strike me. Even with the best docs there are many 
+gotcha's ;-)
+
+
+<DL COMPACT>
+
+<DT><CODE>The AltGr keys don't work even if I use the X11 lookup method.</CODE>
+<DD>
+You probably also have the XKEY_ALT bound to <CODE>Mode_switch</CODE> -- thus
+an extra char <CODE>"\255"</CODE> is inserted with each <CODE>AltGr</CODE> key
+
+<DT><CODE>How do I access Unix devices from UQLX?</CODE>
+<DD>
+The uQVFSx Filesystem does it, provided you don't need any ioctls, 
+section <A HREF="uqlx.html#SEC29">uQVFSx Filesystem</A>. For more complicated cases writing a device 
+driver for UQLX is not as difficult and many examples as well as 
+description exist.
+
+</DL>
+
+
+
+<H1><A NAME="SEC54" HREF="uqlx_toc.html#TOC54">History</A></H1>
+
+
+
+<H2><A NAME="SEC55" HREF="uqlx_toc.html#TOC55">Daniele Terdinas README</A></H2>
+
+<P>
+This is the original README I received with Daniele's sources; refer to
+TECHREF for updates. Much of the information contained herein is more or 
+less outdated.
+
+
+
+
+<H3><A NAME="SEC56" HREF="uqlx_toc.html#TOC56">Q-emuLator</A></H3>
+<P>
+A brief comment about the 68K emulator sources.
+
+
+<P>
+These are the sources (written in the C language) of the 68000 emulator
+which are
+used in my Sinclair QL emulator for Macintosh.
+
+
+<P>
+The sources are not complete: a few procedures are missing, as they are not
+portable and you should rewrite them according to the target platform. In
+particular all the parts regarding the hardware are missing (except for the
+clock
+register); in any case they are not part of the 68008 emulator, but specific of
+the QL emulator.
+
+
+<P>
+A 68000 instruction code is 16 bit long (eventually followed by other data or
+addressing mode specifications), so there are 65536 possible codes. The idea is
+to use the instruction code as an index in a table of functions' addresses, and
+to execute the corresponding function. The table is 65536 x 4 bytes long, i.e.
+256K. Writing all the 65536 functions would be quite a long task, so I
+wrote only
+one function for each instruction type: for example there is only one
+function to
+emulate the MOVE.B instruction; the function's address is put in all the table's
+positions corresponding to the code (binary encoded) 0001xxxxxxxxxxxx, where x
+may be either 0 or 1, covering all the possible bit patterns. In this way the
+MOVE.B function is called for all the 0001xxxxxxxxxxxx instructions codes, like
+0001000000000001 (MOVE.B D1,D0) or 0001110110111100 (MOVE.B #imm,d(A6,RN), where
+d, RN and imm are specified in the bytes following the instruction code). This
+generic MOVE.B function execute the right operation by first interpreting the
+bits marked x (in 0001xxxxxxxxxxxx); in the example to interpret the x bits
+means
+finding the address modes of the source and destination operands. This method
+allows for future optimizations: writing a greater number of more specialized
+functions results in better performance. In the MOVE.B example, we could write
+another function to emulate the 0001yyy000000xxx codes (MOVE.B Dx,Dy), which
+would speed up the execution of the MOVE.B instruction with registers as source
+and destination. Now this function (when it is called) knows already the source
+and destination addressing modes (registers), avoiding the overhead of the
+code-interpretation phase, as was the case with the generic MOVE.B function.
+
+
+<P>
+The instruction-code fetching loop (in the ExecuteLoop procedure), which
+looks up
+in the table the address of the corresponding function and executes it, was
+rewritten in assembly language: as this loop is executed hundred million times,
+it must be fully optimized.
+
+
+<P>
+The 68000's registers (Dn, An, PC, SR) are memorized in global variables.
+
+
+<P>
+Computing the flags during arithmetic operations is a problem: the C language
+doesn't allow a direct flags' control (for example an overflow caused by an
+addition can't be easily detected: the only way to detect it is by
+arguments like
+'if the addends are positive and the result is less then an addend, then an
+overflow has occurred', etc.) and computing the flags leads to a large number of
+complicated tests, resulting in slower emulation.
+
+
+<P>
+Another problem are the read/write operations from/to the QL memory. I decided
+(although it is a slow method) that all these operations can't be performed
+directly, but only through the
+ReadByte/ReadWord/ReadLong/WriteByte/WriteWord/WriteLong functions. In this way
+these six functions can check the address and behave correctly depending on it;
+the following cases are possible: - QL's RAM: the standard case - QL's ROM: can
+only be read. Write operations have no effect. - QL's video memory: when writing
+to it the emulator must draw the corresponding pixels to a Macintosh
+window. This
+operation requires a fair amount of time. To speed it up a little the effective
+drawing operation is delayed as long as the modified bytes are adjacent to each
+other. So the final conversion may involve entire rows instead of single pixels.
+- QL's hardware: the hardware ports behaviour must be emulated. - any other
+address: writing has no effect, to avoid to randomly overwrite the Macintosh
+memory. This means that whatever the QL does, the Mac environment can't be
+corrupted; in other words these controls on each read/write operations result in
+a program which is very stable.
+
+
+<P>
+Exception processing: exceptions are caused by instructions (like TRAP or CHK),
+by the 50/60Hz interrupt (generated by a timer), by reading/writing words
+or long
+words to odd addresses, or by the trace bit when it is set. The exception is
+called by putting the desired exception number in the 'exception' variable
+(otherwise the variable is 0). The variable is not checked after each
+instruction, to avoid slowing down the instruction fetch&#38;execute loop
+(ExecuteLoop). The loop counter (variable 'nInst', determining how many
+instructions have to be executed yet) is zeroed instead, causing the loop to be
+exited. The fact that the end of the loop was due to an exception and is not a
+normal loop termination is signalled by setting the 'extraFlag' variable to
+true;
+the old 'nInst' value is saved in 'nInst2', so that it will be restored when the
+loop will be re-entered after causing the exception. The exception calling
+process consists in the following steps (see the 68000 manual): - enter
+supervisor mode and save SR and PC on the stack - load the new PC from the
+'exception handlers' list, located in low memory
+
+
+<P>
+Addressing modes: operands are fetched through the 'GetFromEA' (EA=Effective
+Address) functions and written to memory through the 'PutToEA' functions.
+Often a
+memory location is read and then written by the same instruction (i.e. it is
+modified). (eg: ADDQ.W #1,(A0): the word at the A0 address is read, incremented
+and written back). Using the two GetFromEA and PutToEA calls would be a waste,
+because the address decoding is performed twice; for this reason a ModifyAtEA
+function is provided, which do the same as GetFromEA but saves in global
+variables some information about the decoded address (Mac memory address, access
+type:  ram/rom/video/ecc...). Then the RewriteEA function is used to
+rewrite data
+at the same address. RewriteEA takes advantage of the saved information.
+Addresses (like a value in an An register) are maintained as QL addresses, which
+are different from the real addresses: for example the QL address 0 doesn't
+correspond to the Mac address 0, because this part of memory is used by the Mac
+operating system. The read/write functions must relocate the address. The only
+exception to this rule is the program counter, which is an address in the Mac
+memory, to make the fetch&#38;execute loop more efficient.
+
+
+<P>
+The types of int employed by the emulator are 8/16/32 bit signed and unsigned.
+They are defined (file QLtypes.h) with the names w8,w16,w32,uw8,uw16,uw32 (u
+means unsigned, w word, the number is the width expressed in bit). The
+definitions are based on the basic C types (char,int,short,long). Depending on
+the particular compiler and computer which is used, it might be necessary to
+modify these definitions. For example on the Mac an int is 32 bit, while on
+old 8086 systems an int is usually 16 bit.
+
+
+<P>
+The file ql68000Init.c contains the code to fill in the 256K function table. The
+functions which emulate the 68000 instructions are contained in two files,
+because
+a unique file would be too long. The first file contains the instructions with
+name beginning with a letter between a and o, the second between p and z, plus
+(at the end) the many variants of the shift instructions.
+
+
+<P>
+June, 4th 1995 Daniele Terdina
+
+
+
+
+<H3><A NAME="SEC57" HREF="uqlx_toc.html#TOC57">A brief note about endianess</A></H3>
+
+<P>
+The 68000 processors are big endian, i.e. when they store in memory a word or a
+long they store the most significant byte first (in lower memory addresses). If
+you want to compile the emulator for little endian machines (like Intel
+processors), you must perform byte swapping when transferring word or long data
+between memory and registers. Luckily almost all the accesses to memory in the
+emulator code are performed by using the functions ReadByte, ReadWord, ReadLong,
+WriteByte, WriteWord, WriteLong, so it is sufficient to add byte swapping
+in this
+functions. However, there are also a few places where memory is accessed
+directly, and you should change the code. Some (but probably not all) of these
+places are: 1) all the accesses to immediate operands in the GetFromEA and
+similar functions 2) all 16 bit displacement, both in the GetFromEA-type
+functions and in jump or other particular instructions (e.g.: bra, jsr, stop) 3)
+all the other places where the program counter is used; in particular the
+instruction fetch and dispatch loop. I suggest that to save time the instruction
+code is not swapped at all: the swapping should be performed when filling the
+256K emulator table instead, so that the code, although with the two bytes in
+reverse order, can directly be used as an index in the modified emulator
+table 4)
+all the optimized functions which access to partial registers. For example, when
+adding a byte to d0, the add_b_dn() function directly accesses the fourth
+byte in
+the chunk of memory containing the register values. On little endian processors
+this byte should be the first in the table instead of the fourth. Similar
+changes
+are needed for many other instructions which use only the byte or word lowest
+part of registers
+
+
+
+
+<H3><A NAME="SEC58" HREF="uqlx_toc.html#TOC58">Daniels FAQ</A></H3>
+
+<P>
+Q: What is RamMap (in the read/write QL memory functions, in file
+QL68000_general.c)?
+
+
+<P>
+A: RamMap is an array. Each position represents a 32K memory chunk (so the array
+has 32 positions to cover the 68008's 1M addressing space). The value in the
+array represents the operations which are allowed on the corresponding memory
+chunk: bit 0=read permission bit 1=write permission bit 2=video memory bit
+3=hardware register ie: ram has value 3, rom 1, unused addresses 0, video ram 7,
+hw registers 8.
+
+
+<P>
+Q: How do you manage the 50 hz interrupt of the 8049 and the Keyboard interrupt?
+
+
+<P>
+A: First: I don't emulate the keyboard interrupt. Anyway the keyboard is polled
+by QDOS every 50th of second via the IPC commands 1 (test IPC status) and 8
+(read
+characters from the IPC keyboard buffer). As for the 50Hz interrupt, I have a
+timer which sets some variables every 20ms. These variables cause an interrupt 2
+exception: pendingInterrupt=2; *((uw8*)theROM+0x280a0l)=16; extraFlag=true;
+nInst2=nInst; nInst=0; Before this, however, the routine checks if interrupt are
+enabled and if so set the interrupt mask (=8). It also disables further 50Hz
+interrupts. When the QDOS I2 handler is called, it reads from an hw register the
+interrupt mask and the value 8 tells it that the cause of the interrupt was the
+50hz interrupt. When the QDOS handler has completed, it reenables the interrupts
+by writing to an hardware register.
+
+
+
+<PRE>
+Daniele Terdina               e-mail: sistest@ictp.trieste.it
+                              Feedback is always welcome!
+</PRE>
+
+
+
+<H1><A NAME="SEC59" HREF="uqlx_toc.html#TOC59">Benchmarks</A></H1>
+
+<P>
+These are mainly interesting for me, but also intended to give new users
+some idea what to expect. Remember, these are the times with JSROM, you can
+get much better times with Minerva and/or Lightning
+
+
+<P>
+After trying around I implemented a method that may be considered reasonably
+precise. The preferred method is now this:
+
+
+
+<PRE>
+make bench1             # mainly CPU emulation
+make bench2             # mainly text output
+</PRE>
+
+<P>
+I have again changed the details for <CODE>bench1</CODE> so these are now <EM>old</EM>
+results:
+
+
+<LI>
+
+Hardware/OS  </TD><TD> bench1  </TD><TD> bench2
+<LI>
+
+SUNW SPARCserver 1000, 384 MB
+        </TD><TD> 18.4r,11.3u,.5s
+        </TD><TD> 105.9r,41.1u,4.6s
+<LI>
+
+Linux i686 
+        </TD><TD> xx,5.87u,.11s,
+        </TD><TD> too slow X connection...
+<LI>
+
+Linux i80486DX, 33MHz, 256kB Cache 32MB RAM
+        </TD><TD> xx,58.4u,1.s
+        </TD><TD> xx,199.4u,.9s
+
+Here are some old benchmarks:
+
+
+<PRE>
+B1:
+10 t=date
+20 for i=1 to 2000:a=sin(1)
+30 print date-t
+
+and B2:
+10 t=date
+15 cls
+20 for i=1 to 1000:print i,
+30 print date-t
+
+The Benchmarks also show how much effect some of the optimisations
+show; the old value is taken without the -DFASTLOOP optimisation.
+
+BENCHMARKS:             | B1                    | B2
+Machine                 | old value             | old value
+                        |       new result      |       new result(s)
+---------------------------------------------------------------------
+SPARC on remote         |  4s                   | 9-15s
+  display               |                       |
+---------------------------------------------------------------------
+Linux/i486DX-33,8MB,64k | 28s                   | 71s
+memory increased to 20MB|       20s             |       49s
+...       256Kcache/32MB|               19s     |               53s
+---------------------------------------------------------------------
+Linux/486DX2-66,12MB,   | 19s                   | 35s
+no L2 cache             |                       |
+---------------------------------------------------------------------
+Linux/P133/32Mb/S3      |  4s                   | 9s
+Trio/1G Scsi            |                       |
+---------------------------------------------------------------------
+Linux/Cyrix 686 PR166   |  3.1s                 |  6.3s
+                        |       2.7             |       6.5s
+---------------------------------------------------------------------
+Linux AMD 5x86 P75 UMC  |                       |
+256KB Cache, 16 MB      |       8s              |       19s
+---------------------------------------------------------------------
+HP-9000/715-65/64MB     |  7s                   | 15s  
+---------------------------------------------------------------------
+SGI MIPS R5000/64MB     |  4s                   |  8s
+---------------------------------------------------------------------
+</PRE>
+
+<P><HR><P>
+This document was generated on 22 October 2002 using
+<A HREF="http://wwwinfo.cern.ch/dis/texi2html/">texi2html</A>&nbsp;1.56k.
+</BODY>
+</HTML>

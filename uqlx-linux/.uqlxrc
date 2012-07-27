@@ -1,0 +1,28 @@
+SYSROM = js_rom
+ROMIM = tk2_rom,0xc000
+ROMDIR = ~/qm/romdir/
+RAMTOP = 16384
+DEVICE = MDV1,~/qm/qldata/,qdos-like
+DEVICE = MDV2,~/qm/qlsoft/,qdos-like
+DEVICE = FLP1,~/qm/DiskImage2,qdos-fs
+DEVICE = FLP2,~/qm/DiskImage,qdos-fs
+DEVICE = FLP3,~/qm/DiskImage3,qdos-fs
+DEVICE = WIN1,~/
+DEVICE = WIN2,/
+DEVICE = WIN3,~/PiQ/
+DEVICE = RAM1,/tmp/.ram1-%x/,clean,qdos-like
+DEVICE = RAM2,/tmp/.ram2-%x/,clean,qdos-like
+DEVICE = RAM3,/tmp/.ram3-%x/,clean,qdos-like
+DEVICE = RAM4,/tmp/.ram4-%x/,clean,qdos-like
+DEVICE = RAM5,/tmp/.ram5-%x/,clean,qdos-like
+DEVICE = RAM6,/tmp/.ram6-%x/,clean,qdos-like
+DEVICE = RAM7,/tmp/.ram7-%x/,clean,qdos-like
+DEVICE = RAM8,/tmp/.ram8-%x/,clean,qdos-like
+DEVICE = CD1            /* remove 'CD' device from QPAC entries */
+DEVICE = MS1
+COLOUR = 0
+
+PRINT = lpr
+CPU_HOG = 0		/* nice and friendly */
+FAST_START = 1
+

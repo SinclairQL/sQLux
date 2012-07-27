@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# $1 = implpath
+
+# find browser and display manuals
+IMPL_PATH=$1
+
+testx()
+{
+  type -path "$1"
+}
+
+if [ -z "$IMPL_PATH" ] ; then
+  echo "syntax: $0 IMPL_PATH" 
+  exit 1
+fi
+
+[ -z "$BROWSER" ] && BROWSER=`testx netscape`
+[ -z "$BROWSER" ] && BROWSER=`testx mozilla` 
+[ -z "$BROWSER" ] && BROWSER=`testx lynx` 
+
+
+if [ -z "$DISPLAY" ] ; then
+   if [ -z "`echo $BROWSER |grep lynx`" ] ; then
+     echo "DISPLAY not set, trying to fall back to lynx"
+   fi
+fi
+
+echo "using browser $BROWSER"
+
+for loc in "$HOME/lib/uqlx/docs" "$IMPL_PATH/docs" /usr/local/lib/uqlx/docs /usr/lib/uqlx/docs
+do
+    if [ -f "$loc/uqlx_toc.html" ] ; then
+       DOC="$loc/uqlx_toc.html"
+       break
+    elif [ -f "$loc/uqlx.html" ] ; then
+       DOC="$loc/uqlx.html"
+       break
+    fi
+done
+
+
+if [ -n "$BROWSER" ] ; then
+  if [ -n "$DOC" ] ; then
+    $BROWSER $DOC
+    exit
+  fi
+else
+  echo "no HTML browser found, set BROWSER"
+fi
+
+echo "trying xdvi.."
+
+xdvi $IMPL_PATH/docs/uqlx

@@ -1,0 +1,391 @@
+<HTML>
+<HEAD>
+   <TITLE>qxl.win-format</TITLE>
+   <X-SAS-WINDOW TOP=25 BOTTOM=452 LEFT=4 RIGHT=534>
+</HEAD>
+<BODY TEXT="#FFFF00" BGCOLOR="#000000" LINK="#80FF00"
+VLINK="#00FF00">
+
+<P>&nbsp;</P>
+
+<P><TABLE BORDER=1 CELLPADDING=1 WIDTH="100%">
+   <TR>
+      <TD>
+         <P ALIGN=CENTER><FONT SIZE=7 COLOR="#FF0000">KuEl</FONT>
+      </TD></TR>
+   <TR>
+      <TD>
+         <P ALIGN=CENTER><B><FONT COLOR="#00FFFF">Format of
+         QXL.WIN-file</FONT></B>
+      </TD></TR>
+   <TR>
+      <TD>
+         <P><TABLE BORDER=1 CELLPADDING=1 WIDTH="100%">
+            <TR>
+               <TD>
+                  <P>
+               </TD><TD>
+                  <P ALIGN=CENTER>Main header of device
+               </TD><TD>
+                  <P>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+00
+               </TD><TD>
+                  <P>long
+               </TD><TD>
+                  <P>"QLWA"
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+04
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>lenth device name
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+06
+               </TD><TD>
+                  <P>20 bytes ASCII
+               </TD><TD>
+                  <P>device name
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+1A
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>0000 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+1C
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>random number
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+1E
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>access counter
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+20
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>0000 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+22
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>number of sectors (512 bytes) in cluster (4
+                  =&gt; 2048 bytes)
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+24
+               </TD><TD>
+                  <P>3 x word
+               </TD><TD>
+                  <P>0000 0000 0000 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+2A
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>total sectors <A HREF="#eins">(1)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+2C
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>free sectors <A HREF="#eins">(1)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+2E
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>formatted sectors <A HREF="#eins">(1)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+30
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>0001 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+32
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>pointer to first free cluster
+                  <A HREF="#zwei">(2)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+34
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>pointer to main directory
+                  <A HREF="#zwei">(2)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+36
+               </TD><TD>
+                  <P>long
+               </TD><TD>
+                  <P>lenth of main directory +header
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+3A
+               </TD><TD>
+                  <P>3 x word
+               </TD><TD>
+                  <P>0000 0000 0000 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>+40
+               </TD><TD>
+                  <P>words
+               </TD><TD>
+                  <P>linked cluster pointer map
+                  <A HREF="#drei">(3)</A>
+               </TD></TR>
+         </TABLE>
+      </TD></TR>
+   <TR>
+      <TD>
+         <P>&nbsp;</P>
+         
+         <P><A NAME="eins"></A><B>(1) virtual values if device &gt;
+         33 MB</B></P>
+         
+         <P><A NAME="zwei"></A><B>(2) if cluster = 2048 bytes (h800)
+         then pointer x h800 =&gt; adress</B></P>
+         
+         <P><A NAME="drei"></A><B><FONT COLOR="#FF0000">(3) Linked
+         cluster pointer map:</FONT></B></P>
+         
+         <P><FONT COLOR="#00FFFF">+0040 word pointer to next cluster
+         or 0000 if end</FONT></P>
+         
+         <P><FONT COLOR="#00FFFF">+0042 word pointer to next cluster
+         or 0000 if end</FONT></P>
+         
+         <P><FONT COLOR="#00FFFF">...</FONT></P>
+         
+         <P><FONT COLOR="#00FFFF">+xxxx word same until all clusters
+         are pointed</FONT></P>
+         
+         <P>&nbsp;</P>
+         
+         <P><FONT COLOR="#FFFFFF"><A NAME="example"></A></FONT><B><FONT COLOR="#FF0000">Example
+         reading main directory (win about 20M):</FONT></B></P>
+         
+         <P><FONT COLOR="#00FF00">+0022: 0004 ----&gt; cluster =
+         h800</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">+0034: 001A ----&gt; x800 = adress
+         hD000 = DIR</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">now look at (001A x 2 + h40 = 0074)
+         if 0000 then main directory has no more cluster else for
+         exemple:</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">+0074: 1939 ----&gt; x800 = adress
+         hC9C800 more entries</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">now look at (1939 x 2 + h40 =
+         32B2)</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">+32B2: 2605 ----&gt; x800 = adress
+         h01302800 still entries</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">now look at (2605 x 2 + h40 =
+         4C4A)</FONT></P>
+         
+         <P><FONT COLOR="#00FF00">+4C4A: 0000 no more cluster: end of
+         main directory</FONT></P>
+         
+         <P>&nbsp;
+      </TD></TR>
+   <TR>
+      <TD>
+         <P><TABLE BORDER=1 CELLPADDING=1 WIDTH="100%">
+            <TR>
+               <TD>
+                  <P>
+               </TD><TD>
+                  <P ALIGN=CENTER>Structure of directories:
+               </TD><TD>
+                  <P>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+00
+               </TD><TD>
+                  <P>64 bytes (h40)
+               </TD><TD>
+                  <P>space for header (not used)
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+00
+               </TD><TD>
+                  <P>long
+               </TD><TD>
+                  <P>lenth of file (+header)
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+04
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>filetype (0=data, 1=exe-file,
+                  h00FF=subdirectory)
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+06
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>generally 0000 sometimes 0318
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+08
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>dataspace if exe-file else 0000
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+0A
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>generally 0000 sometimes 0318 if exe-file ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+0C
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>0000 ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+0E
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>file name lenth
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+10
+               </TD><TD>
+                  <P>36 bytes ASCII
+               </TD><TD>
+                  <P>file name
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+34
+               </TD><TD>
+                  <P>long
+               </TD><TD>
+                  <P>date or 0000 0000 if subdir
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+38
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>overwrite counter ?
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+3A
+               </TD><TD>
+                  <P>word
+               </TD><TD>
+                  <P>pointer to first file cluster
+                  <A HREF="#vier">(4)</A>
+               </TD></TR>
+            <TR>
+               <TD>
+                  <P>DIR+40+3C
+               </TD><TD>
+                  <P>2 x word
+               </TD><TD>
+                  <P>0000 0000 ?
+               </TD></TR>
+         </TABLE>
+      </TD></TR>
+   <TR>
+      <TD>
+         <P>&nbsp;</P>
+         
+         <P><A NAME="vier"></A><B><FONT COLOR="#FF0000">(4) Structure
+         of file:</FONT></B></P>
+         
+         <P><FONT COLOR="#00FFFF">FILE+00 64 (h40) bytes of space for
+         not used header (onely in the first cluster of file)</FONT>
+         </P>
+         
+         <P><FONT COLOR="#00FFFF">FILE+40 h7C0 bytes of data</FONT>
+         </P>
+         
+         <P><FONT COLOR="#00FFFF">then search next adress through
+         clusterpointer: see
+         </FONT><FONT COLOR="#00FFFF"><A HREF="#example">example</A></FONT>
+         </P>
+         
+         <P><FONT COLOR="#00FFFF">adress+00 h800 bytes of data</FONT>
+         </P>
+         
+         <P><FONT COLOR="#00FFFF">until pointer = 0000</FONT></P>
+         
+         <P>&nbsp;
+      </TD></TR>
+</TABLE></P>
+
+<P>&nbsp;</P>
+
+<P>&nbsp;</P>
+
+<P>&nbsp;</P>
+</BODY>
+</HTML>

@@ -1,0 +1,9 @@
+vmtest.c: In Funktion »main«:
+vmtest.c:27:4: Warnung: Übergabe des Arguments 2 von »signal« von inkompatiblem Zeigertyp [standardmäßig aktiviert]
+/usr/include/signal.h:101:23: Anmerkung: »__sighandler_t« erwartet, aber Argument hat Typ »int (*)(int)«
+vmtest Ok
+vmtest Ok
+zmtest.c: In Funktion »main«:
+zmtest.c:15:7: Warnung: Unverträgliche implizite Deklaration der eingebauten Funktion »exit« [standardmäßig aktiviert]
+zmtest.c:18:3: Warnung: Unverträgliche implizite Deklaration der eingebauten Funktion »memset« [standardmäßig aktiviert]
+couldn�t mmap to zero: Operation not permitted

@@ -1,0 +1,11 @@
+*.title: uqlx XAW
+*.background: grey85
+*Command*font: -*-helvetica-bold-r-*-*-*-120-*-*-*-*-iso8859-*
+*Label*font:   -*-times-bold-r-*-*-*-140-*-*-*-*-iso8859-*
+*Label*background: steelblue
+*Label*foreground: white
+*Command*background: steelblue
+*Command*foreground: white
+
+*form.Label.label: uQLx for Linux, %s %d Kb
+*Label*shadowWidth: 2
