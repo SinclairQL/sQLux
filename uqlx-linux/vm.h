@@ -42,7 +42,7 @@ extern void buserr_handler(int , siginfo_t );
 void segv_handler(int, siginfo_t*, void*);
 void buserr_handler(int, long);
 #endif
-#ifdef __i486__
+#if defined(__i486__) || defined(__x86_64__)
 void segv_handler(int , long /*struct sigcontext_struct*/ );
 void buserr_handler(int , long /*struct sigcontext_struct*/ );
 #endif /* i486 */

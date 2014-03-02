@@ -14,7 +14,7 @@
 extern void segv_generic(long p,int signr);
 
 #if  defined(VM_SCR) || defined(USE_VM)
-#ifdef __i486__
+#if defined(__i486__) || defined(__x86_64__)
 void segv_handler(int signr, siginfo_t *info, void *c)
 {
    segv_generic(info->si_addr, signr);

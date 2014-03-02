@@ -209,7 +209,7 @@ void segv_generic(long p,int signr)
 
 #if defined(linux) 
 
-#if defined(__i486__)||defined(__arm__)
+#if defined(__i486__)||defined(__arm__)||defined(__x86_64__)
 void buserr_handler(int signr, long dummy /* struct sigcontext_struct sigc*/)
 {
   write(2,bus_msg,strlen(bus_msg));
