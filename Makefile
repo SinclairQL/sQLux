@@ -14,7 +14,7 @@
 #    BUILD_SPECIALFLAGS= -Dxx 		# need some strange define flags ?
 #    LOCAL_LIBPATHS= -L /amd/hx/lib/X11/
 #    LOCAL_INCLUDES= -I /usr/include/
-    LOCAL_OPTFLAGS= -g -O3 -O0		# or whatever
+    LOCAL_OPTFLAGS= -Wall -g
 #    LOCAL_DEFINES=-DEVM_SCR
 #    LOCAL_LINKFLAGS=
 
@@ -26,7 +26,9 @@ RELSE := $(shell date '+%m/%d/%y  %H:%M:%S')
 NRELSE := $(shell date '+%d.%m.%y-%H.%M')
 PWD := $(shell pwd)
 
-BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DMOUSE  -DUSE_IOSZ -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND -DUX_WAIT -DHAS_STPCPY -DEVM_SCR
+BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DMOUSE -DUSE_IOSZ -DDO_GRAB -DSERIAL \
+	-DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND \
+	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR
 
 # Library and Include paths:
 # most configurationss don't complain about nonexistent directories in the search path,  IRIX is the exception ..
