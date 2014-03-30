@@ -98,12 +98,8 @@ int schedCount = 0;
 extern int min_idle;
 int HasDialog;
 
-/* define useful values for pagesize. Those come from sysconfig if USE_VM is defined */
-#if defined(VM_SCR) || defined(USE_VM)
-#else
 long pagesize/*=RM_PAGESIZE*/;
 int pageshift/*=RM_SHIFT*/;
-#endif
 
 void cleanup_dialog (){}
 
@@ -149,24 +145,10 @@ int InitDialog ()
 int rtc_emu_on = 0;
 void prep_rtc_emu ()
 {
-#ifdef USE_VM
-   rtc_emu_on = 1;
-   mprotect ((Ptr)theROM + 0x18000, pagesize, PROT_NONE);
-#endif
 }
 
 void set_rtc_emu ()
 {
-#ifdef USE_VM
-   uw32 t;
-  
-   rtc_emu_on = 0;
-   GetDateTime (&t);
-   mprotect((Ptr)theROM + 0x18000, pagesize, PROT_READ | PROT_WRITE);
-   WL((Ptr)theROM + 0x18000, t);
-   *(unsigned char *)((Ptr)theROM + 0x18063) = (display_mode == 4 ? 0 : 8);
-   mprotect((Ptr)theROM + 0x18000, pagesize, is_patching ? PROT_NONE : PROT_READ);
-#endif
 }
 
 /* Read a system variable word sized from QDOS memory    */
@@ -182,51 +164,6 @@ uw32 sysvar_l (uw32 a)
   return RL((Ptr)theROM+0x28000+a);
 }
 
-/* restore mprotect() for area according to RamMap       */
-void uqlx_prestore (unsigned long start, unsigned long len)
-{
-#if defined(USE_VM) || defined(VM_SCR) 
-   int i, tmp, prot;
-
-   for (i = start >> pageshift; (start + len) > (i << pageshift); i++) 
-   {
-      switch (RamMap [i])
-      {
-         case QX_NONE: 
-            prot = PROT_READ; 
-            break;
-         case QX_ROM:  
-            prot = PROT_READ; 
-            break;
-         /*case QX_QXM:  
-            prot = PROT_READ; 
-            break;*/
-         case QX_RAM:  
-            prot = PROT_READ | PROT_WRITE; 
-            break;
-         case QX_SCR:  
-            if (!scrModTable[i - (qlscreen.qm_lo >> pageshift)] && do_update)
-               prot = PROT_READ; 
-            else 
-               prot = PROT_READ | PROT_WRITE;
-            break;
-         case QX_IO:   
-            prot = is_patching ? PROT_NONE : PROT_READ; 
-            break;
-         default: 
-            printf("illegal value in uqlx_prestore\n");
-      }
-#ifndef EVM_SCR
-      if (MPROTECT((Ptr)theROM+start,len,prot))
-      {
-          perror("could not change VM permission");
-          printf("  at ql-addr %x, len %x, protection %x \n",(unsigned)start,(unsigned)len,prot);
-      }
-#endif
-   }
-#endif
-}
-
 /* set both RamMap and mprotect() */
 void uqlx_protect (unsigned long  start, unsigned long len, int type)
 {
@@ -238,36 +175,6 @@ void uqlx_protect (unsigned long  start, unsigned long len, int type)
    {
       RamMap[i]=type;
    }
-#if defined(USE_VM) || defined(VM_SCR)
-   {
-      int prot = 0;
-      switch (tmp) 
-      {
-         case QX_NONE: 
-            prot = PROT_READ; 
-            break;
-         case QX_ROM:  
-            prot = PROT_READ; 
-            break;
-         /*case QX_QXM:  
-            prot = PROT_READ; 
-            break;*/
-         case QX_RAM:  
-            prot = PROT_READ | PROT_WRITE; 
-            break;
-         case QX_SCR:  
-            prot = PROT_READ; 
-            break;
-         case QX_IO:   
-            prot = is_patching ? PROT_NONE : PROT_READ; 
-            break;
-         default: 
-            printf("illegal value in uqlx_protect\n");
-      }
-      if (MPROTECT((Ptr)theROM + start, len, prot))
-         perror("could not change VM permission");
-   }
-#endif
 }
 
 #ifdef SHOWINTS
@@ -515,34 +422,6 @@ void init_signals ()
    sac.sa_handler = InitDialogErr;
    if (sigaction(SIGUSR1, &sac, NULL))
       perror("could not redefine SIGUSR1\n");
-
-#ifndef DARWIN
-#if defined(VM_SCR) || defined(USE_VM)
-#if defined(SPARC)||defined(__arm__)||defined(__i486__)
-   sac.sa_sigaction =  (void*)segv_handler;  /* SUN seem to be no longer the only to do this..*/
-#else
-   sac.sa_handler = segv_handler;  
-#endif
-
-   /* This is now done symmetrically on all Linux platforms except 68k */
-#if defined(SPARC)||defined(__arm__)||defined(__i486__)
-   sac.sa_flags = SA_SIGINFO;
-#endif
-   sigaction(SIGSEGV, &sac, NULL);
-#ifdef SPARC
-   sac.sa_sigaction = buserr_handler;
-#else
-   sac.sa_handler = (void*)buserr_handler;
-#endif
-   sigaction(SIGBUS, &sac, NULL);
-#endif
-#ifdef UX_WAIT
-   sac.sa_handler = sigchld_handler;
-   sigaction(SIGCHLD, &sac, NULL);
-#endif
-#else // DARWIN
-  //mach_exn_init();
-#endif
 
 #ifdef UX_WAIT
    sac.sa_handler = sigchld_handler;
@@ -1111,17 +990,8 @@ void uqlxInit ()
    int i, j, c;
    int mem = -1, col = -1, hog = -1;
 
-#if (defined(USE_VM) || defined(VM_SCR) || defined(EVM_SCR))
-#ifdef _SC_PAGESIZE
-   pagesize = sysconf(_SC_PAGESIZE);
-#elif _SC_PAGE_SIZE
-   pagesize = sysconf(_SC_PAGE_SIZE);
-#else  // yet another way.. was that Darwin??
-   pagesize = getpagesize();
-#endif
-#else // no USE_VM
    pagesize = 4096;
-#endif
+
    if(pagesize > 8192)
    {
       printf("USE_VM can't work with pagesize %x\n",(unsigned)pagesize);
@@ -1150,17 +1020,12 @@ void uqlxInit ()
       printf("*** QL Emulator v%s ***\nrelease %s\n\n",uqlx_version,release);
    tzset();
 
-#if defined(VM_SCR) || defined(USE_VM) || defined(ZEROMAP)
-   vm_init();
-#else
    theROM = malloc(RTOP);
    if (theROM == NULL)
    {
       printf("sorry, not enough memory for a %dK QL\n",RTOP / 1024);
       exit(1);
    }
-#endif
-   /*memset(theROM,0,(128+64)*1024);*/ /* somewhat safer... */
 
    RamMap = malloc((((1024*1024*1024)/*& ADDR_MASK*/)>>RM_SHIFT)*sizeof(bctype));
 
@@ -1303,10 +1168,6 @@ void uqlxInit ()
    table[MDVFO_CMD_CODE] = MdvFormat;
    table[POLL_CMD_CODE] = PollCmd;
 
-#if defined(USE_VM) || defined(VM_SCR)
-   table[REGEMU_CMD_CODE]=RegEmuCmd;
-#endif
-
 #ifdef SERIAL
 #ifndef NEWSERIAL
    table[OSERIO_CMD_CODE] = SerIO;
@@ -1367,10 +1228,6 @@ void uqlxInit ()
       SetPC(0x186);
    }
   
-#if defined(VM_SCR) || defined(USE_VM)
-   vm_on ();
-#endif
-
    QLdone = 0;
 }
 
@@ -1393,22 +1250,15 @@ void QLRun(void)
   
    if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
    {
-#if defined(VM_SCR) || defined(USE_VM) || defined (EVM_SCR)
       scrchange=0;
       for(i=0;i<sct_size;i++)
          scrchange=scrchange || scrModTable[i];
       
       if(scrchange)
-#else
-      if ((displayTo-displayFrom>0 && displayFrom!=0) || 
-          (rx1<=rx2 && ry1<=ry2))
-#endif
       {
          FlushDisplay();
-#if !defined(VM_SCR) && !defined(EVM_SCR)
          displayFrom=0; 
          displayTo=0; 
-#endif          
          doscreenflush=0;
          scrcnt=5;
       }  

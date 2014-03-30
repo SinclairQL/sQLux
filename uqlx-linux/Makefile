@@ -220,7 +220,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	vl.c ide.c block.c
 
 
-DOCS := README.aft README.html README README.win COPYRIGHT CONTRIBUTING \
+DOCS := COPYRIGHT CONTRIBUTING \
 	docs/socket.texi docs/uqlx.texi docs/ql.html docs/qxlwin.html
 
 ROMS := romdir/js_rom romdir/min.189
@@ -455,7 +455,7 @@ docs/socket.texi: docs/.dummy
 	touch docs/socket.texi
 ### end dummy doc rules
 
-docs: html_docs dvi_docs README
+docs: html_docs dvi_docs
 
 html_docs: docs/uqlx.html docs/socket.html 
 
@@ -472,14 +472,6 @@ docs/uqlx.dvi: docs/uqlx.texi
 
 docs/socket.dvi: docs/socket.texi
 	-(cd docs; texi2dvi socket.texi)
-
-README.html: README.aft
-	-aft README.aft
-	-aft --type=rtf README.aft
-
-README: README.html
-	-lynx -dump README.html >README
-	-Ted --saveTo README.rtf README.txt
 
 .PHONY : do_checkin
 do_checkin:
