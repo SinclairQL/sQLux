@@ -27,7 +27,6 @@
 
 #include "uqlx_cfg.h"
 #include "qx_proto.h"
-#include "vm.h"
 
 #define vbase qlscreen.qm_lo
 
@@ -709,3 +708,4 @@ void redraw_screen( int x1,int y1,int width,int height)
   /*XFlush (display); */ /* done in x.c:process_events*/
 
 }
+

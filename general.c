@@ -12,7 +12,6 @@
 
 #include "QL68000.h"
 
-#include "vm.h"
 #include <signal.h>
 
 void debug(char*);

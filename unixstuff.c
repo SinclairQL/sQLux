@@ -30,8 +30,6 @@
 #include "QL_config.h" 
 #include "QInstAddr.h"
 
-#include "vm.h"
-
 #include "unix.h"
 #include "boot.h"
 #include "qx_proto.h"

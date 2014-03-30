@@ -8,13 +8,6 @@
 #include <signal.h>
 #include <stdio.h>
 
-#include "vm.h"
-
-#ifdef USE_VM
-#include <sys/mman.h>
-#endif
-
-//#define NEWINT
 void debug(char*);
 void debug2(char*,long);
 

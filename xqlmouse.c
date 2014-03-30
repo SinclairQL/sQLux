@@ -39,7 +39,6 @@
 #include "qx_proto.h"
 
 #include "unixstuff.h"
-#include "vm.h"
 
 #include "util.h"
 #include "xipc.h"

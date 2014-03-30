@@ -3,7 +3,6 @@
  */
 
 #include "QL68000.h"
-#include "vm.h"
 #include "unix.h"
 #include "xcodes.h"
 
