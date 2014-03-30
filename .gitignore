@@ -1,0 +1,17 @@
+qm
+*.o
+
+romdir/*
+
+docs/uqlx.html
+
+#tex stuff
+*.aux
+*.dvi
+*.fn
+*.ky
+*.log
+*.pg
+*.toc
+*.vr
+
