@@ -26,110 +26,7 @@ RELSE := $(shell date '+%m/%d/%y  %H:%M:%S')
 NRELSE := $(shell date '+%d.%m.%y-%H.%M')
 PWD := $(shell pwd)
 
--include .config
-
-export EXACT_HW
-
-
-ifndef OS2_SHELL
- XOS := $(shell uname)
- XOSREL := $(shell uname -r)
-else 
- XOS := OS2
-endif
-
-
-# don't override CC definitions..
-ifndef CC
- CC= gcc
-else
-# ..unless it isn't gcc
- ifeq (,$(findstring gcc,$(CC)))
-   CC= gcc
-   REDEF_CC= yes
- endif
-endif
-
-
-
-# get compile preferences
-ifeq (0,$(MAKELEVEL))
--include $(HOME)/.uqlx_cprefs
-endif
-
-ifeq ($(USE_XAW), yes)
-  XAW_FLAG= -DXAW
-else
-  XAW_FLAG=
-endif
-
-# now try to guess OS and correct BUILDFLAGS ....
-ifeq ($(XOS),Linux)
-  BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DMOUSE  -DUSE_IOSZ -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND -DUX_WAIT -DHAS_STPCPY # -DUSE_VM #-DEVM_SCR # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),SunOS)
-ifeq ($(OSTYPE),solaris)	# Solaris ?
-  BUILDFLAGS :=  -DUSE_IPC -DSOLARIS -DFASTLOOP -DXSCREEN -DQVFS  -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DUX_WAIT -DNO_FIONREAD -DSH_MEM -DUSE_VM -DIPDEV  #-DDEBUG_ROM  # -DUSE_VM -DSH_MEM # -DBACKING_STORE
-  XLFLAG := -lsocket -lxnet
-else			# old sunos...
-  BUILDFLAGS := -DUSE_IPC -DXSCREEN -DQVFS  -DSUNOS -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DUX_WAIT -DNO_FIONREAD  -DFASTLOOP -DBSD -DNO_MEMMOVE -DNO_GETOPT -DEVM_SCR #-DSH_MEM # -DBACKING_STORE
-endif
-endif
-
-ifeq ($(XOS),NetBSD)
-  BUILDFLAGS := -DUSE_IPC -DXSCREEN -DQVFS -DMOUSE -DUSE_IOSZ -DDO_GRAB \
--DSERIAL -DNEWSERIAL -DNEWPTY -DUX_WAIT -DFASTLOOP -DSH_MEM -DIPDEV -DBSD44 -DEVM_SCR\
-#-DDEBUG_ROM  # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),FreeBSD)
-  BUILDFLAGS := -DUSE_IPC -DXSCREEN -DQVFS -DMOUSE -DUSE_IOSZ -DDO_GRAB \
--DSERIAL -DNEWSERIAL -DNEWPTY -DUX_WAIT -DFASTLOOP -DSH_MEM -DIPDEV -DBSD44 -DEVM_SCR \
-#-DDEBUG_ROM # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),Darwin)
-  BUILDFLAGS := -DUSE_IPC -DXSCREEN -DQVFS -DMOUSE -DUSE_IOSZ -DDO_GRAB \
--DSERIAL -DNEWSERIAL -DNEWPTY -DUX_WAIT -DFASTLOOP -DSH_MEM -DIPDEV -DBSD44  -DDARWIN -DHAS_STPCPY #-DUSE_VM
-#-DDEBUG_ROM # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),IRIX)
-  BUILDFLAGS := -DUSE_IPC -DIPDEV -DXSCREEN -DQVFS -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DUX_WAIT -DNO_FIONREAD -DFASTLOOP -DEVM_SCR #-DVM_SCR  -DSH_MEM # -DUSE_VM -DSH_MEM
-endif
-
-ifeq ($(XOS),HP-UX)
-  BUILDFLAGS := -DQVFS  -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DUX_WAIT -DNO_FIONREAD  -DFASTLOOP -DSH_MEM -DEVM_SCR #-DVM_SCR  #-DDEBUG_ROM #   #-DUSE_VM  -DSH_MEM # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),OS2)
-  BUILDFLAGS :=  -DQVFS -DEMX -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DUX_WAIT -DNO_FIONREAD  -DFASTLOOP -DEVM_SCR -DNEED_STRNCASECMP -DNO_NODEFER -DNO_LOCK # -DBACKING_STORE
-endif
-
-ifeq ($(XOS),CYGWIN_NT-4.0)
-   BUILDFLAGS := -DQVFS -DEMX -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DNO_FIONREAD  -DFASTLOOP -DEVM_SCR -DNO_NODEFER -DNO_LOCK -DXSCREEN -DUX_WAIT
-endif
-
-ifeq ($(XOS),CYGWIN_NT-4.0)
-   BUILDFLAGS := -DQVFS -DEMX -DMOUSE  -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY -DNO_FIONREAD  -DFASTLOOP -DEVM_SCR -DNO_NODEFER -DNO_LOCK -DXSCREEN -DUX_WAIT
-endif
-
-####
-
-# Default Case:
-ifndef BUILDFLAGS
-   BUILDFLAGS := -DQVFS  -DMOUSE  -DDO_GRAB  -DFASTLOOP #-DVM_SCR  #-DDEBUG_ROM #  -DUSE_VM -DSH_MEM -DEVM_SCR # -DBACKING_STORE
-   UNKNOWN_ARCH := true
-endif
-
-ifndef GENERIC_CPU
-ifeq (,$(findstring ERROR,$(DEF_CPU)))
-   BUILDFLAGS += $(DEF_CPU)
-endif
-endif
-
-BUILDFLAGS += $(GCC_XFLAGS)
+BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DMOUSE  -DUSE_IOSZ -DDO_GRAB  -DSERIAL  -DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND -DUX_WAIT -DHAS_STPCPY -DEVM_SCR
 
 # Library and Include paths:
 # most configurationss don't complain about nonexistent directories in the search path,  IRIX is the exception ..
@@ -276,16 +173,7 @@ endif
 # export ALL variables (lazy typing)
 export
 
-ifdef QM_CONFIG_DONE
-ifneq (,$(findstring DXAW,$(XAW_FLAG)))
-all: printarch qm-aw docs
-else
 all: printarch qm docs
-endif
-else
-all: print_usage
-endif
-
 
 noaw:
 	$(MAKE) all USE_XAW="no"
@@ -316,15 +204,6 @@ endif
 .PHONY: print_usage
 print_usage:
 	@echo "Please do 'make config' first"
-
-.PHONY: config
-config:
-ifndef OS2_SHELL
-	./config >.config
-else
-	echo "CC=gcc" >.config
-	echo "QM_CONFIG_DONE=yes" >>.config
-endif
 
 xqlmouse.o:	xqlmouse.c
 	$(CC) $(PROFFLAGS)  -c -O3 $(ENVFLAGS) $(INCLUDES) $(OPTFLAGS) $(BUILDFLAGS) $(WFLAGS) $(XAW_FLAG) $<
@@ -551,7 +430,7 @@ version:
 
 .PHONY : clean
 clean:
-	- rm -f $(OBJ) $(XTOBJS) $(XLOBJS) .config .gcc_version qm
+	- rm -f $(OBJ) $(XTOBJS) $(XLOBJS) qm
 
 ### extra .hpr 8.8.99 ###
 .PHONY : distclean
