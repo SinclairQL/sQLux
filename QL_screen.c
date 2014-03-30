@@ -337,7 +337,7 @@ void QL2Pixmap24 (w32 st, char *data, w32 from,w32 to)
 	  
 	  for(i=0; i<4; i++)
 	    {
-	      unsigned long x;
+	      uint32_t x;
 	      
 	      x = colors[((r1&2)<<1)+((r2&3))+((r1&1)<<3)];
 	      setpix24(data,7-(2*i),x);
@@ -356,7 +356,7 @@ void QL2Pixmap24 (w32 st, char *data, w32 from,w32 to)
 	  
 	  for(i=0; i<8; i++)
 	    {
-	      unsigned long x;
+	      uint32_t x;
 	      
 	      x = colors[((r1&1)<<2)+((r2&1)<<1)+((r1&1)&(r2&1))]; 
 	      setpix24(data,7-i,x);
@@ -393,10 +393,10 @@ void QL2Pixmap32 (w32 st, char *data, w32 from,w32 to)
 	
 	for(i=0; i<4; i++)
 	  {
-	    unsigned long x;
+	    uint32_t x;
 	    x = colors[((r1&2)<<1)+((r2&3))+((r1&1)<<3)];
-	    *(unsigned int*)((unsigned int*)data+7-(2*i)) = x;
-	    *(unsigned int*)((unsigned int*)data+7-(2*i+1)) = x;
+	    *(uint32_t *)((uint32_t *)data+7-(2*i)) = x;
+	    *(uint32_t *)((uint32_t *)data+7-(2*i+1)) = x;
 	    
             r1=r1>>2; r2=r2>>2;
 	  }
@@ -412,10 +412,10 @@ void QL2Pixmap32 (w32 st, char *data, w32 from,w32 to)
 	
 	  for(i=0; i<8; i++)
 	    {
-	      unsigned long x;
+	      uint32_t x;
 	      
 	      x = colors[((r1&1)<<2)+((r2&1)<<1)+((r1&1)&(r2&1))]; 
-	      *(unsigned int*)((unsigned int*)data+7-i) = x;	      
+	      *(uint32_t *)((uint32_t *)data+7-i) = x;	      
 	      r1=r1>>1; r2=r2>>1;
 	    }
 	  data+=pbytes*8;

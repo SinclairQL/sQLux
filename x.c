@@ -318,7 +318,7 @@ void process_events (void)
     }
 }
 
-long colors[16];
+uint32_t colors[16];
 
 XVisualInfo * ChooseVisual(Display *display)
 {
