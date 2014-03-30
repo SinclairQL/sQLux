@@ -51,10 +51,6 @@ int main(int ac, char **av)
 
   argv=av;
 
-#ifdef USE_VM
-  vmtest();
-#endif
-
   SetParams(ac, av);
   
   uqlxInit();

@@ -20,16 +20,6 @@ int trace_rts=0;
 #define INLINE inline
 
 
-#ifdef USE_VM
-extern int vm_ison;
-/*sigjmp_buf instr_retry_catch;*/
-
-extern volatile uw32 vm_saved_rom_value;
-extern volatile uw32 vm_saved_rom_addr;
-extern volatile int vm_saved_nInst;
-extern volatile int hwRegsEmu;
-#endif
-
 uw32 rtop_hard;
 int extInt=0;
 
@@ -39,12 +29,8 @@ int extInt=0;
 #define TRR
 #endif
 
-#ifdef USE_VM
-#include "memaccess_vm.h"
-#else
 #define D_ISREG
 #include "memaccess.h"
-#endif
 
 #include "mmodes.h"
 
@@ -587,15 +573,6 @@ void ExceptionProcessing()
 /******************************************************************/
 /* now read in ReadByte etc macros */
 
-#if 0
-#ifdef USE_VM
-#include "memaccess_vm.h"
-#else
-#define D_ISREG
-#include "memaccess.h"
-#endif
-#endif //0
-
 rw32 AREGP GetEA_mBad(ashort r)
 {    
   exception=4;
@@ -700,7 +677,6 @@ void ExecuteLoop(void)
 
 #include "instructions_ao.c"    /* include instructions */
 #include "instructions_pz.c"
-  /*#include "iexl_ug.h"*/
 
 run_it:
   if (unlikely(!itable_valid))
@@ -789,11 +765,6 @@ void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
   left_exl=1;
 #endif
 
-#ifdef USE_VM
-  if(!vm_ison)
-    vm_on();
-#endif
-  
   if((long)pc&1) return;
 
 
@@ -822,34 +793,6 @@ void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
  restart:
 
   ExecuteLoop();
-#ifdef USE_VM
-
-  if ( vm_saved_nInst>0 && (QX_NONE==RamMap[vm_saved_rom_addr>>pageshift] || 
-       QX_ROM ==RamMap[vm_saved_rom_addr>>pageshift]) )
-
-    {
-      WL((Ptr)theROM+vm_saved_rom_addr,vm_saved_rom_value);
-      nInst=vm_saved_nInst;
-      /*printf("reenabling ROM protection at %x\n",((vm_saved_rom_addr>>pageshift)<<pageshift));*/
-      if (MPROTECT((Ptr)theROM+((vm_saved_rom_addr>>pageshift)<<pageshift),pagesize,PROT_READ) <0)
-	perror("failure to reenable ROM protection ");
-      vm_saved_rom_addr=131072;
-      vm_saved_nInst=0;
-
-      /*printf("nInst %d\n",nInst);*/
-      if (nInst>0)
-	goto restart;
-    }
-  if (hwRegsEmu)
-    {
-      hwRegsEmu=0;
-      nInst=vm_saved_nInst;
-      SetDisplay(*(unsigned char *)theROM+0x18063,true);
-      if (nInst>0)
-	goto restart;
-    }
-#endif /* USE_VM */
-
 }
 
 

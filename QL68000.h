@@ -13,57 +13,12 @@
 /* needed for ntoh? functions */
 #include <arpa/inet.h>
 
-#if !defined(USE_VM) && !defined(EVM_SCR) && !defined(VM_SCR)
-#error USE_VM, VM_SCR or EVM_SCR must be defined
-#endif
-
-#ifdef VM_SCR
-#error VM_SCR is currently broken
-#endif
-
 #undef QM_BIG_ENDIAN
-
-#if defined(sparc) || defined(__sparc)
-#define SPARC
-#endif
-
-#if defined(__hp9000s800) || defined(hppa)
-#define HPPA
-#endif
-
-#if defined(ppc) || defined(PPC) || defined(__PPC) || defined(__PPC__)
-#ifndef PPC
-#define PPC
-#endif
-#endif
-
-#if defined(ppc) || defined(__PPC) || defined(__PPC__)
-#define PPC
-#endif
-
-#ifdef PPC
-#define QM_BIG_ENDIAN
-#define HOST_ALIGN 1
-#endif
-
-#if defined(mips)
-#define MIPS
-#endif
-
-#if defined(__alpha__)
-#define ALPHA
-#define HOST_ALIGN 1
-#endif
 
 #if defined(i386) || defined(i486) || defined(i586) || defined(i686) || defined(__i386__) ||defined(__i586__) || defined(__i686__)
 #ifndef __i486__
 #define __i486__
 #endif
-#endif
-
-#if defined(m68000) || defined(_m68k_) || defined(mc68000) \
-    || defined(__mc68000)
-#define m68k
 #endif
 
 #ifdef USE_BUILTIN_EXPECT
@@ -129,10 +84,6 @@ typedef short shindex;
 typedef char bctype;
 #else
 typedef int bctype;  
-#endif
-
-#if 0 /*def SPARC*/
-#define SMALLCACHE
 #endif
 
 typedef void* Ptr;     /* non ANSI, but convenient... */
@@ -328,30 +279,13 @@ extern char             dispScreen;
 extern Cond             dispMode;
 extern Cond             badCodeAddress;
 
-/* RamMap now works with almost any pagesize.. */
-#if 1
-/* slower but more flexible than other case, speed irelevant in USE_VM case */
 #define RM_SHIFT pageshift
-#else
-#ifdef SPARC
-#define RM_SHIFT        13
-#define RM_PAGESIZE    8192
-#else
-#ifndef RM_PAGESIZE
-#define RM_SHIFT        12
-#define RM_PAGESIZE     4096
-#endif
-#endif
-#endif
+
 extern int MPROTECT(void *,long, int);
 
 extern int schedCount;
 #define INCR_SC() {schedCount++;}
 #define DECR_SC() {if (schedCount>0) schedCount--;}
-
-//#ifdef USE_VM
-//extern sigjmp_buf instr_retry_catch;
-//#endif
 
 extern w32  displayFrom;
 extern w32  displayTo;
@@ -796,25 +730,14 @@ extern void QLvector(int , int );
 extern int script;
 extern Cond doTrace;
 
-#if defined(USE_VM) && !defined(VM_SCR)
 #define MARK_SCREEN
-#endif
-#if defined(EVM_SCR)
-#define MARK_SCREEN
-#endif
 
-#if defined(USE_VM) || defined(VM_SCR) 
-void prepChangeMem(w32, w32);
-#else
 #define prepChangeMem
-#endif
 
 extern int verbose;
 #define V1 (verbose>0)
 #define V2 (verbose>1)
 #define V3 (verbose>2)
-
-/*#define inline*/
 
 #include "misdefs.h"
 

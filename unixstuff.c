@@ -96,8 +96,8 @@ int schedCount = 0;
 extern int min_idle;
 int HasDialog;
 
-long pagesize/*=RM_PAGESIZE*/;
-int pageshift/*=RM_SHIFT*/;
+long pagesize=4096;
+int pageshift=12;
 
 void cleanup_dialog (){}
 
@@ -138,6 +138,7 @@ int InitDialog ()
       _exit(0);
 #endif
    }
+   return 0;
 }
 
 int rtc_emu_on = 0;
@@ -448,21 +449,6 @@ void ChangedMemory (int from, int to)
 }
  
 char **argv;
-
-#if defined(USE_VM) || defined(VM_SCR)
-void restart_emulator ()
-{
-   struct itimerval tv;
-
-   tv.it_value.tv_sec = 0;
-   tv.it_value.tv_usec = 0;
-   tv.it_interval.tv_sec = 0;
-   tv.it_interval.tv_usec = 0;
-   setitimer(ITIMER_REAL, &tv, NULL);
-   /*printf("restarting '%s'\n",argv[0]);*/
-   execvp(argv[0], argv);
-}
-#endif
 
 void DbgInfo(void)
 {
@@ -923,10 +909,12 @@ const char *hd_filename[MAX_DISKS]={"/home/rz/.qldir/IMG1",
                                     "/home/rz/.qldir/IMG2"};
 #endif
 
+#ifdef ENABLE_IDE
 static int cyls=0;
 static int heads=0;
 static int secs=0;
 static int snapshot=0;
+#endif
 
 #define HAS_CDROM 0
 
@@ -986,27 +974,7 @@ void uqlxInit ()
    int  rl=0;
    void *tbuff;
    int i, j, c;
-   int mem = -1, col = -1, hog = -1;
-
-   pagesize = 4096;
-
-   if(pagesize > 8192)
-   {
-      printf("USE_VM can't work with pagesize %x\n",(unsigned)pagesize);
-      exit(1);
-   }
-   for(pageshift = 0,i = pagesize;i;i >>= 1, pageshift++);
-      pageshift--;
-   
-   if ((1<<pageshift) != pagesize)
-   {
-      printf("your machine seems to have a very odd pagesize of %ld bytes\n",pagesize);
-      printf("please recompile with -DNO_PSHIFT added to your buildflags\n");
-      exit(1);
-   }
-   else
-      if(V3)
-         printf("page size %ld, page shift %d\n",pagesize,pageshift);
+   int mem = -1, col = -1;
 
    rx1 = 0;
    rx2 = qlscreen.xres-1;

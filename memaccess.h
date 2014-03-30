@@ -3,7 +3,7 @@
  */
 
 
-/* define memory access fns for the non USE_VM case */
+/* define memory access fns */
 
 
 

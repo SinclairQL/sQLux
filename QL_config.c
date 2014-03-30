@@ -330,8 +330,6 @@ short LoadMainRom(void) /* load and modify QL ROM */
 
   /* last not least intrument the ROM code HW register access */
 
-  instrumentCode();
-  
   if(e==0 && !p) e=ERR_ROM_UNKNOWN;
   return e;
 }
@@ -375,10 +373,6 @@ void InitROM(void)
 	aReg[3]=0x0c000;
 	gPC+=2;
 #else
-#if defined(USE_VM) || defined(VM_SCR)
-	vm_off(); 
-#endif
-
 	WW((Ptr)gPC-2,0x0c93);   /* restore original instruction */
 #endif
 #if 0	
@@ -486,10 +480,6 @@ void InitROM(void)
 	restore_regs(saved_regs);
 #ifdef OLD_PATCH
 	aReg[3]=0x0c000;
-#endif
-
-#if defined(USE_VM) || defined(VM_SCR)
-	vm_on();
 #endif
 
 #ifndef OLD_PATCH

@@ -17,10 +17,6 @@
 #include <X11/cursorfont.h>
 #include <X11/extensions/XShm.h>
 
-#if defined(VM_SCR) || defined(USE_VM)
-#include <sys/mman.h>
-#endif
-
 #include "QL68000.h"
 
 #include "unix.h"
@@ -472,9 +468,7 @@ void inline conv_chunk(w32 from, w32 to)
   
   (*QL2Pixmap)(vbase,xi_buf, from, to);
 
-#if defined(VM_SCR) || defined(USE_VM) || defined (EVM_SCR)
   displayFrom=displayTo=0;
-#endif
 
   rx1=x1; rx2=x2;
   ry1=y1; ry2=y2;
@@ -487,19 +481,12 @@ void inline conv_chunk(w32 from, w32 to)
 
 void do_scrconv()
 {
-#if defined(VM_SCR) || defined(USE_VM) || defined (EVM_SCR)
   int i,ii,xfrom,xto; 
   long *ascr,*oscr;
 
   char *nxpage;
   
   xfrom=xto=i=0;
-
-#if 0
-  printf("***** entering scrconv : %d %d %d %d %d %d %d %d \n",scrModTable[0],scrModTable[1],
-	 scrModTable[2],scrModTable[3],scrModTable[4],scrModTable[5],scrModTable[6],
-	 scrModTable[7]);
-#endif
 
 next_page:
   while (!scrModTable[i] && i<sct_size)
@@ -521,16 +508,8 @@ next_page:
   /*scrModTable[i]=0;*/
 
 next_change:
-#if 0
-  printf("scrconv page %d\trealpage %d\toffset %d\n",i,(((int)((char*)oscr-oldscr))/pagesize),(char*)oscr-oldscr-pagesize*(((int)((char*)oscr-oldscr))/pagesize));
-#endif
-
   while( *ascr++ == *oscr++ && 
 	 ((char *)oscr <= nxpage) /*(char*)oldscr+32768+sizeof(*oscr))*/  );
-
-#if 0
-  printf("scrconv search stopped: page %d\trealpage %d\toffset %d\n",i,(((int)((char*)oscr-oldscr))/pagesize),(char*)oscr-oldscr-pagesize*(((int)((char*)oscr-oldscr))/pagesize));
-#endif
 
   // -- stopped by crossing page boundary? continue with next page
   if ((char *)oscr > nxpage /*&& *(ascr-1)==*(oscr-1)*/ ) 
@@ -559,10 +538,6 @@ next_change:
 	 *ascr++!=*oscr++ )  
     *(oscr-1)=*(ascr-1);    /* actualise cmp/shadow buffer */
 
-#if 0
-  printf("scrconv end of diff area: page %d\trealpage %d\toffset %d\n",i,(((int)((char*)oscr-oldscr))/pagesize),(char*)oscr-oldscr-pagesize*(((int)((char*)oscr-oldscr))/pagesize));
-#endif
-
   /*if ((char *)oscr >= oldscr+(i+1)*pagesize+2*sizeof(*oscr)) /*goto next_page;*/
 
   i=(int)PAGEI((char*)oscr-oldscr);
@@ -589,13 +564,7 @@ x_exit:
   if (do_update)
     uqlx_protect(qlscreen.qm_lo,qlscreen.qm_len,QX_SCR);
 #endif
-#if defined(USE_VM) ||defined(VM_SCR)
-//  if (MPROTECT((Ptr)theROM+qlscreen.qm_lo,qlscreen.qm_hi-qlscreen.qm_lo,PROT_READ)<0)
-//    perror("can't change MM permission");
-#endif
-  
-#endif  
-  
+
   if (finishflag)
     draw_chunk();
 

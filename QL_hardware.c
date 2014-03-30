@@ -117,16 +117,6 @@ static uw8 KeyRow(short row)
   return keyrow[row]+mod;
 }
 
-#if defined(USE_VM) || defined(VM_SCR)
-void RegEmuCmd(void)
-{
-  uw16 orig_code;
-
-  orig_code=find_ocode((uw32) ((Ptr)gPC-(Ptr)theROM-2));
-  table[code=orig_code&0xffff]();
-}
-#endif
-
 void pic_set_irq(int irq, int state)
 {
   //printf("warning: pic_set_irq(%d,%d) called\n",irq,state);

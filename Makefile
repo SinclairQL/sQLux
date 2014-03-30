@@ -90,8 +90,8 @@ XLOBJS := x.o xlmain.o xqlmouse.o unixstuff.o
 HEADERS := QL.h  QLtypes.h  QDisk.h QL68000.h cond.h iexl.h QSerial.h  unix.h \
 	QFilesPriv.h  QL_config.h  QSound.h   QInstAddr.h  QLfiles.h boot.h \
 	QDOS.h trace.h uqlx_cfg.h emudisk.h driver.h vm.h \
-	misdefs.h xcodes.h QL_screen.h insnx.h \
-	iexl_general.h memaccess.h memaccess_vm.h mmodes.h iexl_ug.h QVFS.h \
+	misdefs.h xcodes.h QL_screen.h \
+	iexl_general.h memaccess.h mmodes.h iexl_ug.h QVFS.h \
         QL_sound.h \
 	QLip.h iptraps.h util.h xc68.h xipc.h script.h qx_proto.h vl.h \
         cow.h
@@ -103,18 +103,16 @@ OBJ := Init.o general.o instructions_ao.o instructions_pz.o  \
 	QL_files.o QL_driver.o QDisk.o trace.o version.o QLserio.o \
 	QL_screen.o QL_poll.o xcodes.o QL_boot.o QL_basext.o \
 	QL_cconv.o  iexl_general.o QVFS.o QL_sound.o\
-	Xscreen.o QLip.o util.o xc68.o xipc.o script.o rompatch.o \
+	Xscreen.o QLip.o util.o xc68.o xipc.o script.o \
 	mach_exception.o siginfo.o vl.o ide.o block.o
-
-#insnx.o insnx2.o
 
 SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QLtraps.c QL_hardware.c QL_config.c dummies.c vm.c \
 	xqlkey.c qmtrap.c uxfile.c QL_serial.c pty.c uqlx_cfg.c \
 	QL_files.c QL_driver.c QDisk.c trace.c version.c QLserio.c \
 	QL_screen.c QL_poll.c xcodes.c QL_boot.c QL_basext.c \
-	QL_cconv.c insnx.c insnx2.c iexl_general.c QVFS.c \
-	Xscreen.c QLip.c util.c xc68.c xipc.c script.c rompatch.c \
+	QL_cconv.c iexl_general.c QVFS.c \
+	Xscreen.c QLip.c util.c xc68.c xipc.c script.c \
 	QL_sound.c vm_win.c mach_exception.c siginfo.c \
 	vl.c ide.c block.c
 
@@ -126,7 +124,7 @@ ROMS := romdir/js_rom romdir/min.189
 
 CONFIGFILES := Makefile Xql Xqlaw 
 
-AUX := .gdbinit BOOT.test bench1 bench2 xx.c insnx.c.old Xgui.c \
+AUX := .gdbinit BOOT.test bench1 bench2 xx.c Xgui.c \
 	guesscpu_linux config MK.all do_install browse_manual vmtest.c \
 	zmtest.c uqlx.bat  dtest.c
 UTILS := utils/README utils/xheader utils/Makefile utils/qcp.c utils/qls.c \

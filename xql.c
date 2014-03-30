@@ -335,10 +335,6 @@ int main (int ac, char **av)
 	{XtNbottom, XawChainTop}
     };
 
-#ifdef USE_VM
-    vmtest();
-#endif
-
     topLevel = XtVaAppInitialize (&app_context,   /* Application context */
 				  "Xqlaw",   /* Application class */
 				  NULL, 0,

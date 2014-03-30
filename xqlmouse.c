@@ -389,7 +389,6 @@ void MouseTask()
 }
 #endif
 
-#if defined(VM_SCR) || defined(EVM_SCR) || defined(USE_VM)
 #define DISPLAY_CHANGED() display_changed()
 static inline int display_changed()
 {
@@ -403,9 +402,6 @@ static inline int display_changed()
   
   return 0;
 }
-#else
-#define DISPLAY_CHANGED()  (displayTo-displayFrom>4 && displayFrom!=0)
-#endif
 
 
 #ifdef MOUSE

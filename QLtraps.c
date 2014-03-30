@@ -286,15 +286,8 @@ void FastStartup(void)
       nInst=0;
       return;
     }
-#ifdef USE_VM
-  vm_off();
-#endif 
 
   memset((Ptr)theROM+131072l,0,RTOP-131072l);
-
-#ifdef USE_VM
-  vm_on();
-#endif
 
   while(RL((w32*)gPC)!=0x28000l) gPC++;
   gPC-=4;
