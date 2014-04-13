@@ -34,6 +34,7 @@
 #include "boot.h"
 #include "qx_proto.h"
 #include "QL_sound.h"
+#include "uxfile.h"
 
 #define TIME_DIFF    283996800
 void GetDateTime(w32 *);
@@ -126,7 +127,7 @@ int InitDialog ()
 #endif
 
       if (access(buf, R_OK | X_OK)) 
-         return;
+         return 0;
 
       bfpid = qm_fork (cleanup_dialog, 0);
       if (bfpid) 
@@ -166,9 +167,7 @@ uw32 sysvar_l (uw32 a)
 /* set both RamMap and mprotect() */
 void uqlx_protect (unsigned long  start, unsigned long len, int type)
 {
-   int i, tmp;
-
-   tmp = type;
+   int i;
 
    for (i = start>>pageshift; (start+len) > (i<<pageshift); i++) 
    {
@@ -186,8 +185,6 @@ static int flptest = 0;
 
 void dosignal ()
 {
-   uw32 t;
-  
    doPoll = 0;
   
 #ifdef SOUND
@@ -456,7 +453,7 @@ void DbgInfo(void)
 
    /* "ssp" is ssp *before* sv-mode was entered (if active now) */
    /* USP is saved value of a7 or meaningless if not in sv-mode */
-   printf("DebugInfo: PC=%x, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
+   printf("DebugInfo: PC=%lx, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
          (Ptr)pc-(Ptr)theROM, code,
          (supervisor ? "yes" : "no" ),
          usp,ssp,*sp);
@@ -586,7 +583,7 @@ int load_rom(char *name,w32 addr)
    if (r<0) 
    {
       perror("Warning, could not load ROM \n");
-      printf("name %s, addr %x, QDOS origin %x\n",name,addr,(unsigned)theROM);
+      printf("name %s, addr %x, QDOS origin %p\n",name,addr,theROM);
       return 0; 
    }
    if(V3)printf("loaded %s \t\tat %x\n",name,addr);
@@ -666,7 +663,7 @@ char *qm_findx(char *name)
 
 void browse_manuals ()
 {
-   int unused;
+   int ret;
    char buf[PATH_MAX + 25];
    char *loc;
 
@@ -676,7 +673,10 @@ void browse_manuals ()
    qaddpath(buf,"browse_manual ",PATH_MAX);
    strncat(buf,IMPL,PATH_MAX);
    //printf("executing %s\n",buf);
-   unused = system(buf);
+   ret = system(buf);
+   if (ret == -1)
+	   printf("Failed to execute browser\n");
+
    exit(0);
 }
 
@@ -746,10 +746,8 @@ void usage(char **argv)
 }
 void SetParams (int ac, char **av)
 {
-   char *rf;
    char sysrom[200];
-   int  rl = 0;
-   int j,c; 
+   int c; 
    int mem=-1, col=-1, hog=-1, no_patch=-1;
    int gg=0;
   
@@ -973,8 +971,6 @@ void uqlxInit ()
    char *rf;
    int  rl=0;
    void *tbuff;
-   int i, j, c;
-   int mem = -1, col = -1;
 
    rx1 = 0;
    rx2 = qlscreen.xres-1;
@@ -1001,7 +997,7 @@ void uqlxInit ()
       char roms[PATH_MAX];
       char *p;      
 
-      if(rf = getenv("QL_ROM"))
+      if((rf = getenv("QL_ROM")))
           rl = load_rom(rf,0);
       if (!rl)
       {
@@ -1190,7 +1186,7 @@ void uqlxInit ()
   
    if (isMinerva)
    {
-      reg[1]=RTOP&(~16383) | 1 | 2 | 4 | 16;
+      reg[1]=RTOP&((~16383) | 1 | 2 | 4 | 16);
       SetPC(0x186);
    }
   

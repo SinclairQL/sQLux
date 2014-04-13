@@ -6,12 +6,12 @@
 #define true 1
 #define false 0
 
-typedef signed char w8;
-typedef signed short w16;
-typedef signed int w32;
-typedef unsigned char uw8;
-typedef unsigned short uw16;
-typedef unsigned int uw32;
+typedef int8_t w8;
+typedef int16_t w16;
+typedef int32_t w32;
+typedef uint8_t uw8;
+typedef uint16_t uw16;
+typedef uint32_t uw32;
 typedef unsigned char Cond;
 #ifndef BOOLEAN_ALREADY_DEFINED
 typedef Cond Boolean;
