@@ -324,10 +324,6 @@ extern int isMinerva;
                   ( _farray_[_index_](_args_) )
 #endif
 
-vml rw8 GetFromEA_rb_m3(ashort );
-vml rw16 GetFromEA_rw_m3(ashort );
-vml rw32 GetFromEA_rl_m3(ashort );
-
 
 extern rw32      (*GetEA[8])(ashort) /*AREGP*/;      /**/
 extern rw8       (*GetFromEA_b[8])(void);
@@ -370,12 +366,6 @@ rw16 BusErrorCode(aw16 ) REGP1;
 void SetPC(w32 )  REGP1;
 void SetPCX(int )  REGP1;
 
-vml rw8      GetFromEA_b_m3(void);
-vml rw8      GetFromEA_b_m4(void);
-vml rw16     GetFromEA_w_m3(void);
-vml rw16     GetFromEA_w_m4(void);
-vml rw32     GetFromEA_l_m3(void);
-vml rw32     GetFromEA_l_m4(void);
 STATIC rw8 ModifyAtEA_b(ashort ,ashort )  REGP2;
 STATIC rw16 ModifyAtEA_w(ashort ,ashort ) REGP2;
 STATIC rw32 ModifyAtEA_l(ashort ,ashort ) REGP2;
