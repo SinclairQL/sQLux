@@ -65,9 +65,6 @@ extern struct paste_buf *paste_bl;
 int mouse_emu_reg;
 int ochd=0;
 
-static int do_nx=100;
-static int do_ny=100;
-
 int min_idle=5;
 int HasPTR=0;
 int quickMouseUpdate=1;
@@ -114,12 +111,8 @@ void print_mousepos()
 
 #endif  /* MOUSE */
 
-static int hot_wait;
-
 void do_hotactn()
 {
-  w32 saveA3;
-
   char hotch[3];
 
   hotch[0]=ReadByte(ptrscrdrv+0x8d-0x18);
@@ -416,15 +409,9 @@ void QLMovePointer(int pos_x,int pos_y)
   if (HasPTR)
     if (pos_x!=lastx || pos_y!=lasty)
       {
-	int cx,cy;
+	getMouseX();
+	getMouseY();
 	
-	cx=getMouseX();
-	cy=getMouseY();
-	
-#if 0
-	printf("moveto: %d\t%d\t",pos_x,pos_y);
-	print_mousepos();
-#endif
 	setMouseXY(pos_x,pos_y);
 
 	llastx=lastx; lastx=pos_x;
