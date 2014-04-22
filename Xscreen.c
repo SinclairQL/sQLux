@@ -42,7 +42,7 @@ struct SCREENDEF
 };
 
 
-Cond XLookFor(w32 *a,uw32 w,long nMax)
+Cond XLookFor(uintptr_t *a,uw32 w,long nMax)
 {	
   while(nMax-->0 && RL((*a))!=w) (*a)+=2;
   return nMax>0;
@@ -55,7 +55,7 @@ void XPatchPTRENV()
   int flag;
   
   scrdef=(Ptr)pc-8000;
-  while ( XLookFor((w32*)&scrdef,0x20000,24000))
+  while ( XLookFor((uintptr_t *)&scrdef,0x20000,24000))
     {
       if (RL(&(scrdef->scrlen))==0x8000  &&
 	  RW(&(scrdef->linel)) ==0x80 &&
