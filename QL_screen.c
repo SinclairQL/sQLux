@@ -428,7 +428,7 @@ void QL2Pixmap32 (w32 st, char *data, w32 from,w32 to)
 
 extern int rx1,rx2,ry1,ry2,finishflag;  
 
-void inline conv_chunk(w32 from, w32 to)
+void conv_chunk(w32 from, w32 to)
 {
   int x1,x2,y1,y2,width,height;
   

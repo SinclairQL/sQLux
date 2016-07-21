@@ -171,7 +171,7 @@ vml inline rw8 GetFromEA_b_m3(void)
 }
 
 /* added as special case for cmpm */
-vml inline rw8 GetFromEA_rb_m3(ashort r)
+vml rw8 GetFromEA_rb_m3(ashort r)
 {  
   register rw8 b;
   uw32 addr;
@@ -182,7 +182,7 @@ vml inline rw8 GetFromEA_rb_m3(ashort r)
 
   return b;
 }
-vml inline rw16 GetFromEA_rw_m3(ashort r)
+vml rw16 GetFromEA_rw_m3(ashort r)
 {  
   uw32 addr;
 
@@ -191,7 +191,7 @@ vml inline rw16 GetFromEA_rw_m3(ashort r)
   
   return inl_ReadWord(addr);
 }
-vml inline rw32 GetFromEA_rl_m3(ashort r)
+vml rw32 GetFromEA_rl_m3(ashort r)
 {  
   uw32 addr;
   

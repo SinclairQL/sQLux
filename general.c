@@ -27,8 +27,8 @@ int trace_rts=0;
 
 inline void REGP1 WriteHWByte(aw32 addr, aw8 d);
 inline rw8 REGP1  ReadHWByte(aw32 addr);
-inline rw16 ReadHWWord(aw32 addr);
-inline void WriteHWWord(aw32 addr, aw16 d);
+rw16 ReadHWWord(aw32 addr);
+void WriteHWWord(aw32 addr, aw16 d);
 
 
 #include "memaccess.h"
@@ -270,7 +270,7 @@ inline rw8 REGP1  ReadHWByte(aw32 addr)
   return res;
 }
 
-inline rw16 ReadHWWord(aw32 addr)
+rw16 ReadHWWord(aw32 addr)
 {
   switch(addr){
 #ifdef ENABLE_IDE
@@ -280,7 +280,7 @@ inline rw16 ReadHWWord(aw32 addr)
   }
 }
 
-inline void WriteHWWord(aw32 addr, aw16 d)
+void WriteHWWord(aw32 addr, aw16 d)
 {
   switch(addr){
 #ifdef ENABLE_IDE

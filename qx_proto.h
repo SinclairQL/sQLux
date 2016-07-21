@@ -102,7 +102,7 @@ void x_screen_open (int frk);
 void x_screen_close (void);
 void x_reset_state(void);
 void redraw_screen(int ,int ,int ,int );
-void inline conv_chunk(w32 from, w32 to);
+void conv_chunk(w32 from, w32 to);
 void scrconv(void);
 void parse_screen(char *x);
 int Xsim(int val);
