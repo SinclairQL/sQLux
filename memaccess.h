@@ -23,20 +23,6 @@ STATIC rw8 REGP1 ReadByte(aw32 addr)
 
   return *((w8*)theROM+addr);
 }
-#ifndef SMALLCACHE
-STATIC INLINE rw8 REGP1 inl_ReadByte(aw32 addr)
-{   
-  register bctype c;
-
-  addr&=ADDR_MASK;
-
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
-      return ReadHWByte(addr);   
-
-  return *((w8*)theROM+addr);
-}
-#endif
 
 STATIC rw16 REGP1 ReadWord(aw32 addr)
 {   
@@ -64,35 +50,6 @@ STATIC rw16 REGP1 ReadWord(aw32 addr)
     
   return (w16)RW((w16*)((Ptr)theROM+addr)); /* make sure it is signed */
 }
-#ifndef SMALLCACHE
-STATIC INLINE rw16 REGP1 inl_ReadWord(aw32 addr)
-{   
-  register bctype c;
-
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    {   
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-      return 0;
-    }
-  addr&=ADDR_MASK_E;
-#else
-  addr &=ADDR_MASK;
-#endif
-
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
-        return ((w16)ReadHWWord(addr));
-
-  return (w16)RW((w16*)((Ptr)theROM+addr)); /* make sure it is signed */
-}
-#endif
-
 
 STATIC rw32 REGP1 ReadLong(aw32 addr)
 {   
@@ -120,35 +77,6 @@ STATIC rw32 REGP1 ReadLong(aw32 addr)
 
   return  (w32)RL((Ptr)theROM+addr); /* make sure is is signed */
 }
-#ifndef SMALLCACHE
-STATIC INLINE rw32 REGP1 inl_ReadLong(aw32 addr)
-{   
-  register bctype c;
-
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    { 
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-      return 0;
-    }
-  addr &= ADDR_MASK_E;
-#else
-  addr &= ADDR_MASK;
-#endif
-
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
-      return ((w32)ReadWord(addr)<<16)|(uw16)ReadWord(addr+2);
-
-  return  (w32)RL((Ptr)theROM+addr); /* make sure is is signed */
-}
-#endif
-
 
 #define ValidateDispByte(_xx) 
 #ifdef DEBUG
@@ -157,9 +85,8 @@ long watchaddr=0;
 
 /* move HW access to a separate fn, this makes it practicable to inline */
 /* this fn in a few places :) */
-#if 1
 STATIC void REGP2 WriteByte(aw32 addr,aw8 d)
-{   
+{
   register bctype c;
 
   addr&=ADDR_MASK;
@@ -186,104 +113,6 @@ STATIC void REGP2 WriteByte(aw32 addr,aw8 d)
     }
   else *((w8*)theROM+addr)=d;
 }
-#ifndef SMALLCACHE
-STATIC INLINE void REGP2 inl_WriteByte(aw32 addr,aw8 d)
-{   
-  register bctype c;
-
-  addr&=ADDR_MASK;
-
-#ifdef DEBUG
-  if (addr==watchaddr)dbginfo("write byte %d to watchaddr=%x",d,addr);
-#endif
-  c=RamMap[addr>>RM_SHIFT]&30;
-  if(c!=2)
-    { 
-#ifndef VM_SCR
-      if(c==6)
-	{ 
-	  vmMarkScreen(addr);
-	  *((w8*)theROM+addr)=d;
-	}
-      else 
-	if(c==8)
-#endif  /* VM_SCR */
-	  WriteHWByte(addr,d);
-#ifdef DEBUG
-      else dbginfo("WARNING: writing to ROM,addr=%x val=%d\n",addr,d);
-#endif
-    }
-  else *((w8*)theROM+addr)=d;
-}
-#endif //SMALLCACHE
-#else // dead code follows
-
-INLINE void REGP2 WriteByte(aw32 addr,aw8 d)
-{   
-  register bctype c;
-
-  addr&=ADDR_MASK;
-
-#ifdef DEBUG
-  if (addr==watchaddr)dbginfo("write byte %d to watchaddr=%x",d,addr);
-#endif
-  c=RamMap[addr>>RM_SHIFT]&30;
-  if(c!=2)
-    { 
-#ifndef VM_SCR
-      if(c==6)
-	{ 
-#ifdef MARK_SCREEN
-	  vmMarkScreen(addr);
-	  *((w8*)theROM+addr)=d;
-#endif /* MARK_SCREEN */
-	}
-      else 
-	if(c==8)
-#endif  /* VM_SCR */
-	{ 
-	  /*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
-	  
-	  switch(addr) {
-	  case 0x018063:  /* Display control */
-	    SetDisplay(d,true);
-	  case 0x018000:
-	  case 0x018001:
-	    /* ignore write to real-time clock registers */
-	  case 0x018023:
-	    /* ignore write to no reg */
-	    break;
-	  case 0x018002:
-	    if(d!=16)
-	      { 
-		debug2("Write to transmit control >",d);
-		debug2("at pc-2 ",(Ptr)pc-(Ptr)theROM-2);
-		/*TRR;*/
-	      }
-	    break;
-	  case 0x018003:
-	    debugIPC("Write to IPC link > ",d);
-	    debugIPC("at (PC-2) ",(Ptr)pc-(Ptr)theROM-2);
-	    /*TRR;*/
-	    break;
-	  case 0x018020: WriteMdvControl(d); /*TRR;*/ break;
-	  case 0x018021: WriteInt(d); break;
-	  case 0x018022: debug2("Write to MDV/RS232 data >",d); /*TRR;*/ break;
-	  default:  debug2("Write to HW register ",addr);
-                    debug2("at (PC-2) ",(Ptr)pc-(Ptr)theROM-2);
-		    /*TRR;*/
-	    break;
-	  }
-	}
-#ifdef DEBUG
-      else dbginfo("WARNING: writing to ROM,addr=%x val=%d\n",addr,d);
-#endif
-    }
-  else *((w8*)theROM+addr)=d;
-}
-#endif // end dead code
-
-
 
 STATIC void REGP2 WriteWord(aw32 addr,aw16 d)
 {   
@@ -331,58 +160,9 @@ STATIC void REGP2 WriteWord(aw32 addr,aw16 d)
     }
   else WW((Ptr)theROM+addr,d);/* *((w16*)((Ptr)theROM+addr))=d; */
 }
-#ifndef SMALLCACHE
-STATIC void REGP2 inl_WriteWord(aw32 addr,aw16 d)
-{   
-  register bctype c;
-
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    { 
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=0;
-      return;
-    }
-  addr&=ADDR_MASK_E;
-#else
-  addr &= ADDR_MASK;
-#endif
-
-#ifdef DEBUG
-  if (addr==watchaddr)dbginfo("write word %d to watchaddr=%x",d,addr);
-#endif
-  c=RamMap[addr>>RM_SHIFT]&14;
-  if(c!=2)
-    { 
-#ifndef VM_SCR
-      if(c==6)
-	{       
-#if defined(MARK_SCREEN)
-	  vmMarkScreen(addr);
-#endif
-	  WW((Ptr)theROM+addr,d);
-	}
-      else if(c==8)
-#endif /* !VM_SCR */
-	{ 
-	  WriteHWWord(addr,d);
-	}
-#ifdef DEBUG
-      else dbginfo("WARNING: writing to ROM, addr=%x va=%d\n",addr,d);
-#endif
-    }
-  else WW((Ptr)theROM+addr,d);/* *((w16*)((Ptr)theROM+addr))=d; */
-}
-#endif
-
-
 
 STATIC void REGP2 WriteLong(aw32 addr,aw32 d)
-{    
+{
   register bctype c;
 
 #if HOST_ALIGN>1
@@ -427,55 +207,6 @@ STATIC void REGP2 WriteLong(aw32 addr,aw32 d)
     }
   else  WL((Ptr)theROM+addr,d);           
 }
-#ifndef SMALLCACHE
-void REGP2 inl_WriteLong(aw32 addr,aw32 d)
-{    
-  register bctype c;
-
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    { 
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=0;
-      return;
-    }
-  addr&=ADDR_MASK_E;
-#else
-  addr &= ADDR_MASK;
-#endif
-
-#ifdef DEBUG
-  if (addr==watchaddr)dbginfo("write long %d to watchaddr=%x",d,addr);
-#endif
-  c=RamMap[addr>>RM_SHIFT]&14;
-  if(c!=2)
-    { 
-#ifndef VM_SCR
-      if(c==6)
-	{ 
-#if defined(MARK_SCREEN)
-	  vmMarkScreen(addr);
-#endif
-	  WL((Ptr)theROM+addr,d);
-	}
-      else if(c==8)
-#endif /* !VM_SCR */
-	{ 
-	  WriteWord(addr,d>>16);
-	  WriteWord(addr+2,(uw16)d);
-	}
-#ifdef DEBUG
-      else {dbginfo("WARNING: writing to ROM, addr=%x, val=%d\n",addr,d);}
-#endif
-    }
-  else  WL((Ptr)theROM+addr,d);           
-}
-#endif
-
 
 /*############################################################*/
 #ifndef QM_BIG_ENDIAN

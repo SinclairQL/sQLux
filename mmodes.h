@@ -153,7 +153,7 @@ vml rw32 GetEA_m7_3(void)
 
 vml inline rw8 GetFromEA_b_m2(void)
 {    
-  return inl_ReadByte(aReg[code&7]);
+  return ReadByte(aReg[code&7]);
 }
 
 vml inline rw8 GetFromEA_b_m3(void)
@@ -165,7 +165,7 @@ vml inline rw8 GetFromEA_b_m3(void)
   r=code&7;
   addr=aReg[r]++;
   if(r==7) aReg[r]++;
-  b=inl_ReadByte(addr);
+  b=ReadByte(addr);
 
   return b;
 }
@@ -178,7 +178,7 @@ vml rw8 GetFromEA_rb_m3(ashort r)
   
   addr=aReg[r]++;
   if(r==7) aReg[r]++;
-  b=inl_ReadByte(addr);
+  b=ReadByte(addr);
 
   return b;
 }
@@ -189,7 +189,7 @@ vml rw16 GetFromEA_rw_m3(ashort r)
   addr=aReg[r];
   aReg[r]+=2; 
   
-  return inl_ReadWord(addr);
+  return ReadWord(addr);
 }
 vml rw32 GetFromEA_rl_m3(ashort r)
 {  
@@ -198,7 +198,7 @@ vml rw32 GetFromEA_rl_m3(ashort r)
   addr=aReg[r];
   aReg[r]+=4;
 
-  return inl_ReadLong(addr);
+  return ReadLong(addr);
 }
 /****/
 
@@ -208,17 +208,17 @@ vml inline rw8 GetFromEA_b_m4(void)
       
   r=code&7;
   if(r==7) aReg[r]--;
-  return inl_ReadByte(--aReg[r]);
+  return ReadByte(--aReg[r]);
 }
 
 vml inline rw8 GetFromEA_b_m5(void)
 {   
-  return inl_ReadByte(aReg[code&7]+(w16)RW(pc++));
+  return ReadByte(aReg[code&7]+(w16)RW(pc++));
 }
 
 vml inline rw8 GetFromEA_b_m6(void)
 {    
-  return inl_ReadByte(GetEA_m6(code&7));
+  return ReadByte(GetEA_m6(code&7));
 }
 
 vml  rw8 GetFromEA_b_m7(void)
@@ -261,7 +261,7 @@ vml inline rw16 GetFromEA_w_m1(void)
 
 vml inline rw16 GetFromEA_w_m2(void)
 {    
-  return inl_ReadWord(aReg[code&7]);
+  return ReadWord(aReg[code&7]);
 }
 
 vml inline rw16 GetFromEA_w_m3(void)
@@ -273,26 +273,26 @@ vml inline rw16 GetFromEA_w_m3(void)
   r=code&7;
   addr=aReg[r];
   aReg[r]+=2;
-  t=inl_ReadWord(addr);
+  t=ReadWord(addr);
 
   return t;
 }
 
 vml inline rw16 GetFromEA_w_m4(void)
 {    
-  return inl_ReadWord(aReg[code&7]-=2);
+  return ReadWord(aReg[code&7]-=2);
 }
 
 vml inline rw16 GetFromEA_w_m5(void)
 {    
-  return inl_ReadWord(aReg[code&7]+(w16)RW(pc++));
+  return ReadWord(aReg[code&7]+(w16)RW(pc++));
 }
 
 vml rw16 GetFromEA_w_m6()
 {   
   /*w16*/ shindex displ;
   displ=(w16)RW(pc++);
-  return inl_ReadWord(((displ&2048)!=0)? 
+  return ReadWord(((displ&2048)!=0)? 
 		  (*((w32*)((Ptr)reg+((displ>>10)&60)))+
 		     aReg[code&7]+(w32)((w8)displ)) :
 		  (w32)*(((w16*)((Ptr)reg+RWO+((displ>>10)&60))))+
@@ -305,17 +305,17 @@ vml rw16 GetFromEA_w_m7(void)
 
   switch(code&7){
   case 0:
-    return inl_ReadWord((w32)((w16)RW(pc++)));
+    return ReadWord((w32)((w16)RW(pc++)));
   case 1:
     addr=RL((w32*)pc);
     pc+=2;
-    return inl_ReadWord(addr);
+    return ReadWord(addr);
   case 2:
     addr=(w32)pc-(w32)theROM+(w16)RW(pc);
     pc++;
-    return inl_ReadWord(addr);
+    return ReadWord(addr);
   case 3:
-    return inl_ReadWord(GetEA_m7_3());
+    return ReadWord(GetEA_m7_3());
   case 4:
     return (w16)RW(pc++);
   }
@@ -338,7 +338,7 @@ vml inline rw32 GetFromEA_l_m1(void)
 
 vml inline rw32 GetFromEA_l_m2(void)
 {     
-  return inl_ReadLong(aReg[code&7]);
+  return ReadLong(aReg[code&7]);
 }
 
 vml inline rw32 GetFromEA_l_m3(void)
@@ -350,24 +350,24 @@ vml inline rw32 GetFromEA_l_m3(void)
   r=code&7;
   addr=aReg[r];
   aReg[r]+=4;
-  t=inl_ReadLong(addr);
+  t=ReadLong(addr);
 
   return t;
 }
 
 vml inline rw32 GetFromEA_l_m4(void)
 {     
-  return inl_ReadLong(aReg[code&7]-=4);
+  return ReadLong(aReg[code&7]-=4);
 }
 
 vml inline rw32 GetFromEA_l_m5(void)
 {     
-  return inl_ReadLong(aReg[code&7]+(w16)RW(pc++));
+  return ReadLong(aReg[code&7]+(w16)RW(pc++));
 }
 
 vml inline rw32 GetFromEA_l_m6(void)
 {    
-  return inl_ReadLong(GetEA_m6(code&7));
+  return ReadLong(GetEA_m6(code&7));
 }
 
 vml rw32 GetFromEA_l_m7(void)
@@ -376,17 +376,17 @@ vml rw32 GetFromEA_l_m7(void)
 
   switch(code&7){
   case 0:
-    return inl_ReadLong((w32)((w16)RW(pc++)));
+    return ReadLong((w32)((w16)RW(pc++)));
   case 1:
     addr=RL((w32*) pc);/* *((w32*)pc); */
     pc+=2;
-    return inl_ReadLong(addr);
+    return ReadLong(addr);
   case 2:
     addr=(w32)pc-(w32)theROM+(w16)RW(pc);
     pc++;
-    return inl_ReadLong(addr);
+    return ReadLong(addr);
   case 3:
-    return inl_ReadLong(GetEA_m7_3());
+    return ReadLong(GetEA_m7_3());
   case 4:
     pc+=2;
     return RL((w32*)(pc-2));
@@ -413,7 +413,7 @@ vml void AREGP PutToEA_b_mBad(ashort r,aw8 d)
 
 vml inline void AREGP PutToEA_b_m2(ashort r,aw8 d)
 {   
-  inl_WriteByte(aReg[r],d);
+  WriteByte(aReg[r],d);
 }
 
 vml inline void AREGP PutToEA_b_m3(ashort r,aw8 d)
@@ -422,28 +422,28 @@ vml inline void AREGP PutToEA_b_m3(ashort r,aw8 d)
   aReg[r]++;
   if(r==7) aReg[r]++;
 
-  inl_WriteByte(addr,d);
+  WriteByte(addr,d);
 }
 
 vml inline void AREGP PutToEA_b_m4(ashort r,aw8 d)
 {   
   if(r==7) aReg[r]--;
-  inl_WriteByte(--aReg[r],d);
+  WriteByte(--aReg[r],d);
 }
 
 vml inline void AREGP PutToEA_b_m5(ashort r,aw8 d)
 {    
-  inl_WriteByte(aReg[r]+(w16)RW(pc++),d);
+  WriteByte(aReg[r]+(w16)RW(pc++),d);
 }
 
 vml inline void AREGP PutToEA_b_m6(ashort r,aw8 d)
 {   
-  inl_WriteByte(GetEA_m6(r),d);
+  WriteByte(GetEA_m6(r),d);
 }
 
 vml inline void AREGP PutToEA_b_m7(ashort r,aw8 d)
 {     
-  inl_WriteByte(GetEA_m7(r),d);
+  WriteByte(GetEA_m7(r),d);
 }
 
 vml inline void AREGP PutToEA_w_m0(ashort r,aw16 d)
@@ -458,7 +458,7 @@ vml inline void AREGP PutToEA_w_m1(ashort r,aw16 d)
 
 vml inline void AREGP PutToEA_w_m2(ashort r,aw16 d)
 {     
-  inl_WriteWord(aReg[r],d);
+  WriteWord(aReg[r],d);
 }
 
 vml inline void AREGP PutToEA_w_m3(ashort r,aw16 d)
@@ -466,27 +466,27 @@ vml inline void AREGP PutToEA_w_m3(ashort r,aw16 d)
   uw32 addr=aReg[r];
 
   aReg[r]+=2;
-  inl_WriteWord(addr,d);
+  WriteWord(addr,d);
 }
 
 vml inline void AREGP PutToEA_w_m4(ashort r,aw16 d)
 {    
-  inl_WriteWord(aReg[r]-=2,d);
+  WriteWord(aReg[r]-=2,d);
 }
 
 vml inline void AREGP PutToEA_w_m5(ashort r,aw16 d)
 {     
-  inl_WriteWord(aReg[r]+(w16)RW(pc++),d);
+  WriteWord(aReg[r]+(w16)RW(pc++),d);
 }
 
 vml inline void AREGP PutToEA_w_m6(ashort r,aw16 d)
 {     
-  inl_WriteWord(GetEA_m6(r),d);
+  WriteWord(GetEA_m6(r),d);
 }
 
 vml inline void AREGP PutToEA_w_m7(ashort r,aw16 d)
 {    
-  inl_WriteWord(GetEA_m7(r),d);
+  WriteWord(GetEA_m7(r),d);
 }
 
 vml inline void AREGP PutToEA_l_m0(ashort r,aw32 d)
@@ -501,32 +501,32 @@ vml inline void AREGP PutToEA_l_m1(ashort r,aw32 d)
 
 vml inline void AREGP PutToEA_l_m2(ashort r,aw32 d)
 {    
-  inl_WriteLong(aReg[r],d);
+  WriteLong(aReg[r],d);
 }
 
 vml inline void AREGP PutToEA_l_m3(ashort r,aw32 d)
 {    
   uw32 addr=aReg[r];
   aReg[r]+=4;
-  inl_WriteLong(addr,d);
+  WriteLong(addr,d);
 }
 
 vml inline void AREGP PutToEA_l_m4(ashort r,aw32 d)
 {    
-  inl_WriteLong(aReg[r]-=4,d);
+  WriteLong(aReg[r]-=4,d);
 }
 
 vml inline void AREGP PutToEA_l_m5(ashort r,aw32 d)
 {   
-  inl_WriteLong(aReg[r]+(w16)RW(pc++),d);
+  WriteLong(aReg[r]+(w16)RW(pc++),d);
 }
 
 vml inline void AREGP PutToEA_l_m6(ashort r,aw32 d)
 {   
-  inl_WriteLong(GetEA_m6(r),d);
+  WriteLong(GetEA_m6(r),d);
 }
 
 vml inline void AREGP PutToEA_l_m7(ashort r,aw32 d)
 {   
-  inl_WriteLong(GetEA_m7(r),d);
+  WriteLong(GetEA_m7(r),d);
 }

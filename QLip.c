@@ -95,7 +95,7 @@ int ip_open(int id, void **priv)
     char *aport = NULL;
     u_short port = 0;
     struct sockaddr_in name;
-    int cnstatus;
+    int cnstatus=0;
     static const char *dnms[] = {"*tcp,","*udp","*uxs","*uxd","*sck",NULL};
     const char **dp;
     short dindx;
@@ -255,142 +255,6 @@ int ip_pend(ipdev_t *p)
     case -1: return QERR_NC;
     }
 }
-
-#if 0
-static int ipwriteio (ipdev_t * sd, void *buf, long *pno)
-{
-    int no = *pno;
-    int nw;
-    int res;
-    short done = 0;
-    int nr = no;
-    int sum = 0;
-    int sts;
-
-    if (no==0) nr=0;
-
-    if (sd->status == -1)
-      check_status(sd);
-    switch (sd->status)
-      {
-      case -1: return QERR_NC;
-      case -2: return QERR_TE;
-      }
-    
-    while (!done) 
-    {
-      res = write (sd->sock, buf, nr);
-      if (res <= 0)
-	{
-	  if (res < 0)
-	    {
-	      if (errno == EINTR || errno == EAGAIN)
-		continue;
-	      
-	      done=1;
-	      sts = -6;
-	    }
-	  else
-	    {
-	      done = 1;
-	      sts = 0;
-	    }
-	}
-      else
-	{
-	  sum += res;
-	  if (sum == no)
-	    {
-	      done = 1;
-	      sts = 0;
-	    }
-	    (char *) buf += res;
-	}
-    }
-    *pno = sum;
-    return sts;
-}
-#endif
-
-#if 0
-static int ipreadio (ipdev_t * sd, void *buf, long *pno, short tc)
-{
-    int no = *pno;
-    int res;
-    short done = 0;
-    int nr;
-    int sum = 0;
-    int nn;
-    int sts;
-    char *xx =buf;
-    
-    if(*pno <=0)
-      {
-	done=1;
-	sts=0;
-      }
-
-    /*printf("ipreadio , status %d\n",sd->status);*/
-    if (sd->status == -1)
-      check_status(sd);
-    switch (sd->status)
-      {
-      case -1: *pno=0;return QERR_NC;
-      case -2: *pno=0;return QERR_TE;
-      }
-    
-#ifndef SOLARIS
-    res = ioctl (sd->sock, FIONREAD, &nn);
-    
-    if (res)
-    {
-	sts = -6;
-        puts("shagged");
-    }
-    else
-#endif
-    {
-	if (nn < no)
-	    no = nn;
-        
-	if(no > 0)
-	{
-	    nr = (tc) ? 1 : no;
-	    while (!done)
-	    {
-		res = read (sd->sock, buf, nr);
-                
-                if (res <= 0)
-                {
-                    done = 1;
-                    switch (errno)
-                    {
-                        case EINTR: 
-                        case EAGAIN:
-                            sts=0; 
-                            break;
-                        default :
-                            sts=QERR_TE;
-                            break;       
-		    }
-		}
-		else
-		{
-                    sum = res;
-                    sts = 0;
-                    done = 1;
-		}
-	    }
-	}
-	else
-	    sts = -1;
-
-    }
-    
-    *pno = sum; 
-    return sts; 
-}
-#endif
 
 static int ip_read(ipdev_t *sd, void *buf, int pno)
 {  
@@ -1046,11 +910,6 @@ static int ip_inet_addr(const char *cp, unsigned long int *u)
     return 0;
 }
 
-static int ip_inet_network(const char *cp, unsigned long int *u)
-{
-    *u = inet_network(cp);
-    return 0;
-}
 static int ip_inet_ntoa(struct in_addr *in, char *a)
 {
     char *pa;
@@ -1328,7 +1187,7 @@ void ip_io(int id, void *p )
     int op=(w8)reg[0];
     int res, count, len, flag = 0;
     struct sockaddr *sa = NULL;
-    long *params;
+    w32 *params;
     w32 qaddr;
     
     len = (reg[1]) ? reg[1] : sizeof(struct sockaddr_in);

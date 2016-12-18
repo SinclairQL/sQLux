@@ -896,9 +896,6 @@ w32 _reg[16];
 
 #define MAX_DISKS 2
 typedef struct BlockDriverState BlockDriverState;
-static const int ide_iobase[3] = { 0, 0x1f0, 0x170 };
-static const int ide_iobase2[3] = { 8,  0x3f6, 0x376 };
-static const int ide_irq[2] = { 14, 15 };
 BlockDriverState *bs_table[MAX_DISKS];
 #ifdef DARWIN
 const char *hd_filename[MAX_DISKS]={};
@@ -907,63 +904,10 @@ const char *hd_filename[MAX_DISKS]={"/home/rz/.qldir/IMG1",
                                     "/home/rz/.qldir/IMG2"};
 #endif
 
-#ifdef ENABLE_IDE
-static int cyls=0;
-static int heads=0;
-static int secs=0;
-static int snapshot=0;
-#endif
-
 #define HAS_CDROM 0
-
-#ifdef ENABLE_IDE
-
-#define BDRV_TYPE_HD     0
-#define BDRV_TYPE_CDROM  1
-#define BDRV_TYPE_FLOPPY 2
-
-BlockDriverState *bdrv_new(const char *device_name);
-void bdrv_set_type_hint(BlockDriverState *bs, int type);
-#endif
-
 
 void init_xhw()
 {
-#ifdef ENABLE_IDE
-   int i=0;
-
-   /* open the virtual block devices */
-
-   if (HAS_CDROM)
-   {
-      s_table[1] = bdrv_new("cdrom");
-      bdrv_set_type_hint(bs_table[1], BDRV_TYPE_CDROM);
-   }
-   for(i = 0; i < MAX_DISKS; i++) 
-   {
-      if (hd_filename[i]) 
-      {
-         if (!bs_table[i]) 
-         {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "hd%c", i + 'a');  
-            bs_table[i] = bdrv_new(buf);
-         }
-         if (bdrv_open(bs_table[i], hd_filename[i], snapshot) < 0) 
-         {
-            fprintf(stderr, "could not open hard disk image '%s\n",
-                    hd_filename[i]);
-            ///exit(1);
-         }
-         if (i == 0 && cyls != 0)
-            bdrv_set_geometry_hint(bs_table[i], cyls, heads, secs);
-      }
-   }
-
-   i = 0;
-   ide_init(ide_iobase[i], ide_iobase2[i], ide_irq[i],
-            bs_table[2 * i], bs_table[2 * i + 1]);
-#endif
 }
 
 void uqlxInit ()
@@ -995,7 +939,7 @@ void uqlxInit ()
   
    {
       char roms[PATH_MAX];
-      char *p;      
+      char *p=NULL;
 
       if((rf = getenv("QL_ROM")))
           rl = load_rom(rf,0);

@@ -37,12 +37,12 @@
 #define true 1
 #define false 0
 
-typedef signed char w8;
-typedef signed short w16;
-typedef signed int w32;
-typedef unsigned char uw8;
-typedef unsigned short uw16;
-typedef unsigned int uw32;
+typedef int8_t w8;
+typedef int16_t w16;
+typedef int32_t w32;
+typedef uint8_t uw8;
+typedef uint16_t uw16;
+typedef uint32_t uw32;
 
 /* should probably apply for some other RISC chips as well */
 #if defined(SPARC) || defined(HPPA)
@@ -53,7 +53,7 @@ typedef unsigned char Cond;
 
 /* use the wide type because otherwise gcc will promote *every*
  * arg and return value */
-#if 1
+#if 0
 typedef int ashort;
 typedef signed int aw8,aw16,aw32;
 typedef signed int rw8,rw16,rw32;
@@ -62,9 +62,9 @@ typedef unsigned int gshort;
 typedef unsigned int rCond;
 #else
 typedef short ashort;
-typedef w8 aw8,rw8;
-typedef w16 aw16,rw16;
-typedef w32 aw32,rw32;
+typedef w8 aw8,rw8,ruw8;
+typedef w16 aw16,rw16,ruw16;
+typedef w32 aw32,rw32,ruw32;
 typedef unsigned short gshort;
 typedef unsigned char rCond;
 #endif
@@ -342,23 +342,6 @@ STATIC rw32 ReadLong(aw32 ) REGP1;
 STATIC void WriteByte(aw32 ,aw8 ) REGP2;
 STATIC void WriteWord(aw32 ,aw16 ) REGP2;
 STATIC void WriteLong(aw32 ,aw32 ) REGP2;
-
-#ifdef SMALLCACHE
-#define inl_ReadByte ReadByte
-#define inl_ReadWord ReadWord
-#define inl_ReadLong ReadLong
-#define inl_WriteByte WriteByte
-#define inl_WriteWord WriteWord
-#define inl_WriteLong WriteLong
-#else
-/* inline versions of those */
-STATIC rw8 inline inl_ReadByte(aw32 ) REGP1;
-STATIC rw16 inline inl_ReadWord(aw32 ) REGP1;
-STATIC rw32 inline inl_ReadLong(aw32 ) REGP1;
-STATIC void inline inl_WriteByte(aw32 ,aw8 ) REGP2;
-STATIC void inline inl_WriteWord(aw32 ,aw16 ) REGP2;
-STATIC void inline inl_WriteLong(aw32 ,aw32 ) REGP2;
-#endif
 
 rw16 GetSR(void);
 void PutSR(aw16 ) REGP1;

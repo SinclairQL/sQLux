@@ -59,7 +59,6 @@ void QLchunk(w16 *oldPC,long n)       /* execute n emulated 68K istructions */
   
   if(stopped) return;
   if (extraFlag==0) exception=0;
-  extraFlag=extraFlag; /*|| trace || doTrace;*/
 
   save_ninst=nInst;
   nInst=n;

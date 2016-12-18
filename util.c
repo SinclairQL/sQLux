@@ -39,7 +39,7 @@
 int check_pend(int fd,int mode) 
 {
   struct timeval tv;
-  fd_set wfd,errfd,rfd,xfd,*xx;
+  fd_set wfd,errfd,rfd,*xx;
   int res;
 
   /*printf("calling check_pend\n");*/

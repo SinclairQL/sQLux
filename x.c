@@ -83,19 +83,16 @@ extern void QL2Pixmap32 (w32 , char *, w32 ,w32 );
 
 extern void (*QL2Pixmap) (w32 , char *, w32 ,w32 );
      
-static int shmmono=1;
 static char win_name[128];
 static Visual *visual = NULL;
 
 static int screen, nplanes;
-static int Max_x, Max_y;
 
 GC gc;
 static XGCValues gc_val;
 
 Window imagewin;		/* window ID for image */
 XImage *image = NULL;
-static char *Image;
 Cursor cursor;
 Pixmap empty;
 int planes;
@@ -154,11 +151,6 @@ void x_screen_close (void)
   XFlush(display);
   destroy_image();
   XCloseDisplay(display);
-}
-
-static void set_window_name (char *name)
-{
-  XStoreName (display, imagewin, name);
 }
 
 static void create_image (int w, int h, int format)
@@ -221,7 +213,7 @@ static void create_image (int w, int h, int format)
 
 extern void xql_key(XEvent *,int);
 
-do_xflush()
+void do_xflush()
 {
   XFlush(display);
 }
@@ -324,7 +316,7 @@ XVisualInfo * ChooseVisual(Display *display)
 {
   XVisualInfo *visual_list;
   XVisualInfo vTemplate; 
-  int vmatch,i,cmax,idepth;
+  int vmatch,i,idepth;
   
   static char *visual_class[]={"StaticGray","GrayScale","StaticColor",
 			       "PseudoColor","TrueColor","DirectColor"};
@@ -357,9 +349,6 @@ XVisualInfo * ChooseVisual(Display *display)
       printf("Warning: there seems to be no suitable visual\n");
       return NULL; /*XDefaultVisual(display,screen);*/
     }
-
-  cmax=0;
-
 
   if (QMD.pref_vid != -1)
     {
@@ -444,7 +433,7 @@ XVisualInfo * ChooseVisual(Display *display)
   return  NULL; /*XDefaultVisual (display, screen);*/
 
  do_ret:
-  if (V3)printf("using visual %x, class %d\n",retval->visual,retval->class);
+  if (V3)printf("using visual %p, class %d\n",retval->visual,retval->class);
   if ( QMD.color && retval->class<2)
     QMD.color=0;
   return retval;
@@ -466,7 +455,7 @@ void allocColors(Colormap map)
   
   XColor exact_def;
   /*int default_depth=DefaultDepth(display,screen); */
-  int res,i=5;
+  int i=5;
   int i1=0;
   int lim;
 
@@ -485,11 +474,6 @@ void allocColors(Colormap map)
     colors[4]=colors[5]=black;
     colors[6]=colors[7]=white;
   }  
-
-#if 0
-  while(!XMatchVisualInfo(display,screen,depth,i--,&visual_info));
-  if (V3) printf("using Visual %s\n",visual_class[i++]);
-#endif
 
   if ( /*i>1 && */ QMD.color) name=Cname;
   else name=Gname;
@@ -510,9 +494,9 @@ void allocColors(Colormap map)
   
   for(i=i1; i<lim; i++)
     {
-      res=XParseColor(display,map,name[i],&exact_def);
+      XParseColor(display,map,name[i],&exact_def);
       /*printf("XParseColor returns: %d\n",res);*/
-      res=XAllocColor(display,map,&exact_def);
+      XAllocColor(display,map,&exact_def);
       /*printf("XAllocColor returns: %d\n",res);*/
       colors[i]=exact_def.pixel;/*colors[2*(i+1)]=colors[2*(i+1)+1]=exact_def.pixel;*/
       /*printf("pixval : %d\n",exact_def.pixel);*/
@@ -526,6 +510,7 @@ void allocColors(Colormap map)
 
 int xbreak=0;
 extern int QLdone;
+
 int myXIOerr(Display* d)
 {
   if (V2)printf("X connection closed\n");
@@ -533,7 +518,10 @@ int myXIOerr(Display* d)
   QLdone=1;
   xbreak=1;
   cleanup(0);
+
+  return 0;
 }
+
 int myXerr(Display* d, XErrorEvent* ev)
 {
   if (shmflag) shmflag=0;
@@ -541,6 +529,7 @@ int myXerr(Display* d, XErrorEvent* ev)
     {
       printf("X error : probably non-local display, trying to ignore\n"); 
     }
+  return 0;
 }
 
 void setwmhints()
@@ -555,8 +544,8 @@ void x_screen_open (int frk)
 {
   XClassHint xch; 
   unsigned long valuemask;
-  int i;
-  char *ip;
+  XVisualInfo *v=NULL;
+  XVisualInfo vi;
   
 #ifdef SH_MEM
   int shm_major, shm_minor;
@@ -565,15 +554,6 @@ void x_screen_open (int frk)
 
   XSizeHints h;
   XColor ccls[2];
-
-#if 0
-  topLevel = XtVaAppInitialize (&app_context,   /* Application context */
-				"Xql",   /* Application class */
-				NULL, 0,
-				NULL, NULL,
-				NULL,   /* for missing app-defaults file */
-				NULL);  /* terminate varargs list */
-#endif
 
   scr_width = qlscreen.xres;
   scr_height = qlscreen.yres;
@@ -595,9 +575,9 @@ void x_screen_open (int frk)
   /* set X error handler */
   XSetErrorHandler(myXerr);
   XSetIOErrorHandler(myXIOerr);
-#ifdef SH_MEM 
+
   if (shmflag)
-    {
+  {
       if (!XShmQueryVersion (display, &shm_major, &shm_minor, &shm_pixmaps))
 	{
 	  if (V3) fprintf(stderr,
@@ -606,26 +586,15 @@ void x_screen_open (int frk)
 	}
       else
 	{
-	  int foo;
 	  if(V3) fprintf (stderr,
 			  "Using MIT Shared Memory Extension %d.%d," \
 			  " %s shared pixmaps.\n", shm_major, shm_minor,
 			  (shm_pixmaps ? "with" : "without"));
-	  foo = XShmPixmapFormat (display);
-#if 0
-	  verbose && fprintf (stderr,
-			      "XShm Pixmap format: %s\n", ((foo == XYBitmap ? 
-							    "XYBitmap" : (foo == XYPixmap ? "XYPixmap" : "ZPixmap"))));
-#endif
+	  XShmPixmapFormat (display);
 	}
-    }
-#endif
+  }
 
   screen = XDefaultScreen (display);
-
-#if 1 /* XVIS */
-  {	
-    XVisualInfo *v=NULL;
 
     /* take defaults if user doesn't care */
     if (QMD.pref_vid != -1 || strlen(QMD.pref_class) || QMD.pref_depth != -1)
@@ -639,13 +608,10 @@ void x_screen_open (int frk)
     else
       {
 	int i=5;
-	XVisualInfo vi;
-	char *visual_class[]={"StaticGray","GrayScale","StaticColor",
-			      "PseudoColor","TrueColor","DirectColor"};
 
 	depth = DefaultDepth (display, screen);
 	visual = XDefaultVisual (display, screen);
-	if (V3) printf("using default visual %x\n",visual);
+	if (V3) printf("using default visual %p\n",visual);
 	/* find out about color etc.. */
 	while(!XMatchVisualInfo(display,screen,depth,i--,&vi));
 	/*if (verbose) printf("using Visual %s\n",visual_class[i++]);*/
@@ -653,13 +619,6 @@ void x_screen_open (int frk)
 	  QMD.color=0;
       }
     nplanes=depth;
-  }
-#else
-
-  depth = DefaultDepth (display, screen);
-  visual = XDefaultVisual (display, screen);
-  nplanes = XDisplayPlanes (display, screen);
-#endif
 
 
   h.width = scr_width;
@@ -667,7 +626,7 @@ void x_screen_open (int frk)
   h.x = 500;
   h.y = 0;
 
-  h.flags = PSize; /*| PPosition; /*  ?????? */
+  h.flags = PSize;
   black=BlackPixel (display, screen);
   white = WhitePixel (display, screen);
   

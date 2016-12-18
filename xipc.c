@@ -113,15 +113,9 @@ int init_ipc()
   struct sockaddr_un addr;
   int res;
   struct stat sb;
-  int xx=1;
 
   /*printf("initing IPC - ");*/
   sock=socket(AF_UNIX, SOCK_STREAM, 0);
-#if 0
-  res=fchmod(sock,0700);
-  if (res<0)
-    perror("fchmod");
-#endif
   fcntl(sock,F_SETFL,O_NONBLOCK | fcntl(sock,F_GETFL));
 
   sprintf(sock_dir,"/tmp/qm-sockdir-%d",getuid());
@@ -148,30 +142,26 @@ int init_ipc()
       return -1;
     }
 
-#if 0
-  res=setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,&xx,sizeof xx);
-  if (res<0)
-    perror("could not setsockopt");
-#endif
-
   if (bind(sock,(struct sockaddr*)&addr, sizeof (struct sockaddr_un)/*strlen(addr.sun_path)+3*/)<0)
     perror("init_ipc : could not bind socket");
   res=chmod(sock_path,0700);
   if (res<0)
     perror("fchmod");
   listen(sock,1);
+
+  return 0;
 }
 
 int process_fork()
 {
-  int res,pid;
+  int pid;
   connection *cn;
   message msg;
 
   pid=do_fork();
   /*printf("fork result %d\n",pid);*/
   if (pid<0)
-    return;
+    return 0;
 
   /* close all connections */
   for (cn=sc;cn;cn=cn->next)
@@ -179,8 +169,7 @@ int process_fork()
       msg.type=MX_EXIT;
       msg.len=0;
       
-      res=send(cn->sd,(void*)&msg,sizeof(msg),0);
-      /*printf("sent MX_EXIT to GUI: res %d\n",res);*/
+      send(cn->sd,(void*)&msg,sizeof(msg),0);
       close(cn->sd);
     }
   
@@ -209,7 +198,6 @@ void check_connection(int fd)
 {
   int res,unread;
   message msg;
-  char *buff;
 
   while(check_pend(fd,SLC_READ))
     {
@@ -262,7 +250,6 @@ void check_connection(int fd)
 
 void process_ipc()
 {
-  int res;
   int fd;
   connection *cn;
 
