@@ -315,12 +315,6 @@ static void fork_process(FakeTerm w)
 #if 0
 	  fprintf(stderr,"opened tty: %s, result %d\n",w->tname,fd);
 #endif
-
-#ifndef __USE_XOPEN   /* XOPEN does this for us */
-	  /* It's MINE, I tell you! Mine! Mine! Mine! */
-	  fchown(fd, w->uid, w->gid);
-	  fchmod(fd, 0622);
-#endif
           
 #if 0
 	  /* set various signals to non annoying (for SYSV) values */
@@ -390,52 +384,32 @@ static void process_cleanup(FakeTerm w)
 
 static char * tty_find_pty(FakeTerm w)
 {
-#ifdef __USE_XOPEN
+	int err;
     char *pty;
     if((w->master = open("/dev/ptmx",O_RDWR,0)) >= 0)
     {
-        grantpt(w->master);
-        unlockpt(w->master);
-        pty = ptsname(w->master); 
+        err=grantpt(w->master);
+        if (err < 0) {
+        	perror("Granting PTY\n");
+        	return NULL;
+        }
+        err = unlockpt(w->master);
+        if (err < 0) {
+        	perror("Unlocking PTY\n");
+        	return NULL;
+        }
+        pty = ptsname(w->master);
         fprintf(stderr, "Using XOPEN pty %s\n", pty);
         if((w->slave = open(pty, O_RDWR,0)) >= 0)
         {
             return strdup(pty);
         }
         else
-	{
+        {
             close(w->master);
         }
     }
-#else
-    char ttyname[80];
-     struct stat st;
-     register char *c1, *c2;
- 
-     /* Use user provided search loop or our own to grub through ptys */
-     for (c1 = PTYCHAR1; *c1; ++c1) {
-	  for (c2 = PTYCHAR2; *c2; ++c2) {
-	       /* Go for the master side */
-	       sprintf(ttyname, PTYDEV, *c1, *c2);
-	       if (stat(ttyname, &st) < 0)
-		    continue;
-	       if ((w->master = open(ttyname, O_RDWR, 0)) >= 0) {
-		    /*
-		     * Now make sure that the slave side is available.
-		     * This allows for a bug in some versions of rlogind
-		     * and gives us a handle for ioctl() ops.
-		     */
-		    sprintf(ttyname, TTYDEV, *c1, *c2);
-		    if ((w->slave = open(ttyname, O_RDWR, 0)) >= 0) {
-			 return strdup(ttyname);
-                    }
-		    else
-			 close(w->master);
-	       }
-	  }
-     }
-#endif
-     return NULL;
+    return NULL;
 }
 
 typedef struct termios TtyStuff;

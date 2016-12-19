@@ -28,7 +28,7 @@ PWD := $(shell pwd)
 
 BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DMOUSE -DUSE_IOSZ -DDO_GRAB -DSERIAL \
 	-DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND \
-	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR
+	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE
 
 # Library and Include paths:
 # most configurationss don't complain about nonexistent directories in the search path,  IRIX is the exception ..
