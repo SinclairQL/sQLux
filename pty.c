@@ -165,54 +165,48 @@ int pty_init(int idx){return 0;}
 
 int pty_test(int id, char *name)
 {
-    return decode_name(name,Drivers[id].namep,&pty_par);
+    return decode_name(name, Drivers[id].namep, &pty_par[0]);
 }
 
 FakeTerm pty_list=NULL;
 
 int pty_open(int id, void **priv)
 {
-  serdev_t *p;
-  char *cmd;
-  FakeTerm res;
+	serdev_t *p;
+	char *cmd;
 
-  /*int unit=ser_par[0];*/
-  
-  /*  if (unit<1 || unit>MAXSERIAL)
-    return -1;*/
+	*priv=p=malloc(sizeof(serdev_t));
 
-  *priv=p=malloc(sizeof(serdev_t));
-
-  p->parity=0;
-  p->hshake=-1;
-  p->xlate=pty_par[1].i;
-  p->baud=115200; 
+	p->parity=0;
+	p->hshake=-1;
+	p->xlate=pty_par[1].i;
+	p->baud=115200;
 #ifdef NO_FIONREAD
-  p->bfc_valid=0;
+	p->bfc_valid=0;
 #endif
-  p->killed=0;
-  p->w=NULL;
-  p->teof=0;
-  
-  cmd=pty_par[2].s;
-  if (!strcmp(cmd,""))
-    cmd=NULL;
-  
-  p->w = fake_tty_open(cmd);
-  if (p->w && (p->fd = p->w->master)>0)
-    {
-      /*link into list*/
-      if (pty_list) {p->w->next=pty_list;pty_list=p->w;}
-      else pty_list=p->w;
-      p->w->sd=p;
-      p->w->job_control=pty_par[0].i;
-      return 0;
-    }
-  
+	p->killed=0;
+	p->w=NULL;
+	p->teof=0;
 
-  /* failure */
-  free(p);
-  return -1;
+	cmd=pty_par[2].s;
+	if (!strcmp(cmd,""))
+		cmd=NULL;
+
+	p->w = fake_tty_open(cmd);
+	if (p->w && (p->fd = p->w->master)>0)
+	{
+		/*link into list*/
+		if (pty_list) {p->w->next=pty_list;pty_list=p->w;}
+		else pty_list=p->w;
+		p->w->sd=p;
+		p->w->job_control=pty_par[0].i;
+		return 0;
+	}
+
+
+	/* failure */
+	free(p);
+	return -1;
 }
 
 void pty_close(int id,void *priv)
@@ -275,7 +269,6 @@ static void fork_process(FakeTerm w)
 	  /* Now in child process */
 	  char **argp;
 	  int fd;
-      	  struct group *gr;
 
 	  /* We're not particularly interested */
 	  signal(SIGCHLD, SIG_DFL);
@@ -363,7 +356,6 @@ static void fork_process(FakeTerm w)
 static void process_init(FakeTerm w)
 {
      char envterm[1024], *tmp;
-     char * res;
 
      w->uid = getuid();
      w->gid = getgid();
@@ -414,78 +406,6 @@ static char * tty_find_pty(FakeTerm w)
 
 typedef struct termios TtyStuff;
 
-/* File descriptors to try */
-static int Fd_try[] = { 0, 1, 2, -1, 0, -1 };
-
-/* If w is NULL, get tty values for invoking tty, not pty */
-
-static void * tty_get_values(FakeTerm w)
-{
-     int i, *try;
-     static TtyStuff ret;
-     extern int errno;
-
-     if (w == NULL)
-	  try = Fd_try;
-     else {
-	  try = Fd_try + 4;
-	  try[0] = w->slave;
-     }
-     for (i = 0; try[i] >= 0; i++) {
-	  int r;
-
-	  r = tcgetattr(try[i], &ret);
-	  if (!r)	/* success? */
-	       break;
-     }
-
-     return (void *)&ret;
-}
-
-/* Must return some "sane" set of hardwired values */
-static void * tty_get_sane()
-{
-     static struct termios sane;
-     static char cchars[] = {
-	  VINTR, VQUIT, VERASE, VKILL, VEOF, VEOL, VSTART, VSTOP, VSUSP,
-     };
-
-     /*
-      * load values individually rather than in static struct since
-      * the order of the members *doesn't* seem to be something that
-      * all posix systems agree on.
-      */
-     sane.c_iflag = IGNPAR|ICRNL|BRKINT|ISTRIP|IXON;
-     sane.c_oflag = OPOST|ONLCR;
-     sane.c_cflag = B9600|CS7|PARENB|CREAD;
-     sane.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK|ECHONL;
-#ifdef __linux__
-     sane.c_line = 2;
-#endif
-     bcopy(cchars, sane.c_cc, sizeof(cchars));
-     return (void *)&sane;
-}
-
-/* Whap some saved values onto the tty */
-static void tty_set_values(void *val, FakeTerm w)
-{
-     int i, *try;
-     extern int errno;
-
-     if (w == NULL)
-	  try = Fd_try;
-     else {
-	  try = Fd_try + 4;
-	  try[0] = w->slave;
-     }
-     for (i = 0; try[i] >= 0; i++) {
-	  int r;
-	  r = tcsetattr(try[i], TCSADRAIN, (struct termios *)val);
-	  if (!r)	/* success? */
-	       break;
-     }
-}
-
 static void tty_set_size(FakeTerm w, int rows, int cols, int width, int height)
 {
      struct winsize wz;
@@ -528,7 +448,7 @@ void fake_process_create(FakeTerm w)
 static int doargs(char *p, char **cmdp, char ***argp)
 {
     int n,ff,qq,q,issp;
-    char *p1,*p2,*p3,*pp,*pc;
+    char *p1,*p3,*pp;
     char **x,**xav;
 
 #if 1
@@ -648,56 +568,44 @@ static int doargs(char *p, char **cmdp, char ***argp)
 /* convert UQLX-> unix filenames and prepare redirection a'la 'sh' */
 void conv_fnames(char ***cmd, int *redir)
 {
-  char **p=*cmd;
-  char *c;
-
-#if 0
-  for(;*p,p++)
-    {
-      c=*p+strspn(*p," \t");
-      if (*c!='#') continue;
-      c++;
-      *p=ql2uxname(c);   /* alloc/dealloc !!!! */
-    }
-  
-#endif
 }
 
 
 
 FakeTerm fake_tty_open(char *cmd) 
 {
-  FakeTerm w;
-  int redir[20];
-  
-  
-    if((w = calloc(1,sizeof(FakeRec))))
-    {
-	if(cmd)
+	FakeTerm w;
+	int redir[20];
+
+
+	if((w = calloc(1,sizeof(FakeRec))))
 	{
-	    doargs(cmd, &w->command, &w->command_args);
-	    conv_fnames(&w->command_args,redir);
+		if(cmd)
+		{
+			doargs(cmd, &w->command, &w->command_args);
+			conv_fnames(&w->command_args,redir);
+		}
+		else
+		{
+			w->command = DEFAULTCOMMAND;
+			w->command_args = NULL;
+		}
+		w->term_type =  DEFAULTTERMTYPE;
+
+		if (!(w->tname = tty_find_pty(w)))
+		{
+			free(w);
+			return NULL;
+		}
+		else
+		{
+			tty_set_size (w, 24, 80, 480, 240);
+			fake_process_create(w);
+			/*printf("pty child process %d\n",w->pid);*/
+			return w;
+		}
 	}
-	else
-	{
-	    w->command = DEFAULTCOMMAND;
-	    w->command_args = NULL;
-	}
-	w->term_type =  DEFAULTTERMTYPE;
-	
-	if (!(w->tname = tty_find_pty(w)))
-	{
-	    free(w);
-	    return 0;
-	}
-	else
-	{
-	    tty_set_size (w, 24, 80, 480, 240);	
-	    fake_process_create(w);
-	    /*printf("pty child process %d\n",w->pid);*/
-	    return w;
-	}
-    }
+	return NULL;
 }
 
 void fake_tty_close(FakeTerm w)
