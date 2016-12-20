@@ -147,7 +147,7 @@ extern void *ide_state;
 
 
 
-inline  w8 ReadRTClock(w32 addr)
+w8 ReadRTClock(w32 addr)
 {   
   uw32 t;
   GetDateTime(&t);
@@ -177,7 +177,7 @@ inline void REGP1 WriteInt(aw8 d)
     intReg=d;
 }
 
-inline  w8 IntRead(void)
+w8 IntRead(void)
 {    
   register w8 t;
 
