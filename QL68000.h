@@ -206,6 +206,10 @@ extern int nInst;    /* dangerous - it is 'volatile' to some extent */
 #define ASSGN_CODE(val) (code = (unsigned)(unsigned short)val)
 #endif
 
+#if defined(__x86_64__)
+#define HUGE_POINTER
+#endif
+
 #ifndef ASSGN_CODE
 #define ASSGN_CODE(val) (code = val & 0xffff)
 #endif
@@ -672,13 +676,18 @@ static inline void _wl_(uw32 *d, uw32 v)
 
 #ifdef HUGE_POINTER
 void static inline SET_POINTER(w32*_addr_,void *_val_) 
-{ 
-  WL(_addr_,(((long)_val_)>>32)&0xffffffff);
-  WL(_addr_+4,((long)_val_)&0xffffffff);
+{
+	uint32_t val1 = ((uintptr_t)_val_) >> 32;
+	uint32_t val2 = ((uintptr_t)_val_) & 0xFFFFFFFF;
+
+	WL(_addr_,val1);
+	WL(_addr_+4,val2);
 }
 static inline void *GET_POINTER(w32* _addr_)  
 {
-  return ((void *) ((((long)RL(_addr_))<<32 )| (long)RL(_addr_+4)));
+	uintptr_t val=((((uintptr_t)RL(_addr_))<<32 ) | (uint32_t)RL(_addr_+4));
+
+	return (void *)val;
 }
 #else
 #define SET_POINTER(_addr_,_val_)  (WL(_addr_,(w32)_val_)) 
