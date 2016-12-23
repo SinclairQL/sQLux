@@ -87,8 +87,24 @@ struct fileHeader *GetFileHeader(FileNum fileNum);
 #define GET_EOF(_mdvf_)  (RL((Ptr)((Ptr)(_mdvf_)+_eof)))
 #define SET_REF(_mdvf_,_ref_) (WL((Ptr)((Ptr)(_mdvf_)+_ref),(_ref_)))
 #define GET_REF(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_ref)))
-#define SET_NEXT(_mdvf_,_nxt_) (WL((Ptr)((Ptr)(_mdvf_)+_next),(w32)((uintptr_t)_nxt_-(uintptr_t)theROM)))
-#define GET_NEXT(_mdvf_)  ((struct mdvFile *)(RL((Ptr)((Ptr)(_mdvf_)+_next))+(uintptr_t)theROM))
+
+static inline void SET_NEXT(struct mdvFile *_mdvf_, struct mdvFile *_nxt_) {
+	if (!_nxt_) {
+		WL((Ptr)((Ptr)(_mdvf_)+_next),0);
+	} else {
+		WL((Ptr)((Ptr)(_mdvf_)+_next),(w32)((uintptr_t)_nxt_-(uintptr_t)theROM));
+	}
+}
+static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
+	uintptr_t val;
+
+	val = RL((Ptr)((Ptr)(_mdvf_)+_next));
+	if(val)
+		val += (uintptr_t)theROM;
+
+	return val;
+}
+
 #define SET_ID(_mdvf_,_id_) (WL((Ptr)((Ptr)(_mdvf_)+_id),(_id_)))
 #define GET_ID(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_id)))
 #define GET_OPEN(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_open)))
