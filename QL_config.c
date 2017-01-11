@@ -158,9 +158,10 @@ static Cond InstallQemlRom(void)
 	  qemlPatch=LookFor2(&ROMINIT_CMD_ADDR,0x0c934afbl,1,48*1024);
 	  if (testMinervaVersion("1.89"))
 	    {
-	      uw32 mpatch_addr=0x4e6;
+	      uintptr_t mpatch_addr=0x4e6;
+	      uint16_t tmp=RW((Ptr)theROM+mpatch_addr);
 	      printf("Minerva 1.89, checking for >1MB patch\n");
-	      if ( RW((Ptr)theROM+mpatch_addr)==0xd640 )
+	      if (tmp == 0xd640)
 		{
 		  WW((Ptr)theROM+mpatch_addr,0xd680);
 		  printf("....applied patch\n");
