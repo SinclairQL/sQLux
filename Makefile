@@ -63,7 +63,7 @@ PROFFLAGS= #-pg -a
 
 
 #OPTFLAGS=  $(PROFFLAGS) -O3 $(DEBUG)  -finline-functions $(LOCAL_OPTFLAGS) -fomit-frame-pointer
-OPTFLAGS=  $(PROFFLAGS) -O2 $(DEBUG)  $(LOCAL_OPTFLAGS) -fomit-frame-pointer 
+OPTFLAGS=  $(PROFFLAGS) -O2 $(DEBUG)  $(LOCAL_OPTFLAGS)
 
 DEBUGFLAGS=  #-DTRACE #-DBACKTRACE  #-DDEBUG -DVTIME
 
@@ -222,19 +222,17 @@ unixstuff_aw.o:	unixstuff.c
 
 
 # place exotic optimisation flags here:
-XOPTS=-fcprop-registers -fcrossjumping -fgcse -fgcse-after-reload -foptimize-register-move 
+XOPTS=
 
 general.o:	general.c instructions_ao.c instructions_pz.c
-	$(CC) $(PROFFLAGS)  -c  $(XOPTS) -fexpensive-optimizations -fschedule-insns2  \
-	-frerun-cse-after-loop \
+	$(CC) $(PROFFLAGS)  -c  $(XOPTS)  \
 		$(OPTFLAGS) $(DEBUGFLAGS) $(BUILDFLAGS) $(INCLUDES) $(WFLAGS) \
-	 $<  
+	 $<
 
 iexl_general.o:	iexl_general.c instructions_ao.c instructions_pz.c
-	$(CC) $(PROFFLAGS)  -c  $(XOPTS) -fexpensive-optimizations  -fschedule-insns2  \
-	-frerun-cse-after-loop \
+	$(CC) $(PROFFLAGS)  -c  \
 		$(OPTFLAGS) $(DEBUGFLAGS) $(BUILDFLAGS) $(INCLUDES) $(WFLAGS) \
-	 $<  
+	 $<
 
 
 
@@ -381,7 +379,7 @@ do_archive: do_checkin
 distr: version do_archive full_save
 
 .PHONY : save
-save:	
+save:
 	- rm -f uqlx.zip
 	- find . -type f -print | xargs chmod go+u
 	- find . -type d -print | xargs chmod go+u
