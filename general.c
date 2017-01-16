@@ -11,6 +11,7 @@
 #define INLINE
 
 #include "QL68000.h"
+#include "qx_proto.h"
 
 #include <signal.h>
 
@@ -149,7 +150,7 @@ extern void *ide_state;
 
 w8 ReadRTClock(w32 addr)
 {   
-  uw32 t;
+  w32 t;
   GetDateTime(&t);
   /*  t-=qlClock; */
   while(addr++<0x18003l) t>>=8;

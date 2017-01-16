@@ -233,7 +233,7 @@ vml  rw8 GetFromEA_b_m7(void)
     pc+=2;
     return ReadByte(addr);
   case 2:
-    addr=(w32)pc-(w32)theROM+(w16)RW(pc);
+    addr=(uintptr_t)pc-(uintptr_t)theROM+(w16)RW(pc);
     pc++;
     return ReadByte(addr);
   case 3:
@@ -311,7 +311,7 @@ vml rw16 GetFromEA_w_m7(void)
     pc+=2;
     return ReadWord(addr);
   case 2:
-    addr=(w32)pc-(w32)theROM+(w16)RW(pc);
+    addr=(uintptr_t)pc-(uintptr_t)theROM+(w16)RW(pc);
     pc++;
     return ReadWord(addr);
   case 3:
@@ -382,7 +382,7 @@ vml rw32 GetFromEA_l_m7(void)
     pc+=2;
     return ReadLong(addr);
   case 2:
-    addr=(w32)pc-(w32)theROM+(w16)RW(pc);
+    addr=(uintptr_t)pc-(uintptr_t)theROM+(w16)RW(pc);
     pc++;
     return ReadLong(addr);
   case 3:
@@ -448,12 +448,15 @@ vml inline void AREGP PutToEA_b_m7(ashort r,aw8 d)
 
 vml inline void AREGP PutToEA_w_m0(ashort r,aw16 d)
 {
-  *( (w16*)( (Ptr)(&(reg[r])) + RWO ) )=d; 
+	//*( (w16*)( (Ptr)(&(reg[r])) + RWO ) )=d;
+	reg[r]=(reg[r]&0xFFFF0000)|d;
+
 }
 
 vml inline void AREGP PutToEA_w_m1(ashort r,aw16 d)
 {   
-  *( (w16*)( (Ptr)(&(aReg[r])) + RWO ) )=d; 
+	//*( (w16*)( (Ptr)(&(aReg[r])) + RWO ) )=d;
+	aReg[r]=(aReg[r]&0xFFFF0000)|d;
 }
 
 vml inline void AREGP PutToEA_w_m2(ashort r,aw16 d)
