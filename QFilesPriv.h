@@ -102,7 +102,7 @@ static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
 	if(val)
 		val += (uintptr_t)theROM;
 
-	return val;
+	return (struct mdvFile *)val;
 }
 
 #define SET_ID(_mdvf_,_id_) (WL((Ptr)((Ptr)(_mdvf_)+_id),(_id_)))

@@ -65,21 +65,6 @@ void SetDisplay(w8 d, Cond flag)
 void KillSound(){}
 void BeepSound(unsigned char *arg){}
 
-
-/* tabella keycode Mac -> keycode QL */
-/* static uw8		qKey[128]={28,35,30,36,26,38,41,3,43,4,99,44,11,17,12,20,etc. */
-/* con 0 sono marcati i keycode che vengono trattati sempre in modalita' 'raw mode' */
-static uw8		qMode[128]={3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-					3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-					3,3,3,3,0,3,3,3,3,3,3,3,3,3,3,3,
-					0,0,3,3,3,0,3,0,0,0,0,0,3,3,3,3,
-					3,3,3,3,3,3,3,3,3,3,3,3,0,3,3,3,
-					3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
-					0,0,0,0,0,0,3,3,3,3,3,3,3,0,3,3,
-					3,3,3,3,3,3,0,3,0,3,0,0,0,0,0,3};
-/* conversione caratteri ASCII esteso: Mac -> QL */
-/*static uw8		charFromMac[256]={0,0,0,10,0,232,0,0,194,0,10,0,0,10,0,0,etc. */
-
 static uw8		IPC_len[16]={0,0,0,0,0,0,0,0,0,1,16,0,0,0,0,0};
 static uw8		charBuff[CHAR_BUFF_LEN][2];
 static uw16		charAscii[CHAR_BUFF_LEN];
@@ -122,9 +107,7 @@ void pic_set_irq(int irq, int state)
 }
 
 Cond IPC_Command(void)	/* returns false for commands to handle low-level, true otherwise */
-{	short n;
-
-	n=ReadByte(aReg[3]+1);
+{
 	switch(ReadByte(aReg[3])&15){
 	case 1:		/* IPC status */
 	case 8:		/* read keyboard */
@@ -285,59 +268,6 @@ void CheckCapsLock(short m)
 	}
 }
 
-static short CodeTransQL(short v,short *m)
-{	
-
-/* returns QL keycode equivalent to the host keycode v
-	*m are the modifiers (shift, etc.)
-*/
-
-  /*	return ??; */
-}
-
-#if 0
-void DoQLkey(char c,short v,short m)
-{	uw8 code=99;
-	short keyMode;
-
-	CheckCapsLock(m);
-	keyMode=qc.keyMode&qMode[v];
-	if(keyMode==2 && (m&controlKey)!=0) keyMode=1;
-	if(v==26 && (m&controlKey)!=0 && (m&optionKey)!=0) /* ctrl-alt-7 */
-	{	pendingInterrupt=7;
-		extraFlag=true;
-		nInst2=nInst;
-		nInst=0;
-		return;
-	}
-	code=qKey[v];
-	if(code>63)
-	{	switch(code){
-		case 64: m|=controlKey; code=49; break;	/* delete -> ctl+left arrow */
-		case 65: m|=shiftKey; code=8; break;
-		case 66: m|=shiftKey; code=37; break;
-		case 67: m|=controlKey; code=52; break;
-		case 68: m|=shiftKey; code=57; break;	/* F6 */
-		case 69: m|=shiftKey; code=59; break;	/* F7 */
-		case 70: m|=shiftKey; code=60; break;	/* F8 */
-		case 71: m|=shiftKey; code=56; break;	/* F9 */
-		case 72: m|=shiftKey; code=61; break;	/* F10 */
-		}
-	}
-	asciiChar=0;
-	if(keyMode==1)
-	{	v=CodeTransQL(v,&m);
-		if(v>2) code=v;
-	}
-	else if(keyMode==2)
-	{	asciiChar=charFromMac[(unsigned char)c];
-	}
-	if(asciiChar && code==99) code=3;
-	if(code>2 && code<64) queueKey(m,code,asciiChar);
-		else gKeyDown=false;
-}
-#endif
-
 void QL_KeyTrans(void)
 {	if((Ptr)gPC-(Ptr)theROM-2!=KEYTRANS_CMD_ADDR)
 	{	exception=4;
@@ -375,7 +305,6 @@ int MButtonDown=0;
 void MReadKbd()
 {
   int ccode,mod;
-  int kbrd_called=0;
   
   while(qCharLen())
     {
@@ -394,13 +323,10 @@ void MReadKbd()
       /* printf("calling subr %d\n",((w16)(uw16)ReadWord(0x150))+0x4000);*/
       QLsubr(ReadWord(0x150)+0x4000,2000000);
       /*printf("result: %d\n",reg[0]);*/
-      kbrd_called=1;
-      
     }
 
-  if (gKeyDown /*&& !MButtonDown /*|| kbrd_called */)
+  if (gKeyDown)
     {
-      kbrd_called=0;
       aReg[2]=ReadLong(0x2804c);
       reg[5]=-1;/*(gKeyDown!=0)<<4;*/
       
