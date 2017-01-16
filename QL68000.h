@@ -292,21 +292,6 @@ static inline ruw32 h2ql(uw32 v)
   return v;
 }
 
-#if 0 /* turns out that macros are till faster than inline */
-static inline void  _ww_(uw16 *addr, w16 d)
-{
-  *(uw16*)addr=d;
-}
-static inline uw16 _rl_(uw16 *addr)
-{
-  return *addr;
-}
-#else
-#define WW(_addr_,_val_) (*(uw16*)(_addr_)=(_val_))
-#define RW(_addr_) (*(uw16*)(_addr_))
-#endif
-
-
 #if (HOST_ALIGN>2)
 static inline void _wl_(w32 *addr,w32 d)
 {
@@ -350,130 +335,24 @@ static inline ruw32 h2ql(uw32 v)
   return ((v&0xff)<<24)|((v&0xff00)<<8)|((v>>8)&0xff00)|((v>>24)&0xff);
 }
 
-#if defined(__i486__) 
-
-#define HOST_ALIGN 1
-
-#define NEW_I486_MACROS
-
-/* old macros had problems with egcs and suboptimal declarations*/
-#ifdef NEW_I486_MACROS
-
-static inline ruw16 _rw_(uw16 *s)
-{	register uw16 x=*s;
-	asm ( "rolw $8,%0\n" : "=c" (x) : "0" (x) : "cc");
-	return x;
-}
-static inline ruw32 _rl_ (uw32 *a)
-{
-    uw32 retval;
-
-    asm ("bswap %0" : "=r" (retval) : "0" (*a) : "cc");
-    return retval;
-}
-
-static inline void _wl_ (uw32 *a, uw32 v)
-{
-   asm("bswapl %0" : "=r" (v) : "0" (v) : "cc");  /* bswap or bswapl !??!*/
-   *a = v;
-}
-static inline void _ww_ (uw16 *a, uw16 v)
-{
-#ifdef X86_PPRO_OPT
-    __asm__ ("bswapl %0" : "=&r" (v) : "0" (v << 16) : "cc");
-#else
-    __asm__ ("rolw $8,%0" : "=r" (v) : "0" (v) : "cc");
-#endif
-    *a = v;
-}
-#else
-static inline ruw16 _rw_(uw16 *s)
-{	register uw16 x=*s;
-	asm ( "rolw $8,%0\n" : "=c" (x) : "0" (x));
-	return x;
-}
-static inline ruw32 _rl_(uw32 *s)
-{	register uw32 x=*s;
-	asm ( "bswap %0\n" : "=S" (x) : "0" (x));
-	return x;
-}
-static inline void _ww_(uw16 *d, uw16 v)
-{	asm ( 	"xchgb %%ch,%%cl\n\t"
-		"movw %%cx,(%%esi)\n"   
-        : 
-        : "c" (v), "S" (d)
-        : "cx", "memory", "cc");
-}
-static inline void _wl_(uw32 *d, uw32 v)
-{	asm (	"bswap %0\t\n"
-		"movl %0,(%1)\n"   
-	: 
-	: "S" (v), "D" (d) 
-	: "memory", "cc"
-        );
-}
-#endif
-
-#else /* not i486 */
-
 static inline ruw16 _rw_(uw16 *s)
 {
-#if SWAP_LOAD_IN_MEMORY
-	uw16* x = *(s);
-	return ((x&0xff)<<8)|((x>>8)&0xff);
-#else
 	return ntohs(*s);
-   //w8 *ss = (w8 *)s;
-	//uw8 *su = (uw8 *)s;
-	//return ((*(ss))<<8)|(*(su+1));
-#endif
 }
 static inline ruw32 _rl_(uw32 *s)
 {
-#if SWAP_LOAD_IN_MEMORY
-	uw32 x = *(s);
-	return ((x&0xff)<<24)|((x&0xff00)<<8)|((x>>8)&0xff00)|((x>>24)&0xff);
-#else
 	return ntohl(*s);
-   //w8 *ss = (w8 *)s;
-	//uw8 *su = (uw8 *)s;
-	//return ((*(ss))<<24)|((*(su+1))<<16)
-	//		|((*(su+2))<<8)|((*(su+3)));
-#endif
 }
-
 
 static inline void _ww_(uw16 *d, uw16 v)
 {
-#if SWAP_STORE_IN_MEMORY
-	*d=((v&0xff)<<8)|((v>>8)&0xff);
-#else
 	*d = htons(v);
-   //w8 *ds = (w8 *)d;
-	//uw8 *du = (uw8 *)d;
-	//*ds=v>>8;
-	//*(du+1)=v&0xff;
-#endif
 }
 
 static inline void _wl_(uw32 *d, uw32 v)
 {
-#if SWAP_STORE_IN_MEMORY
-	*d=((v&0xff)<<24)|((v&0xff00)<<8)|((v>>8)&0xff00)|((v>>24)&0xff);
-#else
-	//w8 *ds = (w8 *)d;
-	//uw8 *du = (uw8 *)d;
-	//*ds= v>>24;
-	//*(du+1)=(v>>16)&0xff;
-	//*(du+2)=(v>>8)&0xff;
-	//*(du+3)=v&0xff;
    *d = htonl(v);
-#endif
 }
-
-#endif 
-
-
 
 #endif /* QM_BIG_ENDIAN */
 
