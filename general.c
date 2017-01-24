@@ -36,7 +36,7 @@ void WriteHWWord(aw32 addr, aw16 d);
 #include "mmodes.h"
 
 rw32 AREGP GetEA_mBad(ashort r)
-{    
+{
   exception=4;
   extraFlag=true;
   nInst2=nInst;
@@ -60,7 +60,7 @@ INLINE rw8      GetFromEA_b_m2(void);
 INLINE rw8      GetFromEA_b_m3(void);
 INLINE rw8      GetFromEA_b_m4(void);
 INLINE rw8      GetFromEA_b_m5(void);
-INLINE rw8      GetFromEA_b_m6(void); 
+INLINE rw8      GetFromEA_b_m6(void);
 INLINE rw8      GetFromEA_b_m7(void);
 rw8
 (*GetFromEA_b[8])(void)={GetFromEA_b_m0,GetFromEA_b_mBad,GetFromEA_b_m2,
@@ -137,7 +137,7 @@ void
 
 #ifdef DEBUG
 #define TRR  {trace_rts=20;}
-#else 
+#else
 #define TRR
 #endif
 
@@ -149,7 +149,7 @@ extern void *ide_state;
 
 
 w8 ReadRTClock(w32 addr)
-{   
+{
   w32 t;
   GetDateTime(&t);
   /*  t-=qlClock; */
@@ -160,9 +160,9 @@ w8 ReadRTClock(w32 addr)
 
 
 void FrameInt(void)
-{     
+{
   if((intReg&8)!=0) /* controlla che sia abilitato */
-    { 
+    {
       theInt=8;
       intReg^=8;
       pendingInterrupt=2;
@@ -174,12 +174,12 @@ void FrameInt(void)
 }
 
 inline void REGP1 WriteInt(aw8 d)
-{   
+{
     intReg=d;
 }
 
 w8 IntRead(void)
-{    
+{
   register w8 t;
 
   t=theInt;
@@ -189,10 +189,10 @@ w8 IntRead(void)
 
 
 void WriteHWByte(aw32 addr, aw8 d)
-{ 
+{
   /*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
-  
-  switch(addr) 
+
+  switch(addr)
     {
     case 0x018063:  /* Display control */
       SetDisplay(d,true);
@@ -204,7 +204,7 @@ void WriteHWByte(aw32 addr, aw8 d)
       break;
     case 0x018002:
       if(d!=16)
-	{ 
+	{
 	  debug2("Write to transmit control >",d);
 	  debug2("at pc-2 ",(Ptr)pc-(Ptr)theROM-2);
 	  /*TRR;*/
@@ -232,11 +232,11 @@ void WriteHWByte(aw32 addr, aw8 d)
 
 
 rw8 ReadHWByte(aw32 addr)
-{    
+{
   int res=0;
-  
+
   /*printf("read HWreg %x, ",addr-0x18000);*/
-  
+
   switch(addr) {
   case 0x018000: /* Read from real-time clock */
   case 0x018001:
@@ -246,7 +246,7 @@ rw8 ReadHWByte(aw32 addr)
   case 0x018020: debug("Read from MDV/RS232 status");
     debug2("PC-2=",(Ptr)pc-(Ptr)theROM-2);
     break;
-  case 0x018021: 
+  case 0x018021:
     /*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)theROM-2);*/
     res=IntRead();
   case 0x018022: /*debug("Read from MDV track 1");*/ break;
@@ -264,7 +264,7 @@ rw8 ReadHWByte(aw32 addr)
 		return res;
 #endif
   default:   debug2("Read from HW register ",addr);
-             debug2("at (PC-2) ",(Ptr)pc-(Ptr)theROM-2); 
+             debug2("at (PC-2) ",(Ptr)pc-(Ptr)theROM-2);
     break;
   }
   /*printf("result %x \n",res);*/
