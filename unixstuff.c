@@ -845,38 +845,6 @@ void SetParams (int ac, char **av)
    if (mem > 0 && mem < 17) 
       mem=mem * 1024;
 
-   {
-      char *av0 = strrchr(av[0],'/');
-      av0 = av0 ? av0 : av[0];
-
-      if (*sysrom) 
-         strcpy(QMD.sysrom,sysrom);
-      else if( strcmp(av0,"qm") )
-      {
-         if (strstr(av0,"js")) 
-            strcpy(QMD.sysrom,"js_rom");
-         if (strstr(av0,"min")) 
-            strcpy(QMD.sysrom,"minerva_rom");
-      }
-    
-      if (gg==0 && strstr(av0,"x"))
-      {
-         if (strcmp(QMD.sysrom,"minerva_rom"))
-         {
-            strcpy(QMD.sysrom,"minerva_rom");
-            if (V2)
-               printf("using Minerva ROM\n");
-         }
-         if (strstr(av0,"xxx"))
-            parse_screen(QMD.size_xxx);
-         else
-            if (strstr(av0,"xx"))
-               parse_screen(QMD.size_xx);
-            else
-               parse_screen(QMD.size_x);
-      }
-   }
-  
    if(mem != -1) QMD.ramtop = mem;
    if(col != -1) QMD.color = col;
    if(hog != -1) QMD.cpu_hog=1;
