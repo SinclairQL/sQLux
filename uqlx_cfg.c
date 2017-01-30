@@ -477,7 +477,7 @@ int QMParams (void)
 
 	    strncpy(buf,loc,PATH_MAX+1);
 	    qaddpath(buf,"do_install ",PATH_MAX+1);
-	    strncat(buf,IMPL,PATH_MAX+1);
+	    //strncat(buf,IMPL,PATH_MAX+1);
 	    printf("configuration file %s not found, trying to create\n",pf);
 	    system(buf);
 	    fp = lopen(pf, "r");

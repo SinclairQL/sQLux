@@ -116,7 +116,7 @@ int InitDialog ()
       QMpid = getpid ();
       sprintf (arg, "%d", QMpid);
 
-      strncpy (buf, IMPL,PATH_MAX); 
+      //strncpy (buf, IMPL,PATH_MAX);
       p = buf + strlen(buf) - 1;
       if (*p != '/') 
          strncat (buf,"/", PATH_MAX);
@@ -549,7 +549,7 @@ int impopen(char *name,int flg,int mode)
   
    return open(name,flg,md);
 
-   strcpy(buff,IMPL);
+   //strcpy(buff,IMPL);
    p=buff+strlen(buff);
    if (*(p-1)!='/') strcat(buff,"/");
    strncat(buff,name,PATH_MAX);
@@ -649,8 +649,8 @@ char *qm_findx(char *name)
    else 
       loc=NULL;
 
-   if (!loc && !access(IMPL, R_OK | X_OK))
-      loc = IMPL;
+   //if (!loc && !access(IMPL, R_OK | X_OK))
+   //   loc = IMPL;
    if (!loc && !access("/usr/local/lib/uqlx", R_OK | X_OK))
       loc = "/usr/local/lib/uqlx/";
    if ( !loc && !access("/usr/lib/uqlx",R_OK | X_OK))
@@ -671,7 +671,7 @@ void browse_manuals ()
 
    strncpy(buf,loc,PATH_MAX);
    qaddpath(buf,"browse_manual ",PATH_MAX);
-   strncat(buf,IMPL,PATH_MAX);
+   //strncat(buf,IMPL,PATH_MAX);
    //printf("executing %s\n",buf);
    ret = system(buf);
    if (ret == -1)

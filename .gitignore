@@ -1,9 +1,10 @@
-qm
+qlux
 *.o
 
 romdir/*
 
 docs/uqlx.html
+docs/socket.html
 
 #tex stuff
 *.aux
