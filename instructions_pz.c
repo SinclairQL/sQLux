@@ -34,9 +34,9 @@ IDECL(pea)
   register w32 ea;
   ea=ARCALL(GetEA,(code>>3)&7,(code&7));  /* first compute effective address */
   /* ea=GET_EA((code>>3)&7,code&7);*/
-  (*sp)-=4;                                               /* then
+  (*m68k_sp)-=4;                                               /* then
 							     push onto the stack */
-  WriteLong(*sp,ea);
+  WriteLong(*m68k_sp,ea);
 
 NEXT;
 }
@@ -119,13 +119,13 @@ IDECL(rte)
   register w16 sr;
   if(supervisor)
     { 
-      sr=ReadWord(*sp);
+      sr=ReadWord(*m68k_sp);
 #ifdef BACKTRACE
-      SetPCB(ReadLong((*sp)+2),RTE);
+      SetPCB(ReadLong((*m68k_sp)+2),RTE);
 #else
-      SetPC(ReadLong((*sp)+2));
+      SetPC(ReadLong((*m68k_sp)+2));
 #endif
-      (*sp)+=6;
+      (*m68k_sp)+=6;
       ExceptionOut();
       PutSR(sr);
       
@@ -147,13 +147,13 @@ NEXT;
 IDECL(rtr)
 { 
   register w16 cc;
-  cc=ReadWord((*sp));
+  cc=ReadWord((*m68k_sp));
 #ifdef BACKTRACE
-  SetPCB(ReadLong((*sp)+2),RTR);
+  SetPCB(ReadLong((*m68k_sp)+2),RTR);
 #else
-  SetPC(ReadLong((*sp)+2));
+  SetPC(ReadLong((*m68k_sp)+2));
 #endif
-  (*sp)+=6;
+  (*m68k_sp)+=6;
   xflag=(cc&16)!=0;
   negative=(cc&8)!=0;
   zero=(cc&4)!=0;
@@ -171,21 +171,21 @@ NEXT;
 IDECL(rts)
 { 
 #ifdef BACKTRACE 
-  SetPCB((uw16*)((Ptr)theROM+(ReadLong(*sp)&ADDR_MASK)),RTS);
+  SetPCB((uw16*)((Ptr)theROM+(ReadLong(*m68k_sp)&ADDR_MASK)),RTS);
 #else
   /* uggly cast to avoid warning */
-  if((((char)(int)(pc=(uw16*)((Ptr)theROM+(ReadLong(*sp)&ADDR_MASK))))&1)!=0)
+  if((((char)(int)(pc=(uw16*)((Ptr)theROM+(ReadLong(*m68k_sp)&ADDR_MASK))))&1)!=0)
     { 
       exception=3;
       extraFlag=true;
       nInst2=nInst;
       nInst=0;
       readOrWrite=16;
-      badAddress=ReadLong(*sp);
+      badAddress=ReadLong(*m68k_sp);
       badCodeAddress=true;
     }
 #endif
-  (*sp)+=4;
+  (*m68k_sp)+=4;
 
 #ifdef DEBUG
       if(trace_rts-->0)
@@ -713,9 +713,9 @@ IDECL(unlk)
 { 
   register w32    *r;
   r=&(aReg[code&7]);
-  (*sp)=*r;
-  *r=ReadLong(*sp);
-  (*sp)+=4;
+  (*m68k_sp)=*r;
+  *r=ReadLong(*m68k_sp);
+  (*m68k_sp)+=4;
 NEXT;
 }
 

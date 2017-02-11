@@ -1021,7 +1021,7 @@ void REGP1 WriteMdvControl(aw8 d)
 
 static void AddReturn(short d)
 {
-  WriteLong(*sp,ReadLong(*sp)+d);
+  WriteLong(*m68k_sp,ReadLong(*m68k_sp)+d);
 }
 
 void ReadMdvSector(void)

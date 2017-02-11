@@ -460,7 +460,7 @@ void DbgInfo(void)
    printf("DebugInfo: PC=%lx, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
          (Ptr)pc-(Ptr)theROM, code,
          (supervisor ? "yes" : "no" ),
-         usp,ssp,*sp);
+         usp,ssp,*m68k_sp);
    printf("Register Dump:\t Dn\t\tAn\n");
    for(i = 0; i < 8; i++)
       printf("%d\t\t%8x\t%8x\n",i,reg[i],aReg[i]);

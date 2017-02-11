@@ -194,10 +194,10 @@ rw8 ModifyAtEA_b(ashort mode,ashort r)
   case 2:addr=aReg[r];
     break;
   case 3:addr=aReg[r]++;
-    if(r==7) (*sp)++;
+    if(r==7) (*m68k_sp)++;
     break;
   case 4:
-    if(r==7) (*sp)--;
+    if(r==7) (*m68k_sp)--;
     addr=--aReg[r];
     break;
   case 5:addr=aReg[r]+(w16)RW(pc++);

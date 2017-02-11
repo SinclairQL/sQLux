@@ -148,13 +148,13 @@ static void ProcessInterrupts(void)
     {       
       if(!supervisor)
 	{ 
-	  usp=(*sp);
-	  (*sp)=ssp;
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(24+pendingInterrupt);
       WriteLong((*sp)-4,(w32)pc-(long)theROM);
-      (*sp)-=6;
-      WriteWord(*sp,GetSR());
+      (*m68k_sp)-=6;
+      WriteWord(*m68k_sp,GetSR());
       SetPC(theROM[24+pendingInterrupt]);
       iMask=pendingInterrupt;
       pendingInterrupt=0;
@@ -172,13 +172,13 @@ void ProcessInterrupts(void)
     {    
       if(!supervisor)
 	{   
-	  usp=(*sp);
-	  (*sp)=ssp;
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(24+pendingInterrupt);
-      WriteLong((*sp)-4,(Ptr)pc-(Ptr)theROM); 
-      (*sp)-=6;
-      WriteWord(*sp,GetSR());
+      WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)theROM);
+      (*m68k_sp)-=6;
+      WriteWord(*m68k_sp,GetSR());
       SetPCX(24+pendingInterrupt);
       iMask=pendingInterrupt;
       pendingInterrupt=0;
@@ -221,13 +221,13 @@ void PutSR(aw16 sr)
     {
       if(supervisor)
 	{
-	  usp=(*sp);
-	  (*sp)=ssp;
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       else
 	{
-	  ssp=(*sp);
-	  (*sp)=usp;
+	  ssp=(*m68k_sp);
+	  (*m68k_sp)=usp;
 	}
     }
   extraFlag=doTrace || trace || exception!=0 || pendingInterrupt==7
@@ -241,13 +241,13 @@ void PutSR(aw16 sr)
 
 #else
 void REGP1 PutSR(aw16 sr)
-{  
+{
   Cond oldSuper;
   oldSuper=supervisor;
   trace=(sr&0x8000)!=0;
   extraFlag=doTrace || trace || exception!=0;
   if(extraFlag)
-    { 
+    {
       nInst2=nInst;
       nInst=0;
     }
@@ -259,16 +259,16 @@ void REGP1 PutSR(aw16 sr)
   carry=(sr&0x0001)!=0;
   iMask=(char)(sr>>8)&7;
   if(oldSuper!=supervisor)
-    { 
+    {
       if(supervisor)
-	{ 
-	  usp=(*sp);
-	  (*sp)=ssp;
+	{
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       else
-	{ 
-	  ssp=(*sp);
-	  (*sp)=usp;
+	{
+	  ssp=(*m68k_sp);
+	  (*m68k_sp)=usp;
 	}
     }
   ProcessInterrupts();
@@ -276,7 +276,7 @@ void REGP1 PutSR(aw16 sr)
 #endif
 
 rw16 REGP1 BusErrorCode(aw16 dataOrCode)
-{    
+{
   if(supervisor) dataOrCode+=4;
   return dataOrCode+readOrWrite+8;
 }
@@ -289,16 +289,16 @@ void REGP1 SetPCX(int i)
 #endif
 
   pc=(uw16*)((Ptr)theROM+(RL(&theROM[i])&ADDR_MASK));
-  
-#ifdef TRACE 
+
+#ifdef TRACE
   CheckTrace();
 #ifdef BACKTRACE
   AddBackTrace(p,-i);
 #endif
 #endif
-  
-  if(((char)(int)pc&1)!=0) 
-    { 
+
+  if(((char)(int)pc&1)!=0)
+    {
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -316,9 +316,9 @@ void SetPCB(w32 addr, int type)
 
   Ptr p=pc;
 
-  
+
   if(((char)addr&1)!=0)
-    { 
+    {
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -329,21 +329,21 @@ void SetPCB(w32 addr, int type)
 
       return;
     }
-  
+
   pc=(uw16*)((Ptr)theROM+(addr&ADDR_MASK));
 
   CheckTrace();
   AddBackTrace(p,type);
 }
 
-#endif 
+#endif
 
 INLINE void REGP1 SetPC(w32 addr)
 {
   /*  printf("SetPC: addr=%x\n",addr); */
 
   if(((char)addr&1)!=0)
-    { 
+    {
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -354,7 +354,7 @@ INLINE void REGP1 SetPC(w32 addr)
 
       return;
     }
-  
+
   pc=(uw16*)((Ptr)theROM+(addr&ADDR_MASK));
 #ifdef TRACE
   CheckTrace();
@@ -365,7 +365,7 @@ INLINE void REGP1 SetPC(w32 addr)
 void ShowException(void){}
 #else
 void ShowException(void)
-{    
+{
   short i;
   int p1,p2,p4;
   unsigned char *p3;
@@ -373,17 +373,17 @@ void ShowException(void)
   long xc=exception+3;
 
   if (exception==0) return;
- 	
+
 
   p1=(xc);
   p2=((Ptr)pc-(Ptr)theROM-(xc==4? 0:2));
   if(xc==4)
-    { 
+    {
       p3="Illegal code=";
       p4=(code);
     }
   else
-    { 
+    {
       p3="";
       if(xc==3) p3="address error";
       if(xc==5) p3="divide by zero";
@@ -418,7 +418,7 @@ void REGP1 ExceptionIn(char x)
 void ExceptionOut()
 {
   if (!tracetrap) return;
-  
+
   printf("RTE\n");
   DbgInfo();
 }
@@ -433,49 +433,49 @@ void ExceptionProcessing()
 	  if(exception==8) pc--;
 	  if(exception<32 || exception>36) /* tutte le eccezioni
 					      tranne le trap 0-4 */
-	    {       
+	    {
 	      extraFlag=exception<3 || (exception>9 &&
 					exception<32) || exception>47;
 	      if(!extraFlag) extraFlag=ReadLong(0x28050l)==0;
 	      if(extraFlag)
-                        {  
+                        {
 			  UpdateNowRegisters();
 			  /*                              ShowException(); */
 			  nInst=nInst2=0;
                         }
 	    }
 	  if(!supervisor)
-	    { 
-	      usp=(*sp);
-	      (*sp)=ssp;
+	    {
+	      usp=(*m68k_sp);
+	      (*m68k_sp)=ssp;
 	    }
 	  ExceptionIn(exception);
-	  (*sp)-=6;
-	  WriteLong((*sp)+2,(w32)pc-(w32)theROM);
-	  WriteWord((*sp),GetSR());
+	  (*m68k_sp)-=6;
+	  WriteLong((*m68k_sp)+2,(w32)pc-(w32)theROM);
+	  WriteWord((*m68k_sp),GetSR());
 	  SetPC(theROM[exception]);
 	  if(exception==3) /* address error */
 	    {
-	      (*sp)-=8;
-	      WriteWord((*sp)+6,code);
-	      WriteLong((*sp)+2,badAddress);
-	      WriteWord((*sp),BusErrorCode(badCodeAddress? 2:1));
+	      (*m68k_sp)-=8;
+	      WriteWord((*m68k_sp)+6,code);
+	      WriteLong((*m68k_sp)+2,badAddress);
+	      WriteWord((*m68k_sp),BusErrorCode(badCodeAddress? 2:1));
 	      badCodeAddress=false;
 	    }
 	  supervisor=true;
 	  trace=false;
         }
   if(doTrace && exception!=3 && exception!=4 && exception!=8)
-    { 
+    {
       if(!supervisor)
 	{
-	  usp=(*sp);
-	  (*sp)=ssp;
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(9);
-      (*sp)-=6;
-      WriteLong((*sp)+2,(w32)pc-(long)theROM);
-      WriteWord((*sp),GetSR());
+      (*m68k_sp)-=6;
+      WriteLong((*m68k_sp)+2,(w32)pc-(long)theROM);
+      WriteWord((*m68k_sp),GetSR());
       SetPC(theROM[9]);
       supervisor=true;
       trace=false;
@@ -499,33 +499,33 @@ void ExceptionProcessing()
     {
       if(exception<32 || exception>36) /* tutte le eccezioni
 					  tranne le trap 0-4 */
-	{  
+	{
 	  extraFlag=exception<3 || (exception>9 &&
 				    exception<32) || exception>47;
 	  if(!extraFlag) extraFlag=ReadLong(0x28050l)==0;
 	  if(extraFlag)
-	    {    
+	    {
 	      UpdateNowRegisters();
 	      /*ShowException(); */
 	      nInst=nInst2=0;
 	    }
 	}
       if(!supervisor)
-	{ 
-	  usp=(*sp);
-	  (*sp)=ssp;
+	{
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(exception);
-      (*sp)-=6;
-      WriteLong((*sp)+2,(w32)pc-(w32)theROM);
-      WriteWord((*sp),GetSR());
+      (*m68k_sp)-=6;
+      WriteLong((*m68k_sp)+2,(w32)pc-(w32)theROM);
+      WriteWord((*m68k_sp),GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
-	{ 
-	  (*sp)-=8;
-	  WriteWord((*sp)+6,code);
-	  WriteLong((*sp)+2,badAddress);
-	  WriteWord((*sp),BusErrorCode(badCodeAddress? 2:1));
+	{
+	  (*m68k_sp)-=8;
+	  WriteWord((*m68k_sp)+6,code);
+	  WriteLong((*m68k_sp)+2,badAddress);
+	  WriteWord((*m68k_sp),BusErrorCode(badCodeAddress? 2:1));
 	  badCodeAddress=false;
 	  if(nInst) exception=0;
 	} else exception=0; /* allow interrupts */
@@ -534,16 +534,16 @@ void ExceptionProcessing()
       trace=false;
     }
    if(doTrace)
-    {      
+    {
       if(!supervisor)
-	{ 
-	  usp=(*sp);
-	  (*sp)=ssp;
+	{
+	  usp=(*m68k_sp);
+	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(9);
-      (*sp)-=6;
-      WriteLong((*sp)+2,(Ptr)pc-(Ptr)theROM);
-      WriteWord((*sp),GetSR());
+      (*m68k_sp)-=6;
+      WriteLong((*m68k_sp)+2,(Ptr)pc-(Ptr)theROM);
+      WriteWord((*m68k_sp),GetSR());
       SetPCX(9);
       if(nInst==0) exception=9;       /* no interrupt allowed here */
       supervisor=true;
@@ -559,7 +559,7 @@ void ExceptionProcessing()
       nInst2=nInst;
       nInst=0;
     }
-	
+
 }
 #endif
 
@@ -567,7 +567,7 @@ void ExceptionProcessing()
 /* now read in ReadByte etc macros */
 
 rw32 AREGP GetEA_mBad(ashort r)
-{    
+{
   exception=4;
   extraFlag=true;
   nInst2=nInst;
@@ -656,11 +656,11 @@ void ExecuteLoop(void)
   code=0;   /* loop possibly sets only 16 bits ! */
 
   itab=itable;
-  
+
 #define IE_XL
 
-  goto run_it; 
-  
+  goto run_it;
+
   /*#include "iexl_general.h"*/
 
 #include "instructions_ao.c"    /* include instructions */
@@ -669,41 +669,41 @@ void ExecuteLoop(void)
 run_it:
   if (unlikely(!itable_valid))
     {
-#define IE_XL_II 
+#define IE_XL_II
 #include "Init.c"
       /*XSetTable(itable);*/
       itable_valid=1;
     }
-#ifndef ZEROMAP 
+#ifndef ZEROMAP
   theROM=ll_theROM;
 #endif
   ENTER_IEXL;                  /* load vars into regs etc .*/
 
-nextI: 
+nextI:
   if (likely(--nInst>=0))
     {
 #ifdef TRACE
       if (pc>=tracelo) DoTrace();
 #endif
       /*DbgInfo();*/
-      
+
 //#if defined(ASSGN_486)
 //      goto *itab[ASSGN_486()];
 //#else
       //goto *itab[ASSGN_CODE(RW(pc++))];
       goto *itab[code = RW(pc++) & 0xffff];
 //#endif
-    } 
-  
+    }
+
 #if 0
   if (regEmux)
     {
-      nInst= (extraFlag ? 0 : reInst);     
+      nInst= (extraFlag ? 0 : reInst);
       vm_regemu();
- 
+
       goto nextI;
     }
-#endif 
+#endif
 
   if (doPoll) dosignal();
 
@@ -717,22 +717,22 @@ nextI:
 
 #else
 void ExecuteLoop(void)  /* fetch and dispatch loop */
-{     
+{
   register void           (**tab)(void);
 
   tab=qlux_table;
 
-rep: 
-  while(--nInst>=0)    
+rep:
+  while(--nInst>=0)
     {
 
-#ifdef TRACE 
+#ifdef TRACE
       if (pc>tracelo) DoTrace();
 #endif
-      
+
       tab[code=RW(pc++)&0xffff]();
     }
-	
+
   if (doPoll) dosignal();
 
   if(extraFlag)
@@ -745,7 +745,7 @@ rep:
 #endif
 
 void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
-{  
+{
 #ifndef ZEROMAP
   ll_theROM=theROM;
 #endif
@@ -769,7 +769,7 @@ void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 #endif
   nInst=n+1;
   if(extraFlag)
-    { 
+    {
       nInst2=nInst;
 #ifdef NEWINT
       nInst=2;
@@ -787,8 +787,8 @@ void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 
 
 void InitialSetup(void) /* 68K state when powered on */
-{ 
-  ssp=*sp=RL(&theROM[0]);
+{
+  ssp=*m68k_sp=RL(&theROM[0]);
   SetPC(RL(&theROM[1]));
   if(V3)printf("initial PC=%x SP=%x\n",(void*)pc-(void*)theROM,ssp);
 	

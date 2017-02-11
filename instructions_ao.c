@@ -960,7 +960,7 @@ IDECL(bsr)
       displ=(w16)RW(pc);
       oldPC+=2;
     }
-  WriteLong((*sp)-=4,oldPC);
+  WriteLong((*m68k_sp)-=4,oldPC);
 #ifdef BACKTRACE
   SetPCB((Ptr)pc-(Ptr)theROM+displ,BSR);
 #else
@@ -1675,7 +1675,7 @@ IDECL(jsr)
 
   ea=ARCALL(GetEA,(code>>3)&7,(code&7));
   /* ea=GET_EA((code>>3)&7,(code&7));*/
-  WriteLong((*sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
+  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
 #ifdef BACKTRACE
   SetPCB(ea,JSR);
 #else
@@ -1688,7 +1688,7 @@ IDECL(jsr_displ)
 { 
   register w32 ea;
   ea=(w32)pc-(w32)theROM;
-  WriteLong((*sp)-=4,ea+2);
+  WriteLong((*m68k_sp)-=4,ea+2);
   SetPC(ea+(w16)RW(pc));
 NEXT;
 }
@@ -1703,9 +1703,9 @@ IDECL(link)
 { 
   register w32 *r;
   r=&(aReg[code&7]);
-  WriteLong((*sp)-=4,*r);
-  *r=(*sp);
-  (*sp)+=(w16)RW(pc++);
+  WriteLong((*m68k_sp)-=4,*r);
+  *r=(*m68k_sp);
+  (*m68k_sp)+=(w16)RW(pc++);
 NEXT;
 }
 

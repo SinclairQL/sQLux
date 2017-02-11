@@ -100,7 +100,7 @@ extern Cond             stopped;
 extern volatile char    pendingInterrupt;
 
 #define   aReg  (reg+8)
-#define   sp    (aReg+7)
+#define   m68k_sp    (aReg+7)
 extern w32      *g_reg;
 
 #define SETREG16(_ra_,_val_) ({w16 *dn; dn=(w16*)(RWO+(char*)&_ra_); *dn=_val_;})

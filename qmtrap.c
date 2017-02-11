@@ -100,7 +100,7 @@ void QLvector(int which, int nMax)
   
   ea=ReadWord(which);
   
-  WriteLong((*sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
+  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
   SetPC(ea);
 
   extraFlag=false;
@@ -114,7 +114,7 @@ void QLsubr(uw32 ea, int nMax)
 {
   w16 *savedPC=pc;
   
-  WriteLong((*sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
+  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
   SetPC(ea);
 
   extraFlag=false;
