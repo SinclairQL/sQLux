@@ -69,7 +69,7 @@ extern uw16 *pc;
 extern gshort code;
 extern int nInst;    /* dangerous - it is 'volatile' to some extent */
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(__aarch64__)
 #define HUGE_POINTER
 #endif
 
