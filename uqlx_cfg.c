@@ -474,7 +474,7 @@ int QMParams (void)
 	    char *loc;
 
 	    loc=qm_findx("do_install");
-
+        if (!loc) return;
 	    strncpy(buf,loc,PATH_MAX+1);
 	    qaddpath(buf,"do_install ",PATH_MAX+1);
 	    //strncat(buf,IMPL,PATH_MAX+1);
