@@ -35,6 +35,7 @@
 #include "qx_proto.h"
 #include "QL_sound.h"
 #include "uxfile.h"
+#include "SDL2screen.h"
 
 #define TIME_DIFF    283996800
 void GetDateTime(w32 *);
@@ -195,6 +196,7 @@ void dosignal ()
 #ifndef XAW
    if (!script && !QLdone)
       process_events ();
+      QLSDLProcessEvents();
 #endif
 
 #ifdef SHOWINTS
