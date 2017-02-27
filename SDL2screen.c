@@ -1,6 +1,8 @@
 #include <inttypes.h>
 #include <SDL2/SDL.h>
 
+#include "QL_hardware.h"
+
 static SDL_Window *window = NULL;
 static SDL_Surface *screenSurface = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -12,6 +14,17 @@ static SDL_Rect dest_rect;
 
 extern void *theROM;
 extern char *xi_buf;
+
+static int colors[8]={
+    0x000000,
+    0x0000FF,
+    0xFF0000,
+    0xFF00FF,
+    0x00FF00,
+    0x00FFFF,
+    0xFFFF00,
+    0xFFFFFF
+};
 
 int QLSDLScreen(int width, int height, int zoom)
 {
@@ -55,10 +68,47 @@ int QLSDLScreen(int width, int height, int zoom)
 
 }
 
+static int QLSDLUpdatePixelBuffer(void)
+{
+    uint8_t *scr_ptr = theROM + 0x20000;
+    uint32_t *pixel_ptr = pixel_buffer;
+    int t1, t2, i;
+
+    while(scr_ptr < (uint8_t *)(theROM + 0x28000)) {
+        t1 = *scr_ptr++;
+        t2 = *scr_ptr++;
+
+        if (display_mode == 8) {
+
+            for(i=0; i<4; i++) {
+                uint32_t x;
+
+                x = colors[((t1&2)<<1)+((t2&3))+((t1&1)<<3)];
+                *(pixel_ptr + 7-(2*i)) = x;
+                *(pixel_ptr + 7-(2*i+1)) = x;
+
+                t1 >>=2;
+                t2 >>=2;
+            }
+        } else {
+
+            for(i=0; i<8; i++)
+            {
+                uint32_t x;
+
+                x = colors[((t1&1)<<2)+((t2&1)<<1)+((t1&1)&(t2&1))];
+                *(pixel_ptr + 7-i) = x;
+                t1 >>= 1;
+                t2 >>= 1;
+            }
+        }
+        pixel_ptr += 8;
+    }
+}
+
 int QLSDLRenderScreen(void)
 {
-    printf("GGG: QLSDLRenderScreen\n");
-	memcpy(pixel_buffer, xi_buf, sdl_width * sdl_height * 4);
+    QLSDLUpdatePixelBuffer();
     SDL_UpdateTexture(texture, NULL, pixel_buffer, sdl_width * 4);
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, texture, &src_rect, &dest_rect);
