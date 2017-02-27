@@ -1018,6 +1018,8 @@ void uqlxInit ()
       x_screen_open(0);
 #endif
 
+    QLSDLScreen(scr_width, scr_height, 2);
+
 #ifdef TRACE
   TraceInit();
 #endif
@@ -1117,6 +1119,7 @@ void QLRun(void)
       exec:
 #endif
    ExecuteChunk(3000);
+   QLSDLRenderScreen();
 #ifdef UX_WAIT
    if (run_reaper)
       qm_reaper();

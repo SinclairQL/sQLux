@@ -19,7 +19,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	Xscreen.c QLip.c util.c xc68.c xipc.c script.c \
 	QL_sound.c mach_exception.c siginfo.c \
 	vl.c ide.c block.c unixstuff.c xqlmouse.c \
-	x.c xlmain.c uqlx_cfg.c
+	x.c xlmain.c uqlx_cfg.c SDL2screen.c
 
 OBJ := $(SRC:.c=.o)
 
@@ -28,7 +28,7 @@ DOCS := COPYRIGHT CONTRIBUTING \
 
 EXE_NAME = qlux
 
-XLIBS := -lXaw -lXmu -lXt -lX11 -lXext
+XLIBS := -lXaw -lXmu -lXt -lX11 -lXext -lSDL2
 
 
 all : $(EXE_NAME)
