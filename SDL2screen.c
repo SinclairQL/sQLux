@@ -10,7 +10,6 @@ static SDL_Surface *screenSurface = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
 static uint32_t *pixel_buffer = NULL;
-static int sdl_width = 0, sdl_height = 0;
 static SDL_Rect src_rect;
 static SDL_Rect dest_rect;
 static char sdl_win_name[128];
@@ -26,20 +25,17 @@ static int colors[8]={
     0xFFFFFF
 };
 
-int QLSDLScreen(int width, int height, int zoom)
+int QLSDLScreen(void)
 {
     src_rect.x = 0;
     src_rect.y = 0;
-    src_rect.w = width;
-    src_rect.h = height;
+    src_rect.w = qlscreen.xres;
+    src_rect.h = qlscreen.yres;
 
     dest_rect.x = 0;
     dest_rect.y = 0;
-    dest_rect.w = width * zoom;
-    dest_rect.h = height * zoom;
-
-    sdl_width = width;
-    sdl_height = height;
+    dest_rect.w = qlscreen.xres * qlscreen.zoom;
+    dest_rect.h = qlscreen.yres * qlscreen.zoom;
 
     snprintf(sdl_win_name, 128, "QL - %s, %dK", QMD.sysrom, RTOP/1024);
 
@@ -48,7 +44,8 @@ int QLSDLScreen(int width, int height, int zoom)
     	return 0;
 	}
 
-	if (SDL_CreateWindowAndRenderer(sdl_width * zoom, sdl_height * zoom, 0, &window,
+	if (SDL_CreateWindowAndRenderer(qlscreen.xres * qlscreen.zoom,
+                qlscreen.yres * qlscreen.zoom, 0, &window,
                 &renderer) != 0) {
     	printf("SDL_CreateWindowAndRenderer Error: %s\n", SDL_GetError());
 		return 0;
@@ -62,8 +59,8 @@ int QLSDLScreen(int width, int height, int zoom)
 	}
 
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
-            SDL_TEXTUREACCESS_STATIC, sdl_width, sdl_height);
-    pixel_buffer = malloc(sdl_width * sdl_height * 4);
+            SDL_TEXTUREACCESS_STATIC, qlscreen.xres, qlscreen.yres);
+    pixel_buffer = malloc(qlscreen.xres * qlscreen.yres * 4);
     if (!pixel_buffer) {
         printf("Pixel Buffer allocation failed\b");
         return 0;
@@ -72,11 +69,11 @@ int QLSDLScreen(int width, int height, int zoom)
 
 static int QLSDLUpdatePixelBuffer(void)
 {
-    uint8_t *scr_ptr = (void *)theROM + 0x20000;
+    uint8_t *scr_ptr = (void *)theROM + qlscreen.qm_lo;
     uint32_t *pixel_ptr = pixel_buffer;
     int t1, t2, i;
 
-    while(scr_ptr < (uint8_t *)((void *)theROM + 0x28000)) {
+    while(scr_ptr < (uint8_t *)((void *)theROM + qlscreen.qm_hi)) {
         t1 = *scr_ptr++;
         t2 = *scr_ptr++;
 
@@ -111,7 +108,7 @@ static int QLSDLUpdatePixelBuffer(void)
 int QLSDLRenderScreen(void)
 {
     QLSDLUpdatePixelBuffer();
-    SDL_UpdateTexture(texture, NULL, pixel_buffer, sdl_width * 4);
+    SDL_UpdateTexture(texture, NULL, pixel_buffer, qlscreen.xres * 4);
 	SDL_RenderClear(renderer);
 	SDL_RenderCopy(renderer, texture, &src_rect, &dest_rect);
 	SDL_RenderPresent(renderer);
@@ -275,6 +272,8 @@ int QLSDLProcessEvents(void)
             break;
         }
     }
+
+    QLSDLRenderScreen();
 }
 
 void QLSDLExit(void)

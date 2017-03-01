@@ -583,16 +583,16 @@ int do_fork()
     pid=fork();
     if (pid < 0) {
         perror("sorry, could not fork");
-        QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
+        QLSDLScreen();
     }
 
     /* We are in the child */
     if (pid == 0) {
-        QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
+        QLSDLScreen();
         init_timers();
         fork_files();
     } else { /* We are in the parent */
-      QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
+      QLSDLScreen();
     }
 
     /* resetting the state of the keyboard seems the best */

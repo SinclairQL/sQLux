@@ -1025,7 +1025,7 @@ void uqlxInit ()
     scr_height = qlscreen.yres;
 
     if (!script)
-        QLSDLScreen(scr_width, scr_height, 2);
+        QLSDLScreen();
 
 #ifdef TRACE
   TraceInit();
@@ -1126,7 +1126,7 @@ void QLRun(void)
       exec:
 #endif
    ExecuteChunk(3000);
-   QLSDLRenderScreen();
+   //QLSDLRenderScreen();
 #ifdef UX_WAIT
    if (run_reaper)
       qm_reaper();

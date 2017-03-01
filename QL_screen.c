@@ -11,6 +11,7 @@ screen_specs qlscreen =
    0x8000, 
    128, 
    256, 
-   512
+   512,
+   2
 };
 

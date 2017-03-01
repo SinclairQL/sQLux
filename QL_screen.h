@@ -15,6 +15,7 @@ typedef struct _SCREEN_SPECS
   uw32 linel;
   int yres;
   int xres;
+  int zoom;
 } screen_specs;
 
 extern screen_specs qlscreen;

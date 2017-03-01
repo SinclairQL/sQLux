@@ -1,7 +1,7 @@
 #ifndef _SDL2SCREEN_H
 #define _SDL2SCREEN_H
 
-int QLSDLScreen(int width, int height, int zoom);
+int QLSDLScreen(void);
 int QLSDLRenderScreen(void);
 void QLSDLProcessEvents(void);
 void QLSDLExit(void);
