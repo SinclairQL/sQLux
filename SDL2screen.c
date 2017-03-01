@@ -2,6 +2,8 @@
 #include <SDL2/SDL.h>
 
 #include "QL_hardware.h"
+#include "uqlx_cfg.h"
+#include "QL68000.h"
 
 static SDL_Window *window = NULL;
 static SDL_Surface *screenSurface = NULL;
@@ -11,8 +13,7 @@ static uint32_t *pixel_buffer = NULL;
 static int sdl_width = 0, sdl_height = 0;
 static SDL_Rect src_rect;
 static SDL_Rect dest_rect;
-
-extern void *theROM;
+static char sdl_win_name[128];
 
 static int colors[8]={
     0x000000,
@@ -40,6 +41,8 @@ int QLSDLScreen(int width, int height, int zoom)
     sdl_width = width;
     sdl_height = height;
 
+    snprintf(sdl_win_name, 128, "QL - %s, %dK", QMD.sysrom, RTOP/1024);
+
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
         printf("SDL_Init Error: %s\n", SDL_GetError());
     	return 0;
@@ -50,6 +53,8 @@ int QLSDLScreen(int width, int height, int zoom)
     	printf("SDL_CreateWindowAndRenderer Error: %s\n", SDL_GetError());
 		return 0;
     }
+
+    SDL_SetWindowTitle(window, sdl_win_name);
 
 	if ((window == NULL) || (renderer == NULL)) {
 		printf("SDL_CreateWindowAndRenderer Error: %s\n", SDL_GetError());
@@ -67,11 +72,11 @@ int QLSDLScreen(int width, int height, int zoom)
 
 static int QLSDLUpdatePixelBuffer(void)
 {
-    uint8_t *scr_ptr = theROM + 0x20000;
+    uint8_t *scr_ptr = (void *)theROM + 0x20000;
     uint32_t *pixel_ptr = pixel_buffer;
     int t1, t2, i;
 
-    while(scr_ptr < (uint8_t *)(theROM + 0x28000)) {
+    while(scr_ptr < (uint8_t *)((void *)theROM + 0x28000)) {
         t1 = *scr_ptr++;
         t2 = *scr_ptr++;
 
