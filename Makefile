@@ -17,7 +17,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QL_screen.c QL_poll.c xcodes.c QL_boot.c QL_basext.c \
 	QL_cconv.c iexl_general.c QVFS.c \
 	Xscreen.c QLip.c util.c xc68.c xipc.c script.c \
-	QL_sound.c mach_exception.c siginfo.c \
+	QL_sound.c mach_exception.c \
 	vl.c ide.c block.c unixstuff.c \
 	xlmain.c uqlx_cfg.c SDL2screen.c
 
@@ -28,7 +28,7 @@ DOCS := COPYRIGHT CONTRIBUTING \
 
 EXE_NAME = qlux
 
-XLIBS := -lXaw -lXmu -lXt -lX11 -lXext -lSDL2
+XLIBS := -lSDL2
 
 
 all : $(EXE_NAME)
