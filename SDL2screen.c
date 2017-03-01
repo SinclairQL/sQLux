@@ -13,7 +13,6 @@ static SDL_Rect src_rect;
 static SDL_Rect dest_rect;
 
 extern void *theROM;
-extern char *xi_buf;
 
 static int colors[8]={
     0x000000,
@@ -115,6 +114,24 @@ int QLSDLRenderScreen(void)
 	SDL_RenderPresent(renderer);
 }
 
+/* Store the keys pressed */
+unsigned int sdl_keyrow[]={0,0,0,0,0,0,0,0};
+int sdl_shiftstate,sdl_controlstate, sdl_altstate;
+
+static void SDLQLKeyrowChg(int code,int press)
+{
+    int j;
+
+    if (code > -1) {
+        j= 1 << (code % 8);
+
+        if (press)
+            sdl_keyrow[7 - code / 8] |= j;
+        else
+            sdl_keyrow[7 - code / 8] &= ~j;
+    }
+}
+
 struct SDLQLMap
 {
   SDL_Keycode sdl_kc;
@@ -197,7 +214,6 @@ static struct SDLQLMap sdlqlmap[] = {
     {0,0,0}
 };
 
-static int sdl_shiftstate,sdl_controlstate, sdl_altstate;
 
 static int QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {

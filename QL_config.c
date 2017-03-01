@@ -396,7 +396,7 @@ void InitROM(void)
 #endif
 
 
-	SchedInit();
+	//SchedInit();
 
 	init_bas_exts();
 

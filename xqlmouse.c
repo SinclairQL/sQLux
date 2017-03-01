@@ -338,7 +338,7 @@ void MouseTask()
 		if(!script)
 		  {
 		    invisible=1;
-		    InvisibleMousePtr();
+		    //InvisibleMousePtr();
 		  }
 	      }
 	    lastactive=0;
@@ -352,7 +352,7 @@ void MouseTask()
 	    if(!script)
 	      {
 		invisible=0;
-		ResetMousePtr();
+		//ResetMousePtr();
 	      }
 	    
 	  }
@@ -364,12 +364,12 @@ void MouseTask()
 	  printf("internal mouse change - ");
 	  print_mousepos();
 #endif
-	  if (inside && !script){
+	  if (/*inside &&*/ !script){
 #ifdef XAW
 	    XWarpPointer(XtDisplay(bitMap), None,
 			 XtWindow(bitMap), 0,0,0,0, x, y);
 #else
-	    XWarpPointer(display,None,imagewin,0,0,0,0, x,y);
+	    //XWarpPointer(display,None,imagewin,0,0,0,0, x,y);
 	    lastx=x;
 	    lasty=y;
 	    ign_x=x;ign_y=y;
@@ -437,12 +437,12 @@ void SchedulerCmd()
 
 #ifndef XAW
   if (!script)
-  process_events();
+  //process_events();
 #endif
 
   if ((schedCount>min_idle || 
        (quickMouseUpdate && ptractive() && (llastx!=getMouseX() || llasty!=getMouseY()))) &&
-      screen_drawable &&
+      /*screen_drawable &&*/
       ((DISPLAY_CHANGED()) || 
        (rx1<=rx2 && ry1<=ry2))  )
     {
@@ -452,7 +452,7 @@ void SchedulerCmd()
 #endif
 
       scrcnt=5;
-      FlushDisplay();
+      //FlushDisplay();
 #if defined(VM_SCR) || defined(EVM_SCR)
 #else
       displayFrom=0; 

@@ -238,8 +238,8 @@ void trap3(void)
   DECR_SC();/*schedCount--;*/
 
 #ifdef XSCREEN
-  if (!HasPTR && *reg==0x70)
-    XPatchPTRENV();
+//  if (!HasPTR && *reg==0x70)
+//    XPatchPTRENV();
 #endif
 
   exception=35;

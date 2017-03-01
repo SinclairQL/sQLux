@@ -5,5 +5,8 @@ int QLSDLScreen(int width, int height, int zoom);
 int QLSDLRenderScreen(void);
 int QLSDLProcessEvents(void);
 
+extern int sdl_keyrow[8];
+extern int sdl_shiftstate,sdl_controlstate, sdl_altstate;
+
 #endif
 

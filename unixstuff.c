@@ -195,7 +195,7 @@ void dosignal ()
 
 #ifndef XAW
    if (!script && !QLdone)
-      process_events ();
+      //process_events ();
       QLSDLProcessEvents();
 #endif
 
@@ -235,8 +235,9 @@ void cleanup (int err)
       kill (HasDialog, SIGINT);
 
    cleanup_ipc ();
-   if (!script && !xbreak)
-      x_screen_close ();
+   // FIXME: cleanup SDL
+   //if (!script && !xbreak)
+   //   x_screen_close ();
 #endif
    CleanRAMDev ("RAM");
    exit (err);
@@ -716,10 +717,10 @@ int toggle_hog(int val)
    if (val < 0) 
       return QMD.cpu_hog;
    QMD.cpu_hog = val;
-   if(QMD.cpu_hog) 
-      min_idle = 20000;
-   else 
-      min_idle = 5;
+   //if(QMD.cpu_hog)
+   //   min_idle = 20000;
+   //else
+   //   min_idle = 5;
    return QMD.cpu_hog;
 }
 
@@ -1016,11 +1017,14 @@ void uqlxInit ()
    vm_setscreen();
 
 #ifndef XAW
-   if (!script)
-      x_screen_open(0);
+   //if (!script)
+   //   x_screen_open(0);
 #endif
+    scr_width = qlscreen.xres;
+    scr_height = qlscreen.yres;
 
-    QLSDLScreen(scr_width, scr_height, 2);
+    if (!script)
+        QLSDLScreen(scr_width, scr_height, 2);
 
 #ifdef TRACE
   TraceInit();
@@ -1054,7 +1058,7 @@ void uqlxInit ()
 #endif
 #endif
 
-   table[SCHEDULER_CMD_CODE] = SchedulerCmd;
+   //table[SCHEDULER_CMD_CODE] = SchedulerCmd;
    if (isMinerva)
    {
       table[MIPC_CMD_CODE] = KbdCmd;
@@ -1127,22 +1131,22 @@ void QLRun(void)
       qm_reaper();
 #endif
   
-   if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
+   /*if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
    {
       scrchange=0;
       for(i=0;i<sct_size;i++)
          scrchange=scrchange || scrModTable[i];
-      
+
       if(scrchange)
       {
          FlushDisplay();
-         displayFrom=0; 
-         displayTo=0; 
+         displayFrom=0;
+         displayTo=0;
          doscreenflush=0;
          scrcnt=5;
-      }  
-   } 
-#ifdef VTIME   
+      }
+   } */
+#ifdef VTIME
    if ((qlttc--)<=0)
    {
       qlttc=3750;

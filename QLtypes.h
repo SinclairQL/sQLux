@@ -1,7 +1,9 @@
 /*
  * (c) UQLX - see COPYRIGHT
  */
-
+#ifndef _QLTYPES_H
+#define _QLTYPES_H
+#include <inttypes.h>
 
 #define true 1
 #define false 0
@@ -25,3 +27,6 @@ struct qFloat{
 };
 
 #include "misdefs.h"
+
+#endif
+

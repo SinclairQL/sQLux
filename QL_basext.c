@@ -29,12 +29,11 @@
 
 
 #include "xcodes.h"
-
+#include "SDL2screen.h"
 
 /* UQLX basic extensions */
 
 
-extern int keyrow[8];
 extern int gKeyDown;
 
 
@@ -582,18 +581,18 @@ int do_fork()
     perror("sorry, could not fork");
   if (pid==0)
     {
-      destroy_image();
-      x_screen_open(1);
+      //destroy_image();
+      //x_screen_open(1);
       init_timers();
-      conv_chunk(qlscreen.qm_lo,qlscreen.qm_hi);
-      redraw_screen(0,0,qlscreen.xres,qlscreen.yres);
-      XFlush(display);
+      //conv_chunk(qlscreen.qm_lo,qlscreen.qm_hi);
+      //redraw_screen(0,0,qlscreen.xres,qlscreen.yres);
+      //XFlush(display);
       fork_files();
     }
 
   /* resetting the state of the keyboard seems the best */
   gKeyDown=0;
-  for (i=0;i<8;i++) keyrow[i]=0;
+  for (i=0;i<8;i++) sdl_keyrow[i]=0;
   
   return pid;
 }

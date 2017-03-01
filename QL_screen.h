@@ -4,6 +4,7 @@
  * (c) UQLX - see COPYRIGHT
  */
 
+#include "QLtypes.h"
 
 typedef struct _SCREEN_SPECS
 {
@@ -17,7 +18,5 @@ typedef struct _SCREEN_SPECS
 } screen_specs;
 
 extern screen_specs qlscreen;
-
-extern void FlushDisplay (void);
 
 #endif

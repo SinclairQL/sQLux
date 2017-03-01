@@ -226,7 +226,7 @@ void check_connection(int fd)
 	  reply(fd,MX_BREAK,allow_rom_break(ntohl(msg.body.spar)));
 	  break;
 	case MX_KEYSW :
-	  reply(fd,MX_KEYSW,Xsim(ntohl(msg.body.spar)));
+	  //reply(fd,MX_KEYSW,Xsim(ntohl(msg.body.spar)));
 	  break;
 	case MX_HOG :
 	  reply(fd,MX_HOG,toggle_hog(ntohl(msg.body.spar)));
@@ -237,8 +237,8 @@ void check_connection(int fd)
 	    unread=1;
 	  break;
 	case MX_REDRAW:
-	  conv_chunk(qlscreen.qm_lo,qlscreen.qm_hi);
-	  redraw_screen(0,0,qlscreen.xres,qlscreen.yres);
+	  //conv_chunk(qlscreen.qm_lo,qlscreen.qm_hi);
+	  //redraw_screen(0,0,qlscreen.xres,qlscreen.yres);
 	  break;
 	default: printf("unknown message\n");
 	}  

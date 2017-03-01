@@ -12,13 +12,13 @@
 #include "QL_config.h"
 #include "QInstAddr.h"
 #include "qx_proto.h"
+#include "SDL2screen.h"
 
 #define ALT 1
 #define SHIFT 4
 #define CTRL 2
 
 
-extern unsigned int keyrow[8];
 extern uw32 orig_kbenc;
 
 void rts(void);
@@ -104,17 +104,16 @@ void ZeroKeyboardBuffer(void)
 	asciiChar=0;
 }
 
-extern int shiftState,controlState,altState;
-
 static uw8 KeyRow(short row)
 {
-  int mod;
-  
-  if(row==7) mod=shiftState+altState*4+controlState*2;
-  else mod=0;
-  /*printf("Keyrow %d returns %d\n",row,keyrow[row]+mod);*/
-  
-  return keyrow[row]+mod;
+    int mod;
+
+    if(row == 7)
+        mod = sdl_shiftstate + (sdl_altstate << 2) + (sdl_controlstate << 1);
+    else
+        mod=0;
+
+    return sdl_keyrow[row] + mod;
 }
 
 void pic_set_irq(int irq, int state)
