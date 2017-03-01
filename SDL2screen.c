@@ -63,8 +63,6 @@ int QLSDLScreen(int width, int height, int zoom)
         printf("Pixel Buffer allocation failed\b");
         return 0;
     }
-
-
 }
 
 static int QLSDLUpdatePixelBuffer(void)
@@ -215,7 +213,7 @@ static struct SDLQLMap sdlqlmap[] = {
 };
 
 
-static int QLSDProcessKey(SDL_Keysym *keysym, int pressed)
+void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
     int i = 0;
     int mod = 0;
@@ -265,10 +263,17 @@ int QLSDLProcessEvents(void)
         case SDL_KEYUP:
             QLSDProcessKey(&event.key.keysym, 0);
             break;
+        case SDL_QUIT:
+            cleanup(0);
+            break;
         default:
             break;
         }
     }
+}
 
+void QLSDLExit(void)
+{
+    SDL_Quit();
 }
 

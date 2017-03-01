@@ -240,6 +240,7 @@ void cleanup (int err)
    //   x_screen_close ();
 #endif
    CleanRAMDev ("RAM");
+   QLSDLExit();
    exit (err);
 }
 

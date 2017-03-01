@@ -570,35 +570,37 @@ bas_err UQLX_getenv()
   
 }
 
-extern Display *display;
-#ifndef XAW
 int do_fork()
 {
-  int pid,i;
+    int pid,i;
 
-  pid=fork();
-  if (pid<0)
-    perror("sorry, could not fork");
-  if (pid==0)
-    {
-      //destroy_image();
-      //x_screen_open(1);
-      init_timers();
-      //conv_chunk(qlscreen.qm_lo,qlscreen.qm_hi);
-      //redraw_screen(0,0,qlscreen.xres,qlscreen.yres);
-      //XFlush(display);
-      fork_files();
+    /* We must close the screen while forking
+     * and re-open it when we are finished
+     * otherwise we die horrible death
+     */
+    QLSDLExit();
+
+    pid=fork();
+    if (pid < 0) {
+        perror("sorry, could not fork");
+        QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
     }
 
-  /* resetting the state of the keyboard seems the best */
-  gKeyDown=0;
-  for (i=0;i<8;i++) sdl_keyrow[i]=0;
-  
-  return pid;
+    /* We are in the child */
+    if (pid == 0) {
+        QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
+        init_timers();
+        fork_files();
+    } else { /* We are in the parent */
+      QLSDLScreen(qlscreen.xres, qlscreen.yres, 2);
+    }
+
+    /* resetting the state of the keyboard seems the best */
+    gKeyDown=0;
+    for (i=0;i<8;i++) sdl_keyrow[i]=0;
+
+    return pid;
 }
-#else
-int do_fork(){return -1;}
-#endif
 
 
 bas_err Fork_UQLX()
