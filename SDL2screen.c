@@ -73,7 +73,9 @@ static int QLSDLUpdatePixelBuffer(void)
     uint32_t *pixel_ptr = pixel_buffer;
     int t1, t2, i;
 
-    while(scr_ptr < (uint8_t *)((void *)theROM + qlscreen.qm_hi)) {
+    //printf("qlscreen.qm_length %x\n", qlscreen.qm_len);
+    while(scr_ptr < (uint8_t *)((void *)theROM + qlscreen.qm_lo +
+                qlscreen.qm_len)) {
         t1 = *scr_ptr++;
         t2 = *scr_ptr++;
 
@@ -278,6 +280,7 @@ int QLSDLProcessEvents(void)
 
 void QLSDLExit(void)
 {
+    free(pixel_buffer);
     SDL_Quit();
 }
 
