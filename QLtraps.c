@@ -13,6 +13,7 @@
 #include "boot.h"
 #include "QDOS.h"
 #include "qx_proto.h"
+#include "QL_screen.h"
 
 /*extern int schedCount;*/
 extern int HasPTR;
@@ -235,17 +236,15 @@ void trap2(void)
 
 void trap3(void)
 {
-  DECR_SC();/*schedCount--;*/
+    DECR_SC();/*schedCount--;*/
 
-#ifdef XSCREEN
-//  if (!HasPTR && *reg==0x70)
-//    XPatchPTRENV();
-#endif
+    if (!HasPTR && *reg==0x70)
+        QLPatchPTRENV();
 
-  exception=35;
-  extraFlag=true;
-  nInst2=nInst;
-  nInst=0;
+    exception=35;
+    extraFlag=true;
+    nInst2=nInst;
+    nInst=0;
 }
 
 extern int script_read_enable;

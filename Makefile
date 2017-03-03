@@ -2,7 +2,7 @@
 #
 BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DUSE_IOSZ -DDO_GRAB -DSERIAL \
 	-DNEWSERIAL -DNEWPTY  -DFASTLOOP  -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND \
-	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE
+	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE
 
 DEBUG = -ggdb
 
@@ -18,7 +18,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QL_cconv.c iexl_general.c QVFS.c \
 	Xscreen.c QLip.c util.c xc68.c xipc.c script.c \
 	QL_sound.c mach_exception.c \
-	vl.c ide.c block.c unixstuff.c \
+	vl.c ide.c block.c unixstuff.c xqlmouse.c \
 	xlmain.c uqlx_cfg.c SDL2screen.c
 
 OBJ := $(SRC:.c=.o)

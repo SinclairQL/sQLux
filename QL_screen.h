@@ -20,4 +20,6 @@ typedef struct _SCREEN_SPECS
 
 extern screen_specs qlscreen;
 
+void QLPatchPTRENV(void);
+
 #endif
