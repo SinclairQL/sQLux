@@ -275,6 +275,12 @@ int QLSDLProcessEvents(void)
                     event.motion.y / qlscreen.zoom);
             //inside=1;
             break;
+        case SDL_MOUSEBUTTONDOWN:
+            QLButton(event.button.button, 1);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            QLButton(event.button.button, 0);
+            break;
         default:
             break;
         }
