@@ -270,6 +270,11 @@ int QLSDLProcessEvents(void)
         case SDL_QUIT:
             cleanup(0);
             break;
+        case SDL_MOUSEMOTION:
+            QLMovePointer(event.motion.x / qlscreen.zoom,
+                    event.motion.y / qlscreen.zoom);
+            //inside=1;
+            break;
         default:
             break;
         }

@@ -1059,7 +1059,7 @@ void uqlxInit ()
 #endif
 #endif
 
-   //table[SCHEDULER_CMD_CODE] = SchedulerCmd;
+   table[SCHEDULER_CMD_CODE] = SchedulerCmd;
    if (isMinerva)
    {
       table[MIPC_CMD_CODE] = KbdCmd;
