@@ -652,10 +652,10 @@ int parse_nseparator(char **name,int nnlen,char *opts,open_arg *vals,open_arg *r
   if (!nend || nend==*name) goto noval;
 
   nlen=nend-*name;
-  memcpy(ppname,*name,nlen);
+  strncpy(ppname,*name,nlen);
   ppname[nlen]=0;
   res->s=ppname;
-  
+
   ppname=&ppname[nlen+1];
   *name=nend;
   if (*name<strchr(*name,0))
@@ -769,7 +769,7 @@ int decode_name(char *name, struct NAME_PARS *ndescr, open_arg *parblk)
   j=RW(nend)-strlen(ndescr->name);
   strncpy(name,nend+2+strlen(ndescr->name),j);
   name[j]=0;
-  
+
   nend=&name[j];
   pars=ndescr->pars;
   while(i-- /*&& name<nend*/ && pars->func)
