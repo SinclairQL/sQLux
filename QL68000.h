@@ -16,12 +16,6 @@
 
 #undef QM_BIG_ENDIAN
 
-#if defined(i386) || defined(i486) || defined(i586) || defined(i686) || defined(__i386__) ||defined(__i586__) || defined(__i686__)
-#ifndef __i486__
-#define __i486__
-#endif
-#endif
-
 #ifdef USE_BUILTIN_EXPECT
 #define likely(exp)   __builtin_expect((exp),1)
 #define unlikely(exp) __builtin_expect((exp),0)
@@ -40,38 +34,16 @@
 
 /* use the wide type because otherwise gcc will promote *every*
  * arg and return value */
-#if 0
-typedef int ashort;
-typedef signed int aw8,aw16,aw32;
-typedef signed int rw8,rw16,rw32;
-typedef unsigned int ruw8,ruw16,ruw32;
-typedef unsigned int gshort;
-typedef unsigned int rCond;
-#else
 typedef short ashort;
 typedef w8 aw8,rw8,ruw8;
 typedef w16 aw16,rw16,ruw16;
 typedef w32 aw32,rw32,ruw32;
 typedef unsigned short gshort;
 typedef unsigned char rCond;
-#endif
 
-/* shindex is for quants that would fit into 16 bits but are used as index */
-/* somewhere, most CPUs dont like 16 bit indexes  */
-//#if defined(__i486__) || defined(SPARC) || defined(HPPA)
-/* probably easier to tell the one which does */
-#ifndef __mc68000
 typedef int shindex;
-#else
-typedef short shindex;
-#endif
 
-/* must hold 8bit, used for comparison */
-#ifdef m68k
-typedef char bctype;
-#else
-typedef int bctype;  
-#endif
+typedef int bctype;
 
 typedef void* Ptr;     /* non ANSI, but convenient... */
 
@@ -90,102 +62,12 @@ extern char *uqlx_version;
 
 extern int gKeyDown, shiftKey, controlKey, optionKey, alphaLock, altKey;
 
-#ifdef m68k
-#define G_reg
-#endif
-
-#ifndef G_reg 
 extern w32              reg[16];
-#endif
 extern w32              usp,ssp;
 
-
-#ifdef SPARC
-#ifndef BROKEN_GREGS
-register uw16  *pc asm("g5");
-register gshort  code asm("g6");
-register int   nInst asm("g7");
-#define GREGS
-#define MANYREGS
-#endif
-#endif
-
-#ifdef m68k
-// most m68k users will have my patched gcc
-register w32     *reg asm("%a5");
-register uw16    *pc asm("%a4");
-register gshort  code asm("%d6");
-register int     nInst asm("%d7");
-#define GREGS
-/*#define ASSGN_CODE(val) ((uw16)code=(uw16)val)*/
-/* code is fixed to d6, MSW never used - set only lower 16 bit */
-#define ASSGN_CODE(val) ({asm("move.w  %0,%%d6 \n" :: "m" (val) : "d6"); code;})
-#endif
-
-#ifdef __i486__
-// compiler gets internal errors
-#if 0
-//register w32     *reg asm("ebp");
-//register uw16    *pc asm("esi");
-register uw16    *pc asm("ebx");
-//register gshort  code asm("ebx");
-register gshort  code asm("ebp");
-register int     nInst asm("edi");
-#define GREGS
-#else
-#define ASSGN_486() ({gshort tmp;                    \
-                          asm("movzwl %1,%0 \n"          \
-			      "rolw   $8,%0 \n"          \
-                               : "=r" (tmp) : "m" (*pc++) : "cc"); \
-                          code=tmp; })
-#endif
-#endif
-
-#ifdef HPPA
-#ifndef BROKEN_GREGS
-register uw16    *pc asm("r5");
-register gshort  code asm("r6");
-register int     nInst asm("r7");
-#define GREGS
-#define MANYREGS
-#endif
-#endif
-
-#ifdef MIPS
-#ifndef BROKEN_GREGS
-register uw16    *pc asm("$23");
-register gshort  code asm("$22");
-register int     nInst asm("$21");
-#define GREGS
-#define MANYREGS
-#endif
-#endif
-
-#if defined(PPC)
-#ifndef BROKEN_GREGS
-register uw16    *pc asm("r14");
-register gshort  code asm("r15");
-register int     nInst asm("r16");
-#define GREGS
-#define MANYREGS
-#endif
-#endif
-
-#ifdef ALPHA
-#define HUGE_POINTER
-#define MANYREGS
-#endif
-
-#ifndef GREGS
 extern uw16 *pc;
 extern gshort code;
 extern int nInst;    /* dangerous - it is 'volatile' to some extent */
-#endif
-
-#ifdef DARWIN
-// apple sux // really?? ;)
-#define ASSGN_CODE(val) (code = (unsigned)(unsigned short)val)
-#endif
 
 #if defined(__x86_64__)
 #define HUGE_POINTER
@@ -217,17 +99,9 @@ extern char             iMask;
 extern Cond             stopped;
 extern volatile char    pendingInterrupt;
 
-/* reduce register pressure */
-#define NEW_AREG
-
-#ifdef NEW_AREG
 #define   aReg  (reg+8)
 #define   sp    (aReg+7)
 extern w32      *g_reg;
-#else
-extern w32              *sp;
-extern w32              *aReg;
-#endif
 
 #define SETREG16(_ra_,_val_) ({w16 *dn; dn=(w16*)(RWO+(char*)&_ra_); *dn=_val_;})
 

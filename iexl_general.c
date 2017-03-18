@@ -94,14 +94,7 @@ char    iMask;                          /* SR interrupt mask */
 Cond    stopped;                        /* processor status */
 volatile char   pendingInterrupt;       /* interrupt requesting service */
 
-#ifndef NEW_AREG
-w32             *sp;                            /* *sp==reg[15] : stack
-						   pointer */
-w32             *aReg;                          /* aReg=reg+8 : address
-						   registers */
-#else
 w32      *g_reg;
-#endif
 
 #ifndef ZEROMAP
 w32             *theROM;                        /* Ptr to ROM in Mac memory */
@@ -638,12 +631,7 @@ void ExecuteLoop(void)
 
 #if  1 /*MANYREGS*/
 #ifndef G_reg
-#ifdef NEW_AREG
   w32*  reg=g_reg;
-#else
-  w32 *aReg=reg+8;
-  w32* reg=aReg-8;
-#endif
 #endif
   w32 (**GetEA)(ashort) /*REGP1*/ = iexl_GetEA;
   rw8  (**GetFromEA_b)(void) = iexl_GetFromEA_b;

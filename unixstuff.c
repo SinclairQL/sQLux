@@ -1070,12 +1070,7 @@ void uqlxInit ()
    table[0x4e43] = btrap3;
 #endif
   
-#ifdef NEW_AREG
    g_reg = reg;
-#else
-   aReg = reg + 8;
-   sp = &reg[15];
-#endif
 
    /* setup memory map */
    uqlx_protect(0,(0xffffffff & ADDR_MASK)+1, QX_NONE);
