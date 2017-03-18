@@ -155,34 +155,13 @@ extern int isMinerva;
 #define vml static
 #endif
 
-/* pass args for selected fns through registers */
-#if defined(__i486__) && (!defined(NO_REGP))
-#define REGP1 __attribute__ ((regparm(3)))
-#define REGP2 __attribute__ ((regparm(3)))
-#ifndef NO_AREGP  /* sometimes reason actually slower ??*/
-#if __GNUC__>2 || ( __GNUC__==2 && __GNUC_MINOR__>=8) 
-/*#define USE_AREGP*/  /* requires explicit setting */
-#endif
-#endif
-#else
+// FIXME: Remove these
 #define REGP1
 #define REGP2
-#endif
 
-/* same, but for vectored functions gets rather ugly and dangerous,
- * known to break 2.7.2.1, 2.7.2.3 and posibly all versions earlier 2.8.1 */
-#ifdef USE_AREGP
-/* WARN: exactly matching prototypes assumed */
-#define AREGP __attribute__ ((regparm(3)))
-#define ARCALL(_farray_,_index_,_args_...)  \
-                  ({ typeof(_farray_[0]) AREGP _fx_ = _farray_[_index_]; \
-                     (*_fx_)(_args_);})
-#else
 #define AREGP
 #define ARCALL(_farray_,_index_,_args_...)  \
                   ( _farray_[_index_](_args_) )
-#endif
-
 
 extern rw32      (*GetEA[8])(ashort) /*AREGP*/;      /**/
 extern rw8       (*GetFromEA_b[8])(void);

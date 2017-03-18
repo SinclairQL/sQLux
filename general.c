@@ -187,7 +187,7 @@ w8 IntRead(void)
 }
 
 
-inline void REGP1 WriteHWByte(aw32 addr, aw8 d)
+void WriteHWByte(aw32 addr, aw8 d)
 { 
   /*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
   
@@ -230,7 +230,7 @@ inline void REGP1 WriteHWByte(aw32 addr, aw8 d)
 }
 
 
-inline rw8 REGP1  ReadHWByte(aw32 addr)
+rw8 ReadHWByte(aw32 addr)
 {    
   int res=0;
   

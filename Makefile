@@ -17,7 +17,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QL_screen.c QL_poll.c xcodes.c QL_boot.c QL_basext.c \
 	QL_cconv.c iexl_general.c QVFS.c \
 	Xscreen.c QLip.c util.c xc68.c xipc.c script.c \
-	QL_sound.c mach_exception.c \
+	QL_sound.c mach_exception.c memaccess.c \
 	vl.c ide.c block.c unixstuff.c xqlmouse.c \
 	xlmain.c uqlx_cfg.c SDL2screen.c
 
