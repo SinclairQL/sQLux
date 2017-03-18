@@ -1,106 +1,109 @@
-Init.o: Init.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h
-general.o: general.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h memaccess.h mmodes.h
-instructions_ao.o: instructions_ao.c QL68000.h cond.h trace.h iexl.h \
- QDOS.h QL_screen.h misdefs.h
-instructions_pz.o: instructions_pz.c QL68000.h cond.h trace.h iexl.h \
- QDOS.h QL_screen.h misdefs.h
-QLtraps.o: QLtraps.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h QSerial.h QInstAddr.h boot.h qx_proto.h QFilesPriv.h
-QL_hardware.o: QL_hardware.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h QL.h xcodes.h QSound.h QL_config.h QInstAddr.h \
- qx_proto.h QSerial.h QFilesPriv.h
-QL_config.o: QL_config.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h QL.h xcodes.h QL_config.h unix.h uqlx_cfg.h \
+Init.o: Init.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h
+general.o: general.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h memaccess.h mmodes.h
+instructions_ao.o: instructions_ao.c QL68000.h QLtypes.h misdefs.h cond.h \
+ trace.h iexl.h QDOS.h QL_screen.h
+instructions_pz.o: instructions_pz.c QL68000.h QLtypes.h misdefs.h cond.h \
+ trace.h iexl.h QDOS.h QL_screen.h
+QLtraps.o: QLtraps.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL.h QSerial.h QInstAddr.h boot.h qx_proto.h \
+ QFilesPriv.h
+QL_hardware.o: QL_hardware.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h xcodes.h QSound.h QL_config.h QInstAddr.h \
+ qx_proto.h QSerial.h QFilesPriv.h SDL2screen.h
+QL_config.o: QL_config.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h xcodes.h QL_config.h unix.h uqlx_cfg.h \
  emudisk.h qx_proto.h QSerial.h QFilesPriv.h
-dummies.o: dummies.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h qx_proto.h QSerial.h QFilesPriv.h
-vm.o: vm.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h misdefs.h \
- unix.h xcodes.h qx_proto.h QSerial.h QFilesPriv.h
-xqlkey.o: xqlkey.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL_config.h QInstAddr.h uqlx_cfg.h emudisk.h qx_proto.h \
- QSerial.h QFilesPriv.h
-qmtrap.o: qmtrap.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL_config.h QInstAddr.h qx_proto.h QSerial.h QFilesPriv.h
-uxfile.o: uxfile.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h unix.h QL.h QLfiles.h QFilesPriv.h QSerial.h QInstAddr.h \
- QDisk.h emudisk.h qx_proto.h
-QL_serial.o: QL_serial.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h QL.h QInstAddr.h unix.h QSerial.h uqlx_cfg.h \
+dummies.o: dummies.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h qx_proto.h QSerial.h QFilesPriv.h
+vm.o: vm.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h unix.h xcodes.h qx_proto.h QSerial.h QFilesPriv.h
+qmtrap.o: qmtrap.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL_config.h QInstAddr.h qx_proto.h QSerial.h \
+ QFilesPriv.h
+uxfile.o: uxfile.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h unix.h QL.h QLfiles.h QFilesPriv.h QSerial.h \
+ QInstAddr.h QDisk.h emudisk.h qx_proto.h
+QL_serial.o: QL_serial.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h QInstAddr.h unix.h QSerial.h uqlx_cfg.h \
  emudisk.h
-pty.o: pty.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h misdefs.h \
- QL.h driver.h QSerial.h qx_proto.h QFilesPriv.h
-QL_files.o: QL_files.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h QLfiles.h QFilesPriv.h QSerial.h QInstAddr.h QDisk.h \
- unix.h qx_proto.h emudisk.h
-QL_driver.o: QL_driver.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h QL.h xcodes.h driver.h QInstAddr.h unix.h \
+pty.o: pty.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h QL.h driver.h QSerial.h qx_proto.h QFilesPriv.h
+QL_files.o: QL_files.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h QLfiles.h QFilesPriv.h QSerial.h \
+ QInstAddr.h QDisk.h unix.h qx_proto.h emudisk.h
+QL_driver.o: QL_driver.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h xcodes.h driver.h QInstAddr.h unix.h \
  uqlx_cfg.h emudisk.h qx_proto.h QSerial.h QFilesPriv.h QLfiles.h QVFS.h \
  QLip.h QL_sound.h
-QDisk.o: QDisk.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QDisk.h QFilesPriv.h QL.h QL_config.h unix.h emudisk.h \
- qx_proto.h QSerial.h uqlx_cfg.h
-trace.o: trace.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h
-version.o: version.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h
-QLserio.o: QLserio.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QSerial.h driver.h uqlx_cfg.h emudisk.h qx_proto.h \
+QDisk.o: QDisk.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QDisk.h QFilesPriv.h QL.h QL_config.h unix.h \
+ emudisk.h qx_proto.h QSerial.h uqlx_cfg.h
+trace.o: trace.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h
+version.o: version.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h
+QLserio.o: QLserio.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QSerial.h driver.h uqlx_cfg.h emudisk.h qx_proto.h \
  QFilesPriv.h
-QL_screen.o: QL_screen.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h unix.h uqlx_cfg.h emudisk.h qx_proto.h QSerial.h \
+QL_screen.o: QL_screen.c QL_config.h QLtypes.h misdefs.h QL_screen.h \
+ QL68000.h cond.h trace.h iexl.h QDOS.h
+QL_poll.o: QL_poll.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h xcodes.h QL.h QInstAddr.h unix.h qx_proto.h QSerial.h \
  QFilesPriv.h
-QL_poll.o: QL_poll.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h xcodes.h QL.h QInstAddr.h unix.h qx_proto.h QSerial.h \
+xcodes.o: xcodes.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL.h xcodes.h
+QL_boot.o: QL_boot.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL.h QLfiles.h QFilesPriv.h QInstAddr.h QDisk.h \
+ unix.h driver.h qx_proto.h QSerial.h
+QL_basext.o: QL_basext.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL.h QLfiles.h QFilesPriv.h QInstAddr.h \
+ QDisk.h unix.h driver.h qx_proto.h QSerial.h xcodes.h SDL2screen.h
+QL_cconv.o: QL_cconv.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h QL_config.h QInstAddr.h qx_proto.h QSerial.h \
  QFilesPriv.h
-xcodes.o: xcodes.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h xcodes.h
-QL_boot.o: QL_boot.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h QLfiles.h QFilesPriv.h QInstAddr.h QDisk.h unix.h \
- driver.h qx_proto.h QSerial.h
-QL_basext.o: QL_basext.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h QL.h QLfiles.h QFilesPriv.h QInstAddr.h QDisk.h \
- unix.h driver.h qx_proto.h QSerial.h xcodes.h
-QL_cconv.o: QL_cconv.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL_config.h QInstAddr.h qx_proto.h QSerial.h QFilesPriv.h
-iexl_general.o: iexl_general.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h memaccess.h mmodes.h instructions_ao.c \
+iexl_general.o: iexl_general.c QL68000.h QLtypes.h misdefs.h cond.h \
+ trace.h iexl.h QDOS.h QL_screen.h memaccess.h mmodes.h instructions_ao.c \
  instructions_pz.c Init.c
-QVFS.o: QVFS.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h xcodes.h driver.h QInstAddr.h unix.h uqlx_cfg.h emudisk.h \
- QLfiles.h QFilesPriv.h QVFS.h util.h qx_proto.h QSerial.h
-Xscreen.o: Xscreen.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL.h xcodes.h driver.h QInstAddr.h unix.h uqlx_cfg.h emudisk.h \
- script.h qx_proto.h QSerial.h QFilesPriv.h
-QLip.o: QLip.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QSerial.h driver.h uqlx_cfg.h emudisk.h util.h iptraps.h \
+QVFS.o: QVFS.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h QL.h xcodes.h driver.h QInstAddr.h unix.h uqlx_cfg.h \
+ emudisk.h QLfiles.h QFilesPriv.h QVFS.h util.h qx_proto.h QSerial.h
+Xscreen.o: Xscreen.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL.h xcodes.h driver.h QInstAddr.h unix.h uqlx_cfg.h \
+ emudisk.h script.h qx_proto.h QSerial.h QFilesPriv.h
+QLip.o: QLip.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h QSerial.h driver.h uqlx_cfg.h emudisk.h util.h iptraps.h \
  QLip.h xc68.h qx_proto.h QFilesPriv.h
-util.o: util.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QSerial.h driver.h uqlx_cfg.h emudisk.h util.h
+util.o: util.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h QSerial.h driver.h uqlx_cfg.h emudisk.h util.h
 xc68.o: xc68.c xc68.h
-xipc.o: xipc.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h util.h xipc.h qx_proto.h QSerial.h QFilesPriv.h
-script.o: script.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h util.h script.h qx_proto.h QSerial.h QFilesPriv.h
-QL_sound.o: QL_sound.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h qx_proto.h QSerial.h QFilesPriv.h util.h driver.h QL_sound.h
+xipc.o: xipc.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h QDOS.h \
+ QL_screen.h util.h xipc.h qx_proto.h QSerial.h QFilesPriv.h
+script.o: script.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h util.h script.h qx_proto.h QSerial.h QFilesPriv.h
+QL_sound.o: QL_sound.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h qx_proto.h QSerial.h QFilesPriv.h util.h \
+ driver.h QL_sound.h
 mach_exception.o: mach_exception.c
-siginfo.o: siginfo.c
+memaccess.o: memaccess.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h memaccess.h general.h qx_proto.h QSerial.h \
+ QFilesPriv.h
 vl.o: vl.c
 ide.o: ide.c
 block.o: block.c
-unixstuff.o: unixstuff.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h xcodes.h QL_config.h QInstAddr.h unix.h boot.h \
- qx_proto.h QSerial.h QFilesPriv.h QL_sound.h uxfile.h uqlx_cfg.h \
- emudisk.h
-xqlmouse.o: xqlmouse.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h xcodes.h QL.h QInstAddr.h unix.h uqlx_cfg.h emudisk.h \
- qx_proto.h QSerial.h QFilesPriv.h unixstuff.h util.h xipc.h
-x.o: x.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h misdefs.h \
- unix.h uqlx_cfg.h emudisk.h qx_proto.h QSerial.h QFilesPriv.h
-xlmain.o: xlmain.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h QL_config.h QInstAddr.h unix.h boot.h qx_proto.h QSerial.h \
- QFilesPriv.h
-uqlx_cfg.o: uqlx_cfg.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h unix.h qx_proto.h QSerial.h QFilesPriv.h emudisk.h uqlx_cfg.h
+unixstuff.o: unixstuff.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h xcodes.h QL_config.h QInstAddr.h unix.h boot.h \
+ qx_proto.h QSerial.h QFilesPriv.h QL_sound.h uxfile.h SDL2screen.h \
+ uqlx_cfg.h emudisk.h
+xqlmouse.o: xqlmouse.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h xcodes.h QL.h QInstAddr.h unix.h uqlx_cfg.h \
+ emudisk.h qx_proto.h QSerial.h QFilesPriv.h unixstuff.h util.h xipc.h
+xlmain.o: xlmain.c QL68000.h QLtypes.h misdefs.h cond.h trace.h iexl.h \
+ QDOS.h QL_screen.h QL_config.h QInstAddr.h unix.h boot.h qx_proto.h \
+ QSerial.h QFilesPriv.h
+uqlx_cfg.o: uqlx_cfg.c QL68000.h QLtypes.h misdefs.h cond.h trace.h \
+ iexl.h QDOS.h QL_screen.h unix.h qx_proto.h QSerial.h QFilesPriv.h \
+ emudisk.h uqlx_cfg.h
+SDL2screen.o: SDL2screen.c QL_hardware.h QLtypes.h misdefs.h uqlx_cfg.h \
+ emudisk.h QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h
