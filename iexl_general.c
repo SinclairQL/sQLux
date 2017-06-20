@@ -11,7 +11,7 @@
 void debug(char*);
 void debug2(char*,long);
 
-void    (**table)(void);
+void    (**qlux_table)(void);
 
 #ifdef DEBUG
 int trace_rts=0;
@@ -720,7 +720,7 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
 {     
   register void           (**tab)(void);
 
-  tab=table;
+  tab=qlux_table;
 
 rep: 
   while(--nInst>=0)    

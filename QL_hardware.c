@@ -152,7 +152,7 @@ void UseIPC(void)		/* ROM patch: executing IPC command */
 {
 	if((Ptr)gPC-(Ptr)theROM-2==IPC_CMD_ADDR)
 	{	if(IPC_Command()) rts();
-		else table[code=0x40e7]();
+		else qlux_table[code=0x40e7]();
 	}
 	else
 	{	exception=4;
@@ -352,7 +352,7 @@ void QL_KeyTrans(void)
 		WriteLong(aReg[7],ReadLong(aReg[7])+4);
 		rts();
 	}
-	else table[code=KEYTRANS_OCODE]();
+	else qlux_table[code=KEYTRANS_OCODE]();
 }
 
 /* Minerva Keyboard handling */

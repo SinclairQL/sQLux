@@ -656,7 +656,7 @@ NEXT;
 IDECL(trap)
 { 
 #ifdef IE_XL
-  table[code]();
+  qlux_table[code]();
 #else
   exception=32+(code&15);
   extraFlag=true;

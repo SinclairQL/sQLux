@@ -686,7 +686,7 @@ static void SetTabEntries(void (**itable)(void))
 #ifndef IE_XL
 void EmulatorTable(Ptr ibuffer)
 {  
-  table=ibuffer;
+  qlux_table=ibuffer;
   SetTabEntries(ibuffer);
 }
 #endif

@@ -357,9 +357,9 @@ void InitDrivers()
   WW(((uw16*)((Ptr)theROM+DEV_CLOSE_ADDR)),DEVC_CMD_CODE);
   /*WW(((uw16*)((Ptr)theROM+DEV_OPEN_ADDR)),DEV_OPEN_INSTR);*/
 
-  table[DEVO_CMD_CODE]=DrvOpen;
-  table[DEVIO_CMD_CODE]=DrvIO;
-  table[DEVC_CMD_CODE]=DrvClose;
+  qlux_table[DEVO_CMD_CODE]=DrvOpen;
+  qlux_table[DEVIO_CMD_CODE]=DrvIO;
+  qlux_table[DEVC_CMD_CODE]=DrvClose;
 
   while (p->open!=NULL)
     {

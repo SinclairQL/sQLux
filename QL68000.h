@@ -50,7 +50,7 @@ typedef void* Ptr;     /* non ANSI, but convenient... */
 /* end QLtypes.h */
 #define FIX_INS
 
-extern void (**table)(void);
+extern void (**qlux_table)(void);
 
 typedef int OSErr;
 extern char *release;

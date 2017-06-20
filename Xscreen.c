@@ -169,7 +169,7 @@ void devpefio_cmd()
 
 
     code=DEVPEFIO_OCODE;
-    table[code]();
+    qlux_table[code]();
     
   }
 }
@@ -261,13 +261,13 @@ int init_xscreen()
   DEVPEFIO_OCODE=ReadWord(orig_io);
   WW((Ptr)theROM+orig_io,DEVPEF_CMD_CODE);
   
-  table[DEVPEF_CMD_CODE]=devpefio_cmd;
+  qlux_table[DEVPEF_CMD_CODE]=devpefio_cmd;
 
   scan_patch_chans(orig_cdrv);
 
   DEVPEFO_OCODE=ReadWord(orig_open);
   WW((Ptr)theROM+orig_open,DEVPEFO_CMD_CODE);
-  table[DEVPEFO_CMD_CODE]=devpefo_cmd;
+  qlux_table[DEVPEFO_CMD_CODE]=devpefo_cmd;
   
   /*if (qlscreen.qm_lo>131072)*/
   uqlx_protect(qlscreen.qm_lo,qlscreen.qm_len,QX_SCR);

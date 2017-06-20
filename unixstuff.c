@@ -1036,38 +1036,38 @@ void uqlxInit ()
 #endif
    if (!isMinerva)
    {
-      table[IPC_CMD_CODE] = UseIPC;        /* installl pseudoops */
-      table[IPCR_CMD_CODE] = ReadIPC;
-      table[IPCW_CMD_CODE] = WriteIPC;
-      table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
+      qlux_table[IPC_CMD_CODE] = UseIPC;        /* installl pseudoops */
+      qlux_table[IPCR_CMD_CODE] = ReadIPC;
+      qlux_table[IPCW_CMD_CODE] = WriteIPC;
+      qlux_table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
       
-      table[FSTART_CMD_CODE] = FastStartup;
+      qlux_table[FSTART_CMD_CODE] = FastStartup;
    }
-   table[ROMINIT_CMD_CODE] = InitROM;
-   table[MDVIO_CMD_CODE] = MdvIO;
-   table[MDVO_CMD_CODE] = MdvOpen;
-   table[MDVC_CMD_CODE] = MdvClose;
-   table[MDVSL_CMD_CODE] = MdvSlaving;
-   table[MDVFO_CMD_CODE] = MdvFormat;
-   table[POLL_CMD_CODE] = PollCmd;
+   qlux_table[ROMINIT_CMD_CODE] = InitROM;
+   qlux_table[MDVIO_CMD_CODE] = MdvIO;
+   qlux_table[MDVO_CMD_CODE] = MdvOpen;
+   qlux_table[MDVC_CMD_CODE] = MdvClose;
+   qlux_table[MDVSL_CMD_CODE] = MdvSlaving;
+   qlux_table[MDVFO_CMD_CODE] = MdvFormat;
+   qlux_table[POLL_CMD_CODE] = PollCmd;
 
 #ifdef SERIAL
 #ifndef NEWSERIAL
-   table[OSERIO_CMD_CODE] = SerIO;
-   table[OSERO_CMD_CODE] = SerOpen;
-   table[OSERC_CMD_CODE] = SerClose;
+   qlux_table[OSERIO_CMD_CODE] = SerIO;
+   qlux_table[OSERO_CMD_CODE] = SerOpen;
+   qlux_table[OSERC_CMD_CODE] = SerClose;
 #endif
 #endif
 
-   table[SCHEDULER_CMD_CODE] = SchedulerCmd;
+   qlux_table[SCHEDULER_CMD_CODE] = SchedulerCmd;
    if (isMinerva)
    {
-      table[MIPC_CMD_CODE] = KbdCmd;
-      table[KBENC_CMD_CODE] = KBencCmd;
+      qlux_table[MIPC_CMD_CODE] = KbdCmd;
+      qlux_table[KBENC_CMD_CODE] = KBencCmd;
    }
-   table[BASEXT_CMD_CODE]=BASEXTCmd;
+   qlux_table[BASEXT_CMD_CODE]=BASEXTCmd;
 #ifdef AUTO_BOOT
-   table[0x4e43] = btrap3;
+   qlux_table[0x4e43] = btrap3;
 #endif
   
    g_reg = reg;

@@ -17,7 +17,7 @@ void QMExecuteLoop(uw16 *oldPC)  /* fetch and dispatch loop */
 {     
   register void           (**tab)(void);
 
-        tab=table;
+        tab=qlux_table;
 
 	/*printf("enter QME \n");*/
 

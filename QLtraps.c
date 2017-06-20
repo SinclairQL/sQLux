@@ -259,7 +259,7 @@ void btrap3(void)
       /*printf("btrap3: a0=%x\n",aReg[0]);*/
       *((char*)reg+4+RBO)= BOOT_SELECT;
       reg[0]=0;
-      table[code]=trap3;
+      qlux_table[code]=trap3;
       script_read_enable=1;
     }
   else trap3();

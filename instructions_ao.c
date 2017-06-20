@@ -2520,7 +2520,7 @@ NEXT;
 IDECL(code1111)
 {
 #ifdef IE_XL
-  table[code]();
+  qlux_table[code]();
 #else   
   exception=11;
   extraFlag=true;
@@ -2546,7 +2546,7 @@ NEXT;
 IDECL(code1010)
 {   
 #ifdef IE_XL
-  table[code]();
+  qlux_table[code]();
 #else 
   exception=10;
   extraFlag=true;

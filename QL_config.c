@@ -484,7 +484,7 @@ void InitROM(void)
 #endif
 
 #ifndef OLD_PATCH
-	table[code=0x0c93]();    /* run the original routine */
+	qlux_table[code=0x0c93]();    /* run the original routine */
 #endif
 
 }
