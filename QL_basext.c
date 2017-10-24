@@ -9,12 +9,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <stdlib.h>
-
-#include <X11/Xos.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h> 
-#include <X11/Xutil.h>
-#include <X11/cursorfont.h>
+#include <string.h>
 
 #include "QL.h"
 #include "QLfiles.h"
@@ -79,7 +74,7 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
   p->code_addr=(w32)((char*)*iptr-(char*)theROM);         /* store the entry addr */
  
   t=*tptr;
-  if ((int)t&1)
+  if ((uintptr_t)t&1)
     {
       printf("basic extension problem\n");
       cleanup(3);
@@ -91,7 +86,7 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
   t=(w16 *)((char*)t+1);
   strncpy((char *)t,p->name,l);
   t=(w16*)((char*)t+l); /* L !!*/
-  if ((int)t&1) t=(w16*)((char*)t+1);
+  if ((uintptr_t)t&1) t=(w16*)((char*)t+1);
   
   *tptr=t;
    *iptr=(*iptr)+1;
