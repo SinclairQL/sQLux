@@ -612,7 +612,7 @@ int parse_separator(char **name,int nlen,char *opts,open_arg *vals,open_arg *res
 #ifdef TEST
   printf("parse_separator: \'%c\' : %s\n",*opts,*name);
 #endif
-  if (**name!=*opts)
+  if (tolower(**name)!=*opts)
     {
       res->i=vals->i;
 #ifdef TEST
