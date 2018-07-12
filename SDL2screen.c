@@ -249,6 +249,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
         if (keysym->sym == sdlqlmap[i].sdl_kc) {
             if (pressed)
                 queueKey(mod, sdlqlmap[i].code, 0);
+            SDLQLKeyrowChg(sdlqlmap[i].code, pressed);
         }
         i++;
     }
