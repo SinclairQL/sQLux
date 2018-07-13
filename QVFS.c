@@ -56,9 +56,9 @@ int qvf_init(int id,void *p){return 0;}
 int qvf_test(int id, char *name)
 {
   int strict,creat;
-  int res,i,key;
+  int res,key;
   char *cname,*pname,*cmount;
-  
+    unsigned int i;
 
   strict=0;
   creat=0;
