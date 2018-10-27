@@ -1372,7 +1372,6 @@ void ip_io(int id, void *p )
             {
                 reg[1] = res;
                 *reg = 0;
-                aReg[1] = qaddr+res;
             }
             else *reg = res;
             break;
