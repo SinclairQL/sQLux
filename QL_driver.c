@@ -150,11 +150,11 @@ struct PARENTRY ip_pars[]={
 			    {parse_mseparator,"_:",ip_host}, /* dummy */
 			    {parse_mseparator,":",ip_port},
 			    {NULL,NULL,NULL}};
-struct NAME_PARS tcp_name={"*TCP",2,&ip_pars};
-struct NAME_PARS udp_name={"*UDP",2,&ip_pars};
-struct NAME_PARS uxs_name={"*UXS",2,&ip_pars};
-struct NAME_PARS uxd_name={"*UXD",2,&ip_pars};
-struct NAME_PARS sck_name={"*SCK_",0, NULL};
+struct NAME_PARS tcp_name={"TCP",2,&ip_pars};
+struct NAME_PARS udp_name={"UDP",2,&ip_pars};
+struct NAME_PARS uxs_name={"UXS",2,&ip_pars};
+struct NAME_PARS uxd_name={"UXD",2,&ip_pars};
+struct NAME_PARS sck_name={"SCK_",0, NULL};
 
 #endif
 

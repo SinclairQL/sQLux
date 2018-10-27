@@ -96,7 +96,7 @@ int ip_open(int id, void **priv)
     u_short port = 0;
     struct sockaddr_in name;
     int cnstatus=0;
-    static const char *dnms[] = {"*tcp,","*udp","*uxs","*uxd","*sck",NULL};
+    static const char *dnms[] = {"tcp,","udp","uxs","uxd","sck",NULL};
     const char **dp;
     short dindx;
     
@@ -105,7 +105,7 @@ int ip_open(int id, void **priv)
 
      for(dindx = 0, dp = dnms; *dp; dp++,dindx++)
       {
-         if(strncasecmp(Drivers[id].namep->name, *dp, 4) == 0)
+         if(strncasecmp(Drivers[id].namep->name, *dp, 3) == 0)
              break;
       }
      
