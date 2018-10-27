@@ -72,9 +72,7 @@ extern void FlushDisplay (void);
 
 extern void DbgInfo (void);
 
-#ifdef AUTO_BOOT
 void btrap3 (void);
-#endif
 
 extern void SchedulerCmd (void);
 extern void KbdCmd (void);
@@ -1073,9 +1071,9 @@ void uqlxInit ()
       qlux_table[KBENC_CMD_CODE] = KBencCmd;
    }
    qlux_table[BASEXT_CMD_CODE]=BASEXTCmd;
-#ifdef AUTO_BOOT
-   qlux_table[0x4e43] = btrap3;
-#endif
+
+   if (QMD.skip_boot)
+	qlux_table[0x4e43] = btrap3;
   
    g_reg = reg;
 

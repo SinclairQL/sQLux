@@ -249,7 +249,6 @@ void trap3(void)
 
 extern int script_read_enable;
 
-#ifdef AUTO_BOOT
 void btrap3(void)
 {
   DECR_SC();
@@ -264,7 +263,7 @@ void btrap3(void)
     }
   else trap3();
 }
-#endif
+
 #if 0
 void trap4(void)
 {	w32 a;

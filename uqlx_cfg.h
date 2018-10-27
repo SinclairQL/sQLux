@@ -39,6 +39,7 @@ typedef struct
 #endif
   short cpu_hog;
   short fastStartup;
+  short skip_boot;
   short fwhite;
   short xkey_on;
   short do_grab;

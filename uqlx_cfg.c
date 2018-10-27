@@ -49,6 +49,7 @@ QMDATA QMD = {
 #endif
     1,                      /* CPU hog=true */
     1,                        /* fastStartup=true */
+    1,				/* skip_boot=true */
     1,                    /* use real white instead of gray95 */
     0,                    /* ! use different key-read method as default */ 
     1,
@@ -389,6 +390,7 @@ static PARSELIST pl[] = {
 {"CPU_HOG",(PVFV) pInt2, offsetof(QMDATA, cpu_hog) },
 {"REAL_WHITE",(PVFV) pInt2, offsetof(QMDATA, fwhite) },
 {"FAST_START",(PVFV) pInt2, offsetof(QMDATA, fastStartup) },
+{"SKIP_BOOT",(PVFV) pInt2, offsetof(QMDATA, skip_boot) },
 {"XKEY_ON",(PVFV) pInt2, offsetof(QMDATA, xkey_on) },
 {"STRICT_LOCK",(PVFV) pInt2, offsetof(QMDATA, strict_lock) },
 {"NO_PATCH",(PVFV) pInt2, offsetof(QMDATA, no_patch) },

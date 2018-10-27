@@ -8,5 +8,4 @@
 #define Q_F3   240
 #define Q_F4   244
 
-#define AUTO_BOOT
 #define BOOT_SELECT Q_F1
