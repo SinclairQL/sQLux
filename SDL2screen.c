@@ -41,8 +41,12 @@ struct QLcolor QLcolors[8] = {
 		{ 0xFF, 0xFF, 0xFF},
 };
 
+uint32_t SDLcolors[8];
+
 int QLSDLScreen(void)
 {
+	int i;
+
 	src_rect.x = 0;
 	src_rect.y = 0;
 	src_rect.w = qlscreen.xres;
@@ -72,6 +76,10 @@ int QLSDLScreen(void)
 
 	ql_screen = SDL_CreateRGBSurfaceWithFormat(0, qlscreen.xres, qlscreen.yres,
 			ql_window_format->BitsPerPixel, ql_window_format->format);
+
+	
+	for (i = 0; i < 8; i++)
+		SDLcolors[i] = SDL_MapRGB(ql_window_format, QLcolors[i].r, QLcolors[i].g, QLcolors[i].b);
 }
 
 static int QLSDLUpdatePixelBuffer()
@@ -100,22 +108,19 @@ static int QLSDLUpdatePixelBuffer()
 
 		if (display_mode == 8) {
 
-			for(i=0; i<4; i++) {
+			for(i = 0; i < 8; i+=2) {
 				uint32_t x;
 
 				color = ((t1&2)<<1)+((t2&3))+((t1&1)<<3);
 
-				x = SDL_MapRGB(ql_window_format,
-						QLcolors[color].r,
-						QLcolors[color].g,
-						QLcolors[color].b);
+				x = SDLcolors[color];
 
-				if(ql_window_format->BitsPerPixel == 32) {
-					*(pixel_ptr32 + 7-(2*i)) = x;
-					*(pixel_ptr32 + 7-(2*i+1)) = x;
+				if (ql_window_format->BitsPerPixel == 32) {
+					*(pixel_ptr32 + 7-(i)) = x;
+					*(pixel_ptr32 + 7-(i+1)) = x;
 				} else {
-					*(pixel_ptr16 + 7-(2*i)) = x;
-					*(pixel_ptr16 + 7-(2*i+1)) = x;
+					*(pixel_ptr16 + 7-(i)) = x;
+					*(pixel_ptr16 + 7-(i+1)) = x;
 				}
 
 				t1 >>=2;
@@ -126,14 +131,12 @@ static int QLSDLUpdatePixelBuffer()
 			for(i=0; i<8; i++)
 			{
 				uint32_t x;
+
 				color = ((t1&1)<<2)+((t2&1)<<1)+((t1&1)&(t2&1));
 
-				x = SDL_MapRGB(ql_window_format,
-						QLcolors[color].r,
-						QLcolors[color].g,
-						QLcolors[color].b);
+				x = SDLcolors[color];
 
-				if(ql_window_format->BitsPerPixel == 32) {
+				if (ql_window_format->BitsPerPixel == 32) {
 					*(pixel_ptr32 + 7-i) = x;
 				} else {
 					*(pixel_ptr16 + 7-i) = x;
