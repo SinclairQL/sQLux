@@ -74,9 +74,11 @@ int QLSDLScreen(void)
 	ql_window_surface=SDL_GetWindowSurface(ql_window);
 	ql_window_format = ql_window_surface->format;
 
-	ql_screen = SDL_CreateRGBSurfaceWithFormat(0, qlscreen.xres, qlscreen.yres,
+	if (qlscreen.zoom != 1)
+		ql_screen = SDL_CreateRGBSurfaceWithFormat(0, qlscreen.xres, qlscreen.yres,
 			ql_window_format->BitsPerPixel, ql_window_format->format);
-
+	else
+		ql_screen = ql_window_surface;
 	
 	for (i = 0; i < 8; i++)
 		SDLcolors[i] = SDL_MapRGB(ql_window_format, QLcolors[i].r, QLcolors[i].g, QLcolors[i].b);
@@ -163,12 +165,13 @@ int QLSDLRenderScreen(void)
 
 	QLSDLUpdatePixelBuffer();
 
-	if(SDL_MUSTLOCK(ql_window_surface)) {
-		SDL_LockSurface(ql_window_surface);
+	if (qlscreen.zoom != 1) {
+		if(SDL_MUSTLOCK(ql_window_surface)) {
+			SDL_LockSurface(ql_window_surface);
+		}
+		SDL_BlitScaled(ql_screen, &src_rect, ql_window_surface, NULL);
+		SDL_UnlockSurface(ql_window_surface);
 	}
-	SDL_BlitScaled(ql_screen, &src_rect, ql_window_surface, NULL);
-	((uint32_t *)(ql_window_surface->pixels))[0]=0xFFFFFF;
-	SDL_UnlockSurface(ql_window_surface);
 
 	SDL_UpdateWindowSurface(ql_window);
 }
