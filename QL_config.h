@@ -4,7 +4,6 @@
 
 #ifndef _QL_CONFIG_H
 #define _QL_CONFIG_H
-#include "QLtypes.h"
 
 void InitROM(void);
 void EmulatorTable(Ptr);

@@ -15,20 +15,6 @@
 #include <time.h>
 #include <unistd.h>
 
-
-#ifdef XAW
-#include <X11/Intrinsic.h>
-#include <X11/StringDefs.h>
-#endif
-
-#include <X11/Xos.h>
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#ifdef XAW
-#define BOOLEAN_ALREADY_DEFINED
-#endif
-
 #include "xcodes.h"
 #include "QL.h"
 #include "QDOS.h"
@@ -43,14 +29,6 @@
 #include "util.h"
 #include "xipc.h"
  
-#ifdef XAW
-extern Widget bitMap;
-/*extern short xmouse;*/
-#else
-extern Display *display;
-extern Window imagewin;
-#endif
-
 /*extern int schedCount;*/
 extern int inside;
 extern int screen_drawable;

@@ -4,8 +4,6 @@
  * (c) UQLX - see COPYRIGHT
  */
 
-#include "QLtypes.h"
-
 typedef struct _SCREEN_SPECS
 {
   uw32 qm_lo;

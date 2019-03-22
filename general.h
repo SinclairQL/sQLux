@@ -1,6 +1,5 @@
 #ifndef _GENERAL_H
 #define _GENERAL_H
-#include "QLtypes.h"
 
 void WriteHWByte(aw32 addr, aw8 d);
 rw8 ReadHWByte(aw32 addr);

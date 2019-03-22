@@ -2,10 +2,9 @@
  * (c) UQLX - see COPYRIGHT
  */
 #include <stdio.h>
-
+#include "QL68000.h"
 #include "QL_config.h"
 #include "QL_screen.h"
-#include "QL68000.h"
 
 screen_specs qlscreen = 
 {

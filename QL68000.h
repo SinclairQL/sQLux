@@ -12,7 +12,7 @@
 
 /* needed for ntoh? functions */
 #include <arpa/inet.h>
-#include "QLtypes.h"
+#include <stdint.h>
 
 #undef QM_BIG_ENDIAN
 
@@ -32,6 +32,17 @@
 #define true 1
 #define false 0
 
+typedef int8_t w8;
+typedef int16_t w16;
+typedef int32_t w32;
+typedef uint8_t uw8;
+typedef uint16_t uw16;
+typedef uint32_t uw32;
+
+typedef unsigned char Cond;
+typedef Cond Boolean;
+typedef void* Ptr;
+
 /* use the wide type because otherwise gcc will promote *every*
  * arg and return value */
 typedef short ashort;
@@ -46,6 +57,12 @@ typedef int shindex;
 typedef int bctype;
 
 typedef void* Ptr;     /* non ANSI, but convenient... */
+
+struct qFloat
+{
+   uw16    exp;
+   uw32    mant;
+};
 
 /* end QLtypes.h */
 #define FIX_INS

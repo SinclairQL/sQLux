@@ -6,7 +6,6 @@
 /* define memory access fns */
 #include "QL68000.h"
 #include "memaccess.h"
-#include "QLtypes.h"
 #include "general.h"
 #include "qx_proto.h"
 
