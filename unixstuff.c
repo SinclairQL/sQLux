@@ -85,7 +85,7 @@ int script = 0;
 int redir_std = 0;
 
 int scrcnt = 0;
-volatile int doPoll = 0;
+//volatile int doPoll = 0;
 
 #ifdef VTIME
 volatile poll_req = 0;   /* debug only */
@@ -184,7 +184,7 @@ static int flptest = 0;
 
 void dosignal ()
 {
-   doPoll = 0;
+   SDL_AtomicSet(&doPoll, 0);
   
 #ifdef SOUND
    if (delay_list)
@@ -250,7 +250,7 @@ void oncc (int sig)
 
 void signalTimer ()
 {
-   doPoll = 1;
+   //doPoll = 1;
 #ifdef VTIME
    poll_req++;
 #endif
@@ -263,7 +263,7 @@ void signalTimer ()
 void ontsignal (int sig)
 {
    /*set_rtc_emu();*/   /* .. not yet working */
-   signalTimer ();
+   //signalTimer ();
 }
 
 /* rather crude but reliable */
@@ -285,20 +285,6 @@ void on_fat_int (int x)
            "out of control\n");
    dbginfo("FATAL error, PC may not be displayed correctly\n");
    cleanup(44);
-}
-
-void init_timers ()
-{
-   struct itimerval val;
-
-#ifndef VTIME   
-   val.it_value.tv_sec = 0L;
-   val.it_value.tv_usec = 20000;
-  
-   val.it_interval = val.it_value;
-
-   setitimer(ITIMER_REAL, &val, NULL);
-#endif
 }
 
 void InitDialogErr (int x)
@@ -386,45 +372,6 @@ static void qm_reaper ()
 
 void init_signals ()
 {
-   struct sigaction sac;
-   long i;
-
-   sigemptyset(&(sac.sa_mask));
-   sac.sa_flags = 0;
-#if !defined(SUNOS) && !defined(NO_NODEFER)
-   sac.sa_flags=SA_NODEFER;
-#endif
-
-   /* Works for plain signal handlers where we don't need more info */
-   for(i = 1; i <= SIGUSR2; i++)
-   {
-      sac.sa_handler = oncc;
-      sigaction(i, &sac, NULL);
-   }
-   sac.sa_handler = SIG_IGN;
-   sigaction(SIGPIPE, &sac, NULL);
-
-   sac.sa_handler = ontsignal;
-   sigaction(SIGALRM, &sac, NULL);
-
-#ifndef NSIG
-#define NSIG _NSIG
-#endif
-
-   sac.sa_handler = on_fat_int;
-   sigaction(SIGSEGV, &sac, NULL);
-   sigaction(SIGBUS, &sac, NULL);
-   sigaction(SIGILL, &sac, NULL);
-   sigaction(SIGQUIT, &sac, NULL);
-
-   sac.sa_handler = InitDialogErr;
-   if (sigaction(SIGUSR1, &sac, NULL))
-      perror("could not redefine SIGUSR1\n");
-
-#ifdef UX_WAIT
-   sac.sa_handler = sigchld_handler;
-   sigaction(SIGCHLD, &sac, NULL);
-#endif
 }
 
 int load_rom(char *,w32);
@@ -1100,8 +1047,6 @@ void uqlxInit ()
        undoe this effect in init_xscreen() */
       uqlx_protect(qlscreen.qm_lo,qlscreen.qm_len,QX_NONE);
    }
-
-   init_timers();
   
    InitialSetup();
   
@@ -1125,8 +1070,9 @@ void QLRun(void)
 #ifndef XAW
       exec:
 #endif
+
    ExecuteChunk(3000);
-   //QLSDLRenderScreen();
+
 #ifdef UX_WAIT
    if (run_reaper)
       qm_reaper();

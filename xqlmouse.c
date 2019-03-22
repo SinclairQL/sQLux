@@ -400,83 +400,50 @@ void QLMovePointer(int pos_x,int pos_y)
 
 void SchedulerCmd()
 {
-  w32 saved_regs[16];
-  
-  if ((long)((Ptr)gPC-(Ptr)theROM)-2 != SCHEDULER_CMD_ADDR)
-    {
-      exception=4;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      return;
-    }
-  
-  save_regs(saved_regs);
+	w32 saved_regs[16];
 
-#ifndef XAW
-  if (!script)
-  //process_events();
-#endif
+	if ((long)((Ptr)gPC-(Ptr)theROM)-2 != SCHEDULER_CMD_ADDR)
+	{
+		exception=4;
+		extraFlag=true;
+		nInst2=nInst;
+		nInst=0;
+		return;
+	}
 
-  if ((schedCount>min_idle || 
-       (quickMouseUpdate && ptractive() && (llastx!=getMouseX() || llasty!=getMouseY()))) &&
-      /*screen_drawable &&*/
-      ((DISPLAY_CHANGED()) || 
-       (rx1<=rx2 && ry1<=ry2))  )
-    {
-#if 0
-      if (quickMouseUpdate && ptractive() && (llastx!=getMouseX() || llasty!=getMouseY())) 
-	{printf(".");fflush(stdout);}
-#endif
+	save_regs(saved_regs);
 
-      scrcnt=5;
-      //FlushDisplay();
-#if defined(VM_SCR) || defined(EVM_SCR)
-#else
-      displayFrom=0; 
-      displayTo=0; 
-#endif
-      doscreenflush=0;
-    }
+	if (!script)
+
+		if ((schedCount>min_idle ||
+				(quickMouseUpdate && ptractive() && (llastx!=getMouseX() || llasty!=getMouseY()))) &&
+				/*screen_drawable &&*/
+				((DISPLAY_CHANGED()) ||
+						(rx1<=rx2 && ry1<=ry2))  )
+		{
+			scrcnt=5;
+			doscreenflush=0;
+		}
 
 
 #ifdef MOUSE
-  MouseTask();
+	MouseTask();
 #endif
 
-#ifndef VTIME
-  if (QMD.cpu_hog==0 && schedCount++>min_idle)  /* QDOS running idle */
-    {
-      /*printf(".");fflush(stdout);*/
-      /*printf("schedCount %d\n",schedCount);*/
-      
-      if (nInst>5)
+	if (QMD.cpu_hog==0 && schedCount++>min_idle)  /* QDOS running idle */
 	{
-	  nInst2=nInst;
-	  nInst=5; 
+		/*printf(".");fflush(stdout);*/
+		/*printf("schedCount %d\n",schedCount);*/
+
+		if (nInst>5)
+		{
+			nInst2=nInst;
+			nInst=5;
+		}
 	}
- 
-#ifndef __linux__
-      pause();       
-#else 
-	{	    
-	    sigset_t mask, oldmask;
-	    /* Set up the mask of signals to temporarily block. */
-	    sigemptyset (&mask);
-	    sigaddset (&mask, SIGALRM);
-	    /* Wait for a signal to arrive. */
-	    sigprocmask (SIG_BLOCK, &mask, &oldmask);
-	    while (schedCount)
-		sigsuspend (&oldmask);
-	    sigprocmask (SIG_UNBLOCK, &mask, NULL);
-	}
-#endif
-    }
-#endif /* VTIME */
-  
-  restore_regs(saved_regs);
-   
-  rts();
+	restore_regs(saved_regs);
+
+	rts();
 }
 
 

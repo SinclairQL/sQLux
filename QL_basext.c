@@ -584,7 +584,6 @@ int do_fork()
     /* We are in the child */
     if (pid == 0) {
         QLSDLScreen();
-        init_timers();
         fork_files();
     } else { /* We are in the parent */
       QLSDLScreen();

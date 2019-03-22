@@ -4,7 +4,7 @@
 
 #define STATIC static
 #include "QL68000.h"
-
+#include "SDL2screen.h"
 #include <signal.h>
 #include <stdio.h>
 
@@ -615,7 +615,7 @@ endLoop: MOVEM.L   (A7)+,A2-A4
 
 /*  */
 
-extern volatile int doPoll;
+//extern volatile int doPoll;
 
 #ifdef FASTLOOP
 static int itable_valid=0;
@@ -705,7 +705,7 @@ nextI:
     }
 #endif
 
-  if (doPoll) dosignal();
+  if (SDL_AtomicGet(&doPoll)) dosignal();
 
   if(extraFlag)
     {
@@ -733,7 +733,7 @@ rep:
       tab[code=RW(pc++)&0xffff]();
     }
 
-  if (doPoll) dosignal();
+  if (SDL_AtomicGet(doPoll)) dosignal();
 
   if(extraFlag)
     {

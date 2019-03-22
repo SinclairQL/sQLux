@@ -4,6 +4,7 @@
 #include "QL_hardware.h"
 #include "uqlx_cfg.h"
 #include "QL68000.h"
+#include "SDL2screen.h"
 
 static SDL_Window *ql_window = NULL;
 static SDL_Surface *ql_window_surface = NULL;
@@ -12,6 +13,8 @@ static SDL_Surface *ql_screen = NULL;
 static SDL_Rect src_rect;
 static SDL_Rect dest_rect;
 static char sdl_win_name[128];
+
+SDL_atomic_t doPoll;
 
 static int colors[8]={
 		0x000000,
@@ -45,6 +48,7 @@ uint32_t SDLcolors[8];
 
 int QLSDLScreen(void)
 {
+	SDL_TimerID fiftyhz_timer;
 	int i;
 
 	src_rect.x = 0;
@@ -82,6 +86,10 @@ int QLSDLScreen(void)
 	
 	for (i = 0; i < 8; i++)
 		SDLcolors[i] = SDL_MapRGB(ql_window_format, QLcolors[i].r, QLcolors[i].g, QLcolors[i].b);
+
+    SDL_AtomicSet(&doPoll, 0);
+	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
+
 }
 
 static int QLSDLUpdatePixelBuffer()
@@ -355,3 +363,11 @@ void QLSDLExit(void)
 	SDL_Quit();
 }
 
+Uint32 QLSDL50Hz(Uint32 interval, void *param)
+{
+	SDL_AtomicSet(&doPoll, 1);
+
+	schedCount = 0;
+
+	return interval;
+}
