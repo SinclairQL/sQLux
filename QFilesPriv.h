@@ -49,26 +49,26 @@ typedef struct {
 
 struct fileHeader *GetFileHeader(FileNum fileNum);
   
-#define _fNumber 0
-#define _pos 2
-#define _eof 6
-#define _slave 10
-#define _name 20
-#define _next (20+38)
-#define _vol (_next+4)
-#define _dir (_vol+2)
-#define _ref (_dir+4)             /* abuse this field to hold update status */
-#define _key (_ref+4)
-#define _drive (_key+2)
-#define _isdir (_drive+2)
-#define _open (_isdir+2)
-#define _qlDisk (_open+2)
-#define _id (_qlDisk+2)
-#define _filesys (_id+4)
-#define _hfileref (_filesys+4)
+#define _QLF_fNumber 0
+#define _QLF_pos 2
+#define _QLF_eof 6
+#define _QLF_slave 10
+#define _QLF_name 20
+#define _QLF_next (20+38)
+#define _QLF_vol (_QLF_next+4)
+#define _QLF_dir (_QLF_vol+2)
+#define _QLF_ref (_QLF_dir+4)             /* abuse this field to hold update status */
+#define _QLF_key (_QLF_ref+4)
+#define _QLF_drive (_QLF_key+2)
+#define _QLF_isdir (_QLF_drive+2)
+#define _QLF_open (_QLF_isdir+2)
+#define _QLF_qlDisk (_QLF_open+2)
+#define _QLF_id (_QLF_qlDisk+2)
+#define _QLF_filesys (_QLF_id+4)
+#define _QLF_hfileref (_QLF_filesys+4)
 /*#define _nfn   (_hfileref+4)*/
-#define _hf_fcb (_hfileref+4)     /* sizeof == 8 !!*/
-#define mdvFile_len (_hf_fcb+8)
+#define _QLF_hf_fcb (_QLF_hfileref+4)     /* sizeof == 8 !!*/
+#define mdvFile_len (_QLF_hf_fcb+8)
 
 /* Macros needed to avoid alignment errors on certain architectures  */
 #if 0
@@ -81,51 +81,51 @@ struct fileHeader *GetFileHeader(FileNum fileNum);
 #endif
 #endif
 
-#define SET_POS(_mdvf_,_pos_) (WL((Ptr)((Ptr)(_mdvf_)+_pos),(_pos_)))
-#define GET_POS(_mdvf_)   (RL((Ptr)((Ptr)(_mdvf_)+_pos)))
-#define SET_EOF(_mdvf_,_pos_)  (WL((Ptr)((Ptr)(_mdvf_)+_eof),(_pos_)))
-#define GET_EOF(_mdvf_)  (RL((Ptr)((Ptr)(_mdvf_)+_eof)))
-#define SET_REF(_mdvf_,_ref_) (WL((Ptr)((Ptr)(_mdvf_)+_ref),(_ref_)))
-#define GET_REF(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_ref)))
+#define SET_POS(_mdvf_,_pos_) (WL((Ptr)((Ptr)(_mdvf_)+_QLF_pos),(_pos_)))
+#define GET_POS(_mdvf_)   (RL((Ptr)((Ptr)(_mdvf_)+_QLF_pos)))
+#define SET_EOF(_mdvf_,_pos_)  (WL((Ptr)((Ptr)(_mdvf_)+_QLF_eof),(_pos_)))
+#define GET_EOF(_mdvf_)  (RL((Ptr)((Ptr)(_mdvf_)+_QLF_eof)))
+#define SET_REF(_mdvf_,_ref_) (WL((Ptr)((Ptr)(_mdvf_)+_QLF_ref),(_ref_)))
+#define GET_REF(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_QLF_ref)))
 
 static inline void SET_NEXT(struct mdvFile *_mdvf_, struct mdvFile *_nxt_) {
 	if (!_nxt_) {
-		WL((Ptr)((Ptr)(_mdvf_)+_next),0);
+		WL((Ptr)((Ptr)(_mdvf_)+_QLF_next),0);
 	} else {
-		WL((Ptr)((Ptr)(_mdvf_)+_next),(w32)((uintptr_t)_nxt_-(uintptr_t)theROM));
+		WL((Ptr)((Ptr)(_mdvf_)+_QLF_next),(w32)((uintptr_t)_nxt_-(uintptr_t)theROM));
 	}
 }
 static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
 	uintptr_t val;
 
-	val = RL((Ptr)((Ptr)(_mdvf_)+_next));
+	val = RL((Ptr)((Ptr)(_mdvf_)+_QLF_next));
 	if(val)
 		val += (uintptr_t)theROM;
 
 	return (struct mdvFile *)val;
 }
 
-#define SET_ID(_mdvf_,_id_) (WL((Ptr)((Ptr)(_mdvf_)+_id),(_id_)))
-#define GET_ID(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_id)))
-#define GET_OPEN(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_open)))
-#define SET_OPEN(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_open),(_val_)))
-#define GET_DRIVE(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_drive)))
-#define GET_ISDIR(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_isdir)))
-#define GET_ISDISK(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_qlDisk)))
-#define NAME_REF(_mdvf_) ((char *)(Ptr)(_mdvf_)+_name)
-#define GET_KEY(_mdvf_) ((w16)RW((Ptr)((Ptr)(_mdvf_)+_key)))
-#define SET_DRIVE(_mdvf_,_drv_) (WW((Ptr)((Ptr)(_mdvf_)+_drive),(_drv_)))
-#define SET_ISDIR(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_isdir),(_val_)))
-#define SET_ISDISK(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_qlDisk),(_val_)))
-#define SET_KEY(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_key),(_val_)))
-#define GET_FILESYS(_mdvf_)  ((w32)(RL((Ptr)((Ptr)(_mdvf_)+_filesys))))
-#define SET_FILESYS(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_filesys),(_val_)))
-#define GET_HFILE(_mdvf_)  ((RL((Ptr)((Ptr)(_mdvf_)+_hfileref))))
-#define SET_HFILE(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_hfileref),(_val_)))
+#define SET_ID(_mdvf_,_id_) (WL((Ptr)((Ptr)(_mdvf_)+_QLF_id),(_id_)))
+#define GET_ID(_mdvf_) (RL((Ptr)((Ptr)(_mdvf_)+_QLF_id)))
+#define GET_OPEN(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_QLF_open)))
+#define SET_OPEN(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_QLF_open),(_val_)))
+#define GET_DRIVE(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_QLF_drive)))
+#define GET_ISDIR(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_QLF_isdir)))
+#define GET_ISDISK(_mdvf_) (RW((Ptr)((Ptr)(_mdvf_)+_QLF_qlDisk)))
+#define NAME_REF(_mdvf_) ((char *)(Ptr)(_mdvf_)+_QLF_name)
+#define GET_KEY(_mdvf_) ((w16)RW((Ptr)((Ptr)(_mdvf_)+_QLF_key)))
+#define SET_DRIVE(_mdvf_,_drv_) (WW((Ptr)((Ptr)(_mdvf_)+_QLF_drive),(_drv_)))
+#define SET_ISDIR(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_QLF_isdir),(_val_)))
+#define SET_ISDISK(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_QLF_qlDisk),(_val_)))
+#define SET_KEY(_mdvf_,_val_) (WW((Ptr)((Ptr)(_mdvf_)+_QLF_key),(_val_)))
+#define GET_FILESYS(_mdvf_)  ((w32)(RL((Ptr)((Ptr)(_mdvf_)+_QLF_filesys))))
+#define SET_FILESYS(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_QLF_filesys),(_val_)))
+#define GET_HFILE(_mdvf_)  ((RL((Ptr)((Ptr)(_mdvf_)+_QLF_hfileref))))
+#define SET_HFILE(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_QLF_hfileref),(_val_)))
 
-#define GET_FCB(_mdvf_)  ((struct HF_FCB *)(GET_POINTER((Ptr)(_mdvf_) + _hf_fcb)))
+#define GET_FCB(_mdvf_)  ((struct HF_FCB *)(GET_POINTER((Ptr)(_mdvf_) + _QLF_hf_fcb)))
 /*(RL((Ptr)((Ptr)(_mdvf_)+_hf_fcb))))*/
-#define SET_FCB(_mdvf_,_val_)  SET_POINTER((Ptr)(_mdvf_)+_hf_fcb,(_val_))
+#define SET_FCB(_mdvf_,_val_)  SET_POINTER((Ptr)(_mdvf_)+_QLF_hf_fcb,(_val_))
 /*(WL((Ptr)((Ptr)(_mdvf_)+_hf_fcb),(_val_)))*/
 
 #define SET_FNUMBER(_mxdvf_,_num_)  (GET_FCB(_mxdvf_)->fileNum=_num_) 

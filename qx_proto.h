@@ -12,7 +12,7 @@
 extern void InitialSetup(void);
 extern void init_bas_exts(void);
 void init_iso(void);
-int QMParams (void);
+void QMParams (void);
 extern void SchedInit(void);
 extern int init_xscreen(void);
 extern void init_poll(void);

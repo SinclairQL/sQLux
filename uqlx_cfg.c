@@ -18,6 +18,7 @@
 
 #include "unix.h"
 #include "qx_proto.h"
+#include "uxfile.h"
 
 #ifdef __EMX__
 #include <os2emx.h>
@@ -92,7 +93,7 @@ void CheckDev (EMUDEV_t *qd, char *d1, char *d2, char *d3 )
     short idev = -1;
     short lfree = -1;
     short i;
-    char tmp[400];
+    char tmp[401];
     int err;
 
     struct stat sbuf;
@@ -454,7 +455,7 @@ FILE *lopen(const char *s, const char *mode)
     return fp;
 }
 
-int QMParams (void)
+void QMParams (void)
 {
     FILE *fp;
     char *pf;
