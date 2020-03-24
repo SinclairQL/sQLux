@@ -8,10 +8,6 @@
 #ifndef _MEMACCESS_H
 #define _MEMACCESS_H
 
-#define ReadDispByte(_addr_) (*(uw8 *)((Ptr)theROM+((long)_addr_)))
-#define ReadDispWord(__addr__) RW((uw16*)((Ptr)theROM+((long)__addr__)))
-#define ReadDispLong(_adr_) (RL((Ptr)theROM+((long)_adr_)))
-
 extern rw8 ReadByte(aw32 addr);
 extern rw16 ReadWord(aw32 addr);
 extern rw32 ReadLong(aw32 addr);

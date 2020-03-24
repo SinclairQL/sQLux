@@ -14,17 +14,6 @@
 
 #define DUMMY(name,par)  void name(par){/*printf("warning: calling dummy function: %s \n",__FUNCTION__);*/}
 
-/*DUMMY(QDiskFlush);*/
-/*DUMMY(CloseAllFiles);*/
-/*DUMMY(AllocateDisk);*/
-/*DUMMY(WriteMdvControl);*/
-
-
-w8 ReadDispByte(w32 addr)
-{ 
-  return *((w8*)theROM+addr);
-}
-
 size_t x_read(int fildes, void *buf, size_t byt)
 {
   int res;
@@ -36,36 +25,7 @@ size_t x_read(int fildes, void *buf, size_t byt)
   return res;
 }
 
-
-w16 ReadDispWord(w32 addr)
-{ 
-  return RW((w16*)theROM+addr);
-}
-
-w32 ReadDispLong(w32 addr)
-{
-  return RL((w32*)theROM+addr);
-}
 void ValidateDispByte(w32 addr){}
-
-#if 0
-void ExceptionIn(char n)
-{
-  ShowException();
-#ifdef DEBUG
-  /*printf("processing Exception %d\n",n);*/
-#endif
-}
-
-
-void ExceptionOut(void)
-{ 
-#ifdef DEBUG
-  /*printf("RTE\n");*/
-#endif
-}
-#endif
-
 
 void debug(char *msg)
 { 
