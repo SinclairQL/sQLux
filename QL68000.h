@@ -45,11 +45,11 @@ typedef void* Ptr;
 
 /* use the wide type because otherwise gcc will promote *every*
  * arg and return value */
-typedef short ashort;
+typedef w16 ashort;
 typedef w8 aw8,rw8,ruw8;
 typedef w16 aw16,rw16,ruw16;
 typedef w32 aw32,rw32,ruw32;
-typedef unsigned short gshort;
+typedef uw16 gshort;
 typedef unsigned char rCond;
 
 typedef int shindex;
