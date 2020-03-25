@@ -1,3 +1,6 @@
+/*
+ *
+ */
 #include <inttypes.h>
 #include <SDL2/SDL.h>
 
@@ -5,6 +8,8 @@
 #include "uqlx_cfg.h"
 #include "QL68000.h"
 #include "SDL2screen.h"
+#include "qlmouse.h"
+#include "qx_proto.h"
 
 static SDL_Window *ql_window = NULL;
 static SDL_Surface *ql_window_surface = NULL;
@@ -15,17 +20,6 @@ static SDL_Rect dest_rect;
 static char sdl_win_name[128];
 
 SDL_atomic_t doPoll;
-
-static int colors[8]={
-		0x000000,
-		0x0000FF,
-		0xFF0000,
-		0xFF00FF,
-		0x00FF00,
-		0x00FFFF,
-		0xFFFF00,
-		0xFFFFFF
-};
 
 struct QLcolor {
 	int r;
@@ -92,7 +86,7 @@ int QLSDLScreen(void)
 
 }
 
-static int QLSDLUpdatePixelBuffer()
+static void QLSDLUpdatePixelBuffer()
 {
 	uint8_t *scr_ptr = (void *)theROM + qlscreen.qm_lo;
 	uint32_t *pixel_ptr32;
