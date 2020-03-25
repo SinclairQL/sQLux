@@ -466,6 +466,7 @@ OSErr QFOpenDisk(struct mdvFile *f)
       
       curr_flpfcb->qdh= (struct qDiscHeader *)curr_flpfcb->buffer;
       /*InitDiskTables();*/
+      return 0;
     }
   else return 0;  /* nothing to do */
 }
@@ -477,7 +478,7 @@ static OSErr DiskRead(long fref,Ptr dest,long count,long offset)
   int res,fd;
   
   fd=fref;
-  
+
   /*printf("positioning at %d\n",offset);*/
   res=lseek(fd,offset,SEEK_SET);
   if(res<0) {
