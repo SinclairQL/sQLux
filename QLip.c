@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
-
+#include <SDL2/SDL_endian.h>
 
 #include "QSerial.h"
 #include "QDOS.h"
@@ -1086,42 +1086,35 @@ static int endianise(int optname, void *optval)
           return -1;
           break;
         default:
-            *(unsigned long *)optval = RL(optval);
+            *(uint32_t *)optval = SDL_SwapBE32(*(uint32_t *)optval);
             break;
     }
     return 0;
 }
 
 static int ip_getsockopt(ipdev_t *ip, int level, int optname,
-                         void *optval, int *olen)
+                         void *optval, socklen_t *olen)
 {
     int res,qerr;
-    *olen = RL(olen);
     xso_q2x(level, optname, optval, 0);
     res = getsockopt(ip->sock, level, optname, optval, olen);
     xso_x2q(level, optname, optval, *olen);
-#ifndef QM_BIG_ENDIAN
     if(endianise(optname, optval)) return -1;
-#endif
     QERRNO(qerr,res);
     return qerr;
 }
 
 static int ip_setsockopt(ipdev_t *ip, int level, int optname,
-                         void *optval, int len)
+                         void *optval, socklen_t len)
 {
     int res,qerr;
     int one = 1;
     
-#ifndef QM_BIG_ENDIAN
     if(endianise(optname, optval)) return -1;
-#endif
     xso_q2x(level, optname, optval, len);
     res = setsockopt(ip->sock, level, optname, optval, len);
     xso_x2q(level, optname, optval, len);
-#ifndef QM_BIG_ENDIAN
     if(endianise(optname, optval)) return -1;
-#endif
     QERRNO(qerr,res);
     return qerr;
 }
@@ -1185,10 +1178,11 @@ void ip_io(int id, void *p )
 {
     ipdev_t *priv=p;
     int op=(w8)reg[0];
-    int res, count, len, flag = 0;
+    int res, count, flag = 0;
     struct sockaddr *sa = NULL;
     w32 *params;
     w32 qaddr;
+    socklen_t len;
     
     len = (reg[1]) ? reg[1] : sizeof(struct sockaddr_in);
     count = reg[2];
@@ -1402,7 +1396,7 @@ void ip_io(int id, void *p )
             len = reg[1];
             *reg = ip_getsockopt(priv, reg[2], (int)aReg[2],
                                  (Ptr)theROM+aReg[1], &len);
-            reg[1] = len;
+            reg[1] = (uint32_t)len;
             break;
         case IP_SETOPT:
             *reg = ip_setsockopt(priv, reg[2], (int)aReg[2],
