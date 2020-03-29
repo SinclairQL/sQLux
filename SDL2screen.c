@@ -55,7 +55,7 @@ int QLSDLScreen(void)
 	dest_rect.w = qlscreen.xres * qlscreen.zoom;
 	dest_rect.h = qlscreen.yres * qlscreen.zoom;
 
-	snprintf(sdl_win_name, 128, "QL - %s, %dK", QMD.sysrom, RTOP/1024);
+	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP/1024);
 
 	if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
 		printf("SDL_Init Error: %s\n", SDL_GetError());
