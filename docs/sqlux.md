@@ -1,45 +1,28 @@
----
-Generator: 'texi2html 5.0'
-description: UQLX
-distribution: global
-keywords: UQLX
-resource-type: document
-title: UQLX
----
+sQLux
+=====
 
-UQLX
-====
-
-**Richard Zidlicky**\
-
+**UQLX original Richard Zidlicky**
+**sQLux alterations Graeme Gregory**
 Copyright © 1996,1997,1998,1999 Richard Zidlicky
+Copyright © 2020 Graeme Gregory
 
-------------------------------------------------------------------------
+Contents
+--------
 
-[]{#Top}
-
-  ---------------- ------------ ---------- ------------------------------------------------------------------ ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[ &lt;&lt; \]   \[ &lt; \]   \[ Up \]   \[[&gt;](#System-Requirements "Next section in reading order")\]   \[[&gt;&gt;](#Compiling "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------- ------------ ---------- ------------------------------------------------------------------ ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-
-  --------------------------------------------------- ---- ----------------------------
-  [1 Introduction](#Introduction)                          
-  [2 Compiling](#Compiling)                                
-  [3 Installation](#Installation)                          not much to do, but
-  [4 Customization](#Customization)                        nothing works without this
-  [5 Program Invocation](#Program-Invocation)              
-  [6 Filesystems](#Filesystems)                            
-  [7 Other Devices](#Other-Devices)                        pty,ser,prt
-  [8 Printing](#Printing)                                  
-  [9 SuperBasic Extensions](#SuperBasic-Extensions)        
-  [10 TECHREF](#TECHREF)                                   how it works
-  [11 FAQ](#FAQ)                                           
-  [12 History](#History)                                   
-  [13 Benchmarks](#Benchmarks)                             
-  --------------------------------------------------- ---- ----------------------------
-
-[]{#Introduction} []{#Introduction-1}
-
+ 1. [Introduction](#Introduction)
+ 2. [Compiling](#Compiling)
+ 3. [Installation](#Installation) not much to do, but
+ 4. [Customization](#Customization) nothing works without this
+ 5. [Program Invocation](#Program-Invocation)
+ 6. [Filesystems](#Filesystems)
+ 7. [Other Devices](#Other-Devices) pty,ser,prt
+ 8. [Printing](#Printing)
+ 9. [SuperBasic Extensions](#SuperBasic-Extensions)
+ 10. [TECHREF](#TECHREF) how it works
+ 11. [FAQ](#FAQ)
+ 12. [History](#History)
+ 13. [Benchmarks](#Benchmarks)
+ 
 1 Introduction {#introduction .chapter}
 ==============
 
