@@ -105,7 +105,7 @@ int InitDialog ()
 {
    if (pwindow == NULL)
    {
-      char buf [PATH_MAX], arg [100];
+      char buf [PATH_MAX + 1], arg [100];
       char *p;
       int QMpid, bfpid;
       
