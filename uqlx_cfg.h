@@ -35,6 +35,8 @@ typedef struct {
 } QMDATA;
 
 #define QMFILE "~/.uqlxrc"
+#define QLUXFILE "~/.sqluxrc"
+#define QLUXFILE_LOC "sqlux.ini"
 
 extern FILE* lopen(const char *s, const char *mode);
 extern char* ExpandName(char*);
