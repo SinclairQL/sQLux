@@ -802,7 +802,6 @@ void SetParams (int ac, char **av)
       mem=mem * 1024;
 
    if(mem != -1) QMD.ramtop = mem;
-   if(col != -1) QMD.color = col;
    if(hog != -1) QMD.cpu_hog=1;
    if(no_patch != -1) QMD.no_patch=1;
 
