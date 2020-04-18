@@ -1,0 +1,34 @@
+10 REMark UQLX
+100 OPEN#4,con_512x256a0x0
+110 BORDER#4,2,4,2
+120 PAPER#4,2:INK#4,7
+130 CLS#4
+140 AT#4, 1,9
+150 CSIZE#4, 3,1
+160 PRINT#4, "Welcome to sQLux"
+170 CSIZE#4,0,0
+180 PRINT#4
+190 PRINT_RELEASE
+200 PRINT#4
+210 PRINT#4
+220 PRINT#4, "Date",DATE$,"QDOS version:",VER$
+230 PRINT#4
+240 PRINT#4, "Start as: '";getXarg$(0);" -?' to get a list of startup options"
+250 PRINT#4, "          '";getXarg$(0);" -??' to browse manuals"
+260 PRINT#4
+460 CSIZE#4,0,0
+470 PRINT#4:PRINT#4,".... press any key"
+480 PAUSE
+490 CLS#0:CLS#1:CLS#2
+500 CLOSE#4
+510 :
+520 DEFine PROCedure PRINT_RELEASE
+580  STRIP#4,0
+590  AT#4,4,14
+600  PRINT#4,"release"!!UQLX_RELEASE$
+610  STRIP#4,2
+620 END DEFine
+630 :
+640 DEFine PROCedure sa
+650  SAVE_O 'mdv1_BOOT'
+660 END DEFine
