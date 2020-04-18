@@ -265,20 +265,12 @@ static int ip_read(ipdev_t *sd, void *buf, int pno)
 
   ci=0;
   c=buf;
-  /*  printf ("ip_read called, len %d\n",pno);*/
   
-#if 0
-  res=ipreadio(sd, c, &count,0);
+  res=recv(sd->sock, buf, pno, MSG_DONTWAIT);
 
-  if (!res || count>0 ) return count;
-  else return res;
-#else
-  res=read(sd->sock,buf,pno);
-  /*printf("read res %d\n",res);*/
-  /*if (res<0) perror("read");  */
-  if (res<0) res=qmaperr();
+  if (res<0)
+	  res=qmaperr();
   return res;
-#endif
 }
 
 
