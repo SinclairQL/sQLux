@@ -98,7 +98,6 @@ w32      *g_reg;
 
 #ifndef ZEROMAP
 w32             *theROM;                        /* Ptr to ROM in Mac memory */
-w32  *ll_theROM;
 #endif
 
 w32             *ramTop;                        /* Ptr to RAM top in Mac
@@ -641,9 +640,6 @@ void ExecuteLoop(void)
   void (**PutToEA_w)(ashort,aw16) /*REGP2*/ = iexl_PutToEA_w;
   void (**PutToEA_l)(ashort,aw32) /*REGP2*/ = iexl_PutToEA_l;
   Cond (**ConditionTrue)(void) = ll_ConditionTrue;
-#ifndef ZEROMAP
-  w32 *theROM=ll_theROM;
-#endif
 #else
 #define GetFromEA_b iexl_GetFromEA_b
 #define GetFromEA_w iexl_GetFromEA_w
@@ -674,9 +670,6 @@ run_it:
       /*XSetTable(itable);*/
       itable_valid=1;
     }
-#ifndef ZEROMAP
-  theROM=ll_theROM;
-#endif
   ENTER_IEXL;                  /* load vars into regs etc .*/
 
 nextI:
@@ -746,13 +739,6 @@ rep:
 
 void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 {
-#ifndef ZEROMAP
-  ll_theROM=theROM;
-#endif
-#if 0
-  left_exl=1;
-#endif
-
   if((long)pc&1) return;
 
 
