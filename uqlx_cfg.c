@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <linux/limits.h>
 
 #include "unix.h"
 #include "qx_proto.h"
@@ -22,7 +23,10 @@
 #include "uqlx_cfg.h"
 
 QMDATA QMD =
-{ .qdev = qdevs, /* ddvlist */
+{
+.config_file = "sqlux.ini",
+.config_file_opt = 0,
+.qdev = qdevs, /* ddvlist */
 .romlist = NULL, /* romlist */
 .ramtop = 4096, /* RAM top */
 .romdir = "roms/", /* rom dir */
@@ -373,15 +377,18 @@ void QMParams (void)
     int rv = 0, iil;
     QMDATA *p;
 
-    pf = QLUXFILE_LOC;
+    pf = QMD.config_file;
     if (!(fp = lopen(pf, "r"))) {
         pf = QLUXFILE;
-        if (!(fp = lopen(pf, "r"))) {
+        if (!(fp = lopen(pf, "r")) && !QMD.config_file_opt) {
             pf = QMFILE;
             if (!(fp = lopen(pf, "r"))) {
                 printf("ERROR: did not locate config file\n");
                 exit(0);
             }
+        } else {
+            printf("ERROR: did not locate config file %s\n", QMD.config_file);
+            exit(0);
         }
     }
 

@@ -4,6 +4,8 @@
 
 #ifndef _qm_parse_h
 #define _qm_parse_h
+#include <linux/limits.h>
+
 #include "emudisk.h"
 
 typedef struct _qmlist {
@@ -17,6 +19,8 @@ typedef struct _rominfo {
 } ROMITEM;
 
 typedef struct {
+        char config_file[PATH_MAX+1];
+        char config_file_opt;
 	EMUDEV_t *qdev;
 	QMLIST *romlist;
 	long ramtop;

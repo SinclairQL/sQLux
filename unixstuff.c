@@ -716,9 +716,8 @@ void SetParams (int ac, char **av)
             break;
          case 'f':
          {
-            char temp[PATH_MAX];
-            sprintf(temp, "UQLX_CFG=%s", optarg);
-            putenv(temp);
+             strncpy(QMD.config_file, optarg, PATH_MAX);
+             QMD.config_file_opt = 1;
          }
          break;
          case 'o':
