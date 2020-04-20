@@ -137,32 +137,6 @@ volatile w8     theInt=0;
 
 Cond doTrace;            /* trace after current instruction */
 
-
-/******************************************************************/
-
-#ifdef NEWINT
-static void ProcessInterrupts(void)
-{       /* gestione interrupts */
-  if(pendingInterrupt==7 || pendingInterrupt>iMask)
-    {       
-      if(!supervisor)
-	{ 
-	  usp=(*m68k_sp);
-	  (*m68k_sp)=ssp;
-	}
-      ExceptionIn(24+pendingInterrupt);
-      WriteLong((*sp)-4,(w32)pc-(long)theROM);
-      (*m68k_sp)-=6;
-      WriteWord(*m68k_sp,GetSR());
-      SetPC(theROM[24+pendingInterrupt]);
-      iMask=pendingInterrupt;
-      pendingInterrupt=0;
-      supervisor=true;
-      trace=false;
-      stopped=false;
-    }
-}
-#else
 void ProcessInterrupts(void) 
 {   
   /* gestione interrupts */
@@ -187,7 +161,6 @@ void ProcessInterrupts(void)
       extraFlag=false;
     }
 }
-#endif
 
 rw16 GetSR(void)
 {   
@@ -203,42 +176,6 @@ rw16 GetSR(void)
   return sr;
 }
 
-#ifdef NEWINT
-void PutSR(aw16 sr)
-{
-  Cond oldSuper;
-  oldSuper=supervisor;
-  trace=(sr&0x8000)!=0;
-  supervisor=(sr&0x2000)!=0;
-  xflag=(sr&0x0010)!=0;
-  negative=(sr&0x0008)!=0;
-  zero=(sr&0x0004)!=0;
-  overflow=(sr&0x0002)!=0;
-  carry=(sr&0x0001)!=0;
-  iMask=(char)(sr>>8)&7;
-  if(oldSuper!=supervisor)
-    {
-      if(supervisor)
-	{
-	  usp=(*m68k_sp);
-	  (*m68k_sp)=ssp;
-	}
-      else
-	{
-	  ssp=(*m68k_sp);
-	  (*m68k_sp)=usp;
-	}
-    }
-  extraFlag=doTrace || trace || exception!=0 || pendingInterrupt==7
-    || pendingInterrupt>iMask;
-  if(extraFlag)
-    {
-      nInst2=nInst;
-      nInst=0;
-    }
-}
-
-#else
 void REGP1 PutSR(aw16 sr)
 {
   Cond oldSuper;
@@ -272,7 +209,6 @@ void REGP1 PutSR(aw16 sr)
     }
   ProcessInterrupts();
 }
-#endif
 
 rw16 REGP1 BusErrorCode(aw16 dataOrCode)
 {
@@ -424,73 +360,6 @@ void ExceptionOut()
 
 #endif
 
-#ifdef NEWINT
-void ExceptionProcessing()
-{
-  if(exception!=0)
-        {
-	  if(exception==8) pc--;
-	  if(exception<32 || exception>36) /* tutte le eccezioni
-					      tranne le trap 0-4 */
-	    {
-	      extraFlag=exception<3 || (exception>9 &&
-					exception<32) || exception>47;
-	      if(!extraFlag) extraFlag=ReadLong(0x28050l)==0;
-	      if(extraFlag)
-                        {
-			  UpdateNowRegisters();
-			  /*                              ShowException(); */
-			  nInst=nInst2=0;
-                        }
-	    }
-	  if(!supervisor)
-	    {
-	      usp=(*m68k_sp);
-	      (*m68k_sp)=ssp;
-	    }
-	  ExceptionIn(exception);
-	  (*m68k_sp)-=6;
-	  WriteLong((*m68k_sp)+2,(w32)pc-(w32)theROM);
-	  WriteWord((*m68k_sp),GetSR());
-	  SetPC(theROM[exception]);
-	  if(exception==3) /* address error */
-	    {
-	      (*m68k_sp)-=8;
-	      WriteWord((*m68k_sp)+6,code);
-	      WriteLong((*m68k_sp)+2,badAddress);
-	      WriteWord((*m68k_sp),BusErrorCode(badCodeAddress? 2:1));
-	      badCodeAddress=false;
-	    }
-	  supervisor=true;
-	  trace=false;
-        }
-  if(doTrace && exception!=3 && exception!=4 && exception!=8)
-    {
-      if(!supervisor)
-	{
-	  usp=(*m68k_sp);
-	  (*m68k_sp)=ssp;
-	}
-      ExceptionIn(9);
-      (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,(w32)pc-(long)theROM);
-      WriteWord((*m68k_sp),GetSR());
-      SetPC(theROM[9]);
-      supervisor=true;
-      trace=false;
-      stopped=false;
-    }
-  if(pendingInterrupt!=0) ProcessInterrupts();
-  exception=0;
-  extraFlag=doTrace=trace;
-  if(extraFlag)
-    {
-      nInst2=nInst;
-      nInst=2;
-    }
-}
-
-#else
 void ExceptionProcessing()
 {
   if(pendingInterrupt!=0 && !doTrace) ProcessInterrupts();
@@ -560,7 +429,6 @@ void ExceptionProcessing()
     }
 
 }
-#endif
 
 /******************************************************************/
 /* now read in ReadByte etc macros */
@@ -574,148 +442,8 @@ rw32 AREGP GetEA_mBad(ashort r)
   return 0;
 }
 
-
-
-/********************************************************************/
-
-/* fetch and dispatch loop: 68K machine code version
-void ExecuteLoop(void)  esecuzione di nInst istruzioni
-{       void    *where;         pc in asm =E8 un nome riservato !!!
-
-        where=&pc;
-        asm{
-                MOVEM.L   A2-A4,-(A7)
-                MOVEA.L   where,A2
-                LEA       nInst,A3
-                MOVEA.L   table,A4
-                BRA.S     @doLoop
-loop:   MOVEA.L   (A2),A0
-                ADDQ.L    #2,(A2)
-                MOVEQ     #0,D0
-                MOVE.W    (A0),D0
-                MOVE.W    D0,code
-                LSL.L     #2,D0
-                MOVEA.L   0(A4,D0.L),A0
-                JSR       (A0)
-doLoop: SUBQ.L    #1,(A3)
-                BGE.S     @loop
-                TST.B     extraFlag
-                BEQ.S     @endLoop
-                MOVE.L    nInst2,(A3)
-                JSR       ExceptionProcessing
-                TST.L     (A3)
-                BGT.S     @loop
-endLoop: MOVEM.L   (A7)+,A2-A4
-                }
-}
-*/
-
-
-
-/*  */
-
-//extern volatile int doPoll;
-
-#ifdef FASTLOOP
-static int itable_valid=0;
-
-void ExecuteLoop(void)
-{
-  static void *itable[65536];
-#ifdef SPARC
-  register void **itab asm("l7");
-#else
-  register void **itab;
-#endif
-
-#if  1 /*MANYREGS*/
-#ifndef G_reg
-  w32*  reg=g_reg;
-#endif
-  w32 (**GetEA)(ashort) /*REGP1*/ = iexl_GetEA;
-  rw8  (**GetFromEA_b)(void) = iexl_GetFromEA_b;
-  rw16 (**GetFromEA_w)(void) = iexl_GetFromEA_w;
-  rw32 (**GetFromEA_l)(void) = iexl_GetFromEA_l;
-  void (**PutToEA_b)(ashort,aw8) /*REGP2*/ = iexl_PutToEA_b;
-  void (**PutToEA_w)(ashort,aw16) /*REGP2*/ = iexl_PutToEA_w;
-  void (**PutToEA_l)(ashort,aw32) /*REGP2*/ = iexl_PutToEA_l;
-  Cond (**ConditionTrue)(void) = ll_ConditionTrue;
-#else
-#define GetFromEA_b iexl_GetFromEA_b
-#define GetFromEA_w iexl_GetFromEA_w
-#define GetFromEA_l iexl_GetFromEA_l
-#define PutToEA_b iexl_PutToEA_b
-#define PutToEA_w iexl_PutToEA_w
-#define PutToEA_l iexl_PutToEA_l
-#endif
-
-  code=0;   /* loop possibly sets only 16 bits ! */
-
-  itab=itable;
-
-#define IE_XL
-
-  goto run_it;
-
-  /*#include "iexl_general.h"*/
-
-#include "instructions_ao.c"    /* include instructions */
-#include "instructions_pz.c"
-
-run_it:
-  if (unlikely(!itable_valid))
-    {
-#define IE_XL_II
-#include "Init.c"
-      /*XSetTable(itable);*/
-      itable_valid=1;
-    }
-  ENTER_IEXL;                  /* load vars into regs etc .*/
-
-nextI:
-  if (likely(--nInst>=0))
-    {
-#ifdef TRACE
-      if (pc>=tracelo) DoTrace();
-#endif
-      /*DbgInfo();*/
-
-//#if defined(ASSGN_486)
-//      goto *itab[ASSGN_486()];
-//#else
-      //goto *itab[ASSGN_CODE(RW(pc++))];
-      goto *itab[code = RW(pc++) & 0xffff];
-//#endif
-    }
-
-#if 0
-  if (regEmux)
-    {
-      nInst= (extraFlag ? 0 : reInst);
-      vm_regemu();
-
-      goto nextI;
-    }
-#endif
-
-  if (SDL_AtomicGet(&doPoll)) dosignal();
-
-  if(extraFlag)
-    {
-      nInst=nInst2;
-      ExceptionProcessing();
-      if(nInst>0) goto nextI;
-    }
-}
-
-#else
 void ExecuteLoop(void)  /* fetch and dispatch loop */
 {
-  register void           (**tab)(void);
-
-  tab=qlux_table;
-
-rep:
   while(--nInst>=0)
     {
 
@@ -723,54 +451,41 @@ rep:
       if (pc>tracelo) DoTrace();
 #endif
 
-      tab[code=RW(pc++)&0xffff]();
+      qlux_table[code=RW(pc++)&0xffff]();
     }
 
-  if (SDL_AtomicGet(doPoll)) dosignal();
+  if (SDL_AtomicGet(&doPoll)) dosignal();
 
   if(extraFlag)
     {
       nInst=nInst2;
       ExceptionProcessing();
-      if(nInst>0) goto rep;
+      if(nInst>0) ExecuteLoop();
     }
 }
-#endif
 
 void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 {
   if((long)pc&1) return;
-
 
   extraFlag=false;
   ProcessInterrupts();
 
   if(stopped) return;
   exception=0;
-#ifdef NEWINT
-  extraFlag=extraFlag || trace || doTrace;
-#else
+
   extraFlag=trace || doTrace || pendingInterrupt==7 ||
     pendingInterrupt>iMask;
-#endif
+
   nInst=n+1;
   if(extraFlag)
     {
       nInst2=nInst;
-#ifdef NEWINT
-      nInst=2;
-#else
       nInst=0;
-#endif
     }
-
- restart:
 
   ExecuteLoop();
 }
-
-
-
 
 void InitialSetup(void) /* 68K state when powered on */
 {
@@ -787,23 +502,3 @@ void InitialSetup(void) /* 68K state when powered on */
   stopped=false;
   badCodeAddress=false;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

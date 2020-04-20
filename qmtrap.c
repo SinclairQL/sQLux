@@ -65,11 +65,8 @@ void QLchunk(w16 *oldPC,long n)       /* execute n emulated 68K istructions */
   if(extraFlag)
     {      
       nInst2=nInst;
-#ifdef NEWINT
-      nInst=2;
-#else
+
       nInst=0;
-#endif
     }
   
   QMExecuteLoop(oldPC);

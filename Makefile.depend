@@ -61,8 +61,7 @@ QL_basext.o: QL_basext.c QL68000.h cond.h trace.h iexl.h QDOS.h \
 QL_cconv.o: QL_cconv.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
  misdefs.h QL_config.h QInstAddr.h qx_proto.h QSerial.h QFilesPriv.h
 iexl_general.o: iexl_general.c QL68000.h cond.h trace.h iexl.h QDOS.h \
- QL_screen.h misdefs.h memaccess.h mmodes.h instructions_ao.c \
- instructions_pz.c Init.c
+ QL_screen.h misdefs.h SDL2screen.h memaccess.h mmodes.h
 QVFS.o: QVFS.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
  misdefs.h QL.h xcodes.h driver.h QInstAddr.h unix.h uqlx_cfg.h emudisk.h \
  QLfiles.h QFilesPriv.h QVFS.h util.h qx_proto.h QSerial.h
@@ -99,6 +98,8 @@ xlmain.o: xlmain.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
  misdefs.h QL_config.h QInstAddr.h unix.h boot.h qx_proto.h QSerial.h \
  QFilesPriv.h
 uqlx_cfg.o: uqlx_cfg.c QL68000.h cond.h trace.h iexl.h QDOS.h QL_screen.h \
- misdefs.h unix.h qx_proto.h QSerial.h QFilesPriv.h emudisk.h uqlx_cfg.h
+ misdefs.h unix.h qx_proto.h QSerial.h QFilesPriv.h uxfile.h emudisk.h \
+ uqlx_cfg.h
 SDL2screen.o: SDL2screen.c QL_hardware.h QL68000.h cond.h trace.h iexl.h \
- QDOS.h QL_screen.h misdefs.h uqlx_cfg.h emudisk.h
+ QDOS.h QL_screen.h misdefs.h uqlx_cfg.h emudisk.h SDL2screen.h qlmouse.h \
+ qx_proto.h QSerial.h QFilesPriv.h
