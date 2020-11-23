@@ -8,6 +8,7 @@
 #include "memaccess.h"
 #include "general.h"
 #include "qx_proto.h"
+#include "SDL2screen.h"
 
 rw8 ReadByte(aw32 addr)
 {
@@ -94,6 +95,7 @@ void WriteByte(aw32 addr,aw8 d)
         if (c == 6) {
 	        vmMarkScreen(addr);
 	        *((w8*)theROM+addr)=d;
+          	QLSDLUpdateScreenByte(addr-qlscreen.qm_lo, (uint8_t)d);
 	    } else if (c == 8) {
             WriteHWByte(addr,d);
         }
@@ -113,6 +115,7 @@ void WriteWord(aw32 addr,aw16 d)
         if (c == 6) {
 	        vmMarkScreen(addr);
 	        WW((Ptr)theROM+addr,d);
+          QLSDLUpdateScreenWord(addr-qlscreen.qm_lo, d);
 	    }
         else if (c == 8) {
             WriteHWWord(addr,d);
@@ -155,6 +158,7 @@ void WriteLong(aw32 addr,aw32 d)
 	  vmMarkScreen(addr);
 #endif
 	  WL((Ptr)theROM+addr,d);
+    QLSDLUpdateScreenLong(addr-qlscreen.qm_lo, d);
 	}
       else if(c==8)
 #endif /* !VM_SCR */

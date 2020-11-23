@@ -20,6 +20,7 @@ static SDL_Rect dest_rect;
 static char sdl_win_name[128];
 
 SDL_atomic_t doPoll;
+SDL_atomic_t screenUpdate;
 
 struct QLcolor {
 	int r;
@@ -86,76 +87,85 @@ int QLSDLScreen(void)
 
 }
 
-static void QLSDLUpdatePixelBuffer()
+void QLSDLUpdateScreenByte(uint32_t offset, uint8_t data)
 {
-	uint8_t *scr_ptr = (void *)theROM + qlscreen.qm_lo;
-	uint32_t *pixel_ptr32;
-	uint16_t *pixel_ptr16;
 	int t1, t2, i, color;
+	uint16_t dataword = 0;
+
+	if (offset & 1) {
+		offset--;
+		dataword = (uint8_t)ReadByte(qlscreen.qm_lo + offset) << 8;
+		dataword |= data & 0xFF;
+	} else {
+		dataword = (uint16_t)data << 8;
+		dataword |= (uint8_t)ReadByte((qlscreen.qm_lo + offset) + 1) & 0xFF;
+	}
+
+	QLSDLUpdateScreenWord(offset, dataword);
+}
+
+void QLSDLUpdateScreenWord(uint32_t offset, uint16_t data)
+{
+	int t1, t2, i, color;
+	uint32_t *pixel_ptr32;
+
+	t1 = data >> 8;
+	t2 = data & 0xFF;
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_LockSurface(ql_screen);
 	}
 
+	pixel_ptr32 = ql_screen->pixels + (offset * 16);
 
-	if(ql_window_format->BitsPerPixel == 32)
-		pixel_ptr32 = ql_screen->pixels;
-	else
-		pixel_ptr16 = ql_screen->pixels;
+	if (display_mode == 8)
+	{
 
-	pixel_ptr32 = ql_screen->pixels;
+		for (i = 0; i < 8; i += 2)
+		{
+			uint32_t x;
 
-	while(scr_ptr < (uint8_t *)((void *)theROM + qlscreen.qm_lo +
-			qlscreen.qm_len)) {
-		t1 = *scr_ptr++;
-		t2 = *scr_ptr++;
+			color = ((t1 & 2) << 1) + ((t2 & 3)) + ((t1 & 1) << 3);
 
-		if (display_mode == 8) {
+			x = SDLcolors[color];
 
-			for(i = 0; i < 8; i+=2) {
-				uint32_t x;
+			*(pixel_ptr32 + 7 - (i)) = x;
+			*(pixel_ptr32 + 7 - (i + 1)) = x;
 
-				color = ((t1&2)<<1)+((t2&3))+((t1&1)<<3);
-
-				x = SDLcolors[color];
-
-				if (ql_window_format->BitsPerPixel == 32) {
-					*(pixel_ptr32 + 7-(i)) = x;
-					*(pixel_ptr32 + 7-(i+1)) = x;
-				} else {
-					*(pixel_ptr16 + 7-(i)) = x;
-					*(pixel_ptr16 + 7-(i+1)) = x;
-				}
-
-				t1 >>=2;
-				t2 >>=2;
-			}
-		} else {
-
-			for(i=0; i<8; i++)
-			{
-				uint32_t x;
-
-				color = ((t1&1)<<2)+((t2&1)<<1)+((t1&1)&(t2&1));
-
-				x = SDLcolors[color];
-
-				if (ql_window_format->BitsPerPixel == 32) {
-					*(pixel_ptr32 + 7-i) = x;
-				} else {
-					*(pixel_ptr16 + 7-i) = x;
-				}
-
-				t1 >>= 1;
-				t2 >>= 1;
-			}
+			t1 >>= 2;
+			t2 >>= 2;
 		}
-		if(ql_window_format->BitsPerPixel == 32)
-			pixel_ptr32 += 8;
-		else
-			pixel_ptr16 += 8;
 	}
-	SDL_UnlockSurface(ql_screen);
+	else
+	{
+
+		for (i = 0; i < 8; i++)
+		{
+			uint32_t x;
+
+			color = ((t1 & 1) << 2) + ((t2 & 1) << 1) + ((t1 & 1) & (t2 & 1));
+
+			x = SDLcolors[color];
+
+			*(pixel_ptr32 + 7 - i) = x;
+
+			t1 >>= 1;
+			t2 >>= 1;
+		}
+	}
+
+	if (SDL_MUSTLOCK(ql_screen)) {
+		SDL_UnlockSurface(ql_screen);
+	}
+
+	SDL_AtomicSet(&screenUpdate, 1);
+
+}
+
+void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
+{
+	QLSDLUpdateScreenWord(offset, data >> 16);
+	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
 int QLSDLRenderScreen(void)
@@ -165,7 +175,8 @@ int QLSDLRenderScreen(void)
 	int w, h;
 	SDL_PixelFormat pixelformat;
 
-	QLSDLUpdatePixelBuffer();
+	if(!SDL_AtomicGet(&screenUpdate))
+		return;
 
 	if (qlscreen.zoom != 1) {
 		if(SDL_MUSTLOCK(ql_window_surface)) {
@@ -176,6 +187,8 @@ int QLSDLRenderScreen(void)
 	}
 
 	SDL_UpdateWindowSurface(ql_window);
+
+	SDL_AtomicSet(&screenUpdate, 0);
 }
 
 /* Store the keys pressed */
