@@ -27,6 +27,8 @@
 #include "QDOS.h"
 #include "qx_proto.h"
 
+#include "SDL2screen.h"
+
 #include "uqlx_cfg.h"
 
 #define MIN(x,y) ((x)<(y)?(x) : (y))
@@ -1866,6 +1868,9 @@ OSErr QDiskIO(struct mdvFile *f,short op)
 	aReg[1]=to;
 	ChangedMemory(from,to);
       }
+
+    /* Update Screen in case we loaded to it */
+    QLSDLUpdatePixelBuffer();
     break;		
   case 0x49:		/* save file from memory */
     count=reg[2];
