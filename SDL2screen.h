@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 
 int QLSDLScreen(void);
-int QLSDLRenderScreen(void);
+void QLSDLRenderScreen(void);
 int QLSDLProcessEvents(void);
 void QLSDLExit(void);
 Uint32 QLSDL50Hz(Uint32 interval, void *param);

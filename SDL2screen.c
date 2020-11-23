@@ -12,11 +12,13 @@
 #include "qx_proto.h"
 
 static SDL_Window *ql_window = NULL;
-static SDL_Surface *ql_window_surface = NULL;
-static SDL_PixelFormat *ql_window_format = NULL;
+static uint32_t ql_windowid = 0;
 static SDL_Surface *ql_screen = NULL;
-static SDL_Rect src_rect;
+static SDL_Renderer *ql_renderer = NULL;
+static SDL_Texture *ql_texture = NULL;
 static SDL_Rect dest_rect;
+static SDL_DisplayMode sdl_mode;
+const char *sdl_video_driver;
 static char sdl_win_name[128];
 
 SDL_atomic_t doPoll;
@@ -44,17 +46,13 @@ uint32_t SDLcolors[8];
 int QLSDLScreen(void)
 {
 	SDL_TimerID fiftyhz_timer;
+    uint32_t sdl_window_mode;
 	int i;
-
-	src_rect.x = 0;
-	src_rect.y = 0;
-	src_rect.w = qlscreen.xres;
-	src_rect.h = qlscreen.yres;
 
 	dest_rect.x = 0;
 	dest_rect.y = 0;
-	dest_rect.w = qlscreen.xres * qlscreen.zoom;
-	dest_rect.h = qlscreen.yres * qlscreen.zoom;
+	dest_rect.w = qlscreen.xres;
+	dest_rect.h = qlscreen.yres;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP/1024);
 
@@ -63,24 +61,58 @@ int QLSDLScreen(void)
 		return 0;
 	}
 
-	ql_window = SDL_CreateWindow(sdl_win_name, 0, 0, qlscreen.xres * qlscreen.zoom,
-			qlscreen.yres * qlscreen.zoom, 0);
+    sdl_video_driver = SDL_GetCurrentVideoDriver();
+    SDL_GetCurrentDisplayMode(0, &sdl_mode);
+
+    printf("Video Driver %s xres %d yres %d\n", sdl_video_driver, sdl_mode.w, sdl_mode.h);
+
+    if (sdl_video_driver != NULL && strcmp(sdl_video_driver, "x11") == 0
+        && sdl_mode.w >= 800 && sdl_mode.h >= 600) {
+        sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+    } else {
+        sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
+    }
+
+	ql_window = SDL_CreateWindow(sdl_win_name,
+                                 SDL_WINDOWPOS_CENTERED,
+                                 SDL_WINDOWPOS_CENTERED,
+                                 qlscreen.xres,
+                                 qlscreen.yres,
+                                 sdl_window_mode | SDL_WINDOW_ALLOW_HIGHDPI);
+
 	if (ql_window == NULL) {
 		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
 		return 0;
 	}
 
-	ql_window_surface=SDL_GetWindowSurface(ql_window);
-	ql_window_format = ql_window_surface->format;
+    ql_windowid = SDL_GetWindowID(ql_window);
 
-	if (qlscreen.zoom != 1)
-		ql_screen = SDL_CreateRGBSurfaceWithFormat(0, qlscreen.xres, qlscreen.yres,
-			ql_window_format->BitsPerPixel, ql_window_format->format);
-	else
-		ql_screen = ql_window_surface;
-	
-	for (i = 0; i < 8; i++)
-		SDLcolors[i] = SDL_MapRGB(ql_window_format, QLcolors[i].r, QLcolors[i].g, QLcolors[i].b);
+    ql_renderer = SDL_CreateRenderer(ql_window,
+                                     -1,
+                                     SDL_RENDERER_ACCELERATED |
+                                     SDL_RENDERER_PRESENTVSYNC);
+
+    SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
+    SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+
+    ql_screen = SDL_CreateRGBSurfaceWithFormat(0,
+                                               qlscreen.xres,
+                                               qlscreen.yres,
+                                               32,
+                                               SDL_PIXELFORMAT_RGBA32);
+
+    if (ql_screen == NULL) {
+        printf("Error Creating Surface\n");
+    }
+
+    ql_texture = SDL_CreateTexture(ql_renderer,
+                                   SDL_PIXELFORMAT_RGBA32,
+                                   SDL_TEXTUREACCESS_STREAMING,
+                                   ql_screen->w,
+                                   ql_screen->h);
+
+    for (i = 0; i < 8; i++)
+        SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors[i].r, QLcolors[i].g, QLcolors[i].b);
 
     SDL_AtomicSet(&doPoll, 0);
 	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
@@ -168,7 +200,7 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
-int QLSDLRenderScreen(void)
+void QLSDLRenderScreen(void)
 {
 	void *texture_buffer;
 	int pitch;
@@ -178,15 +210,10 @@ int QLSDLRenderScreen(void)
 	if(!SDL_AtomicGet(&screenUpdate))
 		return;
 
-	if (qlscreen.zoom != 1) {
-		if(SDL_MUSTLOCK(ql_window_surface)) {
-			SDL_LockSurface(ql_window_surface);
-		}
-		SDL_BlitScaled(ql_screen, &src_rect, ql_window_surface, NULL);
-		SDL_UnlockSurface(ql_window_surface);
-	}
-
-	SDL_UpdateWindowSurface(ql_window);
+    SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels, ql_screen->pitch);
+    SDL_RenderClear(ql_renderer);
+    SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
+    SDL_RenderPresent(ql_renderer);
 
 	SDL_AtomicSet(&screenUpdate, 0);
 }
@@ -357,6 +384,24 @@ int QLSDLProcessEvents(void)
 		case SDL_MOUSEBUTTONUP:
 			QLButton(event.button.button, 0);
 			break;
+        case SDL_WINDOWEVENT:
+            if (event.window.windowID == ql_windowid) {
+                switch (event.window.event)  {
+                case SDL_WINDOWEVENT_RESIZED:
+                    dest_rect.w = event.window.data1;
+                    dest_rect.h = event.window.data2;
+                    SDL_AtomicSet(&screenUpdate, 1);
+                    QLSDLRenderScreen();
+                    break;
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    dest_rect.w = event.window.data1;
+                    dest_rect.h = event.window.data2;
+                    SDL_AtomicSet(&screenUpdate, 1);
+                    QLSDLRenderScreen();
+                    break;
+                }
+            }
+            break;
 		default:
 			break;
 		}
