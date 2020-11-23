@@ -200,6 +200,63 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
+void QLSDLUpdatePixelBuffer()
+{
+	uint8_t *scr_ptr = (void *)theROM + qlscreen.qm_lo;
+	uint32_t *pixel_ptr32;
+	int t1, t2, i, color;
+
+	if (SDL_MUSTLOCK(ql_screen)) {
+		SDL_LockSurface(ql_screen);
+	}
+
+
+	pixel_ptr32 = ql_screen->pixels;
+
+	while(scr_ptr < (uint8_t *)((void *)theROM + qlscreen.qm_lo +
+			qlscreen.qm_len)) {
+		t1 = *scr_ptr++;
+		t2 = *scr_ptr++;
+
+		if (display_mode == 8) {
+
+			for(i = 0; i < 8; i+=2) {
+				uint32_t x;
+
+				color = ((t1&2)<<1)+((t2&3))+((t1&1)<<3);
+
+				x = SDLcolors[color];
+
+				*(pixel_ptr32 + 7-(i)) = x;
+				*(pixel_ptr32 + 7-(i+1)) = x;
+
+				t1 >>=2;
+				t2 >>=2;
+			}
+		} else {
+
+			for(i=0; i<8; i++)
+			{
+				uint32_t x;
+
+				color = ((t1&1)<<2)+((t2&1)<<1)+((t1&1)&(t2&1));
+
+				x = SDLcolors[color];
+
+				*(pixel_ptr32 + 7-i) = x;
+
+				t1 >>= 1;
+				t2 >>= 1;
+			}
+		}
+		pixel_ptr32 += 8;
+	}
+
+	if (SDL_MUSTLOCK(ql_screen)) {
+	    SDL_UnlockSurface(ql_screen);
+    }
+}
+
 void QLSDLRenderScreen(void)
 {
 	void *texture_buffer;
