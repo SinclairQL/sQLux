@@ -4,11 +4,15 @@ BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DUSE_IOSZ -DDO_GRAB -DSERIAL \
 	-DNEWSERIAL -DNEWPTY -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND \
 	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE
 
-DEBUG = -ggdb -fno-omit-frame-pointer
+ifdef DEBUG
+	DEBUGFLAGS = -ggdb -fno-omit-frame-pointer
+	OPTFLAGS = -Og
+else
+	DEBUGFLAGS =
+	OPTFLAGS = -Ofast
+endif
 
-OPTFLAGS = -O2
-
-CFLAGS = $(BUILDFLAGS) $(DEBUG) $(OPTFLAGS)
+CFLAGS = $(BUILDFLAGS) $(DEBUGFLAGS) $(OPTFLAGS)
 
 SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QLtraps.c QL_hardware.c QL_config.c dummies.c vm.c \
