@@ -51,8 +51,8 @@ int QLSDLScreen(void)
 
 	dest_rect.x = 0;
 	dest_rect.y = 0;
-	dest_rect.w = qlscreen.xres;
-	dest_rect.h = qlscreen.yres;
+	dest_rect.w = qlscreen.xres * qlscreen.zoom;
+	dest_rect.h = qlscreen.yres * qlscreen.zoom;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP/1024);
 
@@ -76,8 +76,8 @@ int QLSDLScreen(void)
 	ql_window = SDL_CreateWindow(sdl_win_name,
                                  SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED,
-                                 qlscreen.xres,
-                                 qlscreen.yres,
+                                 qlscreen.xres * qlscreen.zoom,
+                                 qlscreen.yres * qlscreen.zoom,
                                  sdl_window_mode | SDL_WINDOW_ALLOW_HIGHDPI);
 
 	if (ql_window == NULL) {
