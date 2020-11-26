@@ -1,8 +1,11 @@
 # (c) UQLX - see COPYRIGHT
 #
+
+UNAME := $(shell uname)
+
 BUILDFLAGS := -DLINUX -DUSE_IPC -DQVFS -DUSE_IOSZ -DDO_GRAB -DSERIAL \
-	-DNEWSERIAL -DNEWPTY -DSH_MEM -DIPDEV  -DXSCREEN -DSOUND \
-	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE
+	-DNEWSERIAL -DNEWPTY -DSH_MEM -DIPDEV  -DXSCREEN \
+	-DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE \
 
 ifdef DEBUG
 	DEBUGFLAGS = -ggdb -fno-omit-frame-pointer
@@ -11,8 +14,6 @@ else
 	DEBUGFLAGS =
 	OPTFLAGS = -Ofast
 endif
-
-CFLAGS = $(BUILDFLAGS) $(DEBUGFLAGS) $(OPTFLAGS)
 
 SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QLtraps.c QL_hardware.c QL_config.c dummies.c vm.c \
@@ -24,6 +25,15 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	QL_sound.c mach_exception.c memaccess.c \
 	vl.c ide.c block.c unixstuff.c xqlmouse.c \
 	xlmain.c uqlx_cfg.c SDL2screen.c
+
+ifeq ($(UNAME), Linux)
+	BUILDFLAGS := $(BUILDFLAGS) -Dsound
+endif
+ifeq ($(UNAME), Darwin)
+	BUILDFLAGS := $(BUILDFLAGS) -Wno-implicit-function-declaration
+endif
+
+CFLAGS = $(BUILDFLAGS) $(DEBUGFLAGS) $(OPTFLAGS)
 
 OBJ := $(SRC:.c=.o)
 
