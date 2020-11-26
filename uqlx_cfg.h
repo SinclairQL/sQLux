@@ -4,8 +4,11 @@
 
 #ifndef _qm_parse_h
 #define _qm_parse_h
+#ifdef __APPLE__
+#include <sys/syslimits.h>
+#else
 #include <linux/limits.h>
-
+#endif
 #include "emudisk.h"
 
 typedef struct _qmlist {
@@ -51,7 +54,7 @@ typedef void (*PVFV)(void*, void*, ...);
 
 typedef union {
 	int mval;
-	void* (*mfun)();
+	void* (*mfun)(QMLIST *, char *);
 } uxt;
 
 typedef struct {
