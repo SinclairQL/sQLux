@@ -1029,6 +1029,7 @@ int rename_all_files(struct mdvFile *f, char *fsmount, char *uxname)
 	    rename_single(f,fsmount,temp,dp->d_name,uxlen);
 	  }
 	closedir(dirp);
+	return 0;
 }
 
 int rename_single(struct mdvFile *f,char *fsmount,char *localdir,char *name,int nsdirlen)
@@ -1054,7 +1055,7 @@ int rename_single(struct mdvFile *f,char *fsmount,char *localdir,char *name,int 
 	if (res)
 	  {
 	    perror("rename failed");
-	    return;
+	    return 0;
 	  }
 	temp[0]=0;
 	deleteheader(temp,mount,2); /* delete old header */
@@ -1073,6 +1074,8 @@ int rename_single(struct mdvFile *f,char *fsmount,char *localdir,char *name,int 
 	strncpy(mount,fsmount,4200);
 
 	setheader(mount,temp,&hh,2); /* set header */
+
+	return 0;
 }
 
 
