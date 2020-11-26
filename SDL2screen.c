@@ -66,8 +66,10 @@ int QLSDLScreen(void)
 
     printf("Video Driver %s xres %d yres %d\n", sdl_video_driver, sdl_mode.w, sdl_mode.h);
 
-    if (sdl_video_driver != NULL && strcmp(sdl_video_driver, "x11") == 0
-        && sdl_mode.w >= 800 && sdl_mode.h >= 600) {
+    if (sdl_video_driver != NULL &&
+        (strcmp(sdl_video_driver, "x11") == 0) ||
+		(strcmp(sdl_video_driver, "cocoa") == 0) &&
+        sdl_mode.w >= 800 && sdl_mode.h >= 600) {
         sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     } else {
         sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -87,10 +89,13 @@ int QLSDLScreen(void)
 
     ql_windowid = SDL_GetWindowID(ql_window);
 
+
     ql_renderer = SDL_CreateRenderer(ql_window,
                                      -1,
                                      SDL_RENDERER_ACCELERATED |
                                      SDL_RENDERER_PRESENTVSYNC);
+
+    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
 
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -445,14 +450,12 @@ int QLSDLProcessEvents(void)
             if (event.window.windowID == ql_windowid) {
                 switch (event.window.event)  {
                 case SDL_WINDOWEVENT_RESIZED:
-                    dest_rect.w = event.window.data1;
-                    dest_rect.h = event.window.data2;
+                    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
                     SDL_AtomicSet(&screenUpdate, 1);
                     QLSDLRenderScreen();
                     break;
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    dest_rect.w = event.window.data1;
-                    dest_rect.h = event.window.data2;
+                    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
                     SDL_AtomicSet(&screenUpdate, 1);
                     QLSDLRenderScreen();
                     break;
