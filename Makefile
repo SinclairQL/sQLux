@@ -27,7 +27,7 @@ SRC := Init.c general.c instructions_ao.c instructions_pz.c   \
 	xlmain.c uqlx_cfg.c SDL2screen.c
 
 ifeq ($(UNAME), Linux)
-	BUILDFLAGS := $(BUILDFLAGS) -Dsound
+	BUILDFLAGS := $(BUILDFLAGS) -DSOUND
 endif
 ifeq ($(UNAME), Darwin)
 	BUILDFLAGS := $(BUILDFLAGS) -Wno-implicit-function-declaration
