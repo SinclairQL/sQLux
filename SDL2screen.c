@@ -43,16 +43,32 @@ struct QLcolor QLcolors[8] = {
 
 uint32_t SDLcolors[8];
 
+static void QLSDLSetDestRect(int w, int h)
+{
+    float target_aspect = (float)qlscreen.xres / (float)qlscreen.yres;
+    float window_aspect = (float)w / (float)h;
+    float scale;
+
+    if (target_aspect > window_aspect) {
+        scale = (float)w / (float)qlscreen.xres;
+        dest_rect.x = 0;
+        dest_rect.y = ceilf((float)h - (float)qlscreen.yres * scale) / 2.0;
+        dest_rect.w = w;
+        dest_rect.h = ceilf((float)qlscreen.yres * scale);
+    } else {
+        scale = (float)h / (float)qlscreen.yres;
+        dest_rect.x = ceilf((float)w - ((float)qlscreen.xres * scale)) / 2.0;
+        dest_rect.y = 0;
+        dest_rect.w = ceilf((float)qlscreen.xres * scale);
+        dest_rect.h = h;
+    }
+}
+
 int QLSDLScreen(void)
 {
 	SDL_TimerID fiftyhz_timer;
     uint32_t sdl_window_mode;
-	int i;
-
-	dest_rect.x = 0;
-	dest_rect.y = 0;
-	dest_rect.w = qlscreen.xres * qlscreen.zoom;
-	dest_rect.h = qlscreen.yres * qlscreen.zoom;
+	int i, w, h;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP/1024);
 
@@ -95,7 +111,9 @@ int QLSDLScreen(void)
                                      SDL_RENDERER_ACCELERATED |
                                      SDL_RENDERER_PRESENTVSYNC);
 
-    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
+    SDL_GetRendererOutputSize(ql_renderer, &w, &h);
+
+    QLSDLSetDestRect(w, h);
 
     SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
     SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
@@ -423,6 +441,7 @@ int QLSDLProcessEvents(void)
 {
 	SDL_Event event;
 	int keypressed;
+    int w,h;
 
 	while(SDL_PollEvent(&event)) {
 		switch(event.type) {
@@ -450,12 +469,14 @@ int QLSDLProcessEvents(void)
             if (event.window.windowID == ql_windowid) {
                 switch (event.window.event)  {
                 case SDL_WINDOWEVENT_RESIZED:
-                    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
+                    SDL_GetRendererOutputSize(ql_renderer, &w, &h);
+                    QLSDLSetDestRect(w, h);
                     SDL_AtomicSet(&screenUpdate, 1);
                     QLSDLRenderScreen();
                     break;
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    SDL_GetRendererOutputSize(ql_renderer, &dest_rect.w, &dest_rect.h);
+                    SDL_GetRendererOutputSize(ql_renderer, &w, &h);
+                    QLSDLSetDestRect(w, h);
                     SDL_AtomicSet(&screenUpdate, 1);
                     QLSDLRenderScreen();
                     break;
