@@ -881,16 +881,18 @@ void uqlxInit ()
             exit(2);
          }
       }
-      {
-         QMLIST *q;
-         for(q=QMD.romlist;q;q=q->next)
-         {
-            ROMITEM *c = q->udata;
-            strcpy(p, c->romname);
-            rl = load_rom(roms ,(w32) c->romaddr);
-            if (V3)printf("ROM %s %s loaded at 0x%lx\n", 
-                          c->romname, rl ? "" : "NOT", c->romaddr);
-         }
+      if(QMD.romim) {
+          p = (char *)stpcpy(roms, QMD.romdir);
+          if(*(p-1) != '/') {
+              *p++ = '/';
+          }
+          strcpy(p, QMD.romim);
+
+          rl=load_rom(roms, 0xC000);
+          if (!rl) {
+              fprintf(stderr, "Could not find expansion rom, exiting\n");
+              exit(2);
+          }
       }
    }
 

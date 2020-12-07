@@ -25,10 +25,10 @@ typedef struct {
         char config_file[PATH_MAX+1];
         char config_file_opt;
 	EMUDEV_t *qdev;
-	QMLIST *romlist;
 	long ramtop;
 	char romdir[128];
 	char sysrom[64];
+    char romim[64];
 	char ser1[64];
 	char ser2[64];
 	char ser3[64];
