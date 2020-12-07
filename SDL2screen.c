@@ -2,7 +2,7 @@
  *
  */
 #include <inttypes.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include "QL_hardware.h"
 #include "uqlx_cfg.h"

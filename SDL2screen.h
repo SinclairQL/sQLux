@@ -1,7 +1,7 @@
 #ifndef _SDL2SCREEN_H
 #define _SDL2SCREEN_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 int QLSDLScreen(void);
 void QLSDLRenderScreen(void);
