@@ -11,7 +11,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Dsound")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
