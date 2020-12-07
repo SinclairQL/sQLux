@@ -27,21 +27,7 @@ rw16 ReadWord(aw32 addr)
 {
   register bctype c;
 
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    {
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-      return 0;
-    }
-  addr&=ADDR_MASK_E;
-#else
   addr &=ADDR_MASK;
-#endif
 
   c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
   if(c!=1)
@@ -54,21 +40,7 @@ rw32 ReadLong(aw32 addr)
 {
   register bctype c;
 
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    {
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-      return 0;
-    }
-  addr&=ADDR_MASK_E;
-#else
   addr &= ADDR_MASK;
-#endif
 
   c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
   if(c!=1)
@@ -82,95 +54,51 @@ rw32 ReadLong(aw32 addr)
 long watchaddr=0;
 #endif
 
-/* move HW access to a separate fn, this makes it practicable to inline */
-/* this fn in a few places :) */
 void WriteByte(aw32 addr,aw8 d)
 {
-    bctype c;
-
     addr &= ADDR_MASK;
 
-    c = RamMap[addr >> RM_SHIFT] & 0x1E;
-    if (c != 2) {
-        if (c == 6) {
-	        vmMarkScreen(addr);
-	        *((w8*)theROM+addr)=d;
-          	QLSDLUpdateScreenByte(addr-qlscreen.qm_lo, (uint8_t)d);
-	    } else if (c == 8) {
-            WriteHWByte(addr,d);
-        }
-    } else {
+    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
+	    *((w8*)theROM+addr)=d;
+        QLSDLUpdateScreenByte(addr-qlscreen.qm_lo, d);
+    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+        WriteHWByte(addr, d);
+    } else if (addr > QL_ROM_SIZE) {
         *((w8*)theROM+addr)=d;
     }
 }
 
 void WriteWord(aw32 addr,aw16 d)
 {
-    bctype c;
-
     addr &= ADDR_MASK;
 
-    c = RamMap[addr >> RM_SHIFT] & 0xE;
-    if(c != 2) {
-        if (c == 6) {
-	        vmMarkScreen(addr);
-	        WW((Ptr)theROM+addr,d);
-          QLSDLUpdateScreenWord(addr-qlscreen.qm_lo, d);
-	    }
-        else if (c == 8) {
-            WriteHWWord(addr,d);
-	    }
-    } else {
-        WW((Ptr)theROM+addr,d);
+    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
+        WW((Ptr)theROM + addr, d);
+        QLSDLUpdateScreenWord(addr-qlscreen.qm_lo, d);
+    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+        WriteHWWord(addr, d);
+    } else if (addr >= QL_ROM_SIZE) {
+        WW((Ptr)theROM + addr, d);
     }
 }
 
 void WriteLong(aw32 addr,aw32 d)
 {
-  register bctype c;
-
-#if HOST_ALIGN>1
-  if(((char)addr&1)!=0)
-    {
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=0;
-      return;
-    }
-  addr&=ADDR_MASK_E;
-#else
   addr &= ADDR_MASK;
-#endif
 
-#ifdef DEBUG
-  if (addr==watchaddr)dbginfo("write long %d to watchaddr=%x",d,addr);
-#endif
-  c=RamMap[addr>>RM_SHIFT]&14;
-  if(c!=2)
-    {
-#ifndef VM_SCR
-      if(c==6)
-	{
-#if defined(MARK_SCREEN)
-	  vmMarkScreen(addr);
-#endif
-	  WL((Ptr)theROM+addr,d);
-    QLSDLUpdateScreenLong(addr-qlscreen.qm_lo, d);
-	}
-      else if(c==8)
-#endif /* !VM_SCR */
-	{
-	  WriteWord(addr,d>>16);
-	  WriteWord(addr+2,(uw16)d);
-	}
-#ifdef DEBUG
-      else {dbginfo("WARNING: writing to ROM, addr=%x, val=%d\n",addr,d);}
-#endif
+
+    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
+        WL((Ptr)theROM + addr, d);
+        QLSDLUpdateScreenLong(addr-qlscreen.qm_lo, d);
+    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+        WriteHWWord(addr, d >> 16);
+        WriteHWWord(addr + 2, d);
+    } else if (addr >= QL_ROM_SIZE) {
+        WL((Ptr)theROM + addr, d);
     }
-  else  WL((Ptr)theROM+addr,d);
 }
 
 /*############################################################*/
@@ -367,30 +295,7 @@ rw16 ModifyAtEA_w(ashort mode,ashort r)
     }
     break;
   }
-#if HOST_ALIGN>1
-  if(((short)addr&1)!=0)
-    {
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-#if 1
-      mea_acc=0;
-#else
-      isHW=false;
-#if !defined(VM_SCR)
-      isDisplay=false;
-#endif
-#endif
-      dest=(Ptr)(&dummy);
-      return 0;
-    }
-  addr&=ADDR_MASK_E;
-#else
   addr &=ADDR_MASK;
-#endif /* HOST_ALIGN>1 */
 
   switch(RamMap[addr>>RM_SHIFT]) {
   case 1:   /* ROM */
@@ -545,31 +450,7 @@ rw32 ModifyAtEA_l(ashort mode,ashort r)
     }
     break;
   }
-#if HOST_ALIGN>1
-  if(((short)addr&1)!=0)
-    {
-      exception=3;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      badAddress=addr;
-      readOrWrite=16;
-#if 1
-      mea_acc=0;
-#else
-      isHW=false;
-#if !defined(VM_SCR)
-      isDisplay=false;
-#endif
-#endif
-      dest=(Ptr)(&dummy);
-      return 0;
-    }
-
-  addr&=ADDR_MASK_E;
-#else
   addr &= ADDR_MASK;
-#endif /* HOST_ALIGN>1*/
 
   switch(RamMap[addr>>RM_SHIFT]) {
   case 1:

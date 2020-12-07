@@ -25,4 +25,9 @@ extern void rww_acc(w16 d);
 extern void RewriteEA_l(aw32 d);
 extern void rwl_acc(w32 d);
 
+#define QL_ROM_BASE             0x0000
+#define QL_ROM_SIZE             0x10000
+#define QL_INTERNAL_IO_BASE     0x18000
+#define QL_INTERNAL_IO_SIZE     0x4000
+
 #endif /* _MEMACCESS_H */

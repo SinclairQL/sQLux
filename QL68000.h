@@ -257,31 +257,6 @@ extern char * oldscr;
 #define QX_SCR       7
 #define QX_IO        8
 
-#ifdef SPARC
-#define HOST_ALIGN 4
-#define QM_BIG_ENDIAN
-#endif
-
-#ifdef sgi
-#define HOST_ALIGN 4
-#define QM_BIG_ENDIAN
-#endif
-
-#if defined(HPPA) 
-#define QM_BIG_ENDIAN
-#define HOST_ALIGN 4
-#endif
-
-#if defined(m68k) || defined(m68000) || defined(_m68k_) || defined(mc68000)
-#define QM_BIG_ENDIAN
-#define HOST_ALIGN 1   /* ignore 68000 */
-#endif
-
-#ifdef PPC
-#define QM_BIG_ENDIAN
-#define HOST_ALIGN 1
-#endif
-
 #define WB(_addr_,_val_)(*(uw8*)(_addr_)=(_val_))
 #define RB(_addr_) (*(uw8 *)(_addr_))
 
@@ -309,28 +284,8 @@ static inline ruw32 h2ql(uw32 v)
   return v;
 }
 
-#if (HOST_ALIGN>2)
-static inline void _wl_(w32 *addr,w32 d)
-{
-  if ((long)addr&2)
-    {
-      *(uw16*)addr=d>>16;
-      *(((uw16*)addr)+1)=d&0xffff;
-    }
-  else
-    *addr=d;
-}
-static inline uw32 _rl_(w32 *addr)
-{
-  if ((long)addr&2)
-    return (w32) (((*(uw16*)addr)<<16)|((*(uw16*)(2+(long)(addr)))));
-  else
-    return *addr;
-}
-#else /* HOST_ALIGN <=2 */
 #define WL(_addr_,_val_) (*(uw32*)(_addr_)=(_val_))
 #define RL(_addr_) (*(uw32*)(_addr_))
-#endif
 
 #else
 /* little endian stuff comes here */
