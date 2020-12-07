@@ -29,7 +29,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
-#include <SDL2/SDL_endian.h>
+#include <SDL_endian.h>
 
 #include "QSerial.h"
 #include "QDOS.h"
