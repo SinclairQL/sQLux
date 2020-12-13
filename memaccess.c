@@ -14,6 +14,9 @@ rw8 ReadByte(aw32 addr)
 {
     addr&=ADDR_MASK;
 
+    if (addr > RTOP)
+        return 0;
+
     if ((addr >= QL_INTERNAL_IO_BASE) &&
                 (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
         return ReadHWByte(addr);
@@ -26,6 +29,9 @@ rw16 ReadWord(aw32 addr)
 {
     addr &=ADDR_MASK;
 
+    if (addr > RTOP)
+        return 0;
+
     if ((addr >= QL_INTERNAL_IO_BASE) &&
                 (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
         return ((w16)ReadHWWord(addr));
@@ -37,6 +43,9 @@ rw16 ReadWord(aw32 addr)
 rw32 ReadLong(aw32 addr)
 {
     addr &= ADDR_MASK;
+
+    if (addr > RTOP)
+        return 0;
 
     if ((addr >= QL_INTERNAL_IO_BASE) &&
                 (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
@@ -55,6 +64,9 @@ void WriteByte(aw32 addr,aw8 d)
 {
     addr &= ADDR_MASK;
 
+    if (addr > RTOP)
+        return;
+
     if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
 	    *((w8*)theROM+addr)=d;
         QLSDLUpdateScreenByte(addr-qlscreen.qm_lo, d);
@@ -70,6 +82,9 @@ void WriteWord(aw32 addr,aw16 d)
 {
     addr &= ADDR_MASK;
 
+    if (addr > RTOP)
+        return;
+
     if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
         WW((Ptr)theROM + addr, d);
         QLSDLUpdateScreenWord(addr-qlscreen.qm_lo, d);
@@ -83,8 +98,10 @@ void WriteWord(aw32 addr,aw16 d)
 
 void WriteLong(aw32 addr,aw32 d)
 {
-  addr &= ADDR_MASK;
+    addr &= ADDR_MASK;
 
+    if (addr > RTOP)
+        return;
 
     if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
         WL((Ptr)theROM + addr, d);
