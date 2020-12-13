@@ -12,41 +12,38 @@
 
 rw8 ReadByte(aw32 addr)
 {
-  register bctype c;
+    addr&=ADDR_MASK;
 
-  addr&=ADDR_MASK;
+    if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+        return ReadHWByte(addr);
+    }
 
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
-      return ReadHWByte(addr);
-
-  return *((w8*)theROM+addr);
+    return *((w8*)theROM+addr);
 }
 
 rw16 ReadWord(aw32 addr)
 {
-  register bctype c;
+    addr &=ADDR_MASK;
 
-  addr &=ADDR_MASK;
-
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
+    if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
         return ((w16)ReadHWWord(addr));
+    }
 
-  return (w16)RW((w16*)((Ptr)theROM+addr)); /* make sure it is signed */
+    return (w16)RW((w16*)((Ptr)theROM+addr)); /* make sure it is signed */
 }
 
 rw32 ReadLong(aw32 addr)
 {
-  register bctype c;
+    addr &= ADDR_MASK;
 
-  addr &= ADDR_MASK;
+    if ((addr >= QL_INTERNAL_IO_BASE) &&
+                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+        return ((w32)ReadWord(addr)<<16)|(uw16)ReadWord(addr+2);
+    }
 
-  c=RamMap[addr>>RM_SHIFT]&25 &(~(1<<2));
-  if(c!=1)
-      return ((w32)ReadWord(addr)<<16)|(uw16)ReadWord(addr+2);
-
-  return  (w32)RL((Ptr)theROM+addr); /* make sure is is signed */
+    return  (w32)RL((Ptr)theROM+addr); /* make sure is is signed */
 }
 
 #define ValidateDispByte(_xx)
