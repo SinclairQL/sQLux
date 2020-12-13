@@ -881,7 +881,7 @@ void uqlxInit ()
             exit(2);
          }
       }
-      if(QMD.romim) {
+      if(strlen(QMD.romim)) {
           p = (char *)stpcpy(roms, QMD.romdir);
           if(*(p-1) != '/') {
               *p++ = '/';
