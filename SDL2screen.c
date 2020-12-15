@@ -74,7 +74,7 @@ int QLSDLScreen(void)
 
 	if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) {
 		printf("SDL_Init Error: %s\n", SDL_GetError());
-		return 0;
+		exit(-1);
 	}
 
     sdl_video_driver = SDL_GetCurrentVideoDriver();
