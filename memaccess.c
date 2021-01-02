@@ -116,436 +116,319 @@ void WriteLong(aw32 addr,aw32 d)
 }
 
 /*############################################################*/
-#ifndef QM_BIG_ENDIAN
 int isreg=0;
-#endif
 
 rw8 ModifyAtEA_b(ashort mode,ashort r)
 {
-  shindex displ;
-  w32     addr;
-  switch(mode) {
-  case 0:
-#if 1
-    mea_acc=0;
-#else
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-    isHW=false;
-#endif
-    dest=(Ptr)(&reg[r])+RBO;
-    return *((w8*)dest);
-  case 2:addr=aReg[r];
-    break;
-  case 3:addr=aReg[r]++;
-    if(r==7) (*m68k_sp)++;
-    break;
-  case 4:
-    if(r==7) (*m68k_sp)--;
-    addr=--aReg[r];
-    break;
-  case 5:addr=aReg[r]+(w16)RW(pc++);
-    break;
-  case 6:
-    displ=(w16)RW(pc++);
-    if((displ&2048)!=0) addr=reg[(displ>>12) & 15]+
-			  aReg[r]+(w32)((w8)displ);
-    else addr=(w32) ((w16)(reg[(displ>>12) & 15]))+
-	   aReg[r]+(w32)((w8)displ);
-    break;
-  case 7:
-    switch(r) {
-    case 0:addr=(w16)RW(pc++);
-      break;
-    case 1:addr=RL((w32*)pc);
-      pc+=2;
-      break;
-    default:
-      exception=4;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
+	shindex displ;
+	w32 addr;
 
-      mea_acc=0;
+	isreg = 0;
 
-      dest=(Ptr)(&dummy);
-      return 0;
-    }
-    break;
-  default:
-    exception=4;
-    extraFlag=true;
-    nInst2=nInst;
-    nInst=0;
+	switch (mode)
+	{
+	case 0:
+		isreg = 1;
+		mea_acc = 0;
+		lastAddr = 0;
+		dest = (Ptr)(&reg[r]) + RBO;
+		return *((w8 *)dest);
+	case 2:
+		isreg = 1;
+		addr = aReg[r];
+		break;
+	case 3:
+		addr = aReg[r]++;
+		if (r == 7)
+			(*m68k_sp)++;
+		break;
+	case 4:
+		if (r == 7)
+			(*m68k_sp)--;
+		addr = --aReg[r];
+		break;
+	case 5:
+		addr = aReg[r] + (w16)RW(pc++);
+		break;
+	case 6:
+		displ = (w16)RW(pc++);
+		if ((displ & 2048) != 0)
+			addr = reg[(displ >> 12) & 15] +
+			       aReg[r] + (w32)((w8)displ);
+		else
+			addr = (w32)((w16)(reg[(displ >> 12) & 15])) +
+			       aReg[r] + (w32)((w8)displ);
+		break;
+	case 7:
+		switch (r)
+		{
+		case 0:
+			addr = (w16)RW(pc++);
+			break;
+		case 1:
+			addr = RL((w32 *)pc);
+			pc += 2;
+			break;
+		default:
+			exception = 4;
+			extraFlag = true;
+			nInst2 = nInst;
+			nInst = 0;
 
-    mea_acc=0;
+			mea_acc = 0;
+			lastAddr = 0;
+			dest = (Ptr)(&dummy);
+			return 0;
+		}
+		break;
+	default:
+		exception = 4;
+		extraFlag = true;
+		nInst2 = nInst;
+		nInst = 0;
 
-    dest=(Ptr)(&dummy);
-    return 0;
-  }
-#if 1
-  addr&=ADDR_MASK;
-#endif
-  switch(RamMap[addr>>RM_SHIFT]) {
-  case 1:
+		mea_acc = 0;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return 0;
+	}
 
-    mea_acc=0;
+	addr &= ADDR_MASK;
 
-    dest=(Ptr)(&dummy);
-    return *((w8*)theROM+addr);
-  case 3:
+	switch (RamMap[addr >> RM_SHIFT])
+	{
+	case 1:
 
-    mea_acc=0;
+		mea_acc = 0;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return *((w8 *)theROM + addr);
+	case 3:
+		mea_acc = 0;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return *((w8 *)dest);
+	case 7:
+		mea_acc = 0;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return *((w8 *)dest);
+	case 23:
+		mea_acc = MEA_DISP;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return *((w8 *)dest);
+	case 8:
+		mea_acc = MEA_HW;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return ReadByte(addr);
+	}
 
-    dest=(Ptr)theROM+addr;
-    return *((w8*)dest);
-  case 7:
-
-    mea_acc=0;
-
-    dest=(Ptr)theROM+addr;
-    return *((w8*)dest);
-  case 23:
-
-    mea_acc=MEA_DISP;
-
-    dest=(Ptr)theROM+addr;
-    return *((w8*)dest);
-  case 8:
-
-    mea_acc=MEA_HW;
-
-    lastAddr=addr;
-    dest=(Ptr)(&dummy);
-    return ReadByte(addr);
-  }
-
-  mea_acc=0;
-
-  dest=(Ptr)(&dummy);
-  return 0;
+	mea_acc = 0;
+	lastAddr = 0;
+	dest = (Ptr)(&dummy);
+	return 0;
 }
 
 rw16 ModifyAtEA_w(ashort mode,ashort r)
 {
-  /*w16*/ shindex displ;
-  w32     addr=0;
+	/*w16*/
+	shindex displ;
+	w32 addr = 0;
 
-#ifndef QM_BIG_ENDIAN
-  isreg=0;
-#endif
+	isreg = 0;
 
-  switch(mode) {
-  case 0:
-// mea_acc is not set *if* little endian?????
-#ifdef QM_BIG_ENDIAN
-#if 1
-    mea_acc=0;
-#else
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-    isHW=false;
-#endif
-#else
-    isreg=1;
-#endif
-    dest=(Ptr)(&reg[r])+RWO;
-    return *((w16*)dest);
-  case 1:
-#ifdef QM_BIG_ENDIAN
-#if 1
-    mea_acc=0;
-#else
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-    isHW=false;
-#endif
-#else
-    isreg=1;
-#endif
-    dest=(Ptr)(&aReg[r])+RWO;
-    return *((w16*)dest);
-  case 2:addr=aReg[r];
-    break;
-  case 3:addr=aReg[r];
-    aReg[r]+=2;
-    break;
-  case 4:addr=(aReg[r]-=2);
-    break;
-  case 5:addr=aReg[r]+(w16)RW(pc++);
-    break;
-  case 6:
-    displ=(w16)RW(pc++);
-    if((displ&2048)!=0) addr=reg[(displ>>12) & 15]+
-			  aReg[r]+(w32)((w8)displ);
-    else addr=(w32)((w16)(reg[(displ>>12) & 15]))+
-	   aReg[r]+(w32)((w8)displ);
-    break;
-  case 7:
-    switch(r) {
-    case 0:addr=(w16)RW(pc++);
-      break;
-    case 1:addr=RL((w32*)pc);
-      pc+=2;
-      break;
-    default:
-      exception=4;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-#if 1
-      mea_acc=0;
-#else
-      isHW=false;
-#if !defined(VM_SCR)
-      isDisplay=false;
-#endif
-#endif
-      dest=(Ptr)(&dummy);
-      return 0;
-    }
-    break;
-  }
-  addr &=ADDR_MASK;
+	switch (mode)
+	{
+	case 0:
+		isreg = 1;
+		dest = (Ptr)(&reg[r]) + RWO;
+		return *((w16 *)dest);
+	case 1:
+		isreg = 1;
+		dest = (Ptr)(&aReg[r]) + RWO;
+		return *((w16 *)dest);
+	case 2:
+		addr = aReg[r];
+		break;
+	case 3:
+		addr = aReg[r];
+		aReg[r] += 2;
+		break;
+	case 4:
+		addr = (aReg[r] -= 2);
+		break;
+	case 5:
+		addr = aReg[r] + (w16)RW(pc++);
+		break;
+	case 6:
+		displ = (w16)RW(pc++);
+		if ((displ & 2048) != 0)
+			addr = reg[(displ >> 12) & 15] +
+			       aReg[r] + (w32)((w8)displ);
+		else
+			addr = (w32)((w16)(reg[(displ >> 12) & 15])) +
+			       aReg[r] + (w32)((w8)displ);
+		break;
+	case 7:
+		switch (r)
+		{
+		case 0:
+			addr = (w16)RW(pc++);
+			break;
+		case 1:
+			addr = RL((w32 *)pc);
+			pc += 2;
+			break;
+		default:
+			exception = 4;
+			extraFlag = true;
+			nInst2 = nInst;
+			nInst = 0;
+			mea_acc = 0;
+			dest = (Ptr)(&dummy);
+			return 0;
+		}
+		break;
+	}
+	addr &= ADDR_MASK;
 
-  switch(RamMap[addr>>RM_SHIFT]) {
-  case 1:   /* ROM */
-#if 1
-    mea_acc=0;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    dest=(Ptr)(&dummy);
-    return (w16)RW((w16*)((Ptr)theROM+addr));
-  case 3:
-#if 1
-    mea_acc=0;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    dest=(Ptr)theROM+addr;
-    return (w16)RW((w16*)dest);
+	switch (RamMap[addr >> RM_SHIFT])
+	{
+	case 1: /* ROM */
+		mea_acc = 0;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return (w16)RW((w16 *)((Ptr)theROM + addr));
+	case 3:
+		mea_acc = 0;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return (w16)RW((w16 *)dest);
 
-  case 7:   /* screen access */
-  case 23:
-#if 1
-    mea_acc=MEA_DISP;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=true;
-#endif
-#endif
-    dest=(Ptr)theROM+addr;
-    return (w16)RW((w16*)dest);
+	case 7: /* screen access */
+	case 23:
+		mea_acc = MEA_DISP;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return (w16)RW((w16 *)dest);
 
-#if 0  /* delete that ...*/
-  case 23:
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=true;
-#endif
-    dest=(Ptr)theROM+addr;
-    return (w16)RW(dest);
-#endif
 
-  case 8:
-#if 1
-    mea_acc=MEA_HW;
-#else
-    isHW=true;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    lastAddr=addr;
-    dest=(Ptr)(&dummy);
-    return ReadWord(addr);
-  }
-#if 1
-  mea_acc=0;
-#else
-  isHW=false;
-#if !defined(VM_SCR)
-  isDisplay=false;
-#endif
-#endif
-  dest=(Ptr)(&dummy);
-  return 0;
+	case 8:
+		mea_acc = MEA_HW;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return ReadWord(addr);
+	}
+	mea_acc = 0;
+	lastAddr = 0;
+	dest = (Ptr)(&dummy);
+	return 0;
 }
 
-rw32 ModifyAtEA_l(ashort mode,ashort r)
+rw32 ModifyAtEA_l(ashort mode, ashort r)
 {
-  /*w16*/ shindex displ;
-  w32     addr=0;
+	/*w16*/
+	shindex displ;
+	w32 addr = 0;
 
-#ifndef QM_BIG_ENDIAN
-  isreg=0;
-#endif
+	isreg = 0;
 
-  switch(mode) {
-  case 0:
-#ifdef QM_BIG_ENDIAN
-#if 1
-    mea_acc=0;
-#else
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-    isHW=false;
-#endif
-#else
-    isreg=1;
-#endif
-    dest=(Ptr)(&reg[r]);
-    return *((w32*)dest);
-  case 1:
-#ifdef QM_BIG_ENDIAN
-#if 1
-    mea_acc=0;
-#else
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-    isHW=false;
-#endif
-#else
-    isreg=1;
-#endif
-    dest=(Ptr)(&aReg[r]);
-    return *((w32*)dest);
-  case 2:addr=aReg[r];
-    break;
-  case 3:addr=aReg[r];
-    aReg[r]+=4;
-    break;
-  case 4:addr=(aReg[r]-=4);
-    break;
-  case 5:addr=aReg[r]+(w16)RW(pc++);
-    break;
-  case 6:
-    displ=(w16)RW(pc++);
-    if((displ&2048)!=0) addr=reg[(displ>>12) & 15]+
-			  aReg[r]+(w32)((w8)displ);
-    else addr=(w32)((w16)(reg[(displ>>12) & 15]))+
-	   aReg[r]+(w32)((w8)displ);
-    break;
-  case 7:
-    switch(r) {
-    case 0:addr=(w16)RW(pc++);
-      break;
-    case 1:addr=RL((w32*)pc);
-      pc+=2;
-      break;
-    default:
-      exception=4;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-#if 1
-      mea_acc=0;
-#else
-      isHW=false;
-#if !defined(VM_SCR)
-      isDisplay=false;
-#endif
-#endif
-      dest=(Ptr)(&dummy);
-      return 0;
-    }
-    break;
-  }
-  addr &= ADDR_MASK;
+	switch (mode)
+	{
+	case 0:
+		isreg = 1;
+		dest = (Ptr)(&reg[r]);
+		return *((w32 *)dest);
+	case 1:
+		isreg = 1;
+		dest = (Ptr)(&aReg[r]);
+		return *((w32 *)dest);
+	case 2:
+		addr = aReg[r];
+		break;
+	case 3:
+		addr = aReg[r];
+		aReg[r] += 4;
+		break;
+	case 4:
+		addr = (aReg[r] -= 4);
+		break;
+	case 5:
+		addr = aReg[r] + (w16)RW(pc++);
+		break;
+	case 6:
+		displ = (w16)RW(pc++);
+		if ((displ & 2048) != 0)
+			addr = reg[(displ >> 12) & 15] +
+			       aReg[r] + (w32)((w8)displ);
+		else
+			addr = (w32)((w16)(reg[(displ >> 12) & 15])) +
+			       aReg[r] + (w32)((w8)displ);
+		break;
+	case 7:
+		switch (r)
+		{
+		case 0:
+			addr = (w16)RW(pc++);
+			break;
+		case 1:
+			addr = RL((w32 *)pc);
+			pc += 2;
+			break;
+		default:
+			exception = 4;
+			extraFlag = true;
+			nInst2 = nInst;
+			nInst = 0;
+			mea_acc = 0;
 
-  switch(RamMap[addr>>RM_SHIFT]) {
-  case 1:
-#if 1
-    mea_acc=0;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    dest=(Ptr)(&dummy);
-    return (w32)RL((w32*)((Ptr)theROM+addr));
-  case 3:
-#if 1
-    mea_acc=0;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    dest=(Ptr)theROM+addr;
-    return (w32)RL((w32*)dest);
-  case 7:
-  case 23:
-#if 1
-    mea_acc=MEA_DISP;
-#else
-    isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=true;
-#endif
-#endif
-    dest=(Ptr)theROM+addr;
-    return (w32)RL((w32*)dest);
+			dest = (Ptr)(&dummy);
+			return 0;
+		}
+		break;
+	}
+	addr &= ADDR_MASK;
 
-#if 0  /* delete that */
-  case 23:isHW=false;
-#if !defined(VM_SCR)
-    isDisplay=true;
-#endif
-    dest=(Ptr)theROM+addr;
-    /*tmp=ReadDispLong(addr);*/
-    return (w32)RL(dest);
-#endif
+	switch (RamMap[addr >> RM_SHIFT])
+	{
+	case 1:
+		mea_acc = 0;
+		lastAddr = 0;
+		dest = (Ptr)(&dummy);
+		return (w32)RL((w32 *)((Ptr)theROM + addr));
+	case 3:
+		mea_acc = 0;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return (w32)RL((w32 *)dest);
+	case 7:
+	case 23:
+		mea_acc = MEA_DISP;
+		lastAddr = addr;
+		dest = (Ptr)theROM + addr;
+		return (w32)RL((w32 *)dest);
 
-  case 8:
-#if 1
-    mea_acc=MEA_HW;
-#else
-    isHW=true;
-#if !defined(VM_SCR)
-    isDisplay=false;
-#endif
-#endif
-    lastAddr=addr;
-    dest=(Ptr)(&dummy);
-    return ReadLong(addr);
-  }
-#if 1
-  mea_acc=0;
-#else
-  isHW=false;
-#if !defined(VM_SCR)
-  isDisplay=false;
-#endif
-#endif
-  dest=(Ptr)(&dummy);
-  return 0;
+	case 8:
+		mea_acc = MEA_HW;
+		lastAddr = addr;
+		dest = (Ptr)(&dummy);
+		return ReadLong(addr);
+	}
+	mea_acc = 0;
+	lastAddr = 0;
+	dest = (Ptr)(&dummy);
+	return 0;
 }
-
 
 void RewriteEA_b(aw8 d)
 {
-	*((w8*)dest)=d;
-
-	if(!mea_acc)
-		return;
-
-	WriteByte(lastAddr, d);
+	if (isreg)
+		*((w8*)dest)=d;
+	else {
+		WriteByte(lastAddr, d);
+	}
 }
 
 void RewriteEA_w(aw16 d)
@@ -553,13 +436,8 @@ void RewriteEA_w(aw16 d)
 	if (isreg) {
 		*((w16*)dest)=d;
 	} else {
-		WW((Ptr)dest,d);
+		WriteWord(lastAddr, d);
 	}
-
-	if (!mea_acc)
-		return;
-
-	WriteWord(lastAddr, d);
 }
 
 void RewriteEA_l(aw32 d)
@@ -567,11 +445,6 @@ void RewriteEA_l(aw32 d)
 	if (isreg) {
 		*((w32*)dest)=d;
 	} else {
-		WL((Ptr)dest,d);
+		WriteLong(lastAddr, d);
 	}
-
-	if (!mea_acc)
-		return;
-
-	WriteLong(lastAddr,d);
 }
