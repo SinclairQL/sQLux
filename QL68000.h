@@ -24,9 +24,9 @@
 #define unlikely(exp) (exp)
 #endif
 
-/* 
- * QLtypes.h has been "inlined" here 'cause some typedefs are 
- * CPU dependent  now 
+/*
+ * QLtypes.h has been "inlined" here 'cause some typedefs are
+ * CPU dependent  now
  */
 
 #define true 1
@@ -103,7 +103,7 @@ extern int nInst;    /* dangerous - it is 'volatile' to some extent */
 #define ADDR_MASK_E  0xfffffe
 
 #ifdef TRACE
-extern uw16 *tracelo; 
+extern uw16 *tracelo;
 extern uw16 *tracehi;
 extern void CheckTrace(void);
 extern void TraceInit(void);
@@ -139,7 +139,7 @@ extern Ptr              dest;
 #define MEA_DISP 1
 #define MEA_HW 2
 extern Cond mea_acc;
-#else  
+#else
 #ifndef VM_SCR
 extern Cond             isDisplay;
 #endif
@@ -150,7 +150,6 @@ extern volatile Cond    extraFlag;
 extern volatile w8      intReg;
 extern volatile w8      theInt;
 
-extern bctype           *RamMap;
 extern char             dispScreen;
 extern Cond             dispMode;
 extern Cond             badCodeAddress;
@@ -212,7 +211,7 @@ STATIC void RewriteEA_w(aw16 ) REGP1;
 STATIC void RewriteEA_l(aw32 ) REGP1;
 
 void FrameInt(void);
-void WriteInt(aw8) REGP1; 
+void WriteInt(aw8) REGP1;
 
 void ExceptionIn(char) REGP1;
 void ExceptionOut(void);
@@ -344,7 +343,7 @@ static inline void _wl_(uw32 *d, uw32 v)
 #define dbginfo(format,args...) {printf(format, ## args);\
                                  DbgInfo();}
 
-		     
+
 #ifdef QM_BIG_ENDIAN
 #define RWO 2
 #define UW_RWO 0
@@ -360,7 +359,7 @@ static inline void _wl_(uw32 *d, uw32 v)
 #endif
 
 #ifdef HUGE_POINTER
-void static inline SET_POINTER(w32*_addr_,void *_val_) 
+void static inline SET_POINTER(w32*_addr_,void *_val_)
 {
 	uint32_t val1 = ((uintptr_t)_val_) >> 32;
 	uint32_t val2 = ((uintptr_t)_val_) & 0xFFFFFFFF;
@@ -368,14 +367,14 @@ void static inline SET_POINTER(w32*_addr_,void *_val_)
 	WL(_addr_,val1);
 	WL(_addr_+4,val2);
 }
-static inline void *GET_POINTER(w32* _addr_)  
+static inline void *GET_POINTER(w32* _addr_)
 {
 	uintptr_t val=((((uintptr_t)RL(_addr_))<<32 ) | (uint32_t)RL(_addr_+4));
 
 	return (void *)val;
 }
 #else
-#define SET_POINTER(_addr_,_val_)  (WL(_addr_,(w32)_val_)) 
+#define SET_POINTER(_addr_,_val_)  (WL(_addr_,(w32)_val_))
 #define GET_POINTER(_addr_)  ((void *)RL(_addr_))
 #endif
 

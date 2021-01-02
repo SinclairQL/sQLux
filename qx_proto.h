@@ -51,7 +51,6 @@ void add_patch(uw32 addr,uw16 ocode);
 void restart_emulator(void);
 void instrumentCode(void);
 
-extern void uqlx_protect(unsigned long  start, unsigned long len, int type);
 void uqlx_prestore(unsigned long start, unsigned long len);
 
 void queueKey(short m,short code,uw16 asciiChar);
@@ -78,7 +77,7 @@ int ser_write(serdev_t *, void *, int );
 void BlockMoveData(void *, void *,long );
 int FSClose(int );
 void RewriteHeader(void);
-OSErr KillFileTail(FileNum , int );	
+OSErr KillFileTail(FileNum , int );
 void TestCloseDevs(void);
 void ChangedMemory(int , int );
 void CleanRAMDev(char *dev);

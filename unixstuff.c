@@ -9,7 +9,7 @@
 /*      Signal handling aligned between Linux arm and Linux x86                                 */
 /*      Major code cleanup                                                                      */
 /*      NOTE: Not tested on Linux/68k                                                           */
-/************************************************************************************************/ 
+/************************************************************************************************/
 
 #include "QL68000.h"
 
@@ -19,15 +19,15 @@
 #include <sys/mman.h>
 #include <time.h>
 
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 
-#include "xcodes.h"  
-#include "QL_config.h" 
+#include "xcodes.h"
+#include "QL_config.h"
 #include "QInstAddr.h"
 
 #include "unix.h"
@@ -41,7 +41,7 @@
 void GetDateTime(w32 *);
 long long qlClock = 0;
 
-#ifdef VTIME 
+#ifdef VTIME
 int qlttc = 50;
 int qltime = 0;
 int qitc = 10;
@@ -108,7 +108,7 @@ int InitDialog ()
       char buf [PATH_MAX + 1], arg [100];
       char *p;
       int QMpid, bfpid;
-      
+
 #ifdef XAW
       return 0;
 #else
@@ -117,7 +117,7 @@ int InitDialog ()
 
       //strncpy (buf, IMPL,PATH_MAX);
       p = buf + strlen(buf) - 1;
-      if (*p != '/') 
+      if (*p != '/')
          strncat (buf,"/", PATH_MAX);
 #ifndef USE_IPC
       strncat (buf, "ButtonFrame", PATH_MAX);
@@ -125,11 +125,11 @@ int InitDialog ()
       strncat(buf, "Xgui", PATH_MAX);
 #endif
 
-      if (access(buf, R_OK | X_OK)) 
+      if (access(buf, R_OK | X_OK))
          return 0;
 
       bfpid = qm_fork (cleanup_dialog, 0);
-      if (bfpid) 
+      if (bfpid)
          return bfpid;
 
       execl (buf, buf, arg, NULL);
@@ -163,17 +163,6 @@ uw32 sysvar_l (uw32 a)
   return RL((Ptr)theROM+0x28000+a);
 }
 
-/* set both RamMap and mprotect() */
-void uqlx_protect (unsigned long  start, unsigned long len, int type)
-{
-   int i;
-
-   for (i = start>>pageshift; (start+len) > (i<<pageshift); i++) 
-   {
-      RamMap[i]=type;
-   }
-}
-
 #ifdef SHOWINTS
 static long alrm_count = 0;
 static long a_ticks = 0;
@@ -185,7 +174,7 @@ static int flptest = 0;
 void dosignal ()
 {
    SDL_AtomicSet(&doPoll, 0);
-  
+
 #ifdef SOUND
    if (delay_list)
       qm_sound ();
@@ -206,7 +195,7 @@ void dosignal ()
       a_ticks = aa_cnt = 0;
    }
 #endif
-    
+
    if(--scrcnt < 0)
    {
       doscreenflush = 1;
@@ -219,9 +208,9 @@ void dosignal ()
       TestCloseDevs ();
       process_ipc ();
    }
-  
+
 #ifndef xx_VTIME
-   FrameInt (); 
+   FrameInt ();
 #endif
 }
 
@@ -271,9 +260,9 @@ static int fat_int_called = 0;
 
 void on_fat_int (int x)
 {
-   if (fat_int_called==1) 
+   if (fat_int_called==1)
       exit(45);
-   if (fat_int_called > 1) 
+   if (fat_int_called > 1)
       raise(9);
    fat_int_called++;
 
@@ -315,7 +304,7 @@ static  int qm_wait(fc)
 int *fc;
 {
    int pid;
-     
+
    pid = wait3(fc, WNOHANG, (struct rusage *)NULL);
    return pid;
 }
@@ -364,7 +353,7 @@ static void qm_reaper ()
          last = &(ce->next);
          ce = ce->next;
       }
-      if (!found) 
+      if (!found)
          printf("hm, pid %d not found in cleanup list?\n",pid);
    }
 }
@@ -382,18 +371,18 @@ void ChangedMemory (int from, int to)
    uw32 dto,dfrom;
 
    /* QL screen memory involved? */
-   if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) || 
+   if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
        (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi))
    {
       dfrom = max(qlscreen.qm_lo, from);
       dto = min(qlscreen.qm_hi, to);
 
-      for (i = 0; i < sct_size; i++) 
+      for (i = 0; i < sct_size; i++)
          scrModTable[i] = (i * pagesize + qlscreen.qm_lo <= dto &&
                            i * pagesize + qlscreen.qm_lo >= dfrom);
    }
 }
- 
+
 char **argv;
 
 void DbgInfo(void)
@@ -427,7 +416,7 @@ void GetDateTime (w32 *t)
 {
    struct timeval tp;
 
-#ifndef VTIME  
+#ifndef VTIME
 
    gettimeofday(&tp, (void*)0);
    *t = ux2qltime(tp.tv_sec) + qlClock;;
@@ -440,18 +429,16 @@ int rombreak = 0;
 
 int allow_rom_break(int flag)
 {
-   if (flag < 0) 
+   if (flag < 0)
       return rombreak;
 
    if (flag)
    {
-      uqlx_protect(0, 3 * 32768, QX_RAM);
       rombreak = 1;
    }
    else
    {
-      uqlx_protect(0, 3 * 32768, QX_ROM);
-      rombreak = 0; 
+      rombreak = 0;
    }
    return rombreak;
 }
@@ -473,7 +460,7 @@ void init_uqlx_tz ()
 w32 ReadQlClock(void)
 {
    w32 t;
-  
+
    GetDateTime(&t);
    return t;
 }
@@ -484,10 +471,10 @@ int impopen(char *name,int flg,int mode)
    int r,md;
 
    md = mode;
-  
+
    if ((r = open(name,flg,md))!=-1)
       return r;
-  
+
    if(*name == '~')
    {
       char *p = buff;
@@ -495,49 +482,49 @@ int impopen(char *name,int flg,int mode)
       strcat(p, name + 1);
       name = p;
    }
-  
+
    return open(name,flg,md);
 
    //strcpy(buff,IMPL);
    p=buff+strlen(buff);
    if (*(p-1)!='/') strcat(buff,"/");
    strncat(buff,name,PATH_MAX);
-  
+
    return open(buff,flg,md);
 }
 
 int load_rom(char *name,w32 addr)
-{ 
+{
    struct stat b;
    int r;
    int fd;
 
-  
-   fd = impopen(name,O_RDONLY,0); 
-   if (fd<0) 
+
+   fd = impopen(name,O_RDONLY,0);
+   if (fd<0)
    {
       perror("Warning: could not find ROM image ");
       printf(" - rom name %s\n",name);
-      return 0; 
+      return 0;
    }
 
    fstat(fd,&b);
-   if (b.st_size!=16384 && addr!=0) 
+   if (b.st_size!=16384 && addr!=0)
       printf("Warning: ROM size of 16K expected, %s is %d\n",
              name, (int)b.st_size);
    if (addr & 16383)
       printf("Warning: addr %x for ROM %s not multiple of 16K\n",addr,name);
 
    r = read(fd, (Ptr)theROM + addr, b.st_size);
-   if (r<0) 
+   if (r<0)
    {
       perror("Warning, could not load ROM \n");
       printf("name %s, addr %x, QDOS origin %p\n",name,addr,theROM);
-      return 0; 
+      return 0;
    }
    if(V3)printf("loaded %s \t\tat %x\n",name,addr);
    close(fd);
-  
+
    return r;
 }
 
@@ -545,7 +532,6 @@ int scr_planes = 2;
 int scr_width, scr_height;
 
 int verbose = 2;
-bctype *RamMap;
 
 #ifndef XAW
 extern int shmflag;
@@ -554,12 +540,12 @@ extern int shmflag;
 #ifndef XSCREEN
 void parse_screen(char *x)
 {
-   printf("sorry, '-g' option works only with XSCREEN enabled,\ncheck your Makefile\n"); 
+   printf("sorry, '-g' option works only with XSCREEN enabled,\ncheck your Makefile\n");
 }
 #endif
 
 int sct_size;
-//char *scrModTable, 
+//char *scrModTable,
 char *oldscr ;
 
 static char obuf[BUFSIZ];
@@ -567,14 +553,14 @@ static char obuf[BUFSIZ];
 void CoreDump ()
 {
    int fd,r;
-  
+
    fd = open("qlcore",O_RDWR|O_CREAT,0644);
-   if (fd<0) 
+   if (fd<0)
       perror("coredump failed: read: :");
    if (fd > -1)
    {
       r = write(fd, theROM, 1024*1024);
-      if (!r) 
+      if (!r)
          perror("coredump failed: write: ");
       close(fd);
       if (r)
@@ -595,7 +581,7 @@ char *qm_findx(char *name)
    qaddpath(buf, "lib/uqlx", PATH_MAX);
    if (!access(buf, R_OK | X_OK))
       loc = buf;
-   else 
+   else
       loc=NULL;
 
    //if (!loc && !access(IMPL, R_OK | X_OK))
@@ -660,7 +646,7 @@ void vmtest()
 int toggle_hog(int val)
 {
    /*printf("toggle_hog, setting to %d\n",val);*/
-   if (val < 0) 
+   if (val < 0)
       return QMD.cpu_hog;
    QMD.cpu_hog = val;
    //if(QMD.cpu_hog)
@@ -697,15 +683,15 @@ void usage(char **argv)
 void SetParams (int ac, char **av)
 {
    char sysrom[200];
-   int c; 
+   int c;
    int mem=-1, col=-1, hog=-1, no_patch=-1;
    int gg=0;
-  
+
    setvbuf(stdout,obuf,_IOLBF,BUFSIZ);
 
    *sysrom=0;
-  
-#ifndef NO_GETOPT 
+
+#ifndef NO_GETOPT
    while((c = getopt(ac,av,"f:micnhr:o:s:b:g:W:p?::v:z:")) != EOF)
    {
       switch(c)
@@ -740,7 +726,7 @@ void SetParams (int ac, char **av)
             break;
          case 'i':
             start_iconic=1;
-            break;    
+            break;
          case 'v':
             verbose=atoi(optarg);
             break;
@@ -755,7 +741,7 @@ void SetParams (int ac, char **av)
          case 'b':
          {
             int len;
-          
+
             if (optarg && strcmp("",optarg))
             {
                ux_boot=2;
@@ -782,7 +768,7 @@ void SetParams (int ac, char **av)
             if (qlscreen.zoom>4) qlscreen.zoom=2;
             break;
 
-         default: 
+         default:
             usage(av);
       }
    }
@@ -797,7 +783,7 @@ void SetParams (int ac, char **av)
    UQLX_optind = 1;
 #endif
    QMParams();
-   if (mem > 0 && mem < 17) 
+   if (mem > 0 && mem < 17)
       mem=mem * 1024;
 
    if(mem != -1) QMD.ramtop = mem;
@@ -806,10 +792,10 @@ void SetParams (int ac, char **av)
 
    if (QMD.no_patch) do_update=1;
    //printf("do_update: %d\n",do_update);
-  
+
    toggle_hog(QMD.cpu_hog);
-   
-   RTOP = QMD.ramtop * 1024; 
+
+   RTOP = QMD.ramtop * 1024;
 }
 
 #ifdef G_reg
@@ -855,10 +841,8 @@ void uqlxInit ()
       exit(1);
    }
 
-   RamMap = malloc((((1024*1024*1024)/*& ADDR_MASK*/)>>RM_SHIFT)*sizeof(bctype));
-
    tbuff=malloc(65536*sizeof(void *));
-  
+
    {
       char roms[PATH_MAX];
       char *p=NULL;
@@ -873,9 +857,9 @@ void uqlxInit ()
             *p++ = '/';
          }
          strcpy(p, QMD.sysrom);
-          
+
          rl=load_rom(roms ,(w32)0);
-         if (!rl) 
+         if (!rl)
          {
             fprintf(stderr,"Could not find qdos ROM image, exiting\n");
             exit(2);
@@ -896,8 +880,8 @@ void uqlxInit ()
       }
    }
 
-   init_uqlx_tz();  
-  
+   init_uqlx_tz();
+
 #ifdef XAW
    if (script)
    {
@@ -917,7 +901,7 @@ void uqlxInit ()
 #endif
       HasDialog=InitDialog();
    }
-  
+
 #endif
 
    init_iso();
@@ -926,10 +910,10 @@ void uqlxInit ()
    LoadMainRom();                        /* patch QDOS ROM*/
 
    /* Minerva cannot handle more than 16M of memory... */
-   if (isMinerva && RTOP > 16384 * 1024) 
+   if (isMinerva && RTOP > 16384 * 1024)
       RTOP = 16384 * 1024;
    /* ...everything else not more than 4M */
-   if (!isMinerva && RTOP > 4096 * 1024) 
+   if (!isMinerva && RTOP > 4096 * 1024)
       RTOP = 4096 * 1024;
 
    rtop_hard = RTOP;
@@ -939,7 +923,7 @@ void uqlxInit ()
       qlscreen.xres = qlscreen.xres & (~(7));
       qlscreen.linel = qlscreen.xres/4;
       qlscreen.qm_len = qlscreen.linel*qlscreen.yres;
-      
+
       qlscreen.qm_lo = 128 * 1024;
       qlscreen.qm_hi=128 * 1024 + qlscreen.qm_len;
       if (qlscreen.qm_len>0x8000)
@@ -961,12 +945,12 @@ void uqlxInit ()
       qlscreen.linel = 128;
       qlscreen.yres = 256;
       qlscreen.xres = 512;
-      
+
       qlscreen.qm_lo = 128 * 1024;
       qlscreen.qm_hi = 128 * 1024 + 32 * 1024;
       qlscreen.qm_len = 0x8000;
    }
-  
+
    vm_setscreen();
 
 #ifndef XAW
@@ -992,7 +976,7 @@ void uqlxInit ()
       qlux_table[IPCR_CMD_CODE] = ReadIPC;
       qlux_table[IPCW_CMD_CODE] = WriteIPC;
       qlux_table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
-      
+
       qlux_table[FSTART_CMD_CODE] = FastStartup;
    }
    qlux_table[ROMINIT_CMD_CODE] = InitROM;
@@ -1021,41 +1005,17 @@ void uqlxInit ()
 
    if (QMD.skip_boot)
 	qlux_table[0x4e43] = btrap3;
-  
+
    g_reg = reg;
 
-   /* setup memory map */
-   uqlx_protect(0,(0xffffffff & ADDR_MASK)+1, QX_NONE);
-   uqlx_protect(0,RTOP,QX_RAM);
-
-   uqlx_protect(0,64*1024,QX_ROM);                /* QL ROM, ext ROMs     */
-
-   uqlx_protect(64*1024,32768,QX_QXM);            /* hidden emulator add-on */
-
-   uqlx_protect(64*1024+32768,pagesize, QX_IO);      /* QL I/O       */
-
-
-   /* QX_NONE must be used for extended screen mem while startup to avoid
-      false postives during memory testing */
-   if (qlscreen.qm_lo == 131072)
-      uqlx_protect(qlscreen.qm_lo,qlscreen.qm_len,QX_SCR);
-   else
-   {  
-      /* ignore memarea of old screen */   
-      uqlx_protect(131072,32768,QX_RAM);
-      /* make sure screen mem isn't recognised as RAM,
-       undoe this effect in init_xscreen() */
-      uqlx_protect(qlscreen.qm_lo,qlscreen.qm_len,QX_NONE);
-   }
-  
    InitialSetup();
-  
+
    if (isMinerva)
    {
       reg[1]=RTOP&((~16383) | 1 | 2 | 4 | 16);
       SetPC(0x186);
    }
-  
+
    QLdone = 0;
 }
 
@@ -1077,7 +1037,7 @@ void QLRun(void)
    if (run_reaper)
       qm_reaper();
 #endif
-  
+
    /*if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
    {
       scrchange=0;
@@ -1103,16 +1063,16 @@ void QLRun(void)
    {
       qitc=3;
       doPoll=1;
-      /*FrameInt();*/   
+      /*FrameInt();*/
       poll_req++;
       /*dosignal();*/
    }
 #endif
-  
+
 #ifndef XAW
-   if (!QLdone) 
+   if (!QLdone)
       goto  exec;
-  
+
 
    cleanup(0);
 #else

@@ -201,40 +201,9 @@ rw8 ModifyAtEA_b(ashort mode,ashort r)
 
 	addr &= ADDR_MASK;
 
-	switch (RamMap[addr >> RM_SHIFT])
-	{
-	case 1:
-
-		mea_acc = 0;
-		lastAddr = 0;
-		dest = (Ptr)(&dummy);
-		return *((w8 *)theROM + addr);
-	case 3:
-		mea_acc = 0;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return *((w8 *)dest);
-	case 7:
-		mea_acc = 0;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return *((w8 *)dest);
-	case 23:
-		mea_acc = MEA_DISP;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return *((w8 *)dest);
-	case 8:
-		mea_acc = MEA_HW;
-		lastAddr = 0;
-		dest = (Ptr)(&dummy);
-		return ReadByte(addr);
-	}
-
-	mea_acc = 0;
-	lastAddr = 0;
-	dest = (Ptr)(&dummy);
-	return 0;
+	lastAddr = addr;
+	dest = (Ptr)theROM + addr;
+	return ReadByte(addr);
 }
 
 rw16 ModifyAtEA_w(ashort mode,ashort r)
@@ -300,37 +269,9 @@ rw16 ModifyAtEA_w(ashort mode,ashort r)
 	}
 	addr &= ADDR_MASK;
 
-	switch (RamMap[addr >> RM_SHIFT])
-	{
-	case 1: /* ROM */
-		mea_acc = 0;
-		lastAddr = 0;
-		dest = (Ptr)(&dummy);
-		return (w16)RW((w16 *)((Ptr)theROM + addr));
-	case 3:
-		mea_acc = 0;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return (w16)RW((w16 *)dest);
-
-	case 7: /* screen access */
-	case 23:
-		mea_acc = MEA_DISP;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return (w16)RW((w16 *)dest);
-
-
-	case 8:
-		mea_acc = MEA_HW;
-		lastAddr = 0;
-		dest = (Ptr)(&dummy);
-		return ReadWord(addr);
-	}
-	mea_acc = 0;
-	lastAddr = 0;
-	dest = (Ptr)(&dummy);
-	return 0;
+	lastAddr = addr;
+	dest = (Ptr)theROM + addr;
+	return ReadWord(addr);
 }
 
 rw32 ModifyAtEA_l(ashort mode, ashort r)
@@ -395,37 +336,12 @@ rw32 ModifyAtEA_l(ashort mode, ashort r)
 		}
 		break;
 	}
+
 	addr &= ADDR_MASK;
 
-	switch (RamMap[addr >> RM_SHIFT])
-	{
-	case 1:
-		mea_acc = 0;
-		lastAddr = 0;
-		dest = (Ptr)(&dummy);
-		return (w32)RL((w32 *)((Ptr)theROM + addr));
-	case 3:
-		mea_acc = 0;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return (w32)RL((w32 *)dest);
-	case 7:
-	case 23:
-		mea_acc = MEA_DISP;
-		lastAddr = addr;
-		dest = (Ptr)theROM + addr;
-		return (w32)RL((w32 *)dest);
-
-	case 8:
-		mea_acc = MEA_HW;
-		lastAddr = addr;
-		dest = (Ptr)(&dummy);
-		return ReadLong(addr);
-	}
-	mea_acc = 0;
-	lastAddr = 0;
-	dest = (Ptr)(&dummy);
-	return 0;
+	lastAddr = addr;
+	dest = (Ptr)theROM + addr;
+	return ReadLong(addr);
 }
 
 void RewriteEA_b(aw8 d)

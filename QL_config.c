@@ -14,7 +14,7 @@
 /*#include "QTimer.h"
 #include "QColor.h"
 #include "QSound.h"
-#include "QDisk.h" 
+#include "QDisk.h"
 #include "QSerial.h" */
 #include <string.h>
 /*#include "ConfigDialog.h"
@@ -38,87 +38,13 @@ Cond RamCheck(void)
 {	/* check ram preferences and available RAM */
 }
 
-#if 0
-static Boolean CreateRamMenu(void)
-{	MenuHandle		menu;
-	short			i;
-	unsigned char	s[20];
-
-	/* menu creation deleted */
-
-	return RamCheck();
-}
-#endif
-
-
-#if 0
-static short QL_memory(void)
-{	short j;
-
-	j=AllocateMemory();
-	if(j!=0) return j;
-	RTOP=131072l+(long)qc.ram*1024;
-	ramTop=(w32*)((Ptr)theROM+RTOP);
-
-/* codici RamMap: 1=ROM 3=RAM 7=VIDEO 8=HW 0=niente
-	ovvero:	bit 0=read permission
-			bit 1=write permission
-			bit 2=video memory
-			bit 3=hardware register
-			bit 6=hardware expansion (unused)
-*/
-	for(j=5;j<128;j++) RamMap[j]=0;		/* empty	*/
-	RamMap[0]=RamMap[1]=1;          	/* QL ROM	*/
-	RamMap[2]=1;				/* hidden emulator add-on */
-	RamMap[3]=8;     			/* QL I/O	*/
-	RamMap[4]=7;				/* QL video buffer */
-	for(j=5;j<(RTOP>>15);j++) RamMap[j]=3;		/* QL RAM */
-
-	ClearDisplay();
-
-	return 0;
-}
-
-
-static void SetName(unsigned char *dest,unsigned char *source)
-{	BlockMoveData(source,dest,source[0]+1);
-}
-
-static OSErr GetStandardConfig(void)
-{	qc.ram=4096;
-	qc.fastStartup=false;
-	qc.startSession=false;
-	qc.backRom.active=false;
-	qc.backRom.initRoutine=true;
-	qc.hasFloppy=qc.hasHDisk=true;
-	SetName(qc.floppyName,"Flp");
-	SetName(qc.hDiskName,"Win");
-	SetName(qc.mainRom,"QL_ROM");
-	SetName(qc.backRom.name,"");
-	qc.soundActive=false;
-	qc.ser1=0;
-	qc.ser2=1;
-	qc.ignoreHandshake1=qc.ignoreHandshake2=false;
-	qc.intFrequency=1;
-	qc.keyMode=1;
-/*	prefChanged=true; */
-	return 0;
-}
-
-static OSErr GetConfig(void)
-{	/* load configuratin from preference file to qc variable (deleted) */
-	/* if preferences not found return GetStandardConfig(); */
-}
-#endif
-
-
 Cond LookFor(w32 *a,uw32 w,long nMax)
-{	
+{
   while(nMax-->0 && RL((Ptr)theROM+(*a))!=w) (*a)+=2;
   return nMax>0;
 }
 static Cond LookFor2(w32 *a,uw32 w,uw16 w1,long nMax)
-{	
+{
  rty:
   while(nMax-->0 && RL((Ptr)theROM+(*a))!=w) (*a)+=2;
   if (RW((Ptr)theROM+(*a)+4)==w1)
@@ -136,9 +62,9 @@ static void PatchKeyTrans(void)
 }
 
 static Cond PatchFind(void)
-{	
+{
   Cond ok;
-  
+
   IPC_CMD_ADDR=0x2b80;
   IPCR_CMD_ADDR=0x2e98;
   IPCW_CMD_ADDR=0x2e78;
@@ -152,7 +78,7 @@ static Cond InstallQemlRom(void)
 {
   if(!qemlPatch)
     {
-      if (isMinerva) 
+      if (isMinerva)
 	{
 	  ROMINIT_CMD_ADDR=0x0;
 	  qemlPatch=LookFor2(&ROMINIT_CMD_ADDR,0x0c934afbl,1,48*1024);
@@ -168,13 +94,13 @@ static Cond InstallQemlRom(void)
 		}
 	    }
 	}
-      
+
       else /* not Minerva */
 	{
 	  ROMINIT_CMD_ADDR=0x4a00;
 	  qemlPatch=LookFor(&ROMINIT_CMD_ADDR,0x0c934afbl,1000);
 	}
-      if (!qemlPatch)	   
+      if (!qemlPatch)
 	printf("Warning: could not patch ROM scan sequence\n");
       if(qemlPatch)
 	{
@@ -210,12 +136,12 @@ static Cond ReasonableROM(w32 *r)
   short i;
   w16	ut;
 
-  if((RL(&r[1])<0) || (RL(&r[1])>=49151) || ((short)RL(&r[1])&1)!=0) 
+  if((RL(&r[1])<0) || (RL(&r[1])>=49151) || ((short)RL(&r[1])&1)!=0)
     return false;
-  for(i=3; i<10; i++) 
+  for(i=3; i<10; i++)
     if(RL(&r[i])<0 || RL(&r[i])>=49151 || ((short)RL(&r[i])&1)!=0) return false;
   if(RL(&r[26])<0 || RL(&r[26])>=49151 || ((short)RL(&r[26])&1)!=0) return false;
-  for(i=32; i<48; i++) 
+  for(i=32; i<48; i++)
     if(RL(&r[i])<0 || RL(&r[i])>=49151 || ((short)RL(&r[i])&1)!=0) return false;
   for(i=0xc0; i<0xd6; i+=2)
     {	ut=RW((w16*)((Ptr)r+i));
@@ -232,8 +158,8 @@ int testMinerva(void)
 {
   char *p=(char *)theROM;
   char *limit=(Ptr)theROM+48*1024;
-  /* char *limit=(Ptr)theROM+4*1024; *//* "JSL1" should be found in 1st 4K *//* .hpr 8.8.99 */  
-  
+  /* char *limit=(Ptr)theROM+4*1024; *//* "JSL1" should be found in 1st 4K *//* .hpr 8.8.99 */
+
   do
     {
 /*       p=memchr(p,'Q',limit-p); */
@@ -252,7 +178,7 @@ int testMinervaVersion(char *ver)
 {
   char *p=(char *)theROM;
   char *limit=(Ptr)theROM+48*1024;
-  
+
   do
    {
       p=memchr(p,ver[0],limit-p);
@@ -273,7 +199,7 @@ short LoadMainRom(void) /* load and modify QL ROM */
   qemlPatch=false;
 
   p=1;/*ReasonableROM(theROM);*/
- 
+
   isMinerva=testMinerva();
   if (isMinerva)
     printf("using Minerva ROM\n");
@@ -281,19 +207,19 @@ short LoadMainRom(void) /* load and modify QL ROM */
   //if(V1)printf("no_patch: %d\n",QMD.no_patch);
 
   if (p && !QMD.no_patch)
-    {	
+    {
       if (!isMinerva)
 	{
 	  if(p) p=PatchFind();
 	  if(p)
 	    {
-	  
+
 	      WW((((Ptr)theROM+IPC_CMD_ADDR)), IPC_CMD_CODE);
 	      WW((((Ptr)theROM+IPCR_CMD_ADDR)), IPCR_CMD_CODE);
 	      WW((((Ptr)theROM+IPCW_CMD_ADDR)), IPCW_CMD_CODE);
 	    }
 	}
-      
+
       WW((((Ptr)theROM+0x4000+RW((uw16*)((Ptr)theROM+0x124)))), MDVR_CMD_CODE);	/* read mdv sector */
       WW((((Ptr)theROM+0x4000+RW((uw16*)((Ptr)theROM+0x126)))), MDVW_CMD_CODE);	/* write mdv sector */
       WW(((uw16*)((Ptr)theROM+0x4000+RW((uw16*)((Ptr)theROM+0x128)))), MDVV_CMD_CODE);	/* verify mdv sector */
@@ -301,7 +227,7 @@ short LoadMainRom(void) /* load and modify QL ROM */
 
       if(!isMinerva && QMD.fastStartup) WW(((uw16*)((Ptr)theROM+RL(&theROM[1]))),  FSTART_CMD_CODE);		/* fast startup patch */
       /* FastStartup() -- 0xadc7 */
-      
+
       if (!isMinerva)
 	{
 	  /* correct bugs which crashes the QL with 4M ram */
@@ -319,13 +245,13 @@ short LoadMainRom(void) /* load and modify QL ROM */
 	    p=LookFor(&a,0x90023dbc,120);
 	    if(p) WW(((uw16*)((Ptr)theROM+a)),0x9802);
 	    }
-	  
+
 	  PatchKeyTrans();
 	}
-      
-       p=InstallQemlRom(); 
-      
-      
+
+       p=InstallQemlRom();
+
+
     }
   if (!p && !QMD.no_patch) printf("warning : could not complete ROM patch\n");
 
@@ -355,7 +281,7 @@ void InitROM(void)
   long sysvars,sxvars;
 
 	if((long)((Ptr)gPC-(Ptr)theROM)-2 != ROMINIT_CMD_ADDR)
-	{	
+	{
       printf("PC %8x is not patched with ROMINIT\n", (unsigned)((long)gPC - (long)theROM));
       exception=4;
 		extraFlag=true;
@@ -363,7 +289,7 @@ void InitROM(void)
 	}
 #if 0
 	printf("a6=%x, basic at %x\n",aReg[6],ReadLong(0x28010));
-#endif	
+#endif
 
 	save_regs(saved_regs);
 
@@ -376,7 +302,7 @@ void InitROM(void)
 #else
 	WW((Ptr)gPC-2,0x0c93);   /* restore original instruction */
 #endif
-#if 0	
+#if 0
 	KillSound();
 	CloseSerial();
 	InitSerial();
@@ -417,11 +343,11 @@ void InitROM(void)
 
 	// QDOS version
 	WL((Ptr)qvers,reg[2]);qvers[4]=0;
-       
+
 #if 0
 	p=(Ptr)theROM+RTOP-0x07FFEl;
 	sprintf(p,initstr,uqlx_version,release,qvers);
-	WriteWord(aReg[1]=RTOP-0x08000l,strlen(p));	
+	WriteWord(aReg[1]=RTOP-0x08000l,strlen(p));
 
 #if 1
 	QLvector(0xd0,200000);
@@ -431,11 +357,6 @@ void InitROM(void)
 #endif
 #endif
 
-	/*HACK: allow breakpoints in ROM*/
-#if DEBUG_ROM
-	RamMap[0]=RamMap[1]=RamMap[2]=3;
-	uqlx_protect(0,3*32768,QX_RAM);
-#endif
 	/* now install TKII defaults */
 
 	reg[1]=0x6c;
@@ -450,7 +371,7 @@ void InitROM(void)
 	  WriteWord(aReg[0]+32,strlen(PROGD));strcpy((char*)((Ptr)theROM+aReg[0]+34),PROGD);
 	  WriteWord(aReg[0]+64,strlen(SPOOLD));strcpy((char*)((Ptr)theROM+aReg[0]+66),SPOOLD);
 	}
-	
+
 	/* link in Minerva keyboard handling */
 #if 1
 	if (isMinerva)
@@ -467,16 +388,16 @@ void InitROM(void)
 	      }
 	    WW((Ptr)theROM+KBENC_CMD_ADDR,KBENC_CMD_CODE);
 	    orig_kbenc=RL((Ptr)theROM+sxvars+0x10);
-	    WL((Ptr)theROM+sxvars+0x10,KBENC_CMD_ADDR); 
+	    WL((Ptr)theROM+sxvars+0x10,KBENC_CMD_ADDR);
 #if 0
-	    printf("orig_kbenc=%x\nreplacement kbenc=%x\n",orig_kbenc,KBENC_CMD_ADDR); 
+	    printf("orig_kbenc=%x\nreplacement kbenc=%x\n",orig_kbenc,KBENC_CMD_ADDR);
 	    printf("sx_kbenc addr=%x\n",sxvars+0x10);
 #endif
 	}
-#endif	
+#endif
 
 	init_poll();
-	
+
 	/* make sure it wasn't changed somewhere */
 	restore_regs(saved_regs);
 #ifdef OLD_PATCH
