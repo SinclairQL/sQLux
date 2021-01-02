@@ -10,6 +10,7 @@
 #include "SDL2screen.h"
 #include "qlmouse.h"
 #include "qx_proto.h"
+#include "QL_screen.h"
 
 static SDL_Window *ql_window = NULL;
 static uint32_t ql_windowid = 0;

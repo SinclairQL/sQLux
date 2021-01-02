@@ -30,33 +30,6 @@ int vm_saved_nInst=0;
 
 int vmfatalretry=0;
 
-void vmMarkScreen(uw32 addr)
-{
-  uw32 i=addr;
-  if (i>=qlscreen.qm_lo && i<=qlscreen.qm_hi)
-    {
-      i=PAGEI((w32)(i-qlscreen.qm_lo));
-      if (scrModTable[i]) return;
-
-      scrModTable[i]=1;
-    }
-}
-
-void vm_setscreen()
-{
-  int i,xsize;
-
-  xsize=PAGEX(PAGEI(qlscreen.qm_len+pagesize-1));
-
-  sct_size=PAGEI(xsize);
-
-  scrModTable=(void*)malloc(sct_size+1);
-  for (i=0 ; i<sct_size ; i++) scrModTable[i]=1;  /* hack, force init display */
-
-  oldscr=(void*)malloc(xsize);
-  memset(oldscr,255,xsize);    /* force first screen draw !*/
-}
-
 void vm_on(void)
 {
   vm_ison=1;

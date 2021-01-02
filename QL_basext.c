@@ -21,7 +21,7 @@
 #include "driver.h"
 #include "QDOS.h"
 #include "qx_proto.h"
-
+#include "QL_screen.h"
 
 #include "xcodes.h"
 #include "SDL2screen.h"
@@ -40,7 +40,7 @@ extern int UQLX_argc;
 extern char **UQLX_argv;
 
 typedef int bas_err;
-struct BAS_PFENTRY 
+struct BAS_PFENTRY
 {
   char *name;
   int type;              /* X_FUN, X_PROC*/
@@ -67,12 +67,12 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
 {
   w16 *t;
   int l;
-  
+
 
   /*printf("build_entry %s, code at %d\n",p->name,(long)(*iptr)-(long)theROM);*/
   WW(*iptr,BASEXT_CMD_CODE);  /* make the subr and */
   p->code_addr=(w32)((char*)*iptr-(char*)theROM);         /* store the entry addr */
- 
+
   t=*tptr;
   if ((uintptr_t)t&1)
     {
@@ -87,7 +87,7 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
   strncpy((char *)t,p->name,l);
   t=(w16*)((char*)t+l); /* L !!*/
   if ((uintptr_t)t&1) t=(w16*)((char*)t+1);
-  
+
   *tptr=t;
    *iptr=(*iptr)+1;
    /*printf("iptr: %d\n",*iptr);*/
@@ -96,9 +96,9 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
 void fnext(int type,struct BAS_PFENTRY **list)
 {
   struct BAS_PFENTRY *p;
-  
+
   p=*list;
-  
+
   while(p)
     {
       if (type==p->type)
@@ -118,7 +118,7 @@ void fnext(int type,struct BAS_PFENTRY **list)
 int mangle_count(int totsize,int count)
 {
   int r;
-  
+
   if (count*7>=totsize /*|| count==1*/) return count;
   r=(totsize+count+7)/8;
   /*printf("mangle_count: %d, %d -> %d\n",totsize,count,r);*/
@@ -134,7 +134,7 @@ void create_link_table(struct BAS_PFENTRY *list)
   w16 *etab;
   w16 *instr;
   int fnccnt,pccnt;
-  
+
   pccnt=fnccnt=f_cnt=p_cnt=0;
   tsize=2+2+4+2; /*count,count, end markers */
   inst_size=0;
@@ -160,14 +160,14 @@ void create_link_table(struct BAS_PFENTRY *list)
 	}
       p=p->link;
     }
-  
+
   reg[1]=tsize+inst_size+12+100; /* some pad */
   reg[2]=0;
-    
+
   /*printf("totsize %d, tsize %d, inst_size %d,\n reserve %d\n",reg[1],tsize,inst_size,reg[1]);*/
 #if 1
   QLtrap(1,0x18,2000000);
-  if (reg[0]) 
+  if (reg[0])
     {
       fprintf(stderr,"allocation failed, QDOS error %d\n",reg[0]);
       return;
@@ -177,7 +177,7 @@ void create_link_table(struct BAS_PFENTRY *list)
   bext_table=aReg[0];
   etab=(w16 *)((char*)theROM+aReg[0]);
   instr=(w16 *)((char*)etab+(((tsize+6+10)>>1)<<1));
-  
+
   WW(etab++,mangle_count(pccnt,p_cnt));
   p=ext_list;
   while(p_cnt--)
@@ -187,7 +187,7 @@ void create_link_table(struct BAS_PFENTRY *list)
       p=p->link;
     }
   WW(etab++,0);  /* end proc marker */
-  
+
   WW(etab++,mangle_count(fnccnt,f_cnt));
   p=ext_list;
   while(f_cnt--)
@@ -199,12 +199,12 @@ void create_link_table(struct BAS_PFENTRY *list)
   WW(etab++,0);  /* end fun marker */
   WW(etab++,0);  /* another marker to be sure */
   /*printf("Basic Extensions table at %d\n",bext_table);*/
-#endif 
+#endif
 #if 1
   aReg[1]=bext_table;
-   
-  QLvector(0x110,2000000);   /* and BP.INIT */ 
- 
+
+  QLvector(0x110,2000000);   /* and BP.INIT */
+
 #endif
 }
 
@@ -283,17 +283,17 @@ void init_bas_exts()
   add_bas_fun(BN_SCR_YLIM,UQLX_getYres);
 
   create_link_table(ext_list);
-} 
+}
 
 void BASEXTCmd()
 {
   w32 where;
   struct BAS_PFENTRY *p=ext_list;
-  
+
   where=(w32)((char*)pc-(char*)theROM-2);
-  
+
   /*printf("BASIC EXTENSION\n");*/
-  
+
   while(p)
     {
       if (where==p->code_addr) break;
@@ -306,7 +306,7 @@ void BASEXTCmd()
       printf("problem with basic extension\n");
       return;
     }
-  
+
   reg[0]=(p->command)();
   rts();
 }
@@ -314,7 +314,7 @@ void BASEXTCmd()
 /*************************************************************/
 /* argument access functions etc. */
 
-typedef struct 
+typedef struct
 {
   uw16 len;      /* len is in HOST byteorder.. */
   char str[0];
@@ -324,10 +324,10 @@ typedef struct
 w32 bas_resstack(w32 size)
 {
   w32 r,s;
-  
+
   s=((size+1)>>1)<<1;
   reg[1]=s;
-  
+
   QLvector(0x11a,200000);
   if (reg[0]<-1) return 0;
   r=ReadLong(aReg[6]+0x58)-s;
@@ -342,13 +342,13 @@ w32 bas_resstack(w32 size)
 void bas_deallocstack(uw32 size)
 {
   int r;
-  
+
   if (size&1)
     {
       printf("deallocing %d bytes of SB stack ?!?!!\n",size);
       size&=(uw32)-1;
     }
-  
+
   r=ReadLong(aReg[6]+0x58)+size;
   WriteLong(aReg[6]+0x58,r);
   aReg[1]=r;
@@ -357,7 +357,7 @@ void bas_deallocstack(uw32 size)
 
 int bas_argcount()
 {
-  return (aReg[5]-aReg[3])/8; 
+  return (aReg[5]-aReg[3])/8;
 }
 
 void free_qstr(void *p)
@@ -381,7 +381,7 @@ void resarg()
 //       0 unset, 1 expression, 2 variable, 3 dim variable, 4 Procedure
 //       5 Function, 6 repeat name, 7 for variable, 8 res proc, 9 res fn
 // byte(1): type
-//       0: use 3 substr, use 4 SB Proc, use 8 res Proc, 9 res Fn 
+//       0: use 3 substr, use 4 SB Proc, use 8 res Proc, 9 res Fn
 //       1 string, 2 fp, 3 integer
 //       bit 7:   '#'
 //       bit 4-6:
@@ -456,11 +456,11 @@ qstr *bas_getstr()
 {
   int l;
   qstr *p;
-  
+
   sch1arg();
   QLvector(0x116,2000000);
   resarg();
-  
+
   if (reg[0]<0 || reg[3]!=1) return 0;
 
   /*else return (char*)theROM+aReg[1]+aReg[6]; /* dealloc!!! */
@@ -492,9 +492,9 @@ int bas_getln(int * val)
   sch1arg();
   QLvector(0x118,20000000);
   resarg();
-  
+
   if( ((uw16) reg[3]!=1) || reg[0]) return -1;
-  
+
   *val=ReadLong(aReg[1]+aReg[6]);
   bas_deallocstack(4);
 
@@ -504,11 +504,11 @@ int bas_getln(int * val)
 int bas_retint(int i)
 {
   w32 p;
-  
+
   p=bas_resstack(2);
   WriteWord(p,i);
   reg[4]=3;
-  
+
   return 0;
 }
 
@@ -520,7 +520,7 @@ int bas_retint(int i)
 /*************************************************************/
 bas_err Kill_UQLX()
 {
-  int rx;  
+  int rx;
 
   /* do NOT signal ERR.BP*/
 
@@ -537,9 +537,9 @@ bas_err UQLX_Relse()
 
   if (bas_argcount()!=0)
     return QERR_BP;
-  
+
   return bas_retstr(strlen(release),release);
-  
+
 }
 
 bas_err UQLX_getenv()
@@ -549,20 +549,20 @@ bas_err UQLX_getenv()
   char *c;
 
   if (bas_argcount()!=1) return QERR_BP;
-  
+
   p=bas_getstr();
   if (p==0) return QERR_BP;
 
   /*name=malloc(p->len+1);
     memcpy(name,p->str,p->len);
     name[p->len]=0;*/
-  
+
   c=getenv(p->str);
   free_qstr(p);
-  
+
   if (c) return bas_retstr(strlen(c),c);
   else return bas_retstr(0,(char*)theROM);
-  
+
 }
 
 int do_fork()
@@ -600,7 +600,7 @@ int do_fork()
 bas_err Fork_UQLX()
 {
   int pid;
-  
+
 #ifndef HPR_STYLE
   if (bas_argcount()!=0) return QERR_BP;
 #endif
@@ -632,7 +632,7 @@ bas_err UQLX_getXargc()
 #ifndef HPR_STYLE
   if (bas_argcount()!=0) return QERR_BP;
 #endif
-  
+
   return bas_retint(UQLX_argc-UQLX_optind+1);
 }
 
@@ -641,22 +641,22 @@ bas_err UQLX_getXarg()
 {
   uw32 n;
   char *r;
-  
+
 #ifdef HPR_STYLE
   if (bas_argcount()<1) return QERR_BP;
 #else
   if (bas_argcount()!=1) return QERR_BP;
 #endif
-  
+
   if (bas_getln(&n)<0)
     return QERR_BP;
-  
+
   if (/*n>UQLX_argc-1 || */ n<0  || ((n>0) && (n+UQLX_optind>UQLX_argc)))
     return bas_retstr(0,NULL);
 
   if (n==0) r=UQLX_argv[n];
   else r=UQLX_argv[n+UQLX_optind-1];
-  
+
   return bas_retstr(strlen(r),r);
 }
 
@@ -665,13 +665,13 @@ static bas_err MakeDir()
   qstr *p;
 
   if (bas_argcount()!=1) return QERR_BP;
-  p=bas_getstrpar(); 
+  p=bas_getstrpar();
   // saveregs
   // trap#4
   // trap#2,createfile
   // trap#4
   // trap#3,77
   // restoreregs
-  
+
   return bas_retint(UQLX_argc-UQLX_optind+1);
 }

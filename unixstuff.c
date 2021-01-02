@@ -35,6 +35,7 @@
 #include "qx_proto.h"
 #include "QL_sound.h"
 #include "uxfile.h"
+#include "QL_screen.h"
 #include "SDL2screen.h"
 
 #define TIME_DIFF    283996800
@@ -950,8 +951,6 @@ void uqlxInit ()
       qlscreen.qm_hi = 128 * 1024 + 32 * 1024;
       qlscreen.qm_len = 0x8000;
    }
-
-   vm_setscreen();
 
 #ifndef XAW
    //if (!script)

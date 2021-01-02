@@ -9,6 +9,7 @@
 #include "xcodes.h"
 #include "QDOS.h"
 #include "QL_config.h"
+#include "QL_screen.h"
 #include "unix.h"
 
 /*#include "QTimer.h"

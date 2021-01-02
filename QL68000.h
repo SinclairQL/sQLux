@@ -349,21 +349,8 @@ static inline void *GET_POINTER(w32* _addr_)
 extern void QLtrap(int ,int ,int );
 extern void QLvector(int , int );
 
-
-#include "QL_screen.h"
-
-#ifdef QM_BIG_ENDIAN
-#define big_endian 1
-#else
-#define big_endian 0
-#endif
-
 extern int script;
 extern Cond doTrace;
-
-#define MARK_SCREEN
-
-#define prepChangeMem
 
 extern int verbose;
 #define V1 (verbose>0)

@@ -8,6 +8,7 @@
 #include "memaccess.h"
 #include "general.h"
 #include "qx_proto.h"
+#include "QL_screen.h"
 #include "SDL2screen.h"
 
 static int is_screen(uint32_t addr)

@@ -40,7 +40,7 @@
 #define ERR_FULL -11
 #define ERR_EOF -10
 
-#define min(_a_,_b_)(_a_<_b_ ? _a_ : _b_) 
+#define min(_a_,_b_)(_a_<_b_ ? _a_ : _b_)
 #define max(_a_,_b_)(_a_>_b_ ? _a_ : _b_)
 
 int match(char *,char *, char *, int , int , int, int);
@@ -55,7 +55,7 @@ int eretry(void)
 void qaddpath(char *mount, char *name, int maxnlen)
 {
   int i;
-  
+
   if (*mount==0) return (void) strncpy(mount,name,maxnlen);
   i=strlen(mount);
   if ((mount[i-1])!='/') return (void) addpath(mount,name,maxnlen);
@@ -67,7 +67,7 @@ static int qunlinkfile(char *mount,char *name, int maxnlen)
   qaddpath(mount,name,maxnlen);
 
   res=unlink(mount);
-  
+
   mount[q]=0;
   return res;
 }
@@ -75,9 +75,9 @@ static int qstat(char *mount, char *name, struct stat *buf, int maxnlen)
 {
   int res,q=strlen(mount);
   qaddpath(mount,name,maxnlen);
-  
+
   res=stat(mount,buf);
-  
+
   mount[q]=0;
   return res;
 }
@@ -85,9 +85,9 @@ int qopenfile(char *mount, char *name, int flags, int mode, int maxnlen)
 {
   int res,q=strlen(mount);
   qaddpath(mount,name,maxnlen);
-  
+
   res=open(mount,flags,mode);
-  
+
   mount[q]=0;
   return res;
 }
@@ -97,7 +97,7 @@ DIR *qopendir(char *mount, char *name, int maxnlen)
   DIR *res;
   int q=strlen(mount);
   qaddpath(mount,name,maxnlen);
-  
+
 
   if (*mount) res=opendir(mount);
   else res=opendir(".");
@@ -116,7 +116,7 @@ long qlseek(struct mdvFile *f,off_t pos, int how)
   end=lseek(fd,0,SEEK_END);
   lseek(fd,cpos,SEEK_SET);
   r=lseek(fd,pos,how);
-  if (r>end) 
+  if (r>end)
     {
       *reg=QERR_EF;
       r=lseek(fd,end,SEEK_SET);
@@ -136,7 +136,7 @@ int uxLookupDir(char *mount, char *qdname, struct mdvFile *f, char *uxname, int 
   strncpy(temp,qdname+2,36);
   uxname[0]=0;
 
-  if (qlen && temp[qlen-1]=='_') temp[qlen-1]=0;  
+  if (qlen && temp[qlen-1]=='_') temp[qlen-1]=0;
 
   return match(mount, uxname,temp,1,0,320,fstype);
 }
@@ -173,17 +173,17 @@ char *nseg(char *qpath,char *uxname, char separator, int fstype)
   else
     while(*p++==*u++ && l++<maxlen);
 
-  if ((*(p-1)==separator) && (*(u-1)==0 ) && ((p-1)>qpath)) 
+  if ((*(p-1)==separator) && (*(u-1)==0 ) && ((p-1)>qpath))
     {
       //if (fstype==2)printf("nseg: %s matches %s, rest %s\n",qpath,uxname,p);
       return p;
     }
-  else return NULL;  
+  else return NULL;
 }
 
 
 
-static char *addpath(char *to,char *name, int maxnlen) 
+static char *addpath(char *to,char *name, int maxnlen)
 {
   /*printf("addpath: %s %s \n",to,name);*/
   if (*to) strcat(to,"/");
@@ -216,7 +216,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
     {
       close(fd);
       return memoize(where,name);
-    } else 
+    } else
       {
 	*wt=0;
 	delmemoize();
@@ -232,7 +232,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
   }
 
 #if 0
-  if (!(dirp=qopendir(mount,where,maxnlen))) 
+  if (!(dirp=qopendir(mount,where,maxnlen)))
     {
     if (createp)
       {
@@ -243,12 +243,12 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
       return 0;
     }
 #endif
-  
-  if ( p==NULL && isdir) 
+
+  if ( p==NULL && isdir)
     {
       closedir(dirp);
       return 1;
-    } 
+    }
 
 
   while(dp=readdir(dirp))
@@ -256,7 +256,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
       if (!strcmp(dp->d_name,".-UQLX-")) continue;
       if (fstype==2 && (p=nseg(name,dp->d_name,0x0,fstype)))
 	{
-	  // exact match didn´t work so try ignore case match..
+	  // exact match didnï¿½t work so try ignore case match..
 	  //printf("fst2 found %s, %s, %s\n",p,name,dp->d_name);
 	  addpath(where,dp->d_name,maxnlen);
 	  // must test existence, type and permission to create!
@@ -264,7 +264,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
 	    closedir(dirp);
 	    return memoize(where,dp->d_name);
 	  }
-	  else *wt=0; 
+	  else *wt=0;
 	}
       if (p=nseg(name,dp->d_name,'/',fstype))
 	{
@@ -273,7 +273,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
 	    closedir(dirp);
 	    return memoize(where,dp->d_name);
 	  }
-	  else *wt=0; 
+	  else *wt=0;
 	}
       if (p=nseg(name,dp->d_name,'_',fstype))
 	{
@@ -293,7 +293,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
 	    closedir(dirp);
 	    return memoize(where,dp->d_name);
 	  }
-	  
+
 	  else *wt=0;
 	}
       if (p=cinseg(name,dp->d_name,'_'))
@@ -304,7 +304,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
 	    return memoize(where,dp->d_name);
 	  }
 	  else *wt=0;
-	  
+
 	}
 #endif
     }
@@ -319,7 +319,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp, int maxn
   }
   return 0;
 }
- 
+
 /* utility fn for use by pty.c */
 /* allocate and convert name   */
 char *ql2uxname(char *name)
@@ -332,7 +332,7 @@ char *ql2uxname(char *name)
       j=strlen(qdevs[i].name);
       if (strncasecmp(qdevs[i].name,name,j)) continue;
       dr=name[j];
-      if (dr<1 || dr>8) 
+      if (dr<1 || dr>8)
 	{
 	  printf("illegal drive number: %s\n",name);
 	  return NULL;
@@ -362,7 +362,7 @@ int HCreate(struct mdvFile *f, unsigned char *name,
   /*printf("calling HCreate\n");*/
   err=uxLookupFile(mount,name,f,mname,0,fstype);
   if (!err) return -7;
-  
+
   fd=creat(mname,0666);
   if (fd>=0){
     close(fd);
@@ -374,7 +374,7 @@ int HCreate(struct mdvFile *f, unsigned char *name,
 void getpath(char * respath, char *name, int maxnlen)
 {
   char *p;
-  
+
   strncpy(respath,name,maxnlen);
   p=strrchr(respath,'/');
   if (p) *p=0;
@@ -394,7 +394,7 @@ void reopen_uxfile(struct mdvFile *f)
   size_t cpos;
   char mount[400];
   int fd=GET_HFILE(f);
-  
+
   cpos=lseek(fd,0,SEEK_CUR);
   close(fd);
   printf("reopening file %s, pos %d\n",GET_FCB(f)->uxname,cpos);
@@ -422,12 +422,12 @@ void deleteheader(char *mount, char *fname,int fstype)
   else strcpy(dpath,".-UQLX-");
   fd=qopenfile(mount,dpath,O_RDWR,0,256);
   if (fd<0) return;
-  
+
   nlen=strlen(name);
 
   cmp_fun = (void*)fstype ? strncasecmp : strncmp;
   while(64==read(fd,&buf,64))
-    if (RL((Ptr)&buf) && nlen==RW(REF_FNAME((Ptr)&buf))  && 
+    if (RL((Ptr)&buf) && nlen==RW(REF_FNAME((Ptr)&buf))  &&
 	!cmp_fun(name,REF_FNAME((Ptr)&buf)+2,nlen))
       {
 	WL((Ptr)&buf,0);
@@ -448,7 +448,7 @@ void QHDeleteHeader(char *mount,int open_flag, char *path, struct mdvFile *f, in
   deleteheader(mount,name,fstype);
 }
 
-  
+
 void FillXH(int fd,char *name,struct fileHeader *h, int fstype)
 {
   struct fileHeader buf;
@@ -504,7 +504,7 @@ void setheader(char *fsmount, char *uxname, struct fileHeader *h,int fstype)
       }
     else if ((free<0) && (!RL((Ptr)&buf))) free=lseek(ff,0,SEEK_CUR)-64;
   }
-  if (!found )  
+  if (!found )
     {
       memset(&buf, 0,64);
       if(free > 0)
@@ -552,9 +552,9 @@ void QHFillHeader(struct fileHeader *h,int pof,
 		  struct mdvFile *f, int fstype)
 {
   int err,i,j,fd;
-  struct stat buf; 
+  struct stat buf;
   char dpath[4200],mp[4200];
-  
+
   if (pof==FILDES) err=fstat(file.fd,&buf);
   else err=qstat(mount,file.pth,&buf,4000);
 
@@ -567,14 +567,14 @@ void QHFillHeader(struct fileHeader *h,int pof,
     {
       SET_FLEN(h, buf.st_size+64);
       SET_FDUPDT(h,ux2qltime(buf.st_mtime));
-      
+
       if (buf.st_mode & S_IFDIR ||
-	  (f && GET_ISDIR(f))) 
+	  (f && GET_ISDIR(f)))
 	i=255;
       else i=0;
       SET_FTYP(h,i);
-   
-      if (i==255 && ((j=RW((Ptr)REF_FNAME(h)))<36)) 
+
+      if (i==255 && ((j=RW((Ptr)REF_FNAME(h)))<36))
 	{
 	  *(REF_FNAME(h)+2+j)=DIR_SEPARATOR;
 	  WW((Ptr)REF_FNAME(h),j);
@@ -593,15 +593,15 @@ void QHFillHeader(struct fileHeader *h,int pof,
       getname(dpath,file.pth,4000);
       FillXH(fd,dpath,h,fstype);
     }
-  else 
+  else
     {
       if (GET_FILESYS(f)>-1)
 	{
 	  strncpy(mp,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
 	}
-      
+
       else mp[0]=0;
-      
+
       getpath(dpath,GET_FCB(f)->uxname,4000);
       if (*dpath) strcat(dpath,"/.-UQLX-");
       else strcpy(dpath,".-UQLX-");
@@ -618,8 +618,8 @@ exit:
 void ux2qlpath(char *qname,char *uxname)
 {
   char c;
-  
-  while(c=*qname++=*uxname++) 
+
+  while(c=*qname++=*uxname++)
     if (c=='/') qname[-1]='_';
 }
 
@@ -636,7 +636,7 @@ int QHOpenDir(struct mdvFile *f, int fstype)
   char mount[400];
 
   char templ[100];
-  
+
   DIR *dirp;
   struct dirent *dp;
   struct fileHeader h;
@@ -658,7 +658,7 @@ definition in unix.h",template);
     return -7;
   }
   //printf("temporary file: %s\n",templ);
-#if 1  
+#if 1
   unlink(template);
 #endif
 
@@ -666,11 +666,11 @@ definition in unix.h",template);
 
   err=uxLookupDir(mount,NAME_REF(f),f,mname,fstype);
   if (!err) return -7;
-  
+
   /*printf("dirname is %s, orig name is %s\n",
 	 mname,NAME_REF(f)+2);*/
 
-  /* now fill the correct (sub)directory name into QDOS header */  
+  /* now fill the correct (sub)directory name into QDOS header */
   mlen=strlen(mname);
   mlen = (mlen == 0 ? 0 : mlen);
   WW(NAME_REF(f),mlen);
@@ -684,12 +684,12 @@ definition in unix.h",template);
       perror("could not find directory");
       printf("mount point %s \t name %s \n",mount,mname);
       return -7;
-    } 
+    }
 #if 0
   else printf("opened dir %s\n",mname);
 #endif
 
-  if (mname[0]!=0) 
+  if (mname[0]!=0)
     {
       i=strlen(mname);
       if (mname[i-1]!='/')
@@ -698,18 +698,18 @@ definition in unix.h",template);
 	  mname[i]=0;
 	}
     }
-  
+
   strncpy(GET_FCB(f)->uxname,mname,256);
   ux2qlpath(qlpath,mname);
   qplen=strlen(qlpath);
   mlen=strlen(mname);
   pname=mname+mlen;
-  
+
 
   /*printf("pathname %s %s\n",mname,qlpath);*/
-  
- 
-  /* the 0-th entry of each subdir should point to itself - shouldn't it ? */ 
+
+
+  /* the 0-th entry of each subdir should point to itself - shouldn't it ? */
 #ifdef ZENTRY
   for (i=0;i<64;i++)*(((char*)&h)+i)=0;
   SET_FLEN(&h,128);
@@ -720,11 +720,11 @@ definition in unix.h",template);
   while ((dp=readdir(dirp))!=NULL)
     {
       int unused;
-      
-      if (!strcmp(dp->d_name,".") || 
+
+      if (!strcmp(dp->d_name,".") ||
 	  !strcmp(dp->d_name,"..") ||
 	  !strcmp(dp->d_name,".-UQLX-")) continue;
-      
+
       for (i=0;i<17;i++)*(((char*)&h)+i)=0;
 
       strncpy(REF_FNAME(&h)+2,qlpath,min(qplen,32));
@@ -760,7 +760,7 @@ definition in unix.h",template);
 int FSClose(int fd)
 {
   int err;
-  
+
   err=close(fd);
   /*printf("FSClose file %d, res %d\n",fd,err);*/
   return 0;
@@ -778,7 +778,7 @@ int HOpenDF(int drive, long dir, unsigned char * name,
   err=uxLookupFile(mount,name,f,mname,canCreate,fstype);
   strncpy(GET_FCB(f)->uxname,mname,256);
   /*printf("HOpenDF name lookup ->%s, %s found, res %d\n",mname,(err?"":"not"),err);*/
-  
+
   if (!err) return -7;
   fd=qopenfile(mount,mname,perm,0666,400);
 
@@ -798,7 +798,7 @@ int HDelete(int drive, int dir, unsigned char *name, struct mdvFile *f, int fsty
   err=uxLookupFile(mount,name,f,mname,0,fstype);
 
   if (!err) return -7;
-  
+
   /*printf("calling HDelete %s\n",name+2);*/
   qunlinkfile(mount,mname,400);
   QHDeleteHeader(mount,0,mname,NULL,fstype);
@@ -810,7 +810,7 @@ int flen(int fd)
 {
   struct stat buf;
   int err;
-  
+
   err=fstat(fd,&buf);
   if (!err) return buf.st_size;
   else return -1;
@@ -823,7 +823,7 @@ int HDfLen(struct mdvFile *f, int fstype)
 
 
 /*static char buff[512];*/
-int QHread(int fd,w32 *addr,long *count, Cond lf) 
+int QHread(int fd,w32 *addr,long *count, Cond lf)
 {
   int cnt,startpos;
   int c, fn, err,sz,e;
@@ -833,11 +833,11 @@ int QHread(int fd,w32 *addr,long *count, Cond lf)
   cnt=*count;
   from=*addr;
   startpos=lseek(fd,0,SEEK_CUR);
-  
+
   if (cnt+startpos>flen(fd))
     cnt=flen(fd)-startpos;
   to=from+cnt;
-  
+
   if (from<131072)
     {
       lseek(fd,131072-from,SEEK_CUR);
@@ -845,11 +845,9 @@ int QHread(int fd,w32 *addr,long *count, Cond lf)
     }
   if (to>=RTOP) to=RTOP;
   cnt=to-from;
-  
-  /*prepChangeMem(from,from+cnt);*/
 
   if(cnt>0){
-    if (lf){  
+    if (lf){
       for(i=0,fn=cnt,p=(Ptr)theROM+from;fn>0;fn=fn-1024,p=p+1024)
 	{
 	  sz=min(1024,fn);
@@ -859,18 +857,18 @@ int QHread(int fd,w32 *addr,long *count, Cond lf)
 	      cnt=(Ptr)p-(Ptr)theROM-from;
 	      if (cnt>0)
 		{e=QERR_NC; goto ret;}
-	      else 
+	      else
 		{cnt=0;e=qmaperr(); goto ret;}
 	    }
 	  if (i=memchr(p,10,sz)) break;
 	}
       if (i) cnt=(Ptr)i-(Ptr)theROM-from+1;
-      
+
     }
     else
       {
 	cnt=read(fd,(Ptr)theROM+from,cnt);
-	if (cnt<0 && eretry()) 
+	if (cnt<0 && eretry())
 	  {
 	    cnt=0;e=QERR_NC; goto ret;
 	  }
@@ -880,18 +878,18 @@ int QHread(int fd,w32 *addr,long *count, Cond lf)
   else if (!i && lf && cnt==*count) e=QERR_BF;
   else e=0;
   lseek(fd,startpos+cnt,SEEK_SET);
-  
+
 ret:
   *count=cnt;
   ChangedMemory(from,from+cnt);
-  
+
   return e;
 }
 
 int QWrite(int fd, Ptr addr,long *count)
 {
   int err;
-  
+
   err=write(fd,addr,*count);
   if (err<=0 && *count>0) {*count=0;return qmaperr();}
   *count=err;
@@ -913,22 +911,22 @@ int rename_file(struct mdvFile *f,int fd,char *qln, int qlen, int fstype)
         if ( GET_FILESYS(f)<0 )
 	  {
 	    char nname[4200];
-	    
+
 	    name=GET_FCB(f)->uxname;
 	    strncpy(nname,qln,qlen);
 	    nname[qlen]=0;
 
 	    res=rename(name,nname);
 	  }
-        else 
+        else
 	  {
             name=mount;
             strncpy(mount,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
             strncpy(ren,  qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
             qaddpath(mount, GET_FCB(f)->uxname,320); /*qaddpath !?*/
-	   
 
-	    /* Rather assume that the new device is the same as the old one 
+
+	    /* Rather assume that the new device is the same as the old one
 	     * otherwise it will be interpreted as part of new name */
 	    dnlen=strlen(qdevs[GET_FILESYS(f)].qname);
 	    if('_' == *(qln+dnlen+1) && isdigit(*(qln+dnlen)) &&
@@ -951,7 +949,7 @@ int rename_file(struct mdvFile *f,int fd,char *qln, int qlen, int fstype)
 	    strncpy(temp,qln,256); /* c-strings !! */
 	    temp[qlen]=0;
 	    mname[0]=0;
-	    res=match(ren, mname,temp,0,0,320,fstype); 
+	    res=match(ren, mname,temp,0,0,320,fstype);
 	    if (res)
 	      {
 		res=QERR_EX;             /* already exists */
@@ -976,7 +974,7 @@ int rename_file(struct mdvFile *f,int fd,char *qln, int qlen, int fstype)
 
 		if ( GET_FILESYS(f)<0 )
 		  mount[0]=0;
-		else   
+		else
 		  strncpy(mount,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
 		QHDeleteHeader(mount,1,NULL,f,fstype); /* delete old header */
 		/* now change internal def so QHSetHeader applies to the
@@ -1006,7 +1004,7 @@ int rename_all_files(struct mdvFile *f, char *fsmount, char *uxname)
 	if (p) *p=0;
 	else temp[0]=0;   /* remove last subdir segment */
 	strncpy(mount,fsmount,4000);
-	dirp=qopendir(mount,temp,4000); 
+	dirp=qopendir(mount,temp,4000);
 
 	strncpy(temp,uxname,256);
 	if (p)
@@ -1096,13 +1094,13 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
   int unused;
 
   char c;
-  
+
   fd=GET_HFILE(f);
 
   *reg=0;
 
   /*printf("QHostIO op %x file %x, d1=%d, d2=%d, a1=%d  \n",op,f,reg[1],reg[2],aReg[1]);*/
-  
+
   switch(op)
     {
     case 0:			/* check for pending input */
@@ -1116,28 +1114,26 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
       else *reg=-10;
       break;
     case 2:			/* fetch LF-terminated line */
-      count=(uw16)reg[2]; 
+      count=(uw16)reg[2];
       qaddr=aReg[1];
 
-      prepChangeMem(qaddr,qaddr+count);
       reg[0]=QHread(fd,&qaddr,&count,true);
       reg[1]=count;
       aReg[1]=qaddr+count;
-      
+
 
       /*printf("io.fline res: %d, count= %d\n",*reg,count);*/
       break;
     case 3:			/* fetch string */
       qaddr=aReg[1];
       count=(uw16)reg[2];
-      
-      prepChangeMem(qaddr,qaddr+count);
+
       reg[0]=QHread(fd,&qaddr,&count,false);
 
       reg[1]=count;
       aReg[1]=qaddr+count;
-      
-      break;		
+
+      break;
     case 5:			/* send byte */
       count=1;
       reg[0]=QWrite(fd,(Ptr)reg+4+RBO,&count);
@@ -1147,7 +1143,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
       reg[0]=QWrite(fd,(Ptr)theROM+aReg[1],&count);
       reg[1]=count;
       aReg[1]+=count;
-      break;		
+      break;
     case 0x40:		/* check pending ops */
     case 0x41:		/* flush buffers */
       /* return success */
@@ -1162,14 +1158,13 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	  /* *reg=-10; */	/* end of file */
 	}
       if(reg[1]>flen(fd))
-	{	
+	{
 	  *reg=-10;
 	}
       reg[1]=qlseek(f,reg[1],SEEK_SET);
       break;
     case 0x45:		/* medium information */
       reg[1] = 0x7fff7fff; /* fake number for now */
-      prepChangeMem(aReg[1],aReg[1]+10);
       memset((char*)theROM+aReg[1],' ', 10);
       if (GET_FILESYS(f)>=0)
 	strncpy((char*)theROM+aReg[1],qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],10);
@@ -1192,10 +1187,10 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	  reg[0]=QERR_BF;
 	  goto hrres;
 	}
-      
-      
+
+
       /*printf("getting headers for file %s, %s\n",(Ptr)REF_FNAME(f)+2,GET_FCB(f)->uxname);*/
-      
+
       reg[1]=count|(reg[1]&(~0xf));
 
       for (i=0;i<64;i++)*(((char*)&hh)+i)=0;
@@ -1207,15 +1202,14 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 
       count=(count-4)>>1;
       w=(w16*)&hh;
-      
-      prepChangeMem(aReg[1],aReg[1]+64);
+
       WriteLong(aReg[1],RL((w32*)w)-64);
-      
+
       aReg[1]+=4;
       w+=2;
- 
+
       while(count--)
-	{	
+	{
 	  WriteWord(aReg[1],RW(w++));
 	  aReg[1]+=2;
 	}
@@ -1225,13 +1219,12 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
     case 0x48:		/* read file into memory */
       qaddr=aReg[1];
       count=reg[2];
-      
-      prepChangeMem(qaddr,qaddr+count);
+
       reg[0]=QHread(fd,&qaddr,&count,false);
-      
+
       aReg[1]=qaddr+count;
-	
-      break;		
+
+      break;
     case 0x49:		/* save file from memory */
       count=reg[2];
       reg[0]=QWrite(fd,(Ptr)theROM+aReg[1],&count);
@@ -1251,7 +1244,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
         short qlen;
         int res;
 	char *qln;
- 
+
 	qln = (Ptr)theROM+aReg[1]+2;
 	qlen = RW((Ptr)theROM+aReg[1]);
 
@@ -1265,7 +1258,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
       i=lseek(fd,0,SEEK_CUR);
       unused = ftruncate(fd,i);
        break;
-    case 76:	
+    case 76:
       /* FS.DATE */
       /* D1=-1 read, 0 current time, >0 secs count */
       /* D2.b 0=Update, 1=Backup */
@@ -1277,7 +1270,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	struct timeval tp;
 	int tm,res;
 	char *name,mount[400];
-	
+
 	res=0;
 	fstat(fd,&ft);
 	if (reg[1]<0)
@@ -1293,13 +1286,13 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 
 	    if ( GET_FILESYS(f)<0 )
 		name=GET_FCB(f)->uxname;
-	    else 
+	    else
 	      {
 		name=mount;
 		strncpy(mount,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
 		strncat(mount, GET_FCB(f)->uxname,64);
 	      }
-	    
+
 	    res=utime(name,&tb);
 	  }
 	if (res) *reg=qmaperr();
@@ -1312,13 +1305,13 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
     case 77:
       /* MKDIR */
       i=lseek(fd,0,SEEK_END);
-      if (i>0) 
+      if (i>0)
 	{
 	  *reg=-15;
 	  break;
 	}
       /*printf(" MAKEDIR %s \n",GET_FCB(f)->uxname);*/
-      
+
 
       if ( GET_FILESYS(f)<0 )
       {
@@ -1329,7 +1322,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
       else
       {
 	char mount[400];
-	
+
 	strncpy(mount,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],320);
 	qaddpath(mount, GET_FCB(f)->uxname,400);
 	unlink(mount);
@@ -1339,7 +1332,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	  rename_all_files(f,qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],GET_FCB(f)->uxname);
       }
       break;
-      
+
     case 78:
       /*  FS.VERS : read/write file version  */
       /*  D1=0  read, >0 set to this version */
@@ -1361,7 +1354,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	  else
 	    SET_FVER(&hh,reg[1]);
 
-	  QHSetHeader(&hh,fd,f,fstype);	  
+	  QHSetHeader(&hh,fd,f,fstype);
 	}
       break;
 
@@ -1374,7 +1367,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	short nl;
 	char *p;
 	long mxs;
-	
+
 	memset((char*)theROM+aReg[1]+0,-1,64);
 	if (GET_FILESYS(f)>=0)
           {
@@ -1391,7 +1384,7 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 	WriteWord(aReg[1]+0x16, nl);
 	strncpy((char*)theROM+aReg[1]+0x18,
 		qdevs[GET_FILESYS(f)].qname, nl);
-	mxs = strncasecmp(qdevs[GET_FILESYS(f)].qname, "RAM", 3) 
+	mxs = strncasecmp(qdevs[GET_FILESYS(f)].qname, "RAM", 3)
 	  ? 999999 : 32767;
 	*((char*)theROM+aReg[1]+0x1c)=1+GET_DRIVE(f);
 	*((char*)theROM+aReg[1]+0x1d)=0;
@@ -1417,4 +1410,4 @@ int QHostIO(struct mdvFile *f,int op, int fstype)
 
 }
 
- 
+

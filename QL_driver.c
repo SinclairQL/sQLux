@@ -7,7 +7,7 @@
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
-#include <fcntl.h> 
+#include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,7 +27,7 @@
 #include "uqlx_cfg.h"
 #include "qx_proto.h"
 
-#define min(_a_,_b_)(_a_<_b_ ? _a_ : _b_) 
+#define min(_a_,_b_)(_a_<_b_ ? _a_ : _b_)
 #define max(_a_,_b_)(_a_>_b_ ? _a_ : _b_)
 
 #ifdef __EMX__
@@ -48,7 +48,7 @@ void DrvClose(void);
 
 int qerrno;
 
-int prt_init(int,void *); 
+int prt_init(int,void *);
 int prt_open(int, void**);
 int prt_test(int, char*);
 void prt_close(int, void *);
@@ -56,12 +56,12 @@ void prt_io(int, void *);
 
 
 
-int num_drivers=0; 
+int num_drivers=0;
 /*#define TEST*/
 /*#define IOTEST*/
 
 
-open_arg prt_opt_vals[]={0,1}; 
+open_arg prt_opt_vals[]={0,1};
 open_arg prt_tra_vals[]={0,1};
 open_arg prt_cmdoptions[]={0};  /*simpler to check for arg presence ;-) */
 open_arg prt_cmd[]={0};
@@ -71,13 +71,13 @@ struct PARENTRY prt_pars[]={{parse_option,"f",prt_opt_vals},
 			    {parse_nseparator,"!",prt_cmd},
 			    {NULL,NULL,NULL}};
 struct NAME_PARS prt_name={ "PRT",4,&prt_pars};
- 
+
 #define BDEV
 #ifdef BDEV
 extern int boot_init(int,void *);
 extern int boot_open(int, void**);
-extern int boot_test(int, char*); 
-extern void boot_close(int, void *); 
+extern int boot_test(int, char*);
+extern void boot_close(int, void *);
 extern void boot_io(int, void *);
 
 
@@ -88,8 +88,8 @@ struct NAME_PARS boot_name={"BOOT",0,&boot_pars};
 #ifdef NEWSERIAL
 extern int ser_init(int,void *);
 extern int ser_open(int, void**);
-extern int ser_test(int, char*); 
-extern void ser_close(int, void *); 
+extern int ser_test(int, char*);
+extern void ser_close(int, void *);
 extern void ser_io(int, void *);
 
 open_arg ser_unit[]={1};
@@ -107,7 +107,7 @@ struct PARENTRY ser_pars[]={{parse_value,NULL,ser_unit},
 			    {parse_separator,"b",ser_sv},
 			    {NULL,NULL,NULL}};
 struct NAME_PARS ser_name={"SER",6,&ser_pars};
-#endif 
+#endif
 
 #ifdef NEWPTY
 extern int pty_init(int, void *);
@@ -129,8 +129,8 @@ struct NAME_PARS pty_name={"PTY",3,&pty_pars};
 #ifdef POPEN_DEV
 extern int popen_init(int);
 extern int popen_open(int, void**);
-extern int popen_test(int, char*); 
-extern void popen_close(int, void *); 
+extern int popen_test(int, char*);
+extern void popen_close(int, void *);
 extern void popen_io(int, void *);
 open_arg popen_val[]={(open_arg)""};
 struct PARENTRY popen_pars[]={{parse_nseparator,"_",popen_val},
@@ -159,7 +159,7 @@ struct NAME_PARS sck_name={"SCK_",0, NULL};
 #endif
 
 #ifdef TEST
-int bg_init(int, void *); 
+int bg_init(int, void *);
 int bg_open(int,void **);
 int  bg_test(int,char *);
 void bg_close(int, void *);
@@ -181,7 +181,7 @@ struct PARENTRY bg_pars[]={{parse_value,NULL,bg_val},
 			   {parse_nseparator,",",bg_sv5},
 			   {NULL,NULL,NULL}};
 struct NAME_PARS bg_name={"BG",4,&bg_pars};
-#endif 
+#endif
 
 #ifdef XSCREEN
 #if 0
@@ -239,7 +239,7 @@ struct DRV Drivers[]={
   {0,prt_init, prt_test, prt_open, prt_close, prt_io, &prt_name, 0},
 #ifdef NEWSERIAL
   {0,ser_init, ser_test, ser_open, ser_close, ser_io, &ser_name, 0},
-#endif 
+#endif
 #ifdef NEWPTY
   {0,pty_init, pty_test, pty_open, pty_close, ser_io, &pty_name, 0},
 #endif
@@ -254,7 +254,7 @@ struct DRV Drivers[]={
   {0,ip_init,ip_test,ip_open,ip_close,ip_io,&udp_name,0},
   {0,ip_init,ip_test,ip_open,ip_close,ip_io,&uxs_name,0},
   {0,ip_init,ip_test,ip_open,ip_close,ip_io,&uxd_name,0},
-  {0,ip_init,ip_test,ip_open,ip_close,ip_io,&sck_name,0},    
+  {0,ip_init,ip_test,ip_open,ip_close,ip_io,&sck_name,0},
 #endif
 #ifdef POPEN_DEV
   {0,popen_init,popen_test,popen_open,popen_close,popen_io,&popen_name,0},
@@ -282,10 +282,10 @@ struct DRV Drivers[]={
 w32 DEV_IO_ADDR, DEV_CLOSE_ADDR;
 
 
-struct DRV *dget_drv() 
+struct DRV *dget_drv()
 {
   struct DRV *p;
-  
+
   p=Drivers;
   while(p->open!=NULL)
     {
@@ -316,7 +316,7 @@ static void InitDevDriver(struct DRV *driver, int indx)
 	}
       reg[1]=driver->slot;
     }
-  
+
   reg[2]=0;
   QLtrap(1,0x18,200000l);		/* allocate memory for the driver linkage block */
   if((*reg)==0)
@@ -348,11 +348,11 @@ static void InitDevDriver(struct DRV *driver, int indx)
 void InitDrivers()
 {
   struct DRV *p=Drivers;
-  
+
   DEV_IO_ADDR=0x14020;
   DEV_CLOSE_ADDR=0x14022;
   /*  DEV_OPEN_ADDR=0x14024;*/
-  
+
   WW(((uw16*)((Ptr)theROM+DEV_IO_ADDR)),DEVIO_CMD_CODE);
   WW(((uw16*)((Ptr)theROM+DEV_CLOSE_ADDR)),DEVC_CMD_CODE);
   /*WW(((uw16*)((Ptr)theROM+DEV_OPEN_ADDR)),DEV_OPEN_INSTR);*/
@@ -398,14 +398,14 @@ void DrvIO(void)
       return;
     }
   f=a0addr(false);
-  
+
   if(f==nil)
     {
       *reg=QERR_NO;	/* overflow */
       rts();
       return;
     }
-  
+
 #if 0
   if (DGET_ID(f)!=DRV_ID)
     {
@@ -424,9 +424,9 @@ void DrvIO(void)
       return;
     }
 
-  
-  (*(driver->io))(ix,DGET_PRIV(f)); 
-  
+
+  (*(driver->io))(ix,DGET_PRIV(f));
+
   rts();
 }
 
@@ -438,7 +438,7 @@ void DrvOpen(void)
   struct DRV *p, *drv=Drivers;
   void *priv;
   int err,found=0;
-  
+
 
 #if 0   /* need a different test here */
   if((long)((Ptr)gPC-(Ptr)theROM)-2 != 0x14002l)
@@ -460,15 +460,15 @@ void DrvOpen(void)
       goto end;
     }
 #endif
-  
-    /* get device */    
+
+    /* get device */
 
     p=dget_drv();
     found=(*(p->open_test))(p-Drivers,name);
 
-    if (!found) 
+    if (!found)
       {
-	reg[0]=QERR_NF; 
+	reg[0]=QERR_NF;
 	goto end;
       }
     if (found==-2)
@@ -490,17 +490,17 @@ void DrvOpen(void)
 	reg[2]=0;
 	QLvector(0xc0,20000l);
 	if ((uw16)reg[0]) goto end;
-	
-	f=a0addr(false);    
+
+	f=a0addr(false);
 	if (f)
 	  {
 	    DSET_ID(f,DRV_ID);
-	    DSET_PRIV(f,priv); 
+	    DSET_PRIV(f,priv);
 	  }
       }
     if (err>=0)
       reg[0]=0;
-    
+
     if (err<0)
       reg[0]=err;
  end:
@@ -524,10 +524,10 @@ void DrvClose(void)
       nInst=0;
       return;
     }
-  
+
   //save_regs(saved_regs);
   f=a0addr(false);
-  
+
   if(f==nil)
     {
       *reg=QERR_NO;	/* overflow */
@@ -552,14 +552,14 @@ void DrvClose(void)
       printf("possible driver problem ??\n");
       return;
     }
-  
+
   (*(driver->close))(ix,DGET_PRIV(f));
 
   QLvector(0xc2,20000l);
   //restore_regs(saved_regs);
-  
+
   rts();
-  
+
 }
 
 /* *********** generic helper routines  *********** */
@@ -620,7 +620,7 @@ int parse_separator(char **name,int nlen,char *opts,open_arg *vals,open_arg *res
 #endif
       return 0;
     }
-  
+
   (*name)++;
 #ifdef TEST
   printf("...found, fetch value\n");
@@ -632,7 +632,7 @@ int parse_nseparator(char **name,int nnlen,char *opts,open_arg *vals,open_arg *r
 {
   char *nend;
   int nlen;
-  
+
 #ifdef TEST
   printf("parse name: %s rest name %s\n",opts,*name);
 #endif
@@ -668,7 +668,7 @@ int parse_mseparator(char **name,int nnlen,char *opts,open_arg *vals,open_arg *r
 {
   char *nend;
   int nlen;
-  
+
   if (**name!=*opts)
     {
     noval:
@@ -685,7 +685,7 @@ int parse_mseparator(char **name,int nnlen,char *opts,open_arg *vals,open_arg *r
   memcpy(ppname,*name,nlen);
   ppname[nlen]=0;
   res->s=ppname;
-  
+
   ppname=&ppname[nlen+1];
   *name=nend;
   return 1;
@@ -696,10 +696,10 @@ int parse_value(char **name,int nlen,char *opts,open_arg *vals,open_arg *res)
 {
   char *p=*name;
   int r;
-  
+
 #ifdef TEST
   printf("parse_value: %s\n",*name);
-#endif  
+#endif
 
   r=strtol(*name,name,10);
   if (*name==p)
@@ -711,7 +711,7 @@ int parse_value(char **name,int nlen,char *opts,open_arg *vals,open_arg *res)
       return 0;
     }
   else {
-    res->i=r; 
+    res->i=r;
     /**name=p;*/
 #ifdef TEST
     printf("... return %d\n",res->i);
@@ -723,19 +723,19 @@ int parse_value(char **name,int nlen,char *opts,open_arg *vals,open_arg *res)
 int parse_option(char **name,int nlen,char *opts,open_arg *vals,open_arg *res)
 {
   char *p;
- 
-#ifdef TEST 
+
+#ifdef TEST
   printf("parse_option: opt_string %s name %s\n",opts,*name);
 #endif
   if (**name)
     p=strchr(opts,**name);
   else p=NULL;
-  if (!p) 
+  if (!p)
     {
       res->i=vals->i;
       return 0;
     }
-  
+
   (*name)++;
   res->i=vals[p-opts+1].i;
 #ifdef TEST
@@ -759,13 +759,13 @@ int decode_name(char *name, struct NAME_PARS *ndescr, open_arg *parblk)
 #ifdef TEST
   printf("decode_name: dev_name %s file name %s\n",name+2,ndescr->name);
 #endif
-  
+
   if ( RW(name)<strlen(ndescr->name) || strncasecmp(name+2,ndescr->name,strlen(ndescr->name)) )
     return 0;
   nend=name;
   if (RW(name)>1024) return -1;
   name=rest_name;
-  
+
   j=RW(nend)-strlen(ndescr->name);
   strncpy(name,nend+2+strlen(ndescr->name),j);
   name[j]=0;
@@ -801,8 +801,8 @@ static char buf[1024];
 int ioskip(int (*io_read)(void *, void *,int), void *priv,int len)
 {
   int res=0,ss=0;
-  
-  while(len>0) 
+
+  while(len>0)
     {
       res=(*io_read)(priv,buf,min(len,1024));
       len-=1024;
@@ -823,10 +823,10 @@ void ioread(int(*io_read)(), void *priv, uw32 addr, int *count, int lf)
   uw32 to,from;
 
   cnt=*count;
-  from=addr; 
-  
+  from=addr;
+
   to=from+cnt;
-  
+
   if (from<131072)
     {
       err=ioskip(io_read,priv,131072-from);
@@ -843,22 +843,22 @@ void ioread(int(*io_read)(), void *priv, uw32 addr, int *count, int lf)
 
   e=0;
   if (cnt<0) cnt=0;
-  
+
   if(cnt>0)
     {
       if (lf)
-	{  
+	{
 	  for(i=0,fn=cnt,p=(Ptr)theROM+from;fn>0;)
 	    {
 	      e=err=(*io_read)(priv,p,1);
 
-	      if (err<0) 
+	      if (err<0)
 		{
 		  cnt=(long)((Ptr)p-(Ptr)theROM)-from;
 		  goto errexit;
 		}
 
-	      if (err==0 && *(p-1)!=10) 
+	      if (err==0 && *(p-1)!=10)
 		{
 		  cnt=(long)((Ptr)p-(Ptr)theROM)-from;
 		  e=QERR_EF;    /* QERR_NC ???*/
@@ -870,7 +870,7 @@ void ioread(int(*io_read)(), void *priv, uw32 addr, int *count, int lf)
 	      if (*(p-1)==10) {i=p; break;}
 
 	    }
-	  if (i) 
+	  if (i)
 	    {cnt=(long)((Ptr)i-(Ptr)theROM)-from; e=0;}
 	  else {cnt=ocnt; e=QERR_BF;}
 	}
@@ -885,16 +885,16 @@ void ioread(int(*io_read)(), void *priv, uw32 addr, int *count, int lf)
 	      goto errexit;
 	    }
 	  else
-	    if (e<cnt) e=QERR_NC; 
-	    else  e=0; 
+	    if (e<cnt) e=QERR_NC;
+	    else  e=0;
 	  cnt=err;
-	}      
+	}
     }
-  
+
 errexit:
   *count=cnt;
   ChangedMemory(from,from+cnt);
-  
+
   reg[0]=e;
   return;
 }
@@ -911,31 +911,30 @@ void io_handle(int (*io_read)(), int (*io_write)(), int (*io_pend)(),
   int count,rc_count;
   w32 qaddr;
   int op=(w8)reg[0];
- 
+
   reg[0]=0;
 
 #ifdef IOTEST
 printf("call io_handle \t\td0=%d\td1=%x\td2=%x\td3=%x\ta1=%x\n",op,reg[1],reg[2],reg[3],aReg[1]);
 #endif
-  
+
   switch (op)
     {
-    case 0: 
+    case 0:
       *reg=(*io_pend)(priv);
       break;
-      
+
     case 1:
       res=(*io_read)(priv,&c,1);
       if (res==1)
       *((char*)reg+4+RBO)=c;
       else *reg=res ? res: QERR_EOF;
       break;
-      
+
     case 2:                   /* read line */
       count=max(0,(uw16)reg[2]-(uw16)reg[1]);
       rc_count=(uw16)reg[1];
       qaddr=aReg[1];
-      prepChangeMem(aReg[1],aReg[1]+rc_count);
       ioread(io_read,priv,qaddr,&count,true);
       //(uw16)reg[1]=count+rc_count;
       SETREG16(reg[1], count+rc_count);
@@ -946,7 +945,6 @@ printf("call io_handle \t\td0=%d\td1=%x\td2=%x\td3=%x\ta1=%x\n",op,reg[1],reg[2]
       qaddr=aReg[1];
       count=max(0,(uw16)reg[2]-(uw16)reg[1]);
       rc_count=(uw16)reg[1];
-      prepChangeMem(aReg[1],aReg[1]+rc_count);
       ioread(io_read,priv,qaddr,&count,false);
       reg[1]=count+rc_count;
       aReg[1]=qaddr+count;
@@ -956,7 +954,7 @@ printf("call io_handle \t\td0=%d\td1=%x\td2=%x\td3=%x\ta1=%x\n",op,reg[1],reg[2]
       res=(*io_write)(priv,(Ptr)reg+4+RBO,1);
       if (res<0) *reg=res;
       break;
-      
+
     case 7:			/* send string */
       count=(uw16)reg[2];
       res=(*io_write)(priv,(Ptr)theROM+aReg[1],count);
@@ -965,20 +963,19 @@ printf("call io_handle \t\td0=%d\td1=%x\td2=%x\td3=%x\ta1=%x\n",op,reg[1],reg[2]
 	  count=0;
 	  *reg=res;
 	} else count=res;
-      
+
       reg[1]=count;
       aReg[1]+=count;
-      break;		
-      
+      break;
+
     case 0x48:		/* read file into memory */
       qaddr=aReg[1];
       count=reg[2];
       rc_count=reg[1];
-      prepChangeMem(aReg[1],aReg[1]+rc_count);
       ioread(io_read,priv,qaddr,&count,false);
       aReg[1]=qaddr+count;
       break;
-      
+
     case 0x49:
       count=reg[2];
       res=(*io_write)(priv,(Ptr)theROM+aReg[1],count);
@@ -987,11 +984,11 @@ printf("call io_handle \t\td0=%d\td1=%x\td2=%x\td3=%x\ta1=%x\n",op,reg[1],reg[2]
 	  count=0;
 	  *reg=res;
 	} else count=res;
-      
+
       aReg[1]+=count;
       break;
-      
-    default: 
+
+    default:
       *reg=QERR_BP;
       break;
     }
@@ -1050,7 +1047,7 @@ int prt_write(struct PRT_PRIV *p,void *buf,int len)
 
   if (len==0) return 0;
 
-  if (p->tra) 
+  if (p->tra)
     {
       i=0;
       sig=0;
@@ -1066,14 +1063,14 @@ int prt_write(struct PRT_PRIV *p,void *buf,int len)
 	      if (res>0) nlen -=res;
 	      if (res>0 || errno==EAGAIN || errno==EINTR)
 		goto restart;
-	      else 
+	      else
 		{
 		  if (!i) return qmaperr();
 		  else return i;
 		}
 	    }
 	  /* successfull write, phew..:*/
-	  i++; 
+	  i++;
 	}
       return i;
     }
@@ -1105,7 +1102,7 @@ int prt_open(int id, void **priv)
 {
   FILE *f;
   struct PRT_PRIV *p;
-  
+
   *priv=p=malloc(sizeof(struct PRT_PRIV));
   if (*priv==NULL) return -1;
 
@@ -1124,10 +1121,10 @@ int prt_open(int id, void **priv)
 	}
       strcat(p," ");
       if (prt_par[2].s)strcat(p,prt_par[2].s); /* add options etc */
-      printf("executing command ´%s´\n",p);
+      printf("executing command ï¿½%sï¿½\n",p);
       f=popen(p,"w");
       if (!f) return qmaperr();
-      printf("executing command ´%s´\n",p);
+      printf("executing command ï¿½%sï¿½\n",p);
       free(p);
     }
   else /* simple case */
@@ -1135,7 +1132,7 @@ int prt_open(int id, void **priv)
       f=popen(QMD.prtcmd,"w");
       if (!f) return qmaperr();
     }
-  
+
   p->file=f;
   p->tra=prt_par[1].i;
 
@@ -1145,12 +1142,12 @@ int prt_open(int id, void **priv)
 void prt_close(int id, void *priv)
 {
   struct PRT_PRIV *p=priv;
-  
+
   pclose(p->file);
   free(p);
 }
-  
-  
+
+
 void prt_io(int id, void *priv)
 {
   io_handle(prt_read,prt_write,prt_pend, priv);
