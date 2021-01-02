@@ -10,109 +10,115 @@
 #include "qx_proto.h"
 #include "SDL2screen.h"
 
+static int is_screen(uint32_t addr)
+{
+	if ((addr >= qlscreen.qm_lo) && (addr < qlscreen.qm_hi)) {
+		return 1;
+	}
+	return 0;
+}
+
+static int is_hw(uint32_t addr)
+{
+	if ((addr >= QL_INTERNAL_IO_BASE) &&
+        	(addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
+		return 1;
+	}
+
+	return 0;
+}
 rw8 ReadByte(aw32 addr)
 {
-    addr&=ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return 0;
+	if (addr >= RTOP)
+		return 0;
 
-    if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        return ReadHWByte(addr);
-    }
+	if (is_hw(addr)) {
+		return ReadHWByte(addr);
+	}
 
-    return *((w8*)theROM+addr);
+	return *((w8 *)theROM + addr);
 }
 
 rw16 ReadWord(aw32 addr)
 {
-    addr &=ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return 0;
+	if (addr >= RTOP)
+		return 0;
 
-    if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        return ((w16)ReadHWWord(addr));
-    }
+	if (is_hw(addr)) {
+		return ((w16)ReadHWWord(addr));
+	}
 
-    return (w16)RW((w16*)((Ptr)theROM+addr)); /* make sure it is signed */
+	return (w16)RW((w16 *)((Ptr)theROM + addr)); /* make sure it is signed */
 }
 
 rw32 ReadLong(aw32 addr)
 {
-    addr &= ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return 0;
+	if (addr >= RTOP)
+		return 0;
 
-    if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        return ((w32)ReadWord(addr)<<16)|(uw16)ReadWord(addr+2);
-    }
+	if (is_hw(addr)) {
+		return ((w32)ReadWord(addr) << 16) | (uw16)ReadWord(addr + 2);
+	}
 
-    return  (w32)RL((Ptr)theROM+addr); /* make sure is is signed */
+	return (w32)RL((Ptr)theROM + addr); /* make sure is is signed */
 }
-
-#define ValidateDispByte(_xx)
-#ifdef DEBUG
-long watchaddr=0;
-#endif
 
 void WriteByte(aw32 addr,aw8 d)
 {
-    addr &= ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return;
+	if (addr >= RTOP)
+		return;
 
-    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
-	    *((w8*)theROM+addr)=d;
-        QLSDLUpdateScreenByte(addr-qlscreen.qm_lo, d);
-    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        WriteHWByte(addr, d);
-    } else if (addr > QL_ROM_SIZE) {
-        *((w8*)theROM+addr)=d;
-    }
+	if (is_screen(addr)) {
+		*((w8 *)theROM + addr) = d;
+		QLSDLUpdateScreenByte(addr - qlscreen.qm_lo, d);
+	} else if (is_hw(addr)) {
+		WriteHWByte(addr, d);
+	} else if (addr >= QL_ROM_SIZE) {
+		*((w8 *)theROM + addr) = d;
+	}
 }
 
 void WriteWord(aw32 addr,aw16 d)
 {
-    addr &= ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return;
+	if (addr > RTOP)
+		return;
 
-    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
-        WW((Ptr)theROM + addr, d);
-        QLSDLUpdateScreenWord(addr-qlscreen.qm_lo, d);
-    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        WriteHWWord(addr, d);
-    } else if (addr >= QL_ROM_SIZE) {
-        WW((Ptr)theROM + addr, d);
-    }
+	if (is_screen(addr)) {
+		WW((Ptr)theROM + addr, d);
+		QLSDLUpdateScreenWord(addr - qlscreen.qm_lo, d);
+	} else if (is_hw(addr)) {
+		WriteHWWord(addr, d);
+	} else if (addr >= QL_ROM_SIZE) {
+		WW((Ptr)theROM + addr, d);
+	}
 }
 
 void WriteLong(aw32 addr,aw32 d)
 {
-    addr &= ADDR_MASK;
+	addr &= ADDR_MASK;
 
-    if (addr > RTOP)
-        return;
+	if (addr > RTOP)
+		return;
 
-    if ((addr >= qlscreen.qm_lo) && (addr <= qlscreen.qm_hi)) {
-        WL((Ptr)theROM + addr, d);
-        QLSDLUpdateScreenLong(addr-qlscreen.qm_lo, d);
-    } else if ((addr >= QL_INTERNAL_IO_BASE) &&
-                (addr < (QL_INTERNAL_IO_BASE + QL_INTERNAL_IO_SIZE))) {
-        WriteHWWord(addr, d >> 16);
-        WriteHWWord(addr + 2, d);
-    } else if (addr >= QL_ROM_SIZE) {
-        WL((Ptr)theROM + addr, d);
-    }
+	if (is_screen(addr)) {
+		WL((Ptr)theROM + addr, d);
+		QLSDLUpdateScreenLong(addr - qlscreen.qm_lo, d);
+	} else if (is_hw(addr)) {
+		WriteHWWord(addr, d >> 16);
+		WriteHWWord(addr + 2, d);
+	} else if (addr >= QL_ROM_SIZE) {
+		WL((Ptr)theROM + addr, d);
+	}
 }
 
 /*############################################################*/
