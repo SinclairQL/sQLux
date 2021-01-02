@@ -562,23 +562,6 @@ void RewriteEA_b(aw8 d)
 #endif
 }
 
-/* ufast version for iexl_general.c */
-#if 1  /* split to very fast macro and slow fcall*/
-void rwb_acc(w8 d)
-{
-#ifdef EVM_SCR
-  if (mea_acc==MEA_DISP) vmMarkScreen((char*)dest-(char*)theROM);
-  else
-#endif
-    WriteByte(lastAddr,d);
-}
-/* for the rest of the file the function gets redefined by a macro */
-#define RewriteEA_b(_d_)   do{\
-        *((w8*)dest)=_d_;     \
-        if (mea_acc) rwb_acc(_d_);  } while(0)
-#endif
-
-
 void RewriteEA_w(aw16 d)
 {
 #ifndef QM_BIG_ENDIAN
