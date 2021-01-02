@@ -540,116 +540,38 @@ rw32 ModifyAtEA_l(ashort mode,ashort r)
 
 void RewriteEA_b(aw8 d)
 {
-#if 1
-  *((w8*)dest)=d;
-  if (!mea_acc) return;
-  else
-#ifdef EVM_SCR
-    if (mea_acc==MEA_DISP) vmMarkScreen((char*)dest-(char*)theROM);
-    else
-#endif
-      WriteByte(lastAddr,d);
-#else
-  if(isHW) WriteByte(lastAddr,d);
-  else
-    {
-#if defined(EVM_SCR)
-      if(isDisplay)
-	vmMarkScreen((char*)dest-(char*)theROM);
-#endif
-      *((w8*)dest)=d;
-    }
-#endif
+	*((w8*)dest)=d;
+
+	if(!mea_acc)
+		return;
+
+	WriteByte(lastAddr, d);
 }
 
 void RewriteEA_w(aw16 d)
 {
-#ifndef QM_BIG_ENDIAN
-      if (isreg)
-	*((w16*)dest)=d;
-      else
-	{
-	  WW((Ptr)dest,d);
-#else
-	  WW((Ptr)dest,d);
-#endif /* QM_BIG_ENDIAN */
-	  if (!mea_acc) return;
-#if defined(EVM_SCR)
-	  if(mea_acc==MEA_DISP)
-	    vmMarkScreen((char*)dest-(char*)theROM);
-	  else
-#endif /* EVM_SCR */
-	    WriteWord(lastAddr,d);
-#ifndef QM_BIG_ENDIAN
+	if (isreg) {
+		*((w16*)dest)=d;
+	} else {
+		WW((Ptr)dest,d);
 	}
-#endif
-}
 
-#if 1
-void rww_acc(w16 d)
-{
-#if defined(EVM_SCR)
-	  if(mea_acc==MEA_DISP)
-	    vmMarkScreen((char*)dest-(char*)theROM);
-	  else
-#endif /* EVM_SCR */
-	    WriteWord(lastAddr,d);
-}
-#ifdef QM_BIG_ENDIAN
-#define RewriteEA_w(_d_)       do{    \
-	  WW((Ptr)dest,_d_);          \
-          if (mea_acc) rww_acc(_d_); } while(0)
-#else
-#define RewriteEA_w(_d_)       do{    \
-          if (isreg) *((w16*)dest)=_d_;       \
-          else {                              \
-            	  WW((Ptr)dest,_d_);          \
-                  if (mea_acc) rww_acc(_d_); }} while(0)
-#endif
-#endif
+	if (!mea_acc)
+		return;
 
+	WriteWord(lastAddr, d);
+}
 
 void RewriteEA_l(aw32 d)
 {
-#ifndef QM_BIG_ENDIAN
-      if (isreg) *((w32*)dest)=d;
-      else
-	{
-	  WL((Ptr)dest,d);
-#else
-	  WL((Ptr)dest,d);
-#endif /* QM_BIG_ENDIAN */
-	  if (!mea_acc) return;
-#if defined(EVM_SCR)
-	  if(mea_acc==MEA_DISP)
-	    vmMarkScreen((char*)dest-(char*)theROM);
-	  else
-#endif /* EVM_SCR */
-	    WriteLong(lastAddr,d);
-#ifndef QM_BIG_ENDIAN
+	if (isreg) {
+		*((w32*)dest)=d;
+	} else {
+		WL((Ptr)dest,d);
 	}
-#endif
-}
 
-#if 1
-void rwl_acc(w32 d)
-{
-#if defined(EVM_SCR)
-	  if(mea_acc==MEA_DISP)
-	    vmMarkScreen((char*)dest-(char*)theROM);
-	  else
-#endif /* EVM_SCR */
-	    WriteLong(lastAddr,d);
+	if (!mea_acc)
+		return;
+
+	WriteLong(lastAddr,d);
 }
-#ifdef QM_BIG_ENDIAN
-#define RewriteEA_l(_d_)       do{    \
-	  WL((Ptr)dest,_d_);          \
-          if (mea_acc) rwl_acc(_d_); } while(0)
-#else
-#define RewriteEA_l(_d_)       do{    \
-          if (isreg) *((w32*)dest)=_d_;       \
-          else {                              \
-            	  WL((Ptr)dest,_d_);          \
-                  if (mea_acc) rwl_acc(_d_); }} while(0)
-#endif
-#endif
