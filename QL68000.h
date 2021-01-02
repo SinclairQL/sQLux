@@ -1,3 +1,6 @@
+#include <SDL_endian.h>
+#include <stdint.h>
+
 #ifndef QL68000_H
 #define QL68000_H
 
@@ -9,12 +12,6 @@
 #ifndef STATIC
 #define STATIC
 #endif
-
-/* needed for ntoh? functions */
-#include <arpa/inet.h>
-#include <stdint.h>
-
-#undef QM_BIG_ENDIAN
 
 #ifdef USE_BUILTIN_EXPECT
 #define likely(exp)   __builtin_expect((exp),1)
@@ -259,85 +256,53 @@ extern char * oldscr;
 #define WB(_addr_,_val_)(*(uw8*)(_addr_)=(_val_))
 #define RB(_addr_) (*(uw8 *)(_addr_))
 
-
-
-
-#ifdef QM_BIG_ENDIAN
-
-
 static inline ruw16 q2hw(uw16 val)
 {
-  return val;
+  return SDL_SwapBE16(val);
 }
 static inline ruw32 q2hl(uw32 val)
 {
-  return val;
-}
-
-static inline ruw16 h2qw(uw16 v)
-{
-  return v;
-}
-static inline ruw32 h2ql(uw32 v)
-{
-  return v;
-}
-
-#define WL(_addr_,_val_) (*(uw32*)(_addr_)=(_val_))
-#define RL(_addr_) (*(uw32*)(_addr_))
-
-#else
-/* little endian stuff comes here */
-
-static inline ruw16  q2hw(uw16 val)
-{
-  return ((val&0xff)<<8)|((val>>8)&0xff);
-}
-static inline ruw32 q2hl(uw32 val)
-{
-  return ((val&0xff)<<24)|((val&0xff00)<<8)|((val>>8)&0xff00)|((val>>24)&0xff);
+	return SDL_SwapBE32(val);
 }
 static inline ruw16 h2qw(uw16 v)
 {
-  return ((v&0xff)<<8)|((v>>8)&0xff);
+	return SDL_SwapBE16(v);
 }
 static inline ruw32 h2ql(uw32 v)
 {
-  return ((v&0xff)<<24)|((v&0xff00)<<8)|((v>>8)&0xff00)|((v>>24)&0xff);
+	return SDL_SwapBE32(v);
 }
 
 static inline ruw16 _rw_(uw16 *s)
 {
-	return ntohs(*s);
+	return SDL_SwapBE16(*s);
 }
 static inline ruw32 _rl_(uw32 *s)
 {
-	return ntohl(*s);
+	return SDL_SwapBE32(*s);
 }
 
 static inline void _ww_(uw16 *d, uw16 v)
 {
-	*d = htons(v);
+	*d = SDL_SwapBE16(v);
 }
 
 static inline void _wl_(uw32 *d, uw32 v)
 {
-   *d = htonl(v);
+	*d = SDL_SwapBE32(v);
 }
 
-#endif /* QM_BIG_ENDIAN */
-
 #ifndef RW
-#define RW(_r_a)         _rw_((void *)(_r_a))
+#define RW(_r_a) _rw_((void *)(_r_a))
 #endif
 #ifndef RL
-#define RL(_r_al)        _rl_((void *)(_r_al))
+#define RL(_r_al) _rl_((void *)(_r_al))
 #endif
 #ifndef WW
-#define WW(_r_a,_r_v)    _ww_((void *)(_r_a), (_r_v))
+#define WW(_r_a, _r_v) _ww_((void *)(_r_a), (_r_v))
 #endif
 #ifndef WL
-#define WL(_r_al,_r_vl)  _wl_((void *)(_r_al),(_r_vl))
+#define WL(_r_al, _r_vl) _wl_((void *)(_r_al), (_r_vl))
 #endif
 
 #define dbginfo(format,args...) {printf(format, ## args);\
