@@ -32,7 +32,7 @@ rw8 ReadByte(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if (addr >= RTOP)
+	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
 		return 0;
 
 	if (is_hw(addr)) {
@@ -46,7 +46,7 @@ rw16 ReadWord(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if (addr >= RTOP)
+	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
 		return 0;
 
 	if (is_hw(addr)) {
@@ -60,7 +60,7 @@ rw32 ReadLong(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if (addr >= RTOP)
+	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
 		return 0;
 
 	if (is_hw(addr)) {
@@ -74,7 +74,7 @@ void WriteByte(aw32 addr,aw8 d)
 {
 	addr &= ADDR_MASK;
 
-	if (addr >= RTOP)
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
 	if (is_screen(addr)) {
@@ -91,7 +91,7 @@ void WriteWord(aw32 addr,aw16 d)
 {
 	addr &= ADDR_MASK;
 
-	if (addr > RTOP)
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
 	if (is_screen(addr)) {
@@ -108,7 +108,7 @@ void WriteLong(aw32 addr,aw32 d)
 {
 	addr &= ADDR_MASK;
 
-	if (addr > RTOP)
+	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
 		return;
 
 	if (is_screen(addr)) {
