@@ -156,10 +156,14 @@ void devpefio_cmd()
 
 	if ( xm>512 || ym>256 && xm<=qlscreen.xres && ym<=qlscreen.yres )
 	  {
-	    WriteWord(aReg[0]+0x18,xo/*scr_par[2].i*/);
-	    WriteWord(aReg[0]+0x1a,yo/*scr_par[3].i*/);
-	    WriteWord(aReg[0]+0x1c,xw/*scr_par[0].i*/);
-	    WriteWord(aReg[0]+0x1e,yw/*scr_par[1].i*/);
+        uint16_t bwidth;
+        /* get the border width */
+        bwidth = ReadWord(aReg[0]+0x20);
+
+	    WriteWord(aReg[0]+0x18,xo + (bwidth * 2) /*scr_par[2].i*/);
+	    WriteWord(aReg[0]+0x1a,yo + bwidth       /*scr_par[3].i*/);
+	    WriteWord(aReg[0]+0x1c,xw - (bwidth * 4) /*scr_par[0].i*/);
+	    WriteWord(aReg[0]+0x1e,yw - (bwidth * 2) /*scr_par[1].i*/);
 
 	    reg[0]=0;
 	    rts();
@@ -203,6 +207,7 @@ void devpefo_cmd()
 {
   int res;
   uw32 sA0;
+  uint16_t bwidth;
 
   sA0=aReg[0];
 
@@ -229,11 +234,14 @@ void devpefo_cmd()
       return;
     }
 
+  /* get the border width */
+  bwidth = ReadWord(aReg[0]+0x20);
+
   /* set real bounds */
-  WriteWord(aReg[0]+0x18,scr_par[2].i);
-  WriteWord(aReg[0]+0x1a,scr_par[3].i);
-  WriteWord(aReg[0]+0x1c,scr_par[0].i);
-  WriteWord(aReg[0]+0x1e,scr_par[1].i);
+  WriteWord(aReg[0]+0x18,scr_par[2].i + (bwidth * 2));
+  WriteWord(aReg[0]+0x1a,scr_par[3].i + bwidth);
+  WriteWord(aReg[0]+0x1c,scr_par[0].i - (bwidth * 4));
+  WriteWord(aReg[0]+0x1e,scr_par[1].i - (bwidth * 2));
   /* set physical screen: */
 
   WriteWord(aReg[0]+0x64,qlscreen.linel);
