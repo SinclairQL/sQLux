@@ -35,8 +35,6 @@ extern EMUDEV_t qdevs[];
 
 #ifdef STATICDEVS
 EMUDEV_t qdevs[16] = {
-    {"MDV", {0}, {1,1,0,0,0,0,0,0}, {0}, {NULL}, {NULL},
-	 {"/ql/qldata/","/ql/qlsoft/"},{0},{0},0},
 #if 0
     {"FLP", {0}, {1,1,0,0,0,0,0,0}, {0}, {NULL}, {NULL},
 	 {"/ql/qldata/","/ql/qlsoft/"},{0},{0},0},
