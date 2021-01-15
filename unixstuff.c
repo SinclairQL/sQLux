@@ -662,7 +662,6 @@ void usage(char **argv)
 	       "\t\t -s 'boot_cmd'       :    .. and do scripting \n"
 	       "\t\t -d 'boot_dev'       : device where BOOT should be read eg. 'mdv1'\n"
 	       "\t\t -g NxM              : define screen size to NxM \n"
-	       "\t\t -z zoom             : zoom level of display default=2 max 4\n"
 	       "\t\t -v num              : set verbosity\n"
 	       "\t\t -W window           : reparent root window \n"
 	       "\t\t -n                  : dont patch anything (xuse only)\n\n"
@@ -681,7 +680,7 @@ void SetParams(int ac, char **av)
 	*sysrom = 0;
 
 #ifndef NO_GETOPT
-	while ((c = getopt(ac, av, "f:micnhr:o:s:b:g:W:p?::v:z:d:")) != EOF) {
+	while ((c = getopt(ac, av, "f:micnhr:o:s:b:g:W:p?::v:d:")) != EOF) {
 		switch (c) {
 		case 'g':
 			gg = 0;
@@ -743,13 +742,6 @@ void SetParams(int ac, char **av)
 				browse_manuals();
 			else
 				usage(av);
-			break;
-		case 'z':
-			qlscreen.zoom = atoi(optarg);
-			if (qlscreen.zoom <= 1)
-				qlscreen.zoom = 1;
-			if (qlscreen.zoom > 4)
-				qlscreen.zoom = 2;
 			break;
 		case 'd':
 			if (optarg && strcmp("", optarg)) {
