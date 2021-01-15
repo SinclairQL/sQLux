@@ -438,6 +438,43 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	}
 }
 
+static void QLSDLProcessMouse(int x, int y)
+{
+    int qlx = 0, qly= 0;
+    float x_ratio, y_ratio;
+
+    if (SDL_GetWindowFlags(ql_window) & SDL_WINDOW_ALLOW_HIGHDPI) {
+        x *= 2;
+        y *= 2;
+    }
+
+    if (x < dest_rect.x) {
+        qlx = 0;
+    } else if (x > (dest_rect.w + dest_rect.x)) {
+        qlx = qlscreen.xres - 1;
+    } else {
+        x_ratio = (float)dest_rect.w / (float)qlscreen.xres;
+
+        x -= dest_rect.x;
+
+        qlx = ((float)x / x_ratio);
+    }
+
+    if (y < dest_rect.y) {
+        qly = 0;
+    } else if (y > (dest_rect.h + dest_rect.y)) {
+        qly = qlscreen.yres - 1;
+    } else {
+        y_ratio = (float)dest_rect.h / (float)qlscreen.yres;
+
+        y -= dest_rect.y;
+
+        qly = ((float)y / y_ratio);
+    }
+
+	QLMovePointer(qlx, qly);
+}
+
 int QLSDLProcessEvents(void)
 {
 	SDL_Event event;
@@ -456,8 +493,7 @@ int QLSDLProcessEvents(void)
 			cleanup(0);
 			break;
 		case SDL_MOUSEMOTION:
-			QLMovePointer(event.motion.x / qlscreen.zoom,
-					event.motion.y / qlscreen.zoom);
+            QLSDLProcessMouse(event.motion.x, event.motion.y);
 			//inside=1;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
