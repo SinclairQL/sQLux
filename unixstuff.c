@@ -38,7 +38,7 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 
-#define TIME_DIFF    283996800
+#define TIME_DIFF 283996800
 void GetDateTime(w32 *);
 long long qlClock = 0;
 
@@ -61,25 +61,25 @@ char **UQLX_argv;
 extern uw32 rtop_hard;
 extern int screen_drawable;
 
-int do_update = 0;  /* initial delay for screen drawing */
+int do_update = 0; /* initial delay for screen drawing */
 
-#define min(_a_,_b_) (_a_<_b_ ? _a_ : _b_)
-#define max(_a_,_b_) (_a_>_b_ ? _a_ : _b_)
+#define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)
+#define max(_a_, _b_) (_a_ > _b_ ? _a_ : _b_)
 
 int rx1, rx2, ry1, ry2, finishflag, doscreenflush;
 int QLdone = 0;
 
-extern void FlushDisplay (void);
+extern void FlushDisplay(void);
 
-extern void DbgInfo (void);
+extern void DbgInfo(void);
 
-void btrap3 (void);
+void btrap3(void);
 
-extern void SchedulerCmd (void);
-extern void KbdCmd (void);
+extern void SchedulerCmd(void);
+extern void KbdCmd(void);
 
 #ifndef XAW
-extern void process_events (void);
+extern void process_events(void);
 #endif
 
 int script = 0;
@@ -89,7 +89,7 @@ int scrcnt = 0;
 //volatile int doPoll = 0;
 
 #ifdef VTIME
-volatile poll_req = 0;   /* debug only */
+volatile poll_req = 0; /* debug only */
 #endif
 
 int noints = 0;
@@ -97,71 +97,72 @@ int schedCount = 0;
 extern int min_idle;
 int HasDialog;
 
-long pagesize=4096;
-int pageshift=12;
+long pagesize = 4096;
+int pageshift = 12;
 
-void cleanup_dialog (){}
-
-int InitDialog ()
+void cleanup_dialog()
 {
-   if (pwindow == NULL)
-   {
-      char buf [PATH_MAX + 1], arg [100];
-      char *p;
-      int QMpid, bfpid;
+}
+
+int InitDialog()
+{
+	if (pwindow == NULL) {
+		char buf[PATH_MAX + 1], arg[100];
+		char *p;
+		int QMpid, bfpid;
 
 #ifdef XAW
-      return 0;
+		return 0;
 #else
-      QMpid = getpid ();
-      sprintf (arg, "%d", QMpid);
+		QMpid = getpid();
+		sprintf(arg, "%d", QMpid);
 
-      //strncpy (buf, IMPL,PATH_MAX);
-      p = buf + strlen(buf) - 1;
-      if (*p != '/')
-         strncat (buf,"/", PATH_MAX);
+		//strncpy (buf, IMPL,PATH_MAX);
+		p = buf + strlen(buf) - 1;
+		if (*p != '/')
+			strncat(buf, "/", PATH_MAX);
 #ifndef USE_IPC
-      strncat (buf, "ButtonFrame", PATH_MAX);
+		strncat(buf, "ButtonFrame", PATH_MAX);
 #else
-      strncat(buf, "Xgui", PATH_MAX);
+		strncat(buf, "Xgui", PATH_MAX);
 #endif
 
-      if (access(buf, R_OK | X_OK))
-         return 0;
+		if (access(buf, R_OK | X_OK))
+			return 0;
 
-      bfpid = qm_fork (cleanup_dialog, 0);
-      if (bfpid)
-         return bfpid;
+		bfpid = qm_fork(cleanup_dialog, 0);
+		if (bfpid)
+			return bfpid;
 
-      execl (buf, buf, arg, NULL);
-      perror ("Sorry, could not exec() GUI");
-      /*kill(QMpid,SIGUSR1);*/
-      _exit(0);
+		execl(buf, buf, arg, NULL);
+		perror("Sorry, could not exec() GUI");
+		/*kill(QMpid,SIGUSR1);*/
+		_exit(0);
 #endif
-   }
-   return 0;
+	}
+	return 0;
 }
 
 int rtc_emu_on = 0;
-void prep_rtc_emu ()
+void prep_rtc_emu()
 {
 }
 
-void set_rtc_emu ()
+void set_rtc_emu()
 {
 }
 
 /* Read a system variable word sized from QDOS memory    */
 /* NOTE(TF): Apparently not used anywhere in the code!   */
-uw16 sysvar_w (uw32 a)
+uw16 sysvar_w(uw32 a)
 {
-   return RW((Ptr)theROM + 0x28000 + a);
+	return RW((Ptr)theROM + 0x28000 + a);
 }
 
 /* Read a system variable (long) from QDOS memory        */
-uw32 sysvar_l (uw32 a)
+uw32 sysvar_l(uw32 a)
 {
-  return RL((Ptr)theROM+0x28000+a);
+	return RL((Ptr)theROM + 0x28000 + a);
 }
 
 #ifdef SHOWINTS
@@ -172,257 +173,249 @@ static long aa_cnt = 0;
 
 static int flptest = 0;
 
-void dosignal ()
+void dosignal()
 {
-   SDL_AtomicSet(&doPoll, 0);
+	SDL_AtomicSet(&doPoll, 0);
 
 #ifdef SOUND
-   if (delay_list)
-      qm_sound ();
+	if (delay_list)
+		qm_sound();
 #endif
 
 #ifndef XAW
-   if (!script && !QLdone)
-      //process_events ();
-      QLSDLProcessEvents();
+	if (!script && !QLdone)
+		//process_events ();
+		QLSDLProcessEvents();
 #endif
 
 #ifdef SHOWINTS
-   aa_cnt += alrm_count;
-   alrm_count = 0;
-   if (++a_ticks > 49)
-   {
-      printf("received %d alarm signals, processed %d\n",aa_cnt,a_ticks);
-      a_ticks = aa_cnt = 0;
-   }
+	aa_cnt += alrm_count;
+	alrm_count = 0;
+	if (++a_ticks > 49) {
+		printf("received %d alarm signals, processed %d\n", aa_cnt,
+		       a_ticks);
+		a_ticks = aa_cnt = 0;
+	}
 #endif
 
-   if(--scrcnt < 0)
-   {
-      doscreenflush = 1;
-      set_rtc_emu();
-   }
+	if (--scrcnt < 0) {
+		doscreenflush = 1;
+		set_rtc_emu();
+	}
 
-   if (flptest++ > 25)
-   {
-      flptest = 0;
-      TestCloseDevs ();
-      process_ipc ();
-   }
+	if (flptest++ > 25) {
+		flptest = 0;
+		TestCloseDevs();
+		process_ipc();
+	}
 
 #ifndef xx_VTIME
-   FrameInt ();
+	FrameInt();
 #endif
 }
 
 extern int xbreak;
-void cleanup (int err)
+void cleanup(int err)
 {
 #ifndef XAW
-   if (HasDialog > 0)
-      kill (HasDialog, SIGINT);
+	if (HasDialog > 0)
+		kill(HasDialog, SIGINT);
 
-   cleanup_ipc ();
-   // FIXME: cleanup SDL
-   //if (!script && !xbreak)
-   //   x_screen_close ();
+	cleanup_ipc();
+	// FIXME: cleanup SDL
+	//if (!script && !xbreak)
+	//   x_screen_close ();
 #endif
-   CleanRAMDev ("RAM");
-   QLSDLExit();
-   exit (err);
+	CleanRAMDev("RAM");
+	QLSDLExit();
+	exit(err);
 }
 
-void oncc (int sig)
+void oncc(int sig)
 {
-   printf ("exiting\n");
-   QLdone = 1;
+	printf("exiting\n");
+	QLdone = 1;
 }
 
-void signalTimer ()
+void signalTimer()
 {
-   //doPoll = 1;
+	//doPoll = 1;
 #ifdef VTIME
-   poll_req++;
+	poll_req++;
 #endif
-   schedCount = 0;
+	schedCount = 0;
 #ifdef SHOWINTS
-   alrm_count++;
+	alrm_count++;
 #endif
 }
 
-void ontsignal (int sig)
+void ontsignal(int sig)
 {
-   /*set_rtc_emu();*/   /* .. not yet working */
-   //signalTimer ();
+	/*set_rtc_emu();*/ /* .. not yet working */
+	//signalTimer ();
 }
 
 /* rather crude but reliable */
 static int fat_int_called = 0;
 
-void on_fat_int (int x)
+void on_fat_int(int x)
 {
-   if (fat_int_called==1)
-      exit(45);
-   if (fat_int_called > 1)
-      raise(9);
-   fat_int_called++;
+	if (fat_int_called == 1)
+		exit(45);
+	if (fat_int_called > 1)
+		raise(9);
+	fat_int_called++;
 
-   alarm (0);
-   printf ("Terminate on signal %d\n", x);
-   printf ("This may be due to an internal error,\n"
-           "a feature not emulated or an 68000 exception\n"
-           "that typically occurs only when QDOS is unrecoverably\n"
-           "out of control\n");
-   dbginfo("FATAL error, PC may not be displayed correctly\n");
-   cleanup(44);
+	alarm(0);
+	printf("Terminate on signal %d\n", x);
+	printf("This may be due to an internal error,\n"
+	       "a feature not emulated or an 68000 exception\n"
+	       "that typically occurs only when QDOS is unrecoverably\n"
+	       "out of control\n");
+	dbginfo("FATAL error, PC may not be displayed correctly\n");
+	cleanup(44);
 }
 
-void InitDialogErr (int x)
+void InitDialogErr(int x)
 {
-   HasDialog = -1;
-   /* init_timers (); */
+	HasDialog = -1;
+	/* init_timers (); */
 }
 
 #ifdef UX_WAIT
 #include <sys/wait.h>
-struct cleanup_entry
-{
-   void (*cleanup) ();
-   unsigned long int id;
-   pid_t pid;
-   struct cleanup_entry *next;
+struct cleanup_entry {
+	void (*cleanup)();
+	unsigned long int id;
+	pid_t pid;
+	struct cleanup_entry *next;
 };
 
-static struct cleanup_entry * cleanup_list = NULL;
+static struct cleanup_entry *cleanup_list = NULL;
 static int run_reaper;
 
 static void sigchld_handler(int sig)
 {
-   run_reaper = 1;
+	run_reaper = 1;
 }
 
-static  int qm_wait(fc)
-int *fc;
+static int qm_wait(fc) int *fc;
 {
-   int pid;
+	int pid;
 
-   pid = wait3(fc, WNOHANG, (struct rusage *)NULL);
-   return pid;
+	pid = wait3(fc, WNOHANG, (struct rusage *)NULL);
+	return pid;
 }
 
 /* exactly like fork but registers cleanup handler */
 int qm_fork(void (*cleanup)(), unsigned long id)
 {
-   struct cleanup_entry *ce;
-   int pid;
+	struct cleanup_entry *ce;
+	int pid;
 
-   pid = fork ();
-   if (pid > 0)
-   {
-      ce = (void*)malloc(sizeof(struct cleanup_entry));
-      ce->pid = pid;
-      ce->id = id;
-      ce->cleanup = cleanup;
-      ce->next = cleanup_list;
-      cleanup_list = ce;
-   }
-   return pid;
+	pid = fork();
+	if (pid > 0) {
+		ce = (void *)malloc(sizeof(struct cleanup_entry));
+		ce->pid = pid;
+		ce->id = id;
+		ce->cleanup = cleanup;
+		ce->next = cleanup_list;
+		cleanup_list = ce;
+	}
+	return pid;
 }
 
-static void qm_reaper ()
+static void qm_reaper()
 {
-   struct cleanup_entry *ce,**last;
-   int pid, found;
-   int failcode;
+	struct cleanup_entry *ce, **last;
+	int pid, found;
+	int failcode;
 
-   run_reaper = 0;
-   while((pid = qm_wait(&failcode)) > 0)
-   {
-      ce = cleanup_list;
-      last = &cleanup_list;
-      found = 0;
-      while(ce)
-      {
-         if (pid == ce->pid)
-         {
-            *last = ce->next;
-            (*(ce->cleanup))(ce->pid,ce->id,failcode);
-            free(ce);
-            found = 1;
-            break;
-         }
-         last = &(ce->next);
-         ce = ce->next;
-      }
-      if (!found)
-         printf("hm, pid %d not found in cleanup list?\n",pid);
-   }
+	run_reaper = 0;
+	while ((pid = qm_wait(&failcode)) > 0) {
+		ce = cleanup_list;
+		last = &cleanup_list;
+		found = 0;
+		while (ce) {
+			if (pid == ce->pid) {
+				*last = ce->next;
+				(*(ce->cleanup))(ce->pid, ce->id, failcode);
+				free(ce);
+				found = 1;
+				break;
+			}
+			last = &(ce->next);
+			ce = ce->next;
+		}
+		if (!found)
+			printf("hm, pid %d not found in cleanup list?\n", pid);
+	}
 }
 #endif
 
-void init_signals ()
+void init_signals()
 {
 }
 
-int load_rom(char *,w32);
+int load_rom(char *, w32);
 
-void ChangedMemory (int from, int to)
+void ChangedMemory(int from, int to)
 {
-   int i;
-   uw32 dto,dfrom;
+	int i;
+	uw32 dto, dfrom;
 
-   /* QL screen memory involved? */
-   if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
-       (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi))
-   {
-      dfrom = max(qlscreen.qm_lo, from);
-      dto = min(qlscreen.qm_hi, to);
+	/* QL screen memory involved? */
+	if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
+	    (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi)) {
+		dfrom = max(qlscreen.qm_lo, from);
+		dto = min(qlscreen.qm_hi, to);
 
-      for (i = 0; i < sct_size; i++)
-         scrModTable[i] = (i * pagesize + qlscreen.qm_lo <= dto &&
-                           i * pagesize + qlscreen.qm_lo >= dfrom);
-   }
+		for (i = 0; i < sct_size; i++)
+			scrModTable[i] =
+				(i * pagesize + qlscreen.qm_lo <= dto &&
+				 i * pagesize + qlscreen.qm_lo >= dfrom);
+	}
 }
 
 char **argv;
 
 void DbgInfo(void)
 {
-   int i;
+	int i;
 
-   /* "ssp" is ssp *before* sv-mode was entered (if active now) */
-   /* USP is saved value of a7 or meaningless if not in sv-mode */
-   printf("DebugInfo: PC=%lx, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
-         (Ptr)pc-(Ptr)theROM, code,
-         (supervisor ? "yes" : "no" ),
-         usp,ssp,*m68k_sp);
-   printf("Register Dump:\t Dn\t\tAn\n");
-   for(i = 0; i < 8; i++)
-      printf("%d\t\t%8x\t%8x\n",i,reg[i],aReg[i]);
+	/* "ssp" is ssp *before* sv-mode was entered (if active now) */
+	/* USP is saved value of a7 or meaningless if not in sv-mode */
+	printf("DebugInfo: PC=%lx, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
+	       (Ptr)pc - (Ptr)theROM, code, (supervisor ? "yes" : "no"), usp,
+	       ssp, *m68k_sp);
+	printf("Register Dump:\t Dn\t\tAn\n");
+	for (i = 0; i < 8; i++)
+		printf("%d\t\t%8x\t%8x\n", i, reg[i], aReg[i]);
 }
 
 long uqlx_tz;
 
-long ux2qltime (long t)
+long ux2qltime(long t)
 {
-   return t + TIME_DIFF + uqlx_tz;
+	return t + TIME_DIFF + uqlx_tz;
 }
 
-long ql2uxtime (long t)
+long ql2uxtime(long t)
 {
-   return t - TIME_DIFF - uqlx_tz;
+	return t - TIME_DIFF - uqlx_tz;
 }
 
-void GetDateTime (w32 *t)
+void GetDateTime(w32 *t)
 {
-   struct timeval tp;
+	struct timeval tp;
 
 #ifndef VTIME
 
-   gettimeofday(&tp, (void*)0);
-   *t = ux2qltime(tp.tv_sec) + qlClock;;
+	gettimeofday(&tp, (void *)0);
+	*t = ux2qltime(tp.tv_sec) + qlClock;
+	;
 #else
-   *t = qltime;
+	*t = qltime;
 #endif
 }
 
@@ -430,103 +423,100 @@ int rombreak = 0;
 
 int allow_rom_break(int flag)
 {
-   if (flag < 0)
-      return rombreak;
+	if (flag < 0)
+		return rombreak;
 
-   if (flag)
-   {
-      rombreak = 1;
-   }
-   else
-   {
-      rombreak = 0;
-   }
-   return rombreak;
+	if (flag) {
+		rombreak = 1;
+	} else {
+		rombreak = 0;
+	}
+	return rombreak;
 }
 
-void init_uqlx_tz ()
+void init_uqlx_tz()
 {
-   struct tm ltime;
-   struct tm gtime;
-   time_t ut;
+	struct tm ltime;
+	struct tm gtime;
+	time_t ut;
 
-   ut = time(NULL);
-   ltime = *localtime(&ut);
-   gtime = *gmtime(&ut);
+	ut = time(NULL);
+	ltime = *localtime(&ut);
+	gtime = *gmtime(&ut);
 
-   gtime.tm_isdst = ltime.tm_isdst;
-   uqlx_tz = mktime(&ltime) - mktime(&gtime);
+	gtime.tm_isdst = ltime.tm_isdst;
+	uqlx_tz = mktime(&ltime) - mktime(&gtime);
 }
 
 w32 ReadQlClock(void)
 {
-   w32 t;
+	w32 t;
 
-   GetDateTime(&t);
-   return t;
+	GetDateTime(&t);
+	return t;
 }
 
-int impopen(char *name,int flg,int mode)
+int impopen(char *name, int flg, int mode)
 {
-   char buff[PATH_MAX],*p;
-   int r,md;
+	char buff[PATH_MAX], *p;
+	int r, md;
 
-   md = mode;
+	md = mode;
 
-   if ((r = open(name,flg,md))!=-1)
-      return r;
+	if ((r = open(name, flg, md)) != -1)
+		return r;
 
-   if(*name == '~')
-   {
-      char *p = buff;
-      strcpy(p, getenv("HOME"));
-      strcat(p, name + 1);
-      name = p;
-   }
+	if (*name == '~') {
+		char *p = buff;
+		strcpy(p, getenv("HOME"));
+		strcat(p, name + 1);
+		name = p;
+	}
 
-   return open(name,flg,md);
+	return open(name, flg, md);
 
-   //strcpy(buff,IMPL);
-   p=buff+strlen(buff);
-   if (*(p-1)!='/') strcat(buff,"/");
-   strncat(buff,name,PATH_MAX);
+	//strcpy(buff,IMPL);
+	p = buff + strlen(buff);
+	if (*(p - 1) != '/')
+		strcat(buff, "/");
+	strncat(buff, name, PATH_MAX);
 
-   return open(buff,flg,md);
+	return open(buff, flg, md);
 }
 
-int load_rom(char *name,w32 addr)
+int load_rom(char *name, w32 addr)
 {
-   struct stat b;
-   int r;
-   int fd;
+	struct stat b;
+	int r;
+	int fd;
 
+	fd = impopen(name, O_RDONLY, 0);
+	if (fd < 0) {
+		perror("Warning: could not find ROM image ");
+		printf(" - rom name %s\n", name);
+		return 0;
+	}
 
-   fd = impopen(name,O_RDONLY,0);
-   if (fd<0)
-   {
-      perror("Warning: could not find ROM image ");
-      printf(" - rom name %s\n",name);
-      return 0;
-   }
+	fstat(fd, &b);
+	if (b.st_size != 16384 && addr != 0)
+		printf("Warning: ROM size of 16K expected, %s is %d\n", name,
+		       (int)b.st_size);
+	if (addr & 16383)
+		printf("Warning: addr %x for ROM %s not multiple of 16K\n",
+		       addr, name);
 
-   fstat(fd,&b);
-   if (b.st_size!=16384 && addr!=0)
-      printf("Warning: ROM size of 16K expected, %s is %d\n",
-             name, (int)b.st_size);
-   if (addr & 16383)
-      printf("Warning: addr %x for ROM %s not multiple of 16K\n",addr,name);
+	r = read(fd, (Ptr)theROM + addr, b.st_size);
+	if (r < 0) {
+		perror("Warning, could not load ROM \n");
+		printf("name %s, addr %x, QDOS origin %p\n", name, addr,
+		       theROM);
+		return 0;
+	}
+	if (V3)
+		printf("loaded %s \t\tat %x\n", name, addr);
+	close(fd);
 
-   r = read(fd, (Ptr)theROM + addr, b.st_size);
-   if (r<0)
-   {
-      perror("Warning, could not load ROM \n");
-      printf("name %s, addr %x, QDOS origin %p\n",name,addr,theROM);
-      return 0;
-   }
-   if(V3)printf("loaded %s \t\tat %x\n",name,addr);
-   close(fd);
-
-   return r;
+	return r;
 }
 
 int scr_planes = 2;
@@ -541,32 +531,31 @@ extern int shmflag;
 #ifndef XSCREEN
 void parse_screen(char *x)
 {
-   printf("sorry, '-g' option works only with XSCREEN enabled,\ncheck your Makefile\n");
+	printf("sorry, '-g' option works only with XSCREEN enabled,\ncheck your Makefile\n");
 }
 #endif
 
 int sct_size;
 //char *scrModTable,
-char *oldscr ;
+char *oldscr;
 
 static char obuf[BUFSIZ];
 
-void CoreDump ()
+void CoreDump()
 {
-   int fd,r;
+	int fd, r;
 
-   fd = open("qlcore",O_RDWR|O_CREAT,0644);
-   if (fd<0)
-      perror("coredump failed: read: :");
-   if (fd > -1)
-   {
-      r = write(fd, theROM, 1024*1024);
-      if (!r)
-         perror("coredump failed: write: ");
-      close(fd);
-      if (r)
-         printf("memory dump saved as qlcore\n");
-   }
+	fd = open("qlcore", O_RDWR | O_CREAT, 0644);
+	if (fd < 0)
+		perror("coredump failed: read: :");
+	if (fd > -1) {
+		r = write(fd, theROM, 1024 * 1024);
+		if (!r)
+			perror("coredump failed: write: ");
+		close(fd);
+		if (r)
+			printf("memory dump saved as qlcore\n");
+	}
 }
 
 char *uqlx_version = "0.50";
@@ -575,228 +564,234 @@ char *uqlx_version = "0.50";
 
 char *qm_findx(char *name)
 {
-   char *loc;
-   static char buf[PATH_MAX+40];
+	char *loc;
+	static char buf[PATH_MAX + 40];
 
-   strncpy(buf, getenv("HOME"), PATH_MAX);
-   qaddpath(buf, "lib/uqlx", PATH_MAX);
-   if (!access(buf, R_OK | X_OK))
-      loc = buf;
-   else
-      loc=NULL;
+	strncpy(buf, getenv("HOME"), PATH_MAX);
+	qaddpath(buf, "lib/uqlx", PATH_MAX);
+	if (!access(buf, R_OK | X_OK))
+		loc = buf;
+	else
+		loc = NULL;
 
-   //if (!loc && !access(IMPL, R_OK | X_OK))
-   //   loc = IMPL;
-   if (!loc && !access("/usr/local/lib/uqlx", R_OK | X_OK))
-      loc = "/usr/local/lib/uqlx/";
-   if ( !loc && !access("/usr/lib/uqlx",R_OK | X_OK))
-      loc="/usr/lib/uqlx/";
-   if ( !loc && !access("/usr/local/uqlx/lib/",R_OK | X_OK))
-      loc="/usr/local/uqlx/lib/";
+	//if (!loc && !access(IMPL, R_OK | X_OK))
+	//   loc = IMPL;
+	if (!loc && !access("/usr/local/lib/uqlx", R_OK | X_OK))
+		loc = "/usr/local/lib/uqlx/";
+	if (!loc && !access("/usr/lib/uqlx", R_OK | X_OK))
+		loc = "/usr/lib/uqlx/";
+	if (!loc && !access("/usr/local/uqlx/lib/", R_OK | X_OK))
+		loc = "/usr/local/uqlx/lib/";
 
-   return loc;
+	return loc;
 }
 
-void browse_manuals ()
+void browse_manuals()
 {
-   int ret;
-   char buf[PATH_MAX + 25];
-   char *loc;
+	int ret;
+	char buf[PATH_MAX + 25];
+	char *loc;
 
-   loc = qm_findx ("browse_manual");
+	loc = qm_findx("browse_manual");
 
-   strncpy(buf,loc,PATH_MAX);
-   qaddpath(buf,"browse_manual ",PATH_MAX);
-   //strncat(buf,IMPL,PATH_MAX);
-   //printf("executing %s\n",buf);
-   ret = system(buf);
-   if (ret == -1)
-	   printf("Failed to execute browser\n");
+	strncpy(buf, loc, PATH_MAX);
+	qaddpath(buf, "browse_manual ", PATH_MAX);
+	//strncat(buf,IMPL,PATH_MAX);
+	//printf("executing %s\n",buf);
+	ret = system(buf);
+	if (ret == -1)
+		printf("Failed to execute browser\n");
 
-   exit(0);
+	exit(0);
 }
 
 void vmtest()
 {
 #if defined(LINUX) && defined(m68k)
-   int res;
+	int res;
 
-   char buf[PATH_MAX+1];
-   char *loc;
+	char buf[PATH_MAX + 1];
+	char *loc;
 
-   loc=qm_findx("vmtest");
+	loc = qm_findx("vmtest");
 
-   strncpy(buf,loc,PATH_MAX);
-   qaddpath(buf,"vmtest",PATH_MAX);
+	strncpy(buf, loc, PATH_MAX);
+	qaddpath(buf, "vmtest", PATH_MAX);
 
-   res=system(buf);
-   if (res==1)
-   {
-      printf("vmtest failed, for m68k get latest kernel patch from"
-             "rz@linux-m68k.org");
-      exit(44);
-   }
-   if (res)
-   {
-      printf("problem executing %s\n",buf);
-      exit(1);
-   }
+	res = system(buf);
+	if (res == 1) {
+		printf("vmtest failed, for m68k get latest kernel patch from"
+		       "rz@linux-m68k.org");
+		exit(44);
+	}
+	if (res) {
+		printf("problem executing %s\n", buf);
+		exit(1);
+	}
 #endif
 }
 
 int toggle_hog(int val)
 {
-   /*printf("toggle_hog, setting to %d\n",val);*/
-   if (val < 0)
-      return QMD.cpu_hog;
-   QMD.cpu_hog = val;
-   //if(QMD.cpu_hog)
-   //   min_idle = 20000;
-   //else
-   //   min_idle = 5;
-   return QMD.cpu_hog;
+	/*printf("toggle_hog, setting to %d\n",val);*/
+	if (val < 0)
+		return QMD.cpu_hog;
+	QMD.cpu_hog = val;
+	//if(QMD.cpu_hog)
+	//   min_idle = 20000;
+	//else
+	//   min_idle = 5;
+	return QMD.cpu_hog;
 }
 
 void usage(char **argv)
 {
-   printf("UQLX release %s:\n\tusage: %s [options] arguments\n",release,argv[0] );
-   printf("\t options:\n"
-          "\t\t -?                  : list options \n"
-          "\t\t -??                 : browse manuals, may set $BROWSER \n"
-          "\t\t -f config_file      : read alternative config file\n"
-          "\t\t -m                  : use greyscale display \n"
-          "\t\t -c                  : display colors [if possible] \n"
-          "\t\t -i                  : start iconified \n"
-          "\t\t -h                  : waste all cpu time available \n"
-          "\t\t -r MEM              : set RAMTOP to this many Kb \n"
-          "\t\t -o romname          : use this ROM \n"
-          "\t\t -b 'boot_cmd'       : define BOOT device with boot_cmd \n"
-          "\t\t -s 'boot_cmd'       :    .. and do scripting \n"
-          "\t\t -g NxM              : define screen size to NxM \n"
-          "\t\t -z zoom             : zoom level of display default=2 max 4\n"
-          "\t\t -v num              : set verbosity\n"
-          "\t\t -W window           : reparent root window \n"
-          "\t\t -n                  : dont patch anything (xuse only)\n\n"
-          "\t arguments: available through Superbasic commands\n\n"
-         );
-   exit(0);
+	printf("UQLX release %s:\n\tusage: %s [options] arguments\n", release,
+	       argv[0]);
+	printf("\t options:\n"
+	       "\t\t -?                  : list options \n"
+	       "\t\t -??                 : browse manuals, may set $BROWSER \n"
+	       "\t\t -f config_file      : read alternative config file\n"
+	       "\t\t -m                  : use greyscale display \n"
+	       "\t\t -c                  : display colors [if possible] \n"
+	       "\t\t -i                  : start iconified \n"
+	       "\t\t -h                  : waste all cpu time available \n"
+	       "\t\t -r MEM              : set RAMTOP to this many Kb \n"
+	       "\t\t -o romname          : use this ROM \n"
+	       "\t\t -b 'boot_cmd'       : define BOOT device with boot_cmd \n"
+	       "\t\t -s 'boot_cmd'       :    .. and do scripting \n"
+	       "\t\t -d 'boot_dev'       : device where BOOT should be read eg. 'mdv1'\n"
+	       "\t\t -g NxM              : define screen size to NxM \n"
+	       "\t\t -z zoom             : zoom level of display default=2 max 4\n"
+	       "\t\t -v num              : set verbosity\n"
+	       "\t\t -W window           : reparent root window \n"
+	       "\t\t -n                  : dont patch anything (xuse only)\n\n"
+	       "\t arguments: available through Superbasic commands\n\n");
+	exit(0);
 }
-void SetParams (int ac, char **av)
+void SetParams(int ac, char **av)
 {
-   char sysrom[200];
-   int c;
-   int mem=-1, col=-1, hog=-1, no_patch=-1;
-   int gg=0;
+	char sysrom[200];
+	int c;
+	int mem = -1, col = -1, hog = -1, no_patch = -1;
+	int gg = 0;
 
-   setvbuf(stdout,obuf,_IOLBF,BUFSIZ);
+	setvbuf(stdout, obuf, _IOLBF, BUFSIZ);
 
-   *sysrom=0;
+	*sysrom = 0;
 
 #ifndef NO_GETOPT
-   while((c = getopt(ac,av,"f:micnhr:o:s:b:g:W:p?::v:z:")) != EOF)
-   {
-      switch(c)
-      {
-         case 'g':
-            gg = 0;
-            parse_screen(optarg);
-            break;
-         case 'f':
-         {
-             strncpy(QMD.config_file, optarg, PATH_MAX);
-             QMD.config_file_opt = 1;
-         }
-         break;
-         case 'o':
-            strcpy(sysrom,optarg);
-            break;
-         case 'm':
-            col = 0;
-            break;
-         case 'c':
-            col = 1;
-            break;
-         case 'r':
-            mem = atoi(optarg);
-            break;
-         case 'h':
-            hog = 1;
-            break;
-         case 'n':
-            no_patch = 1;
-            break;
-         case 'i':
-            start_iconic=1;
-            break;
-         case 'v':
-            verbose=atoi(optarg);
-            break;
-         case 'p':
-            is_patching=1;
-            verbose=0;
-            /* FALLTHRU */
-         case 's':
-            script=1;
-            redir_std=1;
-            /* FALLTHRU */
-         case 'b':
-         {
-            int len;
+	while ((c = getopt(ac, av, "f:micnhr:o:s:b:g:W:p?::v:z:d:")) != EOF) {
+		switch (c) {
+		case 'g':
+			gg = 0;
+			parse_screen(optarg);
+			break;
+		case 'f': {
+			strncpy(QMD.config_file, optarg, PATH_MAX);
+			QMD.config_file_opt = 1;
+		} break;
+		case 'o':
+			strcpy(sysrom, optarg);
+			break;
+		case 'm':
+			col = 0;
+			break;
+		case 'c':
+			col = 1;
+			break;
+		case 'r':
+			mem = atoi(optarg);
+			break;
+		case 'h':
+			hog = 1;
+			break;
+		case 'n':
+			no_patch = 1;
+			break;
+		case 'i':
+			start_iconic = 1;
+			break;
+		case 'v':
+			verbose = atoi(optarg);
+			break;
+		case 'p':
+			is_patching = 1;
+			verbose = 0;
+			/* FALLTHRU */
+		case 's':
+			script = 1;
+			redir_std = 1;
+			/* FALLTHRU */
+		case 'b': {
+			int len;
 
-            if (optarg && strcmp("",optarg))
-            {
-               ux_boot=2;
-               len=strlen(optarg);
-               ux_bname=malloc(len+2);
-               strncpy(ux_bname,optarg,len);
-               ux_bname[len]=10;
-               ux_bname[len+1]=0;
-            }
-         }
-         break;
-         case 'W':
-            pwindow=optarg;
-            break;
-            case '?':
-            if(optarg)
-               browse_manuals();
-            else
-               usage(av);
-            break;
-	 case 'z':
-            qlscreen.zoom=atoi(optarg);
-            if (qlscreen.zoom<=1) qlscreen.zoom=1;
-            if (qlscreen.zoom>4) qlscreen.zoom=2;
-            break;
+			if (optarg && strcmp("", optarg)) {
+				ux_boot = 2;
+				len = strlen(optarg);
+				ux_bname = malloc(len + 2);
+				strncpy(ux_bname, optarg, len);
+				ux_bname[len] = 10;
+				ux_bname[len + 1] = 0;
+			}
+		} break;
+		case 'W':
+			pwindow = optarg;
+			break;
+		case '?':
+			if (optarg)
+				browse_manuals();
+			else
+				usage(av);
+			break;
+		case 'z':
+			qlscreen.zoom = atoi(optarg);
+			if (qlscreen.zoom <= 1)
+				qlscreen.zoom = 1;
+			if (qlscreen.zoom > 4)
+				qlscreen.zoom = 2;
+			break;
+		case 'd':
+			if (optarg && strcmp("", optarg)) {
+				if (strlen(optarg) != 4) {
+					printf("-d BOOT_DEV must be 4 chars\n");
+				} else {
+					strncpy(QMD.bootdev, optarg, 4);
+				}
+			}
+			break;
+		default:
+			usage(av);
+		}
+	}
 
-         default:
-            usage(av);
-      }
-   }
-
-   UQLX_argc = ac;
-   UQLX_argv = av;
-   UQLX_optind = optind;
+	UQLX_argc = ac;
+	UQLX_argv = av;
+	UQLX_optind = optind;
 
 #else
-   UQLX_argc = ac;
-   UQLX_argv = av;
-   UQLX_optind = 1;
+	UQLX_argc = ac;
+	UQLX_argv = av;
+	UQLX_optind = 1;
 #endif
-   QMParams();
-   if (mem > 0 && mem < 17)
-      mem=mem * 1024;
+	QMParams();
+	if (mem > 0 && mem < 17)
+		mem = mem * 1024;
 
-   if(mem != -1) QMD.ramtop = mem;
-   if(hog != -1) QMD.cpu_hog=1;
-   if(no_patch != -1) QMD.no_patch=1;
+	if (mem != -1)
+		QMD.ramtop = mem;
+	if (hog != -1)
+		QMD.cpu_hog = 1;
+	if (no_patch != -1)
+		QMD.no_patch = 1;
 
-   if (QMD.no_patch) do_update=1;
-   //printf("do_update: %d\n",do_update);
+	if (QMD.no_patch)
+		do_update = 1;
+	//printf("do_update: %d\n",do_update);
 
-   toggle_hog(QMD.cpu_hog);
+	toggle_hog(QMD.cpu_hog);
 
-   RTOP = QMD.ramtop * 1024;
+	RTOP = QMD.ramtop * 1024;
 }
 
 #ifdef G_reg
@@ -807,10 +802,10 @@ w32 _reg[16];
 typedef struct BlockDriverState BlockDriverState;
 BlockDriverState *bs_table[MAX_DISKS];
 #ifdef DARWIN
-const char *hd_filename[MAX_DISKS]={};
+const char *hd_filename[MAX_DISKS] = {};
 #else
-const char *hd_filename[MAX_DISKS]={"/home/rz/.qldir/IMG1",
-                                    "/home/rz/.qldir/IMG2"};
+const char *hd_filename[MAX_DISKS] = { "/home/rz/.qldir/IMG1",
+				       "/home/rz/.qldir/IMG2" };
 #endif
 
 #define HAS_CDROM 0
@@ -819,225 +814,216 @@ void init_xhw()
 {
 }
 
-void uqlxInit ()
+void uqlxInit()
 {
-   char *rf;
-   int  rl=0;
-   void *tbuff;
+	char *rf;
+	int rl = 0;
+	void *tbuff;
 
-   rx1 = 0;
-   rx2 = qlscreen.xres-1;
-   ry1 = 0;
-   ry2 = qlscreen.yres-1;
-   finishflag = 0;
+	rx1 = 0;
+	rx2 = qlscreen.xres - 1;
+	ry1 = 0;
+	ry2 = qlscreen.yres - 1;
+	finishflag = 0;
 
-   if(V1)
-      printf("*** QL Emulator v%s ***\nrelease %s\n\n",uqlx_version,release);
-   tzset();
+	if (V1)
+		printf("*** QL Emulator v%s ***\nrelease %s\n\n", uqlx_version,
+		       release);
+	tzset();
 
-   theROM = malloc(RTOP);
-   if (theROM == NULL)
-   {
-      printf("sorry, not enough memory for a %dK QL\n",RTOP / 1024);
-      exit(1);
-   }
+	theROM = malloc(RTOP);
+	if (theROM == NULL) {
+		printf("sorry, not enough memory for a %dK QL\n", RTOP / 1024);
+		exit(1);
+	}
 
-   tbuff=malloc(65536*sizeof(void *));
+	tbuff = malloc(65536 * sizeof(void *));
 
-   {
-      char roms[PATH_MAX];
-      char *p=NULL;
+	{
+		char roms[PATH_MAX];
+		char *p = NULL;
 
-      if((rf = getenv("QL_ROM")))
-          rl = load_rom(rf,0);
-      if (!rl)
-      {
-         p = (char*)stpcpy(roms, QMD.romdir);
-         if(*(p-1) != '/')
-         {
-            *p++ = '/';
-         }
-         strcpy(p, QMD.sysrom);
+		if ((rf = getenv("QL_ROM")))
+			rl = load_rom(rf, 0);
+		if (!rl) {
+			p = (char *)stpcpy(roms, QMD.romdir);
+			if (*(p - 1) != '/') {
+				*p++ = '/';
+			}
+			strcpy(p, QMD.sysrom);
 
-         rl=load_rom(roms ,(w32)0);
-         if (!rl)
-         {
-            fprintf(stderr,"Could not find qdos ROM image, exiting\n");
-            exit(2);
-         }
-      }
-      if(strlen(QMD.romim)) {
-          p = (char *)stpcpy(roms, QMD.romdir);
-          if(*(p-1) != '/') {
-              *p++ = '/';
-          }
-          strcpy(p, QMD.romim);
+			rl = load_rom(roms, (w32)0);
+			if (!rl) {
+				fprintf(stderr,
+					"Could not find qdos ROM image, exiting\n");
+				exit(2);
+			}
+		}
+		if (strlen(QMD.romim)) {
+			p = (char *)stpcpy(roms, QMD.romdir);
+			if (*(p - 1) != '/') {
+				*p++ = '/';
+			}
+			strcpy(p, QMD.romim);
 
-          rl=load_rom(roms, 0xC000);
-          if (!rl) {
-              fprintf(stderr, "Could not find expansion rom, exiting\n");
-              exit(2);
-          }
-      }
-   }
+			rl = load_rom(roms, 0xC000);
+			if (!rl) {
+				fprintf(stderr,
+					"Could not find expansion rom, exiting\n");
+				exit(2);
+			}
+		}
+	}
 
-   init_uqlx_tz();
+	init_uqlx_tz();
 
 #ifdef XAW
-   if (script)
-   {
-      fprintf(stderr,"scriptmode mode not supported with XAW\n");
-      script=0;
-   }
+	if (script) {
+		fprintf(stderr, "scriptmode mode not supported with XAW\n");
+		script = 0;
+	}
 #endif
 
-
-   init_signals();
+	init_signals();
 
 #ifndef XAW
-   if (!script && 1)
-   {
+	if (!script && 1) {
 #ifdef USE_IPC
-      init_ipc();
+		init_ipc();
 #endif
-      HasDialog=InitDialog();
-   }
+		HasDialog = InitDialog();
+	}
 
 #endif
 
-   init_iso();
+	init_iso();
 
-   init_xhw();                           /* init extra HW */
-   LoadMainRom();                        /* patch QDOS ROM*/
+	init_xhw(); /* init extra HW */
+	LoadMainRom(); /* patch QDOS ROM*/
 
-   /* Minerva cannot handle more than 16M of memory... */
-   if (isMinerva && RTOP > 16384 * 1024)
-      RTOP = 16384 * 1024;
-   /* ...everything else not more than 4M */
-   if (!isMinerva && RTOP > 4096 * 1024)
-      RTOP = 4096 * 1024;
+	/* Minerva cannot handle more than 16M of memory... */
+	if (isMinerva && RTOP > 16384 * 1024)
+		RTOP = 16384 * 1024;
+	/* ...everything else not more than 4M */
+	if (!isMinerva && RTOP > 4096 * 1024)
+		RTOP = 4096 * 1024;
 
-   rtop_hard = RTOP;
+	rtop_hard = RTOP;
 
-   if (isMinerva)
-   {
-      qlscreen.xres = qlscreen.xres & (~(7));
-      qlscreen.linel = qlscreen.xres/4;
-      qlscreen.qm_len = qlscreen.linel*qlscreen.yres;
+	if (isMinerva) {
+		qlscreen.xres = qlscreen.xres & (~(7));
+		qlscreen.linel = qlscreen.xres / 4;
+		qlscreen.qm_len = qlscreen.linel * qlscreen.yres;
 
-      qlscreen.qm_lo = 128 * 1024;
-      qlscreen.qm_hi=128 * 1024 + qlscreen.qm_len;
-      if (qlscreen.qm_len>0x8000)
-      {
-         if ( ((long)RTOP-qlscreen.qm_len)<256*1024+8192)
-         {
-            /*RTOP+=qlscreen.qm_len;*/
-            printf("sorry, not enough RAM for such a big screen\n");
-            goto bsfb;
-         }
-         qlscreen.qm_lo=((RTOP-qlscreen.qm_len)>>15)<<15;    /* RTOP MUST BE 32K aligned.. */
-         qlscreen.qm_hi=qlscreen.qm_lo+qlscreen.qm_len;
-         RTOP=qlscreen.qm_lo;
-      }
-   }
-   else  /* JS doesn't handle big screen */
-   {
-      bsfb:
-      qlscreen.linel = 128;
-      qlscreen.yres = 256;
-      qlscreen.xres = 512;
+		qlscreen.qm_lo = 128 * 1024;
+		qlscreen.qm_hi = 128 * 1024 + qlscreen.qm_len;
+		if (qlscreen.qm_len > 0x8000) {
+			if (((long)RTOP - qlscreen.qm_len) <
+			    256 * 1024 + 8192) {
+				/*RTOP+=qlscreen.qm_len;*/
+				printf("sorry, not enough RAM for such a big screen\n");
+				goto bsfb;
+			}
+			qlscreen.qm_lo = ((RTOP - qlscreen.qm_len) >> 15)
+					 << 15; /* RTOP MUST BE 32K aligned.. */
+			qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
+			RTOP = qlscreen.qm_lo;
+		}
+	} else /* JS doesn't handle big screen */
+	{
+	bsfb:
+		qlscreen.linel = 128;
+		qlscreen.yres = 256;
+		qlscreen.xres = 512;
 
-      qlscreen.qm_lo = 128 * 1024;
-      qlscreen.qm_hi = 128 * 1024 + 32 * 1024;
-      qlscreen.qm_len = 0x8000;
-   }
+		qlscreen.qm_lo = 128 * 1024;
+		qlscreen.qm_hi = 128 * 1024 + 32 * 1024;
+		qlscreen.qm_len = 0x8000;
+	}
 
 #ifndef XAW
-   //if (!script)
-   //   x_screen_open(0);
+	//if (!script)
+	//   x_screen_open(0);
 #endif
-    scr_width = qlscreen.xres;
-    scr_height = qlscreen.yres;
+	scr_width = qlscreen.xres;
+	scr_height = qlscreen.yres;
 
-    if (!script)
-        QLSDLScreen();
+	if (!script)
+		QLSDLScreen();
 
 #ifdef TRACE
-  TraceInit();
+	TraceInit();
 #endif
-   EmulatorTable(tbuff);
+	EmulatorTable(tbuff);
 #ifdef G_reg
-   reg = _reg;
+	reg = _reg;
 #endif
-   if (!isMinerva)
-   {
-      qlux_table[IPC_CMD_CODE] = UseIPC;        /* installl pseudoops */
-      qlux_table[IPCR_CMD_CODE] = ReadIPC;
-      qlux_table[IPCW_CMD_CODE] = WriteIPC;
-      qlux_table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
+	if (!isMinerva) {
+		qlux_table[IPC_CMD_CODE] = UseIPC; /* installl pseudoops */
+		qlux_table[IPCR_CMD_CODE] = ReadIPC;
+		qlux_table[IPCW_CMD_CODE] = WriteIPC;
+		qlux_table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
 
-      qlux_table[FSTART_CMD_CODE] = FastStartup;
-   }
-   qlux_table[ROMINIT_CMD_CODE] = InitROM;
-   qlux_table[MDVIO_CMD_CODE] = MdvIO;
-   qlux_table[MDVO_CMD_CODE] = MdvOpen;
-   qlux_table[MDVC_CMD_CODE] = MdvClose;
-   qlux_table[MDVSL_CMD_CODE] = MdvSlaving;
-   qlux_table[MDVFO_CMD_CODE] = MdvFormat;
-   qlux_table[POLL_CMD_CODE] = PollCmd;
+		qlux_table[FSTART_CMD_CODE] = FastStartup;
+	}
+	qlux_table[ROMINIT_CMD_CODE] = InitROM;
+	qlux_table[MDVIO_CMD_CODE] = MdvIO;
+	qlux_table[MDVO_CMD_CODE] = MdvOpen;
+	qlux_table[MDVC_CMD_CODE] = MdvClose;
+	qlux_table[MDVSL_CMD_CODE] = MdvSlaving;
+	qlux_table[MDVFO_CMD_CODE] = MdvFormat;
+	qlux_table[POLL_CMD_CODE] = PollCmd;
 
 #ifdef SERIAL
 #ifndef NEWSERIAL
-   qlux_table[OSERIO_CMD_CODE] = SerIO;
-   qlux_table[OSERO_CMD_CODE] = SerOpen;
-   qlux_table[OSERC_CMD_CODE] = SerClose;
+	qlux_table[OSERIO_CMD_CODE] = SerIO;
+	qlux_table[OSERO_CMD_CODE] = SerOpen;
+	qlux_table[OSERC_CMD_CODE] = SerClose;
 #endif
 #endif
 
-   qlux_table[SCHEDULER_CMD_CODE] = SchedulerCmd;
-   if (isMinerva)
-   {
-      qlux_table[MIPC_CMD_CODE] = KbdCmd;
-      qlux_table[KBENC_CMD_CODE] = KBencCmd;
-   }
-   qlux_table[BASEXT_CMD_CODE]=BASEXTCmd;
+	qlux_table[SCHEDULER_CMD_CODE] = SchedulerCmd;
+	if (isMinerva) {
+		qlux_table[MIPC_CMD_CODE] = KbdCmd;
+		qlux_table[KBENC_CMD_CODE] = KBencCmd;
+	}
+	qlux_table[BASEXT_CMD_CODE] = BASEXTCmd;
 
-   if (QMD.skip_boot)
-	qlux_table[0x4e43] = btrap3;
+	if (QMD.skip_boot)
+		qlux_table[0x4e43] = btrap3;
 
-   g_reg = reg;
+	g_reg = reg;
 
-   InitialSetup();
+	InitialSetup();
 
-   if (isMinerva)
-   {
-      reg[1]=RTOP&((~16383) | 1 | 2 | 4 | 16);
-      SetPC(0x186);
-   }
+	if (isMinerva) {
+		reg[1] = RTOP & ((~16383) | 1 | 2 | 4 | 16);
+		SetPC(0x186);
+	}
 
-   QLdone = 0;
+	QLdone = 0;
 }
 
 #ifndef XAW
 void QLRun(void)
 #else
-   Cond CPUWork(void)
+Cond CPUWork(void)
 #endif
-   {
-      int scrchange,i;
+{
+	int scrchange, i;
 
 #ifndef XAW
-      exec:
+exec:
 #endif
 
-   ExecuteChunk(3000);
+	ExecuteChunk(3000);
 
 #ifdef UX_WAIT
-   if (run_reaper)
-      qm_reaper();
+	if (run_reaper)
+		qm_reaper();
 #endif
 
-   /*if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
+		/*if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
    {
       scrchange=0;
       for(i=0;i<sct_size;i++)
@@ -1053,28 +1039,25 @@ void QLRun(void)
       }
    } */
 #ifdef VTIME
-   if ((qlttc--)<=0)
-   {
-      qlttc=3750;
-      qltime++;
-   }
-  if ((qitc--)<0)
-   {
-      qitc=3;
-      doPoll=1;
-      /*FrameInt();*/
-      poll_req++;
-      /*dosignal();*/
-   }
+	if ((qlttc--) <= 0) {
+		qlttc = 3750;
+		qltime++;
+	}
+	if ((qitc--) < 0) {
+		qitc = 3;
+		doPoll = 1;
+		/*FrameInt();*/
+		poll_req++;
+		/*dosignal();*/
+	}
 #endif
 
 #ifndef XAW
-   if (!QLdone)
-      goto  exec;
+	if (!QLdone)
+		goto exec;
 
-
-   cleanup(0);
+	cleanup(0);
 #else
-   return 0;
+	return 0;
 #endif
 }

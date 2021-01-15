@@ -8,6 +8,6 @@
 void InitROM(void);
 void EmulatorTable(Ptr);
 
-Cond LookFor(w32 *a,uw32 w,long nMax);
+Cond LookFor(w32 *a, uw32 w, long nMax);
 
 #endif /*_QL_CONFIG_H*/

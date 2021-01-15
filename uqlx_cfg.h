@@ -22,18 +22,19 @@ typedef struct _rominfo {
 } ROMITEM;
 
 typedef struct {
-        char config_file[PATH_MAX+1];
-        char config_file_opt;
+	char config_file[PATH_MAX + 1];
+	char config_file_opt;
 	EMUDEV_t *qdev;
 	long ramtop;
 	char romdir[128];
 	char sysrom[64];
-    char romim[64];
+	char romim[64];
 	char ser1[64];
 	char ser2[64];
 	char ser3[64];
 	char ser4[64];
 	char prtcmd[64];
+	char bootdev[5];
 	short cpu_hog;
 	short fastStartup;
 	short skip_boot;
@@ -45,16 +46,16 @@ typedef struct {
 #define QLUXFILE "~/.sqluxrc"
 #define QLUXFILE_LOC "sqlux.ini"
 
-extern FILE* lopen(const char *s, const char *mode);
-extern char* ExpandName(char*);
+extern FILE *lopen(const char *s, const char *mode);
+extern char *ExpandName(char *);
 
 #include <stddef.h>
 
-typedef void (*PVFV)(void*, void*, ...);
+typedef void (*PVFV)(void *, void *, ...);
 
 typedef union {
 	int mval;
-	void* (*mfun)(QMLIST *, char *);
+	void *(*mfun)(QMLIST *, char *);
 } uxt;
 
 typedef struct {
@@ -71,4 +72,3 @@ typedef struct {
 extern QMDATA QMD;
 
 #endif
-
