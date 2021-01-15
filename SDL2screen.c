@@ -97,7 +97,7 @@ int QLSDLScreen(void)
                                  SDL_WINDOWPOS_CENTERED,
                                  qlscreen.xres * qlscreen.zoom,
                                  qlscreen.yres * qlscreen.zoom,
-                                 sdl_window_mode | SDL_WINDOW_ALLOW_HIGHDPI);
+                                 sdl_window_mode);
 
 	if (ql_window == NULL) {
 		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
