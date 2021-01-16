@@ -40,6 +40,7 @@ QMDATA QMD = {
 	.ser4 = "", /* ser4 */
 	.prtcmd = "lpr", /* print cmd */
 	.bootdev = "mdv1", /* boot device */
+	.bdi1 = "", /* BDI Unit 1 */
 	.cpu_hog = 1, /* CPU hog=true */
 	.fastStartup = 1, /* fastStartup=true */
 	.skip_boot = 1, /* skip_boot=true */
@@ -333,6 +334,7 @@ static PARSELIST pl[] = {
 	{ "STRICT_LOCK", (PVFV)pInt2, offsetof(QMDATA, strict_lock) },
 	{ "NO_PATCH", (PVFV)pInt2, offsetof(QMDATA, no_patch) },
 	{ "BOOT_DEV", (PVFV)pString, offsetof(QMDATA, bootdev), 4 },
+	{ "BDI1", (PVFV)pString, offsetof(QMDATA, bdi1), 63 },
 	{ NULL, NULL },
 };
 

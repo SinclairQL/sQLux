@@ -4,11 +4,14 @@
 
 #ifndef _qm_parse_h
 #define _qm_parse_h
+
+#include <stdio.h>
 #ifdef __APPLE__
 #include <sys/syslimits.h>
 #else
 #include <linux/limits.h>
 #endif
+
 #include "emudisk.h"
 
 typedef struct _qmlist {
@@ -35,6 +38,7 @@ typedef struct {
 	char ser4[64];
 	char prtcmd[64];
 	char bootdev[5];
+	char bdi1[64];
 	short cpu_hog;
 	short fastStartup;
 	short skip_boot;
