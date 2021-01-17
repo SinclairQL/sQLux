@@ -800,8 +800,6 @@ const char *hd_filename[MAX_DISKS] = { "/home/rz/.qldir/IMG1",
 				       "/home/rz/.qldir/IMG2" };
 #endif
 
-#define HAS_CDROM 0
-
 void init_xhw()
 {
 }

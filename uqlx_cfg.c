@@ -165,14 +165,6 @@ void CheckDev(EMUDEV_t *qd, char *d1, char *d2, char *d3)
 					flag_set |=
 						(qd + idev)->Where[ndev - 1] =
 							1;
-				else if (strstr(d3, "ide-emu") != NULL)
-					flag_set |=
-						(qd + idev)->Where[ndev - 1] =
-							4;
-				else if (strstr(d3, "cd-emu") != NULL)
-					flag_set |=
-						(qd + idev)->Where[ndev - 1] =
-							8;
 				else if (strstr(d3, "qdos-like") != NULL)
 					flag_set |=
 						(qd + idev)->Where[ndev - 1] =
