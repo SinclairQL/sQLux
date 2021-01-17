@@ -515,96 +515,105 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 	short onDisk, alloc_fcb, canExist, canCreate, perm, e;
 
 	/*
-   * BEWARE : the logic of this function is so broken that gdb can't
-   * debug it -- adding a few more bizare statements a'la "1==1;"
-   */
+	 * BEWARE : the logic of this function is so broken that gdb can't
+   	 * debug it -- adding a few more bizare statements a'la "1==1;"
+   	 */
 
-	{
-		alloc_fcb = 0;
+	alloc_fcb = 0;
 
-		SET_FILESYS(f, filesys);
+	SET_FILESYS(f, filesys);
 
-		SET_OPEN(f, false);
+	SET_OPEN(f, false);
 
-		drive--;
-		if (qdevs[filesys].Present[drive]) {
+	drive--;
+	if (qdevs[filesys].Present[drive]) {
 #ifdef TRACE_OPEN
-			printf("MDVOpen : name %s namelen %d %s\n",
-			       NAME_REF(f) + 2, RW(NAME_REF(f)),
-			       (key == 4 ? "as directory" : ""));
+		printf("MDVOpen : name %s namelen %d %s\n", NAME_REF(f) + 2,
+		       RW(NAME_REF(f)), (key == 4 ? "as directory" : ""));
 #endif
-			SET_ISDISK(f, onDisk = qdevs[filesys].Where[drive]);
-			SET_DRIVE(f, drive);
+		SET_ISDISK(f, onDisk = qdevs[filesys].Where[drive]);
+		SET_DRIVE(f, drive);
 
-			fcb = (Ptr)malloc(sizeof(struct HF_FCB));
-			alloc_fcb = 1;
-			SET_FCB(f, fcb);
+		/* TK2 opens the device as a file so kludge here */
+		if (!strlen(NAME_REF(f) + 2) && onDisk != 0 && onDisk != 2 &&
+		    key == 1)
+			key = 4;
 
-			SET_KEY(f, key);
-			res = 0;
-			if (key != Q_DIR && !onDisk)
-				FilenameFromQL(NAME_REF(f));
-			if (key >= Q_DIR || key < 0) {
-				if (key == Q_DIR) /* open directory */
-				{
-					SET_ISDIR(f, true);
-					if (onDisk == 0 || onDisk == 2)
-						res = QHOpenDir(f, onDisk);
-					else
-						res = QDiskOpenDir(f);
-					/* printf("OpenDir retval %d\n",res); */
-				} else if (key < 0) /* delete file */
-				{
-					if (onDisk == 0 || onDisk == 2)
-						res = HDelete(mdvVol[drive],
-							      mdvDir[drive],
-							      NAME_REF(f), f,
-							      2);
-					else
-						res = QDiskDelete(f);
-				} else
-					res = -15; /* bad parameter */
-			} else /* open file */
+		fcb = (Ptr)malloc(sizeof(struct HF_FCB));
+		alloc_fcb = 1;
+		SET_FCB(f, fcb);
+
+		SET_KEY(f, key);
+		res = 0;
+		if (key != Q_DIR && !onDisk)
+			FilenameFromQL(NAME_REF(f));
+		if (key >= Q_DIR || key < 0) {
+			if (key == Q_DIR) /* open directory */
 			{
-				canExist = key != Q_IO_NEW;
-				canCreate = key >= Q_IO_NEW;
-				/*printf("open %s key=%d, cancreate: %d\n",NAME_REF(f)+2,key,canCreate);*/
-				if (onDisk == 0 || onDisk == 2) {
-					perm = (key == 1 ? O_RDONLY : O_RDWR) |
+				SET_ISDIR(f, true);
+				if (onDisk == 0 || onDisk == 2)
+					res = QHOpenDir(f, onDisk);
+				else
+					res = QDiskOpenDir(f);
+				/* printf("OpenDir retval %d\n",res); */
+			} else if (key < 0) /* delete file */
+			{
+				if (onDisk == 0 || onDisk == 2)
+					res = HDelete(mdvVol[drive],
+						      mdvDir[drive],
+						      NAME_REF(f), f, 2);
+				else
+					res = QDiskDelete(f);
+			} else
+				res = -15; /* bad parameter */
+		} else /* open file */
+		{
+			canExist = key != Q_IO_NEW;
+			canCreate = key >= Q_IO_NEW;
+			/*printf("open %s key=%d, cancreate: %d\n",NAME_REF(f)+2,key,canCreate);*/
+			if (onDisk == 0 || onDisk == 2) {
+				perm = (key == 1 ? O_RDONLY : O_RDWR) |
+				       (canExist && canCreate ? O_CREAT : 0);
+				e = HOpenDF(mdvVol[drive], mdvDir[drive],
+					    NAME_REF(f), perm, f, 0, onDisk);
+
+				if (e && (key != 2)) {
+					perm = O_RDONLY |
 					       (canExist && canCreate ?
 							      O_CREAT :
 							      0);
 					e = HOpenDF(mdvVol[drive],
 						    mdvDir[drive], NAME_REF(f),
 						    perm, f, 0, onDisk);
+				}
 
-					if (e && (key != 2)) {
-						perm = O_RDONLY |
-						       (canExist && canCreate ?
-								      O_CREAT :
-								      0);
-						e = HOpenDF(mdvVol[drive],
-							    mdvDir[drive],
-							    NAME_REF(f), perm,
-							    f, 0, onDisk);
-					}
-
-					if (e == 0 && !canExist) {
-						res = -8; /* already exists */
-						FSClose(GET_HFILE(f));
-					} else if (e ==
-						   0) /* file succesfully opened */
-						SET_ISDIR(f, false);
+				if (e == 0 && !canExist) {
+					res = -8; /* already exists */
+					FSClose(GET_HFILE(f));
+				} else if (e == 0) /* file succesfully opened */
+					SET_ISDIR(f, false);
+				else {
+					if (e == -49)
+						res = -9; /* in use */
 					else {
-						if (e == -49)
-							res = -9; /* in use */
-						else {
-							res = QERR_NF;
-							if (canCreate) {
-								/*printf("file name %s\n",NAME_REF(f)+2);*/
-								perm = (key == 1 ?
-										      O_RDONLY :
-										      O_RDWR) |
+						res = QERR_NF;
+						if (canCreate) {
+							/*printf("file name %s\n",NAME_REF(f)+2);*/
+							perm = (key == 1 ?
+									      O_RDONLY :
+									      O_RDWR) |
+							       (canExist && canCreate ?
+									      O_CREAT :
+									      0);
+							e = HOpenDF(
+								mdvVol[drive],
+								mdvDir[drive],
+								NAME_REF(f),
+								perm | O_CREAT,
+								f, canCreate,
+								onDisk);
+							if (e && (key != 2)) {
+								perm = O_RDONLY |
 								       (canExist && canCreate ?
 										      O_CREAT :
 										      0);
@@ -613,41 +622,23 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 									mdvDir[drive],
 									NAME_REF(
 										f),
-									perm | O_CREAT,
-									f,
-									canCreate,
+									perm, f,
+									0,
 									onDisk);
-								if (e && (key !=
-									  2)) {
-									perm = O_RDONLY |
-									       (canExist && canCreate ?
-											      O_CREAT :
-											      0);
-									e = HOpenDF(
-										mdvVol[drive],
-										mdvDir[drive],
-										NAME_REF(
-											f),
-										perm,
-										f,
-										0,
-										onDisk);
-								}
-								res = 0;
-								if (e != 0)
-									res = QERR_NF;
 							}
+							res = 0;
+							if (e != 0)
+								res = QERR_NF;
 						}
 					}
-				} else
-					res = QDiskOpen(f, drive, canExist,
-							canCreate);
-			}
-			StopMotor();
-		} else
-			res = QERR_NF;
-		drive++;
-	}
+				}
+			} else
+				res = QDiskOpen(f, drive, canExist, canCreate);
+		}
+		StopMotor();
+	} else
+		res = QERR_NF;
+	drive++;
 
 noBlock:
 	if (res == 0 && GET_KEY(f) >= 0) {
