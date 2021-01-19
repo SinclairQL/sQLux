@@ -455,7 +455,7 @@ void QHDeleteHeader(char *mount, int open_flag, char *path, struct mdvFile *f,
 	deleteheader(mount, name, fstype);
 }
 
-void FillXH(int fd, char *name, struct fileHeader *h, int fstype)
+int FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 {
 	struct fileHeader buf;
 	int nlen = strlen(name);
@@ -465,7 +465,7 @@ void FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 	lseek(fd, 0, SEEK_CUR);
 
 	cmp_fun = (void *)fstype ? strncasecmp : strncmp;
-	while (64 == read(fd, &buf, 64))
+	while (64 == read(fd, &buf, 64)) {
 		if (nlen == RW((Ptr)REF_FNAME(&buf)) &&
 		    !cmp_fun(name, REF_FNAME(&buf) + 2, nlen) &&
 		    RL((Ptr)&buf)) {
@@ -476,10 +476,28 @@ void FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 			found = 1;
 			break;
 		}
+	}
 	if (!found) {
 		/*WW(((Ptr)h)+4, 0);*/
 		WL(((Ptr)h) + 6, 0);
 		WL(((Ptr)h) + 10, 0);
+	}
+
+	return found;
+}
+
+void FillXHXtcc(int fd, struct fileHeader *h)
+{
+	off_t cur_pos;
+	uint8_t buffer[8];
+
+	lseek(fd, -8, SEEK_END);
+	read(fd, buffer, 8);
+
+	if (!strncmp(buffer, "XTcc", 4)) {
+		printf("Found XTcc setting data space 0x%x\n", RL(buffer + 4));
+		WW((Ptr)h + 4, 1);
+		WL(((Ptr)h) + 6, RL(buffer + 4));
 	}
 }
 
@@ -494,9 +512,9 @@ void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
 
 	getpath(dpath, uxname, 4000);
 	if (*dpath)
-		strcat(dpath, "/.-UQLX-");
+		strcat(dpath, "/.sqlux_");
 	else
-		strcpy(dpath, ".-UQLX-");
+		strcpy(dpath, ".sqlux_");
 
 	ff = qopenfile(mount, dpath, O_RDWR | O_CREAT, 0666, 4000);
 	getname(dpath, uxname, 4000);
@@ -560,7 +578,7 @@ void QHFillHeader(struct fileHeader *h, int pof,
 		  /*union {char *pth;int fd;} */ pvf file, char *mount,
 		  struct mdvFile *f, int fstype)
 {
-	int err, i, j, fd;
+	int err, i, j, fd, fd2, found = 0;
 	struct stat buf;
 	char dpath[4200], mp[4200];
 
@@ -600,10 +618,18 @@ void QHFillHeader(struct fileHeader *h, int pof,
 		else
 			strcpy(dpath, ".-UQLX-");
 		fd = qopenfile(mount, dpath, O_RDWR, 0, 4000);
-		if (fd < 0)
-			goto exit;
-		getname(dpath, file.pth, 4000);
-		FillXH(fd, dpath, h, fstype);
+		if (fd >= 0) {
+			getname(dpath, file.pth, 4000);
+			found = FillXH(fd, dpath, h, fstype);
+		}
+
+		if (!found) {
+			fd2 = qopenfile(mount, file.pth, O_RDONLY, 0, 4000);
+			if (fd2 >= 0) {
+				FillXHXtcc(fd2, h);
+				close(fd2);
+			}
+		}
 	} else {
 		if (GET_FILESYS(f) > -1) {
 			strncpy(mp,
@@ -620,10 +646,18 @@ void QHFillHeader(struct fileHeader *h, int pof,
 		else
 			strcpy(dpath, ".-UQLX-");
 		fd = qopenfile(mp, dpath, O_RDWR, 0, 4000);
-		if (fd < 0)
-			goto exit;
-		getname(dpath, GET_FCB(f)->uxname, 4000);
-		FillXH(fd, dpath, h, fstype);
+		if (fd >= 0) {
+			getname(dpath, GET_FCB(f)->uxname, 4000);
+			found = FillXH(fd, dpath, h, fstype);
+		}
+		if (!found) {
+			fd2 = qopenfile(mp, GET_FCB(f)->uxname, O_RDONLY, 0,
+					4000);
+			if (fd2 >= 0) {
+				FillXHXtcc(fd2, h);
+				close(fd2);
+			}
+		}
 	}
 exit:
 	close(fd);
