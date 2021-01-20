@@ -486,9 +486,21 @@ int FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 	return found;
 }
 
+int FillQemulator(int fd, struct fileHeader *h)
+{
+	uint8_t buffer[30];
+
+	lseek(fd, 0, SEEK_SET);
+	read (fd, buffer, 30);
+
+	if(strncmp(buffer, "]!QDOS File Header", 18)) {
+		WW((Ptr)h + 4, RW(buffer));
+		WL(((Ptr)h) + 6, RL(buffer + 2));
+	}
+}
+
 void FillXHXtcc(int fd, struct fileHeader *h)
 {
-	off_t cur_pos;
 	uint8_t buffer[8];
 
 	lseek(fd, -8, SEEK_END);
