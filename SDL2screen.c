@@ -19,6 +19,7 @@ static SDL_Renderer *ql_renderer = NULL;
 static SDL_Texture *ql_texture = NULL;
 static SDL_Rect dest_rect;
 static SDL_DisplayMode sdl_mode;
+static SDL_TimerID fiftyhz_timer;
 const char *sdl_video_driver;
 static char sdl_win_name[128];
 
@@ -64,13 +65,12 @@ static void QLSDLSetDestRect(int w, int h)
 
 int QLSDLScreen(void)
 {
-	SDL_TimerID fiftyhz_timer;
 	uint32_t sdl_window_mode;
 	int i, w, h;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP / 1024);
 
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
 		printf("SDL_Init Error: %s\n", SDL_GetError());
 		exit(-1);
 	}

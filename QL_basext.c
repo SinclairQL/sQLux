@@ -584,9 +584,11 @@ int do_fork()
     /* We are in the child */
     if (pid == 0) {
         QLSDLScreen();
+        QLSDLUpdatePixelBuffer();
         fork_files();
     } else { /* We are in the parent */
       QLSDLScreen();
+      QLSDLUpdatePixelBuffer();
     }
 
     /* resetting the state of the keyboard seems the best */
