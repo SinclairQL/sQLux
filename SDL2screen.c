@@ -22,6 +22,7 @@ static SDL_DisplayMode sdl_mode;
 static SDL_TimerID fiftyhz_timer;
 const char *sdl_video_driver;
 static char sdl_win_name[128];
+static char ql_fullscreen = false;
 
 SDL_atomic_t doPoll;
 SDL_atomic_t screenUpdate;
@@ -282,6 +283,21 @@ void QLSDLRenderScreen(void)
 	SDL_AtomicSet(&screenUpdate, 0);
 }
 
+void SDLQLFullScreen(void)
+{
+	int w, h;
+
+	ql_fullscreen ^= 1;
+
+	if (ql_fullscreen)
+		SDL_RestoreWindow(ql_window);
+	SDL_SetWindowFullscreen(ql_window, ql_fullscreen);
+	if (!ql_fullscreen)
+		SDL_MaximizeWindow(ql_window);
+
+	QLSDLProcessEvents();
+}
+
 /* Store the keys pressed */
 unsigned int sdl_keyrow[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 int sdl_shiftstate, sdl_controlstate, sdl_altstate;
@@ -403,6 +419,10 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	case SDLK_RALT:
 		sdl_altstate = pressed;
 		break;
+	case SDLK_F11:
+		if (pressed)
+			SDLQLFullScreen();
+		return;
 	}
 
 	mod = sdl_altstate | sdl_controlstate << 1 | sdl_shiftstate << 2;
