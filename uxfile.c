@@ -524,9 +524,9 @@ void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
 
 	getpath(dpath, uxname, 4000);
 	if (*dpath)
-		strcat(dpath, "/.sqlux_");
+		strcat(dpath, "/.-UQLX-");
 	else
-		strcpy(dpath, ".sqlux_");
+		strcpy(dpath, ".-UQLX-");
 
 	ff = qopenfile(mount, dpath, O_RDWR | O_CREAT, 0666, 4000);
 	getname(dpath, uxname, 4000);
