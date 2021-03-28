@@ -25,7 +25,7 @@
 #include "unix.h"
 #include "emudisk.h"
 #include "QDOS.h"
-#include "qx_proto.h"
+#include "dummies.h"
 
 #include "SDL2screen.h"
 
@@ -380,6 +380,7 @@ OSErr QFOpenDisk(struct mdvFile *f)
 	perror("could not stat file/device");
 
 
+#ifndef NO_LOCK
       if (QMD.strict_lock)
 	{
 	  xmode=(sbuf.st_mode | S_ISGID) & (~ S_IXGRP );
@@ -387,6 +388,7 @@ OSErr QFOpenDisk(struct mdvFile *f)
 	    if (errno != EROFS)
 	      perror("warning, could not change mode, locking may not be available");
 	}
+#endif
 
       fd=open(qdevs[fs].mountPoints[drnum],O_RDWR);
       if (fd<0 && (errno==EACCES || errno==EROFS))
