@@ -6,11 +6,7 @@
 #define _qm_parse_h
 
 #include <stdio.h>
-#ifdef __APPLE__
-#include <sys/syslimits.h>
-#else
-#include <linux/limits.h>
-#endif
+#include <limits.h>
 
 #include "emudisk.h"
 
