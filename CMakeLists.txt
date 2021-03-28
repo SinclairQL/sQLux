@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.7)
 
 project(sqlux)
 
+message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
+
 set(CMAKE_C_FLAGS "-DLINUX -DUSE_IPC -DQVFS -DUSE_IOSZ -DDO_GRAB -DSERIAL \
         -DNEWSERIAL -DNEWPTY -DSH_MEM -DIPDEV  -DXSCREEN \
         -DUX_WAIT -DHAS_STPCPY -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE")
@@ -12,6 +14,10 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND")
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_LOCK")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
