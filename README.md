@@ -22,6 +22,20 @@ Basic instructions
 
 sQLux not fully buildable on MinGW system yet
 
+Instructions based on debian/ubuntu distro, other distros you will have to modify as appropriate
+
+Download the SDL2 mingw SDK and adapt the following to your environment/version.
+
+    tar xvf SDL2-devel-2.0.14-mingw.tar.gz
+    cd cd SDL2-2.0.14/
+    sed -i "s|/opt/local/|/usr/local/|" x86_64-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
+    sed -i "s|/opt/local/|/usr/local/|" i686-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
+    sudo mkdir /usr/local/i686-w64-mingw32
+    sudo mkdir /usr/local/x86_64-w64-mingw32
+    sudo make cross
+
+Now mingw version of SDL2 is available and we can build sQLux for Win64
+
     mkdir mingw
     cd mingw
     cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
