@@ -17,7 +17,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_LOCK")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_LOCK -DNO_FORK")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -27,8 +27,6 @@ else()
 endif()
 
 find_package(SDL2 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2_NET REQUIRED SDL2_net)
 
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_NET_INCLUDE_DIRS})
 

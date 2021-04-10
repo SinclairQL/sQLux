@@ -21,7 +21,6 @@
 #include "QFilesPriv.h" */
 
 #include "uqlx_cfg.h"
-#include "qx_proto.h"
 
 static short ramItem = -1;
 extern int do_update;
