@@ -13,6 +13,7 @@
 #include <utime.h>
 #include <ctype.h>
 #include <sys/time.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <string.h>
@@ -691,18 +692,17 @@ void ux2qlpath(char *qname, char *uxname)
 }
 
 static int templ_count = 0;
-static char template[100] = "QDOSXXXXXX";
+static char template[100] = TEMPDIR "/QDOSXXXXXX";
 
 int QHOpenDir(struct mdvFile *f, int fstype)
 {
 	FILE *xx;
-	int fd;
+	int fd, res;
 	char *pname;
 	char mname[256];
 	char qlpath[36];
 	char mount[400];
-
-	char templ[200];
+	char templ[100];
 
 	DIR *dirp;
 	struct dirent *dp;
@@ -710,29 +710,19 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 
 	struct stat buf;
 	int fd1, err, qlen, qplen;
-	int res;
 
 	long i, j, mlen;
 
-	if (!strcmp(template, "QDOSXXXXXX")) {
-		res = mkstemp(template);
-		if (res < 0)
-			perror("QHOpenDir mkstemp");
-	}
-
-	snprintf(templ, 200, "%sxx%d", template, templ_count++);
-	fd = open(template, O_RDWR | O_CREAT, 0666);
+	strcpy(templ, template);
+	fd = mkstemp(templ);
 	if (fd < 0) {
-		perror("could not open temporary file for directory operation :");
-		printf("trying to open file %s, you may try to change the TEMPDIR \
-definition in unix.h",
-		       template);
+		perror("QHOpenDir mkstemp");
 		return -7;
 	}
-	//printf("temporary file: %s\n",templ);
-#if 1
-	unlink(template);
-#endif
+	res = unlink(templ);
+	if (res < 0) {
+		perror("QHOpenDir Cannot Unlink");
+	}
 
 	strncpy(mount, qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)], 320);
 
