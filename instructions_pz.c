@@ -197,7 +197,7 @@ void sbcd(void)
 	r2 = d2 - s2;
 	if (xflag)
 		r2--;
-	if (xflag = carry = r2 < 0)
+	if ((xflag = carry = r2 < 0))
 		r2 += 100;
 	zero = zero && r2 == 0;
 	r = (r2 % 10) + ((r2 / 10) << 4);
