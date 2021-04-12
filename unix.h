@@ -16,7 +16,12 @@
 #define PAR_OUT_COMMAND "cat >/dev/lp0" /* PAR output */
 #define PAR_IN_COMMAND "cat /dev/lp0"   /* PAR input */
 
+#ifdef __WIN32__
+#define TEMPDIR "tmp/"
+#else
 #define TEMPDIR "/tmp"
+#endif
+
 #ifndef PATH_MAX 
 #define PATH_MAX 400
 #endif
