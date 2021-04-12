@@ -5,6 +5,8 @@
 
 #include <sys/types.h>
 
+#if defined(SERIAL) || defined(NEWPTY)
+
 Cond SetBaudRate(short);
 void InstallSerial(void);
 void InitSerial(void);
@@ -61,4 +63,5 @@ int readio (serdev_t * sd, char *buf, long *pno, short tc);
 
 #define MAXSERIAL 4
 
-#endif
+#endif  /* defined(SERIAL) || defined(NEWPTY) */
+#endif /* QSERIAL_H */
