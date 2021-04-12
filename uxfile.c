@@ -45,7 +45,7 @@
 
 int match(char *, char *, char *, int, int, int, int);
 
-static char *addpath(char *to, char *name, int maxnlen);
+static void addpath(char *to, char *name, int maxnlen);
 
 int eretry(void)
 {
@@ -183,7 +183,7 @@ char *nseg(char *qpath, char *uxname, char separator, int fstype)
 		return NULL;
 }
 
-static char *addpath(char *to, char *name, int maxnlen)
+void addpath(char *to, char *name, int maxnlen)
 {
 	/*printf("addpath: %s %s \n",to,name);*/
 	if (*to)
@@ -207,7 +207,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp,
 
 	wt = where + strlen(where);
 
-	if (res = memoized(where, name))
+	if ((res = memoized(where, name)))
 		return res;
 	addpath(where, name, maxnlen);
 	if (isdir && (dirp = qopendir(mount, where, maxnlen))) {
@@ -252,7 +252,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp,
 		return 1;
 	}
 
-	while (dp = readdir(dirp)) {
+	while ((dp = readdir(dirp))) {
 		if (!strcmp(dp->d_name, ".-UQLX-"))
 			continue;
 		if (fstype == 2 && (p = nseg(name, dp->d_name, 0x0, fstype))) {
@@ -267,19 +267,19 @@ int match(char *mount, char *where, char *name, int isdir, int createp,
 			} else
 				*wt = 0;
 		}
-		if (p = nseg(name, dp->d_name, '/', fstype)) {
+		if ((p = nseg(name, dp->d_name, '/', fstype))) {
 			addpath(where, dp->d_name, maxnlen);
-			if (res = match(mount, where, p, isdir, createp,
-					maxnlen, fstype)) {
+			if ((res = match(mount, where, p, isdir, createp,
+					maxnlen, fstype))) {
 				closedir(dirp);
 				return memoize(where, dp->d_name);
 			} else
 				*wt = 0;
 		}
-		if (p = nseg(name, dp->d_name, '_', fstype)) {
+		if ((p = nseg(name, dp->d_name, '_', fstype))) {
 			addpath(where, dp->d_name, maxnlen);
-			if (res = match(mount, where, p, isdir, createp,
-					maxnlen, fstype)) {
+			if ((res = match(mount, where, p, isdir, createp,
+					maxnlen, fstype))) {
 				closedir(dirp);
 				return memoize(where, dp->d_name);
 			} else
@@ -322,36 +322,6 @@ int match(char *mount, char *where, char *name, int isdir, int createp,
 	return 0;
 }
 
-/* utility fn for use by pty.c */
-/* allocate and convert name   */
-char *ql2uxname(char *name)
-{
-	char *res, p, where_dev, c;
-	int i, j, dr;
-#if 0
-  for (i=0;i<=MAXDEV;i++)
-    {
-      j=strlen(qdevs[i].name);
-      if (strncasecmp(qdevs[i].name,name,j)) continue;
-      dr=name[j];
-      if (dr<1 || dr>8)
-	{
-	  printf("illegal drive number: %s\n",name);
-	  return NULL;
-	}
-      break
-    }
-  if (i>MAXDEV)
-    {
-      printf("sorry, no such device: %s\n",name);
-      return NULL;
-    }
-  where_dev=qdevs[i].mountPoints[dr-1]
-  p=res=malloc(strlen(name)+400);
-  match(p,where_dev,name,isdir0-1,createp0-1);
-#endif /* 0 */
-}
-
 int HCreate(struct mdvFile *f, unsigned char *name, unsigned char *s1,
 	    unsigned char *s2, int fstype)
 {
@@ -361,7 +331,7 @@ int HCreate(struct mdvFile *f, unsigned char *name, unsigned char *s1,
 	strncpy(mount, qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)], 320);
 
 	/*printf("calling HCreate\n");*/
-	err = uxLookupFile(mount, name, f, mname, 0, fstype);
+	err = uxLookupFile(mount, (char *)name, f, mname, 0, fstype);
 	if (!err)
 		return -7;
 
@@ -490,7 +460,7 @@ int FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 	return found;
 }
 
-int FillQemulator(int fd, struct fileHeader *h)
+void FillQemulator(int fd, struct fileHeader *h)
 {
 	uint8_t buffer[30];
 	ssize_t res;
@@ -498,7 +468,7 @@ int FillQemulator(int fd, struct fileHeader *h)
 	lseek(fd, 0, SEEK_SET);
 	res = read (fd, buffer, 30);
 
-	if(strncmp(buffer, "]!QDOS File Header", 18)) {
+	if(strncmp((char *)buffer, "]!QDOS File Header", 18)) {
 		WW((Ptr)h + 4, RW(buffer));
 		WL(((Ptr)h) + 6, RL(buffer + 2));
 	}
@@ -512,7 +482,7 @@ void FillXHXtcc(int fd, struct fileHeader *h)
 	lseek(fd, -8, SEEK_END);
 	res = read(fd, buffer, 8);
 
-	if (!strncmp(buffer, "XTcc", 4)) {
+	if (!strncmp((char *)buffer, "XTcc", 4)) {
 		printf("Found XTcc setting data space 0x%x\n", RL(buffer + 4));
 		WW((Ptr)h + 4, 1);
 		WL(((Ptr)h) + 6, RL(buffer + 4));
@@ -686,7 +656,7 @@ void ux2qlpath(char *qname, char *uxname)
 {
 	char c;
 
-	while (c = *qname++ = *uxname++)
+	while ((c = *qname++ = *uxname++))
 		if (c == '/')
 			qname[-1] = '_';
 }
@@ -821,7 +791,7 @@ int HOpenDF(int drive, long dir, unsigned char *name, long perm,
 
 	/*printf("calling HOpenDF %s, perm %d\n",name+2,perm);*/
 	strncpy(mount, qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)], 320);
-	err = uxLookupFile(mount, name, f, mname, canCreate, fstype);
+	err = uxLookupFile(mount, (char *)name, f, mname, canCreate, fstype);
 	strncpy(GET_FCB(f)->uxname, mname, 256);
 	/*printf("HOpenDF name lookup ->%s, %s found, res %d\n",mname,(err?"":"not"),err);*/
 
@@ -843,7 +813,7 @@ int HDelete(int drive, int dir, unsigned char *name, struct mdvFile *f,
 	int err;
 
 	strncpy(mount, qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)], 320);
-	err = uxLookupFile(mount, name, f, mname, 0, fstype);
+	err = uxLookupFile(mount, (char *)name, f, mname, 0, fstype);
 
 	if (!err)
 		return -7;
@@ -913,7 +883,7 @@ int QHread(int fd, w32 *addr, long *count, Cond lf)
 						goto ret;
 					}
 				}
-				if (i = memchr(p, 10, sz))
+				if ((i = memchr(p, 10, sz)))
 					break;
 			}
 			if (i)
@@ -1045,6 +1015,8 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 	rename_error:
 		return res;
 	}
+
+	return res;
 }
 
 extern int rename_single(struct mdvFile *, char *, char *, char *, int);
@@ -1074,7 +1046,7 @@ int rename_all_files(struct mdvFile *f, char *fsmount, char *uxname)
 		lastseg = temp;
 	uxlen = strlen(lastseg);
 
-	while (dp = readdir(dirp)) {
+	while ((dp = readdir(dirp))) {
 		if (!strcmp(dp->d_name, ".-UQLX-") ||
 		    !strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
