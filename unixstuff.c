@@ -11,6 +11,10 @@
 /*      NOTE: Not tested on Linux/68k                                                           */
 /************************************************************************************************/
 
+#ifdef __WIN32__
+#define __USE_MINGW_ALARM
+#endif
+
 #include "QL68000.h"
 
 #include <sys/types.h>
@@ -31,6 +35,7 @@
 
 #include "unix.h"
 #include "boot.h"
+#include "dummies.h"
 #include "iexl_general.h"
 #include "QDisk.h"
 #include "QL_cconv.h"
