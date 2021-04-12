@@ -50,7 +50,7 @@ void QLchunk(w16 *oldPC,long n)       /* execute n emulated 68K istructions */
   savePOLLM=ReadWord(0x28030);
   WriteWord(0x28030,0);
   
-  if((long)pc&1) return;
+  if((uintptr_t)pc&1) return;
 
   /*extraFlag=false;*/
   /*ProcessInterrupts();*/
