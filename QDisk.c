@@ -29,6 +29,7 @@
 
 #include "SDL2screen.h"
 
+#include "unixstuff.h"
 #include "uqlx_cfg.h"
 
 #define MIN(x,y) ((x)<(y)?(x) : (y))
@@ -295,15 +296,15 @@ static OSErr LoadSector0(void)
     {
 
 
-      if ( QDH_ID(buffer)!='QL' )
+      if ( QDH_ID(buffer)!=(('Q' << 8) | 'L'))
 	return QERR_NI;
       switch(QDH_VER(buffer))
 	{
-	case 'WA' : curr_flpfcb->DiskType=qlwa;
+	case ('W' << 8) | 'A' : curr_flpfcb->DiskType=qlwa;
 	  break;
-	case '5A' : curr_flpfcb->DiskType=floppyDD;
+	case ('5' << 8) | 'A' : curr_flpfcb->DiskType=floppyDD;
 	  break;
-	case '5B' : curr_flpfcb->DiskType=floppyHD;
+	case ('5' << 8) | 'B' : curr_flpfcb->DiskType=floppyHD;
 	  break;
 	default : return QERR_NI;
 	}
@@ -782,7 +783,7 @@ static int QLWA_GetFileSectNum(FileNum fileNum, int sector)
       p=(uw16*)(curr_flpfcb->buffer+0x40)+(uw16)RW(p);
     }
   if (g==group)
-    return ((int)((int)p-(int)(curr_flpfcb->buffer+0x40)))/2*QWA_SPC(curr_flpfcb->qdh)+sr;
+    return ((int)((uintptr_t)p-(uintptr_t)(curr_flpfcb->buffer+0x40)))/2*QWA_SPC(curr_flpfcb->qdh)+sr;
 
   gError=ERR_NO_FILE_BLOCK;
   return -1;

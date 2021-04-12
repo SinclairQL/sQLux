@@ -82,7 +82,8 @@
 #include "QSerial.h"
 #endif
 
-#include "qx_proto.h"
+#include "QLserio.h"
+#include "unixstuff.h"
 
 #if !defined(NFILES)
 #define NFILES	64	/* take a wild guess */
@@ -252,7 +253,7 @@ void pty_close(int id,void *priv)
 
 static void fork_process(FakeTerm w)
 {
-     int i;
+     int i, res;
      sigset_t mask,omask;
  
      /* Make sure we don't get the signal just yet - do it the BSD way,
@@ -303,8 +304,8 @@ static void fork_process(FakeTerm w)
 	   * This should also take care of the controlling TTY. I hope.
 	   */
           fd = open(w->tname, O_RDWR, 0);		/* 0 */
-          dup(fd);					/* 1 */
-          dup(fd);					/* 2 */
+          res = dup(fd);				/* 1 */
+          res = dup(fd);				/* 2 */
 #if 0
 	  fprintf(stderr,"opened tty: %s, result %d\n",w->tname,fd);
 #endif
@@ -325,8 +326,8 @@ static void fork_process(FakeTerm w)
 #endif
 
 	  /* since we may be setuid root (for utmp), be safe */
-	  setuid(w->uid);
-	  setgid(w->gid);
+	  res = setuid(w->uid);
+	  res = setgid(w->gid);
 
 	  argp = w->command_args ;
 

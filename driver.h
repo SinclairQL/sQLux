@@ -56,7 +56,7 @@ struct NAME_PARS
 {
   char * name;
   int pcount;
-  struct PARENTRY **pars;
+  struct PARENTRY *pars;
 };
  
 

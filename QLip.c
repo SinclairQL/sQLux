@@ -1,6 +1,6 @@
 /*********************************************************************
  * QLIP (c) 1998 Jonathan Hudson & Richard Zidlicky
- * 
+ *
  * This code is part of the uqlx QDOS emulator for Unix
  *
  * This file is outside the uqlx copyright and may be freely copied,
@@ -22,14 +22,19 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/time.h>
+#ifdef __WIN32__
+#include <winsock2.h>
+#else
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
+#endif
 #include <SDL_endian.h>
 
+#include "QL_driver.h"
 #include "QSerial.h"
 #include "QDOS.h"
 #include "driver.h"
@@ -39,7 +44,6 @@
 #include "iptraps.h"
 #include "QLip.h"
 #include "xc68.h"
-#include "qx_proto.h"
 
 /* some (many?) OS's don't know this yet ...*/
 #ifdef SOLARIS
@@ -289,12 +293,13 @@ static int ip_write(ipdev_t *sd, void *buf, int pno)
 void net_convert(struct netent *h1, struct netent *h2)
 {
 	int i, m, n;
-	char *h, *hql;
+	char *h;
+	w32 hql;
 
 	h = (char *)h2 + sizeof(struct netent);
-	hql = h - (int)theROM;
+	hql = (uintptr_t)h - (uintptr_t)theROM;
 #if 1 /*def O3BUG    */
-	WL((w32 *)&h2->n_name, (w32)hql);
+	WL((w32 *)&h2->n_name, hql);
 #else
 	h2->n_name = (char *)htonl((int)hql);
 #endif
@@ -306,7 +311,8 @@ void net_convert(struct netent *h1, struct netent *h2)
 	hql = hql + m;
 
 	{
-		char **q, *s, *sql;
+		char **q, *s;
+		w32 sql;
 		int l;
 
 		s = h;
@@ -327,7 +333,7 @@ void net_convert(struct netent *h1, struct netent *h2)
 #endif
 		for (q = h1->n_aliases; *q; q++) {
 #if 1 /*def O3BUG*/
-			WL((w32 *)s, (w32)hql);
+			WL((w32 *)s, hql);
 #else
 			*(char **)s = (char *)htonl((int)hql);
 #endif
@@ -345,12 +351,13 @@ void net_convert(struct netent *h1, struct netent *h2)
 void proto_convert(struct protoent *h1, struct protoent *h2)
 {
 	int i, m, n;
-	char *h, *hql;
+	char *h;
+	w32 hql;
 
 	h = (char *)h2 + sizeof(struct protoent);
-	hql = h - (int)theROM;
+	hql = (uintptr_t)h - (uintptr_t)theROM;
 #if 1 /*def O3BUG */
-	WL((w32 *)&h2->p_name, (w32)hql);
+	WL((w32 *)&h2->p_name, hql);
 #else
 	h2->p_name = (char *)htonl((int)hql);
 #endif
@@ -361,7 +368,8 @@ void proto_convert(struct protoent *h1, struct protoent *h2)
 	hql = hql + m;
 
 	{
-		char **q, *s, *sql;
+		char **q, *s;
+		w32 sql;
 		int l;
 
 		s = h;
@@ -376,13 +384,13 @@ void proto_convert(struct protoent *h1, struct protoent *h2)
 		sql = hql + l;
 		s = h + l;
 #if 1 /*def O3BUG */
-		WL((w32 *)&h2->p_aliases, (w32)sql);
+		WL((w32 *)&h2->p_aliases, sql);
 #else
 		h2->p_aliases = (void *)htonl((int)sql);
 #endif
 		for (q = h1->p_aliases; *q; q++) {
 #if 1 /*def O3BUG */
-			WL((w32 *)s, (w32)hql);
+			WL((w32 *)s, hql);
 #else
 			*(char **)s = (char *)htonl((int)hql);
 #endif
@@ -398,10 +406,11 @@ void proto_convert(struct protoent *h1, struct protoent *h2)
 void serv_convert(struct servent *h1, struct servent *h2)
 {
 	int i, m, n;
-	char *h, *hql;
+	char *h;
+	w32 hql;
 
 	h = (char *)h2 + sizeof(struct servent);
-	hql = h - (int)theROM;
+	hql = (uintptr_t)h - (uintptr_t)theROM;
 #if 1 /*def O3BUG */
 	WL((w32 *)&h2->s_name, (w32)hql);
 #else
@@ -425,7 +434,8 @@ void serv_convert(struct servent *h1, struct servent *h2)
 	hql = hql + m;
 
 	{
-		char **q, *s, *sql;
+		char **q, *s;
+		w32 sql;
 		int l;
 
 		s = h;
@@ -446,7 +456,7 @@ void serv_convert(struct servent *h1, struct servent *h2)
 #endif
 		for (q = h1->s_aliases; *q; q++) {
 #if 1 /*def O3BUG */
-			WL((w32 *)s, (w32)hql);
+			WL((w32 *)s, hql);
 #else
 			*(char **)s = (char *)htonl((int)hql);
 #endif
@@ -463,13 +473,14 @@ void serv_convert(struct servent *h1, struct servent *h2)
 void host_convert(struct hostent *h1, struct hostent *h2)
 {
 	int i, m, n;
-	char *h, *hql;
+	char *h;
+	w32 hql;
 	int tmp;
 
 	h = (char *)h2 + sizeof(struct hostent); /* start of free space */
-	hql = h - (int)theROM; /* address in QDOS */
+	hql = (uintptr_t)h - (uintptr_t)theROM; /* address in QDOS */
 #if 1 /* def O3BUG */
-	WL((w32 *)&h2->h_name, (w32)hql); /* set address for name */
+	WL((w32 *)&h2->h_name, hql); /* set address for name */
 #else
 	h2->h_name = (char *)htonl((int)hql);
 #endif
@@ -479,7 +490,7 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 	h = h + m; /* next free */
 	hql = hql + m; /* next free in QDOS speak */
 #if 1 /* def O3BUG */
-	WL((w32 *)&h2->h_addr_list, (w32)hql); /* set addr list for QDOS */
+	WL((w32 *)&h2->h_addr_list, hql); /* set addr list for QDOS */
 #else
 	h2->h_addr_list = (void *)htonl((int)hql);
 #endif
@@ -493,7 +504,7 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 		memcpy(&x, h1->h_addr_list[i],
 		       sizeof(int)); /* ip in net format */
 #if 1 /*def O3BUG */
-		WL((w32 *)h, (w32)(hql + n * sizeof(int))); /* set up address */
+		WL((w32 *)h, hql + n * sizeof(int)); /* set up address */
 #else
 		*(char **)h = (void *)htonl((int)hql + n * sizeof(int));
 #endif
@@ -511,7 +522,8 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 	hql += n * sizeof(int);
 
 	{
-		char **q, *s, *sql;
+		char **q, *s; 
+		w32 sql;
 		int l;
 
 		s = h;
@@ -526,13 +538,13 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 		sql = hql + l;
 		s = h + l;
 #if 1 /* def O3BUG */
-		WL((w32 *)&h2->h_aliases, (w32)sql);
+		WL((w32 *)&h2->h_aliases, sql);
 #else
 		h2->h_aliases = (void *)htonl((int)sql);
 #endif
 		for (q = h1->h_aliases; *q; q++) {
 #if 1 /* def O3BUG */
-			WL((w32 *)s, (w32)hql);
+			WL((w32 *)s, hql);
 #else
 			*(char **)s = (void *)htonl((int)hql);
 #endif
@@ -889,11 +901,13 @@ static int ip_inet_ntoa(struct in_addr *in, char *a)
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_inet_makeaddr(int net, int host, struct in_addr *in)
 {
 	*in = inet_makeaddr(net, host);
 	return 0;
 }
+#endif
 
 static int ip_inet_lnaof(struct in_addr *in, unsigned long int *u)
 {
@@ -928,7 +942,7 @@ static int ip_recvlf (ipdev_t *p, void *buf, long blen)
     int n,qerr,res = 0;
     char *c = buf;
     short done = 0;
-    
+
     for(done = 0 ;!done;)
     {
         n = recv(p->sock, c, 1, 0);
@@ -949,7 +963,7 @@ static int ip_recvlf (ipdev_t *p, void *buf, long blen)
         }
     }
 
-    
+
     QERRNO(qerr,res);
     return qerr;
 }
@@ -1132,7 +1146,7 @@ void ip_io(int id, void *p)
 	int op = (w8)reg[0];
 	int res, count, flag = 0;
 	struct sockaddr *sa = NULL;
-	w32 *params;
+	w32 params;
 	w32 qaddr;
 	socklen_t len;
 
@@ -1255,9 +1269,11 @@ void ip_io(int id, void *p)
 		*reg = ip_inet_ntoa((Ptr)theROM + aReg[1],
 				    (Ptr)theROM + aReg[2]);
 		break;
+#ifdef __WIN32__
 	case IP_INET_MAKEADDR:
 		*reg = ip_inet_makeaddr(reg[1], reg[2], (Ptr)theROM + aReg[2]);
 		break;
+#endif
 	case IP_INET_LNAOF:
 		*reg = ip_inet_lnaof((Ptr)theROM + aReg[1],
 				     (unsigned long *)&res);
@@ -1303,9 +1319,9 @@ void ip_io(int id, void *p)
 			*reg = res;
 		break;
 	case IP_SENDTO:
-		params = (long *)aReg[2];
-		len = ReadLong((w32)(params + 1));
-		sa = setsockaddr(priv, ReadLong((w32)params));
+		params = aReg[2];
+		len = ReadLong(params + 4);
+		sa = setsockaddr(priv, ReadLong(params));
 		*reg = ip_send(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
 			       len);
 		resetsockaddr(priv, sa);
@@ -1328,8 +1344,8 @@ void ip_io(int id, void *p)
 			*reg = res;
 		break;
 #if 0
-    case 2: /* io.fline */ 
-            count &= 0xffff;            
+    case 2: /* io.fline */
+            count &= 0xffff;
             qaddr = aReg[1];
             res = ip_recvlf(priv, (Ptr)theROM+aReg[1], count);
             if(res >= 0)
@@ -1342,9 +1358,9 @@ void ip_io(int id, void *p)
             break;
 #endif
 	case IP_RECVFM:
-		params = (long *)aReg[2];
-		len = ReadLong((w32)(params + 1));
-		sa = setsockaddr(priv, ReadLong((w32)params));
+		params = aReg[2];
+		len = ReadLong(params + 4);
+		sa = setsockaddr(priv, ReadLong(params));
 		*reg = ip_recv(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
 			       &len);
 		resetsockaddr(priv, sa);

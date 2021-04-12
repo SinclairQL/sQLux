@@ -5,11 +5,16 @@
 #include "QL68000.h"
 #include "QL.h"
 #include <stdio.h>
+#include "iexl_general.h"
 #include "xcodes.h"
 #include "QDOS.h"
+#include "QL_basext.h"
 #include "QL_config.h"
+#include "QL_driver.h"
+#include "QL_poll.h"
 #include "QL_screen.h"
 #include "unix.h"
+#include "unixstuff.h"
 
 /*#include "QTimer.h"
 #include "QColor.h"
@@ -17,10 +22,12 @@
 #include "QDisk.h"
 #include "QSerial.h" */
 #include <string.h>
-/*#include "ConfigDialog.h"
-#include "QFilesPriv.h" */
+/*#include "ConfigDialog.h"*/
+#include "QFilesPriv.h"
 
 #include "uqlx_cfg.h"
+#include "xqlmouse.h"
+#include "Xscreen.h"
 
 static short ramItem = -1;
 extern int do_update;
@@ -116,21 +123,6 @@ static Cond InstallQemlRom(void)
 			   MDVSL_CMD_CODE);
 			WW(((uw16 *)((Ptr)theROM + MDVFO_CMD_ADDR)),
 			   MDVFO_CMD_CODE);
-#ifdef SERIAL
-#ifndef NEWSERIAL
-			if (isMinerva) {
-				printf("sorry, old style SER driver won't work\n");
-				return qemlPatch;
-			} else {
-				WW(((uw16 *)((Ptr)theROM + 0xbb6l)),
-				   OSERIO_CMD_CODE); /* I/O */
-				WW(((uw16 *)((Ptr)theROM + 0xad0l)),
-				   OSERO_CMD_CODE); /* Open */
-				WW(((uw16 *)((Ptr)theROM + 0xb8el)),
-				   OSERC_CMD_CODE); /* Close */
-			}
-#endif
-#endif
 		}
 	}
 	return qemlPatch;

@@ -14,7 +14,6 @@ screen_specs qlscreen =
    128, 
    256, 
    512,
-   2
 };
 
 struct SCREENDEF
@@ -51,7 +50,7 @@ void QLPatchPTRENV(void)
 
 	        return;
 	    } else {
-	        scrdef_search = (void *)scrdef_search + 2;
+	        scrdef_search = scrdef_search + 2;
         }
     }
 

@@ -7,7 +7,6 @@
 #include "QL68000.h"
 #include "memaccess.h"
 #include "general.h"
-#include "qx_proto.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
 

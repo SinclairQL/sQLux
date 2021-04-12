@@ -10,24 +10,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-#include <sys/times.h>
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "instructions.h"
 #include "xcodes.h"
 #include "QL.h"
 #include "QDOS.h"
 
 #include "QInstAddr.h"
+#include "QL_config.h"
 #include "unix.h"
 #include "uqlx_cfg.h"
-#include "qx_proto.h"
 
 #include "unixstuff.h"
 
 #include "util.h"
-#include "xipc.h"
  
 /*extern int schedCount;*/
 extern int inside;
@@ -96,43 +95,6 @@ void do_hotactn()
   hotch[0]=ReadByte(ptrscrdrv+0x8d-0x18);
   hotch[1]=ReadByte(ptrscrdrv+0x8e -0x18);
   hotch[2]=194;
-
-  insert_keyQ(3,hotch);
-}
-
-void paste_into_keyq()
-{
-  uw32 saveA3;
-
-  do {
-    if (!paste_bl) return;
-
-    saveA3=aReg[3];
-    aReg[2]=ReadLong(0x2804c);	/* :HIER: abs. sysref raus *//* kann auch null oder -ve werden, wert+aktion dann verwerfen! */
-    if (aReg[2]<=0) return;
-
-    QLvector(0xde,2000000l);
-    /*printf("queue: free %d, empty %s\n",reg[2],(w32)reg[0]==QERR_NC ? "yes":"no");*/
-    if (reg[2]<1)
-      {
-	return;
-      }
-    
-    reg[1]=*(paste_bl->p++); /* get char */
-    if (paste_bl->p-paste_bl->text>=paste_bl->size)
-      {
-	struct paste_buf *p;
-
-	/*printf("free paste block %x, next %x\n",paste_bl,paste_bl->next);*/
-	p=paste_bl->next;
-	free(paste_bl);
-	paste_bl=p;
-      }
-      
-    QLvector(0xe0,2000000l);
-  }while(reg[0]==0);
-
-  aReg[3]=saveA3;
 }
 
 w32 getSCRdriver()
@@ -272,8 +234,6 @@ void MouseTask()
 	  HasPTR=1;
 	}
     }
-
-  paste_into_keyq();
 
   if (HasPTR && !QLdone)
     {

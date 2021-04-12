@@ -6,6 +6,7 @@
 
 /* some miscelaneous utility fucntions */
 
+#if defined(QVFS) || defined(IPDEV) || defined(QSERIAL)
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
@@ -26,8 +27,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #endif
-#include <sys/ioctl.h>
-
+#include <sys/select.h>
 
 #include "QSerial.h"
 #include "QDOS.h"
@@ -36,7 +36,7 @@
 #include "util.h"
 
 
-int check_pend(int fd,int mode) 
+int check_pend(int fd,int mode)
 {
   struct timeval tv;
   fd_set wfd,errfd,rfd,*xx;
@@ -53,24 +53,26 @@ int check_pend(int fd,int mode)
     case SLC_ERR: xx=&errfd;
       break;
     default : printf("wrong mode for check_pend: %d\n",mode);
-      return 0;     
+      return 0;
     }
-  
+
   tv.tv_sec=0;
   tv.tv_usec=0;
-  
+
   FD_ZERO(&wfd);
   FD_ZERO(&errfd);
   FD_ZERO(&rfd);
   /*FD_ZERO(&xfd);*/
 
   FD_SET(fd,xx);
-  
+
 
   res=select(fd+1,&rfd,&wfd,&errfd,&tv);
   /*printf("select returns %d, rfds %d wfds %d, errfds %d\n",res,rfd,wfd,errfd);*/
-  
+
   if (res<0) return 0;
   /*return FD_ISSET(fd,xx);*/
   return (res>0);
 }
+
+#endif /* defined(QVFS) || defined(IPDEV) || defined(QSERIAL) */

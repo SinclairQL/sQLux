@@ -11,8 +11,9 @@
 #include "QSound.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
-#include "qx_proto.h"
 #include "SDL2screen.h"
+#include "qmtrap.h"
+#include "unixstuff.h"
 
 #define ALT 1
 #define SHIFT 4
@@ -156,7 +157,7 @@ void ReadIPC(void)		/* ROM patch: reading from IPC */
 	    {
 	      asciiChar=IPCR_ascii[IPCR_p];
 	      /*printf("ReadIPC: asciiChar %d\n",asciiChar);*/
-	      
+
 	      reg[1]=IPCR_buff[IPCR_p++];
 	      IPCR_n--;
 	    }
@@ -206,7 +207,7 @@ void DoIPCCommand(uw8 IPC_com)
 			/*printf("ascii : %c code: %x ascii: %c code: %x\n",
        IPCR_ascii[IPCR_n-2],IPCR_buff[IPCR_n-1],
        IPCR_ascii[IPCR_n-1],IPCR_buff[IPCR_n]); */
-			
+
 			if(charHead>=CHAR_BUFF_LEN) charHead=0;
 		}
 		break;
@@ -222,7 +223,7 @@ void DoIPCCommand(uw8 IPC_com)
 void WriteIPC(void)		/* ROM patch: writing to IPC */
 {
   /*printf("write IPC\n");*/
-  
+
   if((Ptr)gPC-(Ptr)theROM-2==IPCW_CMD_ADDR)
     {
       rts();
@@ -252,11 +253,11 @@ void queueKey(short m,short code,uw16 asciiChar)
   if(m&SHIFT) code|=4;
   if(m&CTRL) code|=2;
   if(m&ALT) code|=1;
-  
+
     charAscii[charTail]=asciiChar;
     /*printf("queued char: %d\n",charAscii[charTail]);*/
     charBuff[charTail++][0]=code;
-    
+
     if(charTail>=CHAR_BUFF_LEN) charTail=0;
 }
 
@@ -295,7 +296,7 @@ void KbdCmd(void)   /* do IPC command */
       *((char*)reg+4+RBO)=KeyRow(ReadByte(aReg[3]+3));
       WriteLong(aReg[7],ReadLong(aReg[7])+2);
     }
-  
+
   /*printf("returning d1=%x\n",reg[1]);*/
   rts();
 }
@@ -305,19 +306,19 @@ int MButtonDown=0;
 void MReadKbd()
 {
   int ccode,mod;
-  
+
   while(qCharLen())
     {
       asciiChar=charAscii[charHead];
       ccode=charBuff[charHead][1];
       mod=charBuff[charHead++][0];
-      
+
       if (charHead>=CHAR_BUFF_LEN) charHead=0;
       /*printf("char %c %d\t ccode %d\n",asciiChar,asciiChar,ccode);*/
 
       reg[1]=ccode;
       reg[2]=mod;
-      
+
 
       aReg[2]=ReadLong(0x2804c);
       /* printf("calling subr %d\n",((w16)(uw16)ReadWord(0x150))+0x4000);*/
@@ -329,17 +330,17 @@ void MReadKbd()
     {
       aReg[2]=ReadLong(0x2804c);
       reg[5]=-1;/*(gKeyDown!=0)<<4;*/
-      
+
       QLsubr(ReadWord(0x152)+0x4000,2000000);
     }
-} 
+}
 
 #if 0
-void MEndRep() 
+void MEndRep()
 {
       aReg[2]=ReadLong(0x2804c);
       reg[5]=0;/*(gKeyDown!=0)<<4;*/
-      
+
       QLsubr(ReadWord(0x152)+0x4000,2000000);
 }
 #endif
@@ -351,7 +352,7 @@ void KBencCmd()
   if (asciiChar)
     {
       reg[1]=asciiChar;
-      
+
       WriteLong(aReg[7],ReadLong(aReg[7])+2);
       rts();
     }

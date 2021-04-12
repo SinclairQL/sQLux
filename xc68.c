@@ -2,6 +2,8 @@
 
 /* fucntions to translate C68 to/from HOST constants and options */
 
+#ifdef IPDEV
+
 #include "xc68.h"
 #include <errno.h>
 #include <stdio.h>
@@ -59,7 +61,7 @@ char *protoname(int proto)
     case  C68_IPPROTO_RAW  : return " raw IP packet ";
   default : return "unknown protocol";
   }
-  
+
 }
 
 
@@ -67,17 +69,18 @@ char *protoname(int proto)
 void xso_q2x(int level,int optname, void* optval,int len)
 {
   char *proto;
-  
+
   proto=protoname(level);
-  
+
   printf("xso_q2x: proto %d %s, optname %d\n",level,proto,optname);
 }
 void xso_x2q(int level,int optname, void* optval,int len)
 {
   char *proto;
-  
+
   proto=protoname(level);
-  
+
   printf("xso_q2x: proto %d %s, optname %d\n",level,proto,optname);
 }
 
+#endif /* IPDEV */

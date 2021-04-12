@@ -10,6 +10,8 @@
 
 /* currently this IS NOT HPR's QVFS*/
 
+#ifdef QVFS
+
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
@@ -252,4 +254,4 @@ void qvf_io(int id, void *priv)
   
 }
 
-
+#endif /* QVFS */

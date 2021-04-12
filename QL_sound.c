@@ -9,11 +9,11 @@
 #include <linux/soundcard.h>
 
 #include "QL68000.h"
-#include "qx_proto.h"
+#include "QL_driver.h"
 #include "util.h"
 #include "driver.h"
 #include "QL_sound.h"
-
+#include "unixstuff.h"
 
 // FLUSH: sync (start playing)
 // FS.HEADR get parameters
@@ -156,7 +156,7 @@ static int do_open(int ix,void **p)
 int sound_test(int id,char *name)
 {
   //printf ("sound: %s\n",name+2);
-  return decode_name(name,Drivers[id].namep,&sound_par);
+  return decode_name(name,Drivers[id].namep,(open_arg *)&sound_par);
 }
 
 int sound_pend(struct sound_data *p)
@@ -328,7 +328,7 @@ static void heads(struct sound_data *p)
 
 static void sound_done(pid_t pid, int id)
 {
-  struct sound_data *p=(void*)id;
+  struct sound_data *p=(void*)(uintptr_t)id;
   
   //printf("sound done, id %x\n",id);
   // p==NULL is invalid for closed channels

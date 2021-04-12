@@ -189,4 +189,7 @@
 #define C68_MSG_CTRUNC      0x20            /* control data lost before delivery */
 #define C68_MSG_WAITALL     0x40            /* wait for full request or error */
 
+int c68err(int err);
+void xso_q2x(int level,int optname, void* optval,int len);
+void xso_x2q(int level,int optname, void* optval,int len);
 

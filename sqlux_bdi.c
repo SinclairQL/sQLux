@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -82,6 +83,8 @@ uint8_t SQLUXBDIStatus()
 
 uint8_t SQLUXBDIDataRead()
 {
+	ssize_t res;
+
 	if (!bdi_files[bdi_unit - 1]) {
 		bdi_debug("BDI: ERROR File Not Open\n");
 		return 0;
@@ -89,7 +92,9 @@ uint8_t SQLUXBDIDataRead()
 	if (bdi_ctr == 0) {
 		bdi_debug("BDI: seeking to 0x%8x\n", bdi_address * 512);
 		lseek(bdi_files[bdi_unit - 1], bdi_address * 512, SEEK_SET);
-		read(bdi_files[bdi_unit - 1], bdi_buffer, 512);
+		res = read(bdi_files[bdi_unit - 1], bdi_buffer, 512);
+		if (res < 0)
+			perror("BDI Read\n");
 	}
 
 	bdi_debug("BDI: Read %d\n", bdi_ctr);
@@ -102,6 +107,8 @@ uint8_t SQLUXBDIDataRead()
 
 void SQLUXBDIDataWrite(uint8_t d)
 {
+	ssize_t res;
+
 	if (!bdi_files[bdi_unit - 1]) {
 		bdi_debug("BDI: ERROR File Not Open\n");
 		return;
@@ -117,8 +124,12 @@ void SQLUXBDIDataWrite(uint8_t d)
 		bdi_buffer[bdi_ctr++] = d;
 
 	if (bdi_ctr == 512) {
-		write(bdi_files[bdi_unit - 1], bdi_buffer, 512);
+		 res = write(bdi_files[bdi_unit - 1], bdi_buffer, 512);
+		 if (res < 0 )
+			 perror("BDI Write\n");
+#ifndef __WIN32__
 		fsync(bdi_files[bdi_unit - 1]);
+#endif
 	}
 }
 

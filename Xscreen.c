@@ -15,18 +15,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "xcodes.h"
 
 #include "driver.h"
 #include "QDOS.h"
 
+#include "instructions.h"
 #include "QInstAddr.h"
+#include "qmtrap.h"
 #include "unix.h"
 #include "uqlx_cfg.h"
-#include "script.h"
-#include "qx_proto.h"
 #include "QL_screen.h"
 
 #define min(_a_,_b_) (_a_<_b_ ? _a_ : _b_)
@@ -118,31 +117,6 @@ void devpefio_cmd()
 
   if((long)((Ptr)gPC-(Ptr)theROM)-2 == DEVPEF_IO_ADDR);
   {
-
-/* special action in script mode */
-    if (script)
-      {
-	save_regs(saved_regs);
-	op=reg[0];
-
-	/* TK2 screen locking... */
-	if (reg[3]<0 && (op==7 || op==5 || op==0x49))
-	  goto scr_io;
-
-	if (op==4)
-	  {op=2;reg[0]=2;}
-
-	io_handle(script_read,script_write,script_pend,NULL);
-	if (op==0 || op==1 || op==2 || op==3 || op==0x48)
-	  {
-	    rts();
-	    return;
-	  }
-	restore_regs(saved_regs);
-      }
-
-  scr_io:
-
     if ((uw8)reg[0]==0xd)
       {
 	pbl=(Ptr)theROM+aReg[1];
@@ -171,8 +145,6 @@ void devpefio_cmd()
 	  }
       }
 
-
-
     code=DEVPEFIO_OCODE;
     qlux_table[code]();
 
@@ -194,7 +166,7 @@ void mangle_args(char *dev)
     return;                       /* same, for other reasons */
 
   if (scr_par[4].i>=0)
-    sprintf(GXS+2,"%s__%d",dev,scr_par[4].i);
+    sprintf(GXS+2,"%s__%ld",dev,scr_par[4].i);
   else
     sprintf(GXS+2,"%s",dev);
 
@@ -211,12 +183,12 @@ void devpefo_cmd()
 
   sA0=aReg[0];
 
-  res=decode_name((Ptr)theROM+((aReg[0])&ADDR_MASK_E),&scr_name,&scr_par);
+  res=decode_name((Ptr)theROM+((aReg[0])&ADDR_MASK_E),&scr_name,(open_arg *)&scr_par);
   if (res==1)
     mangle_args("SCR_");
   else
     {
-      res=decode_name((Ptr)theROM+((aReg[0])&ADDR_MASK_E),&con_name,&scr_par);
+      res=decode_name((Ptr)theROM+((aReg[0])&ADDR_MASK_E),&con_name,(open_arg *)&scr_par);
       if (res==1)
 	mangle_args("CON_");
     }
@@ -284,7 +256,7 @@ int init_xscreen()
 
 static void pps_usg(char *m)
 {
-  printf("Bad geometry: %s. Please use 'nXm' where n=x size, m=y size\n");
+  printf("Bad geometry: %s. Please use 'nXm' where n=x size, m=y size\n", m);
 
   qlscreen.xres=512;
   qlscreen.yres=256;

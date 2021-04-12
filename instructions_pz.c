@@ -3,6 +3,7 @@
  */
 
 #include "QL68000.h"
+#include "mmodes.h"
 
 #ifdef DEBUG
 extern int trace_rts;
@@ -144,7 +145,7 @@ void rts(void)
 	SetPCB((uw16 *)((Ptr)theROM + (ReadLong(*m68k_sp) & ADDR_MASK)), RTS);
 #else
 	/* uggly cast to avoid warning */
-	if ((((char)(int)(pc = (uw16 *)((Ptr)theROM +
+	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)theROM +
 					(ReadLong(*m68k_sp) & ADDR_MASK)))) &
 	     1) != 0) {
 		exception = 3;

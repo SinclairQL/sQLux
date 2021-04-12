@@ -2,23 +2,17 @@
  * (c) UQLX - see COPYRIGHT
  */
 
-#define STATIC static
 #include "QL68000.h"
 #include "SDL2screen.h"
-#include <signal.h>
-#include <stdio.h>
-
-void debug(char*);
-void debug2(char*,long);
+#include "memaccess.h"
+#include "mmodes.h"
+#include "unixstuff.h"
 
 void    (**qlux_table)(void);
 
 #ifdef DEBUG
 int trace_rts=0;
 #endif
-
-#define INLINE inline
-
 
 uw32 rtop_hard;
 int extInt=0;
@@ -30,9 +24,7 @@ int extInt=0;
 #endif
 
 #define D_ISREG
-#include "memaccess.h"
 
-#include "mmodes.h"
 
 rw32
 (*iexl_GetEA[8])(ashort) /*REGP1*/ ={GetEA_mBad,GetEA_mBad,GetEA_m2,GetEA_mBad,GetEA_mBad,
@@ -232,7 +224,7 @@ void REGP1 SetPCX(int i)
 #endif
 #endif
 
-  if(((char)(int)pc&1)!=0)
+  if(((char)(uintptr_t)pc&1)!=0)
     {
       exception=3;
       extraFlag=true;
@@ -273,7 +265,7 @@ void SetPCB(w32 addr, int type)
 
 #endif
 
-INLINE void REGP1 SetPC(w32 addr)
+void REGP1 SetPC(w32 addr)
 {
   /*  printf("SetPC: addr=%x\n",addr); */
 
@@ -385,7 +377,7 @@ void ExceptionProcessing()
 	}
       ExceptionIn(exception);
       (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,(w32)pc-(w32)theROM);
+      WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)theROM);
       WriteWord((*m68k_sp),GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
@@ -491,7 +483,7 @@ void InitialSetup(void) /* 68K state when powered on */
 {
   ssp=*m68k_sp=RL(&theROM[0]);
   SetPC(RL(&theROM[1]));
-  if(V3)printf("initial PC=%x SP=%x\n",(void*)pc-(void*)theROM,ssp);
+  if(V3)printf("initial PC=%x SP=%x\n",(w32)((void*)pc-(void*)theROM),ssp);
 	
   iMask=7;
   supervisor=true;

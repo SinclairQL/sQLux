@@ -4,6 +4,7 @@
 
 /* most of the code has moved to QLserio.c */
 
+#ifdef SERIAL
 #include "QL68000.h"
 
 #include <stdio.h>
@@ -43,3 +44,5 @@ Cond SetBaudRate(short rate)
     }
     return 1;
 }
+
+#endif /* SERIAL */

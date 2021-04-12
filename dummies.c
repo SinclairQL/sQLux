@@ -10,31 +10,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include "qx_proto.h"
+
+#include "uxfile.h"
 
 #define DUMMY(name,par)  void name(par){/*printf("warning: calling dummy function: %s \n",__FUNCTION__);*/}
 
 size_t x_read(int fildes, void *buf, size_t byt)
 {
   int res;
-  
+
   do
     res=read(fildes,buf,byt);
   while(res<=0 && byt>0 && eretry());
-  
+
   return res;
 }
 
 void ValidateDispByte(w32 addr){}
 
 void debug(char *msg)
-{ 
+{
 #ifdef DEBUG
 printf("%s\n",msg);
 #endif
 }
 void debug2(char *msg, long n)
-{ 
+{
 #ifdef DEBUG
  printf("%s\t%x\n",msg,n);
 #endif
@@ -42,7 +43,7 @@ void debug2(char *msg, long n)
 
 /*#define DEBUG_IPC*/
 void debugIPC(char *msg, long n)
-{ 
+{
 #ifdef DEBUG_IPC
  printf("%s\t%x\n",msg,n);
  /*DbgInfo();*/
@@ -54,13 +55,13 @@ void debugIPC(char *msg, long n)
 
 DUMMY(HFlushFile,void);
 DUMMY(HQRead,void)
-DUMMY(HRewriteHeader,void)                     
-DUMMY(HKillFileTail,void)                     
-DUMMY(HGetFileHeader,void)                     
-DUMMY(HQWrite,void)        
+DUMMY(HRewriteHeader,void)
+DUMMY(HKillFileTail,void)
+DUMMY(HGetFileHeader,void)
+DUMMY(HQWrite,void)
 
 DUMMY(InstallSerial,void)
-DUMMY(NoteAlert,void) 
+DUMMY(NoteAlert,void)
 DUMMY(DiskEject,void)
 
 DUMMY(CautionAlert,void)
@@ -95,7 +96,7 @@ char *strncpy(char *dest, const char *src, size_t n)
 
 
 #ifndef SERIAL
-DUMMY(SetBaudRate)
+Cond SetBaudRate(short dummy){}
 #endif
 
 
@@ -107,7 +108,7 @@ void * NewPtr(long need)
 
 int Random()
 {
-#if  defined(hpux) || defined(__EMX__)
+#ifdef __WIN32__
   return rand();
 #else
   return random();

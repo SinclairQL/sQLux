@@ -14,16 +14,17 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "dummies.h"
+#include "QDisk.h"
 #include "QL.h"
 #include "QLfiles.h"
 #include "QFilesPriv.h"
-#include "QSerial.h"
-/*#include "SelectFolder.h"*/
 #include "QInstAddr.h"
 #include "QDisk.h"
 #include "unix.h"
+#include "uxfile.h"
 #include "QDOS.h"
-#include "qx_proto.h"
+#include "QSerial.h"
 
 #define MDV_ID 0x28b07ae4
 
@@ -313,8 +314,11 @@ void InitRAMDev(char *dev)
 						*--ptr = '\0';
 					}
 					/*printf("Making dir %s\n",qdevs[i].mountPoints[j]);*/
-
+#ifdef __WIN32__
+					mkdir(qdevs[i].mountPoints[j]);
+#else
 					mkdir(qdevs[i].mountPoints[j], 0755);
+#endif
 					*ptr = '/';
 					/*printf("Making dir %s\n",qdevs[i].mountPoints[j]);*/
 				}
@@ -513,6 +517,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 	struct HF_FCB *fcb;
 	w32 res;
 	short onDisk, alloc_fcb, canExist, canCreate, perm, e;
+	int fres;
 
 	/*
 	 * BEWARE : the logic of this function is so broken that gdb can't
@@ -643,7 +648,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 noBlock:
 	if (res == 0 && GET_KEY(f) >= 0) {
 		drive--;
-		if (GET_KEY(f) == 3)
+		if (GET_KEY(f) == 3) {
 			if (qdevs[filesys].Where[drive] == 1) {
 				struct fileHeader *h;
 
@@ -653,8 +658,10 @@ noBlock:
 					RewriteHeader();
 					KillFileTail(GET_FNUMBER(f), 0);
 				}
-			} else
-				ftruncate(GET_HFILE(f), 0);
+			} else {
+				fres = ftruncate(GET_HFILE(f), 0);
+			}
+		}
 
 		SET_POS(f, 64); /*f->pos=64;*/
 		if (onDisk == 0 || onDisk == 2)
@@ -758,7 +765,7 @@ void fork_files()
 				if ((qdevs[fs].Where[dr] == 0 ||
 				     qdevs[fs].Where[dr] == 2) &&
 				    (f = (qdevs[fs].FileList[dr])))
-					while (f != nil && ((int)f & 1) == 0 &&
+					while (f != nil && ((uintptr_t)f & 1) == 0 &&
 					       GET_ID(f) == MDV_ID) {
 						nfd = GET_HFILE(f);
 						close(nfd);
@@ -775,7 +782,7 @@ void CloseAllMdvFiles(short drive, int filesys)
 	int isdisk;
 
 	f = qdevs[filesys].FileList[drive];
-	while (f != nil && ((int)f & 1) == 0 && GET_ID(f) == MDV_ID) {
+	while (f != nil && ((uintptr_t)f & 1) == 0 && GET_ID(f) == MDV_ID) {
 		if (GET_OPEN(f)) {
 			isdisk = GET_ISDISK(f);
 			if (isdisk == 0 || isdisk == 2) {

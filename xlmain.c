@@ -2,12 +2,10 @@
  * (c) UQLX - see COPYRIGHT
  */
 
-
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
@@ -19,24 +17,23 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "QL_config.h" 
+#include "QL_config.h"
 #include "QInstAddr.h"
 
 #include "unix.h"
+#include "unixstuff.h"
 #include "boot.h"
-#include "qx_proto.h"
 
 extern char **argv;
 
 int main(int ac, char **av)
 {
-  argv=av;
+	argv = av;
 
-  SetParams(ac, av);
-  
-  uqlxInit();
-  
-  QLRun();
+	SetParams(ac, av);
+	uqlxInit();
 
-  return 0;
+	QLRun();
+
+	return 0;
 }

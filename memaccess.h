@@ -5,25 +5,27 @@
 
 /* define memory access fns */
 
-#ifndef _MEMACCESS_H
-#define _MEMACCESS_H
+#ifndef MEMACCESS_H
+#define MEMACCESS_H
 
-extern rw8 ReadByte(aw32 addr);
-extern rw16 ReadWord(aw32 addr);
-extern rw32 ReadLong(aw32 addr);
-extern void WriteByte(aw32 addr,aw8 d);
-extern void WriteWord(aw32 addr,aw16 d);
-extern void WriteLong(aw32 addr,aw32 d);
+#include "QL68000.h"
 
-extern rw8 ModifyAtEA_b(ashort mode,ashort r);
-extern rw16 ModifyAtEA_w(ashort mode,ashort r);
-extern rw32 ModifyAtEA_l(ashort mode,ashort r);
-extern void RewriteEA_b(aw8 d);
-extern void rwb_acc(w8 d);
-extern void RewriteEA_w(aw16 d);
-extern void rww_acc(w16 d);
-extern void RewriteEA_l(aw32 d);
-extern void rwl_acc(w32 d);
+rw8 ReadByte(aw32 addr);
+rw16 ReadWord(aw32 addr);
+rw32 ReadLong(aw32 addr);
+void WriteByte(aw32 addr,aw8 d);
+void WriteWord(aw32 addr,aw16 d);
+void WriteLong(aw32 addr,aw32 d);
+
+rw8 ModifyAtEA_b(ashort mode,ashort r);
+rw16 ModifyAtEA_w(ashort mode,ashort r);
+rw32 ModifyAtEA_l(ashort mode,ashort r);
+void RewriteEA_b(aw8 d);
+void rwb_acc(w8 d);
+void RewriteEA_w(aw16 d);
+void rww_acc(w16 d);
+void RewriteEA_l(aw32 d);
+void rwl_acc(w32 d);
 
 #define QL_ROM_BASE             0x0000
 #define QL_ROM_SIZE             0x10000

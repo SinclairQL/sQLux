@@ -4,12 +4,10 @@
  */
 
 
+#include "iexl_general.h"
 #include "QL68000.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
-
-#include "qx_proto.h"
-
 
 int tracetrap=0;
 

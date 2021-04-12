@@ -16,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/mman.h>
 #include <time.h>
 
 #include <fcntl.h>
@@ -32,11 +31,16 @@
 
 #include "unix.h"
 #include "boot.h"
-#include "qx_proto.h"
+#include "iexl_general.h"
+#include "QDisk.h"
+#include "QL_cconv.h"
+#include "QL_files.h"
 #include "QL_sound.h"
 #include "uxfile.h"
+#include "uqlx_cfg.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
+#include "Xscreen.h"
 
 #define TIME_DIFF 283996800
 void GetDateTime(w32 *);
@@ -57,6 +61,8 @@ int is_patching = 0;
 int UQLX_optind;
 int UQLX_argc;
 char **UQLX_argv;
+
+char *homedir="";
 
 extern uw32 rtop_hard;
 extern int screen_drawable;
@@ -102,45 +108,6 @@ int pageshift = 12;
 
 void cleanup_dialog()
 {
-}
-
-int InitDialog()
-{
-	if (pwindow == NULL) {
-		char buf[PATH_MAX + 1], arg[100];
-		char *p;
-		int QMpid, bfpid;
-
-#ifdef XAW
-		return 0;
-#else
-		QMpid = getpid();
-		sprintf(arg, "%d", QMpid);
-
-		//strncpy (buf, IMPL,PATH_MAX);
-		p = buf + strlen(buf) - 1;
-		if (*p != '/')
-			strncat(buf, "/", PATH_MAX);
-#ifndef USE_IPC
-		strncat(buf, "ButtonFrame", PATH_MAX);
-#else
-		strncat(buf, "Xgui", PATH_MAX);
-#endif
-
-		if (access(buf, R_OK | X_OK))
-			return 0;
-
-		bfpid = qm_fork(cleanup_dialog, 0);
-		if (bfpid)
-			return bfpid;
-
-		execl(buf, buf, arg, NULL);
-		perror("Sorry, could not exec() GUI");
-		/*kill(QMpid,SIGUSR1);*/
-		_exit(0);
-#endif
-	}
-	return 0;
 }
 
 int rtc_emu_on = 0;
@@ -206,7 +173,6 @@ void dosignal()
 	if (flptest++ > 25) {
 		flptest = 0;
 		TestCloseDevs();
-		process_ipc();
 	}
 
 #ifndef xx_VTIME
@@ -217,15 +183,6 @@ void dosignal()
 extern int xbreak;
 void cleanup(int err)
 {
-#ifndef XAW
-	if (HasDialog > 0)
-		kill(HasDialog, SIGINT);
-
-	cleanup_ipc();
-	// FIXME: cleanup SDL
-	//if (!script && !xbreak)
-	//   x_screen_close ();
-#endif
 	CleanRAMDev("RAM");
 	QLSDLExit();
 	exit(err);
@@ -468,7 +425,7 @@ int impopen(char *name, int flg, int mode)
 
 	if (*name == '~') {
 		char *p = buff;
-		strcpy(p, getenv("HOME"));
+		strcpy(p, homedir);
 		strcat(p, name + 1);
 		name = p;
 	}
@@ -567,7 +524,7 @@ char *qm_findx(char *name)
 	char *loc;
 	static char buf[PATH_MAX + 40];
 
-	strncpy(buf, getenv("HOME"), PATH_MAX);
+	strncpy(buf, homedir, PATH_MAX);
 	qaddpath(buf, "lib/uqlx", PATH_MAX);
 	if (!access(buf, R_OK | X_OK))
 		loc = buf;
@@ -668,6 +625,7 @@ void usage(char **argv)
 	       "\t arguments: available through Superbasic commands\n\n");
 	exit(0);
 }
+
 void SetParams(int ac, char **av)
 {
 	char sysrom[200];
@@ -816,6 +774,10 @@ void uqlxInit()
 	ry2 = qlscreen.yres - 1;
 	finishflag = 0;
 
+	rf = getenv("HOME");
+	if (rf)
+		homedir = rf;
+
 	if (V1)
 		printf("*** QL Emulator v%s ***\nrelease %s\n\n", uqlx_version,
 		       release);
@@ -867,24 +829,7 @@ void uqlxInit()
 
 	init_uqlx_tz();
 
-#ifdef XAW
-	if (script) {
-		fprintf(stderr, "scriptmode mode not supported with XAW\n");
-		script = 0;
-	}
-#endif
-
 	init_signals();
-
-#ifndef XAW
-	if (!script && 1) {
-#ifdef USE_IPC
-		init_ipc();
-#endif
-		HasDialog = InitDialog();
-	}
-
-#endif
 
 	init_iso();
 

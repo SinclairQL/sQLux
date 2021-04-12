@@ -18,10 +18,13 @@
 #include "xcodes.h"
 
 #include "driver.h"
+#include "dummies.h"
 #include "QDOS.h"
 
 #include "QInstAddr.h"
+#include "QL_cconv.h"
 #include "unix.h"
+#include "unixstuff.h"
 #include "uqlx_cfg.h"
 
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)
@@ -62,7 +65,7 @@ struct PARENTRY prt_pars[] = { { parse_option, "f", prt_opt_vals },
 			       { parse_nseparator, "_", prt_cmdoptions },
 			       { parse_nseparator, "!", prt_cmd },
 			       { NULL, NULL, NULL } };
-struct NAME_PARS prt_name = { "PRT", 4, &prt_pars };
+struct NAME_PARS prt_name = { "PRT", 4, (struct PARENTRY *)&prt_pars };
 
 #define BDEV
 #ifdef BDEV
@@ -73,10 +76,10 @@ extern void boot_close(int, void *);
 extern void boot_io(int, void *);
 
 struct PARENTRY boot_pars[] = { { NULL, NULL, NULL } };
-struct NAME_PARS boot_name = { "BOOT", 0, &boot_pars };
+struct NAME_PARS boot_name = { "BOOT", 0, (struct PARENTRY *)&boot_pars };
 #endif
 
-#ifdef NEWSERIAL
+#ifdef SERIAL
 extern int ser_init(int, void *);
 extern int ser_open(int, void **);
 extern int ser_test(int, char *);
@@ -97,7 +100,7 @@ struct PARENTRY ser_pars[] = { { parse_value, NULL, ser_unit },
 			       { parse_separator, "_", ser_sv0 }, /* dummy */
 			       { parse_separator, "b", ser_sv },
 			       { NULL, NULL, NULL } };
-struct NAME_PARS ser_name = { "SER", 6, &ser_pars };
+struct NAME_PARS ser_name = { "SER", 6, (struct PARENTRY *)&ser_pars };
 #endif
 
 #ifdef NEWPTY
@@ -114,7 +117,7 @@ struct PARENTRY pty_pars[] = { { parse_option, "IK", pty_ovals1 },
 			       { parse_option, "RZCT", pty_ovals2 },
 			       { parse_nseparator, "_", pty_val },
 			       { NULL, NULL, NULL } };
-struct NAME_PARS pty_name = { "PTY", 3, &pty_pars };
+struct NAME_PARS pty_name = { "PTY", 3, (struct PARENTRY *)&pty_pars };
 #endif
 
 #ifdef POPEN_DEV
@@ -126,12 +129,11 @@ extern void popen_io(int, void *);
 open_arg popen_val[] = { (open_arg) "" };
 struct PARENTRY popen_pars[] = { { parse_nseparator, "_", popen_val },
 				 { NULL, NULL, NULL } };
-struct NAME_PARS popen_name = { "popen", 1, &popen_pars };
+struct NAME_PARS popen_name = { "popen", 1, (struct PARENTRY *)&popen_pars };
 #endif
 
 #include "QLfiles.h"
 #include "QFilesPriv.h"
-#include "QVFS.h"
 
 #ifdef IPDEV
 #include "QLip.h"
@@ -140,10 +142,10 @@ open_arg ip_port[] = { (open_arg) "" };
 struct PARENTRY ip_pars[] = { { parse_mseparator, "_:", ip_host }, /* dummy */
 			      { parse_mseparator, ":", ip_port },
 			      { NULL, NULL, NULL } };
-struct NAME_PARS tcp_name = { "TCP", 2, &ip_pars };
-struct NAME_PARS udp_name = { "UDP", 2, &ip_pars };
-struct NAME_PARS uxs_name = { "UXS", 2, &ip_pars };
-struct NAME_PARS uxd_name = { "UXD", 2, &ip_pars };
+struct NAME_PARS tcp_name = { "TCP", 2, (struct PARENTRY *)&ip_pars };
+struct NAME_PARS udp_name = { "UDP", 2, (struct PARENTRY *)&ip_pars };
+struct NAME_PARS uxs_name = { "UXS", 2, (struct PARENTRY *)&ip_pars };
+struct NAME_PARS uxd_name = { "UXD", 2, (struct PARENTRY *)&ip_pars };
 struct NAME_PARS sck_name = { "SCK_", 0, NULL };
 
 #endif
@@ -171,7 +173,7 @@ struct PARENTRY bg_pars[] = { { parse_value, NULL, bg_val },
 			      { parse_nseparator, "--", bg_sv4 },
 			      { parse_nseparator, ",", bg_sv5 },
 			      { NULL, NULL, NULL } };
-struct NAME_PARS bg_name = { "BG", 4, &bg_pars };
+struct NAME_PARS bg_name = { "BG", 4, (struct PARENTRY *)&bg_pars };
 #endif
 
 #ifdef XSCREEN
@@ -195,8 +197,8 @@ struct PARENTRY scr_pars[] = {
 	{ parse_separator, "a", scr_sv3 }, { parse_separator, "x", scr_sv4 },
 	{ parse_separator, "_", scr_sv5 }, { NULL, NULL, NULL }
 };
-struct NAME_PARS scr_name = { "SCR", 6, &scr_pars };
-struct NAME_PARS con_name = { "CON", 6, &scr_pars };
+struct NAME_PARS scr_name = { "SCR", 6, (struct PARENTRY *)&scr_pars };
+struct NAME_PARS con_name = { "CON", 6, (struct PARENTRY *)&scr_pars };
 #endif
 
 #ifdef SOUND
@@ -221,14 +223,14 @@ struct PARENTRY sound_pars[] = { { parse_option, "r", sound_oread },
 				 { parse_option, "123456789", sound_subdev },
 				 { parse_separator, "_", sound_sv2 },
 				 { NULL, NULL, NULL } };
-struct NAME_PARS sound_name = { "SOUND", 5, &sound_pars };
+struct NAME_PARS sound_name = { "SOUND", 5, (struct PARENTRY *)&sound_pars };
 #endif
 
 struct NAME_PARS qvf_name = { "VFS_", 0, NULL };
 
 struct DRV Drivers[] = {
 	{ 0, prt_init, prt_test, prt_open, prt_close, prt_io, &prt_name, 0 },
-#ifdef NEWSERIAL
+#ifdef SERIAL
 	{ 0, ser_init, ser_test, ser_open, ser_close, ser_io, &ser_name, 0 },
 #endif
 #ifdef NEWPTY
@@ -304,7 +306,7 @@ static void InitDevDriver(struct DRV *driver, int indx)
 	if (driver->slot != 0) {
 		if (driver->slot < reg[1]) {
 			printf("requested driver size for driver %s too small: %d\n",
-			       *name, driver->slot);
+			       name, driver->slot);
 			goto ddier;
 		}
 		reg[1] = driver->slot;

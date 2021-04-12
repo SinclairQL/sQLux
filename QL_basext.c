@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "QL.h"
-#include "QLfiles.h"
+#include "QL_files.h"
 #include "QFilesPriv.h"
 #include "QInstAddr.h"
 #include "QDisk.h"
@@ -401,24 +401,6 @@ qstr *bas_getstr();
 /* ca_ret   */
 /*  rts */
 
-qstr *bas_getstrpar()
-{
-	int l;
-	qstr *p;
-	char *bp;
-
-	if (argused())
-		return bas_getstr();
-	l = parname();
-	if (l == -1)
-		return (qstr *)0;
-	bp = (char *)(l * 8 + ReadLong(aReg[6] + 0x18));
-	printf("bp %p\n", bp);
-	bp = ReadWord(aReg[6] + bp + 2) + ReadLong(aReg[6] + 0x20);
-	printf("%p ,%d\n%s\n", bp, l, (char *)bp + 1 + aReg[6]);
-	return p;
-}
-
 qstr *bas_getstr()
 {
 	int l;
@@ -641,19 +623,3 @@ bas_err UQLX_getXarg()
 	return bas_retstr(strlen(r), r);
 }
 
-static bas_err MakeDir()
-{
-	qstr *p;
-
-	if (bas_argcount() != 1)
-		return QERR_BP;
-	p = bas_getstrpar();
-	// saveregs
-	// trap#4
-	// trap#2,createfile
-	// trap#4
-	// trap#3,77
-	// restoreregs
-
-	return bas_retint(UQLX_argc - UQLX_optind + 1);
-}

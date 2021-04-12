@@ -12,8 +12,8 @@
 #include "QInstAddr.h"
 #include "boot.h"
 #include "QDOS.h"
-#include "qx_proto.h"
 #include "QL_screen.h"
+#include "unixstuff.h"
 
 /*extern int schedCount;*/
 extern int HasPTR;
@@ -247,8 +247,6 @@ void trap3(void)
     nInst=0;
 }
 
-extern int script_read_enable;
-
 void btrap3(void)
 {
   DECR_SC();
@@ -259,7 +257,6 @@ void btrap3(void)
       *((char*)reg+4+RBO)= BOOT_SELECT;
       reg[0]=0;
       qlux_table[code]=trap3;
-      script_read_enable=1;
     }
   else trap3();
 }

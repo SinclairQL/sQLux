@@ -11,8 +11,9 @@
 #define INLINE
 
 #include "QL68000.h"
-#include "qx_proto.h"
 #include "sqlux_bdi.h"
+#include "dummies.h"
+#include "unixstuff.h"
 
 #include <signal.h>
 
@@ -32,15 +33,6 @@ void WriteHWWord(aw32 addr, aw16 d);
 
 #include "memaccess.h"
 #include "mmodes.h"
-
-rw32 AREGP GetEA_mBad(ashort r)
-{
-	exception = 4;
-	extraFlag = true;
-	nInst2 = nInst;
-	nInst = 0;
-	return 0;
-}
 
 INLINE rw32 GetEA_m2(ashort) AREGP;
 INLINE rw32 GetEA_m5(ashort) AREGP;

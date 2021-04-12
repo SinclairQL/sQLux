@@ -2,7 +2,13 @@
  * (c) UQLX - see COPYRIGHT
  */
 #ifndef IEXL_GENERAL_H
-#define UEXL_GENERAL_H
+#define IEXL_GENERAL_H
+
+#include "QL68000.h"
+
+void ExecuteChunk(long);
+void InitialSetup(void);
+void ExceptionProcessing(void);
 
 #define RewriteEA_b(_d_)   (*((w8*)dest)=_d_)  
 
@@ -54,5 +60,5 @@ static inline void RewriteEA_l(aw32 d)
 
      /****************************************************/
 
-#endif
-#endif
+#endif /* IEXL_GENERAL_H */
+

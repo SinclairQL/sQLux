@@ -14,14 +14,9 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <dirent.h>
-#ifdef __APPLE__
-#include <sys/syslimits.h>
-#else
-#include <linux/limits.h>
-#endif
+#include <limits.h>
 
 #include "unix.h"
-#include "qx_proto.h"
 #include "uxfile.h"
 #include "emudisk.h"
 #include "uqlx_cfg.h"
@@ -335,9 +330,14 @@ FILE *lopen(const char *s, const char *mode)
 	FILE *fp;
 	char fnam[PATH_MAX];
 
+	printf("Entered lopen %s\n", s);
 	if (*s == '~') {
 		char *p = fnam;
-		strcpy(p, getenv("HOME"));
+		char *pf = getenv("HOME");
+		printf("HERE\n");
+		if (pf)
+			strcpy(p, getenv("HOME"));
+		printf("NOT HERE\n");
 		strcat(p, s + 1);
 		s = p;
 	}
@@ -349,7 +349,7 @@ FILE *lopen(const char *s, const char *mode)
 
 		if ((pf = getenv("HOME"))) {
 			short n;
-
+			printf("HOME %p\n", pf);
 			strcpy(pname, pf);
 			n = strlen(pname);
 			if (*(pname + n - 1) != '/'
@@ -365,6 +365,7 @@ FILE *lopen(const char *s, const char *mode)
 		}
 	}
 
+	printf("Exited lopen\n");
 	return fp;
 }
 
@@ -375,6 +376,7 @@ void QMParams(void)
 	int rv = 0, iil;
 	QMDATA *p;
 
+	printf("QMParams\n");
 	pf = QMD.config_file;
 	if (!(fp = lopen(pf, "r"))) {
 		pf = QLUXFILE;

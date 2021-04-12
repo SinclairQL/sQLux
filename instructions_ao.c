@@ -10,8 +10,9 @@
 //#define STATIC static
 #include "QL68000.h"
 //#include "memaccess.h"
-//#include "mmodes.h"
 #endif
+
+#include "mmodes.h"
  
 #ifdef IE_XL
 #define IDECL(_iname_)  _iname_ :
@@ -954,7 +955,7 @@ IDECL(bsr)
   w16 displ;
   w32 oldPC;
 
-  oldPC=(w32)pc-(w32)theROM;
+  oldPC=(uintptr_t)pc-(uintptr_t)theROM;
   if((displ=(w16)(((w8)(code&255))))==0)
     { 
       displ=(w16)RW(pc);
@@ -1687,7 +1688,7 @@ NEXT;
 IDECL(jsr_displ)
 { 
   register w32 ea;
-  ea=(w32)pc-(w32)theROM;
+  ea=(uintptr_t)pc-(uintptr_t)theROM;
   WriteLong((*m68k_sp)-=4,ea+2);
   SetPC(ea+(w16)RW(pc));
 NEXT;

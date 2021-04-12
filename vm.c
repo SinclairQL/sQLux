@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "qx_proto.h"
-
 extern int main();
 extern int strcasecmp();
 extern uw32 rtop_hard;
