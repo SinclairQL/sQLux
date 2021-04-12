@@ -20,6 +20,7 @@
 #include "uxfile.h"
 #include "emudisk.h"
 #include "uqlx_cfg.h"
+#include "unixstuff.h"
 
 QMDATA QMD = {
 	.config_file = "sqlux.ini",
@@ -113,7 +114,7 @@ void CheckDev(EMUDEV_t *qd, char *d1, char *d2, char *d3)
 
 				if (*d2 == '~') {
 					d2++;
-					strncpy(tmp, getenv("HOME"), 400);
+					strncpy(tmp, homedir, 400);
 					if (*d2)
 						strncat(tmp, d2, 400);
 				} else
@@ -330,13 +331,12 @@ FILE *lopen(const char *s, const char *mode)
 	FILE *fp;
 	char fnam[PATH_MAX];
 
-	printf("Entered lopen %s\n", s);
 	if (*s == '~') {
 		char *p = fnam;
-		char *pf = getenv("HOME");
+		char *pf = homedir;
 		printf("HERE\n");
 		if (pf)
-			strcpy(p, getenv("HOME"));
+			strcpy(p, homedir);
 		printf("NOT HERE\n");
 		strcat(p, s + 1);
 		s = p;
@@ -347,7 +347,7 @@ FILE *lopen(const char *s, const char *mode)
 		char pname[512];
 		char *pf;
 
-		if ((pf = getenv("HOME"))) {
+		if ((pf = homedir)) {
 			short n;
 			printf("HOME %p\n", pf);
 			strcpy(pname, pf);
@@ -365,7 +365,6 @@ FILE *lopen(const char *s, const char *mode)
 		}
 	}
 
-	printf("Exited lopen\n");
 	return fp;
 }
 
@@ -376,7 +375,6 @@ void QMParams(void)
 	int rv = 0, iil;
 	QMDATA *p;
 
-	printf("QMParams\n");
 	pf = QMD.config_file;
 	if (!(fp = lopen(pf, "r"))) {
 		pf = QLUXFILE;
