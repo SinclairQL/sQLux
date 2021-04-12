@@ -347,7 +347,7 @@ void DbgInfo(void)
 
 	/* "ssp" is ssp *before* sv-mode was entered (if active now) */
 	/* USP is saved value of a7 or meaningless if not in sv-mode */
-	printf("DebugInfo: PC=%lx, code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
+	printf("DebugInfo: PC=%" PRIXPTR ", code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
 	       (Ptr)pc - (Ptr)theROM, code, (supervisor ? "yes" : "no"), usp,
 	       ssp, *m68k_sp);
 	printf("Register Dump:\t Dn\t\tAn\n");
