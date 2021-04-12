@@ -84,7 +84,9 @@ int QLSDLScreen(void)
 
 	if (sdl_video_driver != NULL &&
 		    (strcmp(sdl_video_driver, "x11") == 0) ||
-	    (strcmp(sdl_video_driver, "cocoa") == 0) && sdl_mode.w >= 800 &&
+		    (strcmp(sdl_video_driver, "cocoa") == 0) ||
+		    (strcmp(sdl_video_driver, "windows") == 0) &&
+		    sdl_mode.w >= 800 &&
 		    sdl_mode.h >= 600) {
 		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE |
 				  SDL_WINDOW_MAXIMIZED;
