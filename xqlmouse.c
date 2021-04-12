@@ -88,15 +88,6 @@ void print_mousepos()
 
 #endif  /* MOUSE */
 
-void do_hotactn()
-{
-  char hotch[3];
-
-  hotch[0]=ReadByte(ptrscrdrv+0x8d-0x18);
-  hotch[1]=ReadByte(ptrscrdrv+0x8e -0x18);
-  hotch[2]=194;
-}
-
 w32 getSCRdriver()
 {
   return ReadLong(ReadLong(ReadLong(0x28078))+4);	/* :HIER: abs. sysref raus */
@@ -175,8 +166,6 @@ void QLButton(int bnr,int press)
 	  break;
 	  /*  case 2: hot */
 	case 2:
-	  if (press)
-	    do_hotactn();
 	  break;
 	case 3: 
 	  if (press) WriteByte(ptrscrdrv+0xaf-0x18,2);
