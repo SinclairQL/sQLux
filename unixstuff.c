@@ -67,7 +67,7 @@ int UQLX_optind;
 int UQLX_argc;
 char **UQLX_argv;
 
-char *homedir="";
+char *homedir = "";
 
 extern uw32 rtop_hard;
 extern int screen_drawable;
@@ -637,6 +637,11 @@ void SetParams(int ac, char **av)
 	int c;
 	int mem = -1, col = -1, hog = -1, no_patch = -1;
 	int gg = 0;
+	char *home;
+
+	home = getenv("HOME");
+	if (home)
+		homedir = strdup(home);
 
 	setvbuf(stdout, obuf, _IOLBF, BUFSIZ);
 
@@ -778,10 +783,6 @@ void uqlxInit()
 	ry1 = 0;
 	ry2 = qlscreen.yres - 1;
 	finishflag = 0;
-
-	rf = getenv("HOME");
-	if (rf)
-		homedir = rf;
 
 	if (V1)
 		printf("*** QL Emulator v%s ***\nrelease %s\n\n", uqlx_version,
