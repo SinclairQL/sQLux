@@ -121,7 +121,7 @@ void CheckDev(EMUDEV_t *qd, char *d1, char *d2, char *d3)
 					strncpy(tmp, d2, 400);
 
 				dlen = strlen(tmp);
-				if (dnam = malloc(dlen + 16)) {
+				if ((dnam = malloc(dlen + 16))) {
 					sprintf(dnam, tmp, getpid());
 					dlen = strlen(dnam);
 					if (*(dnam + dlen - 1) != '/') {
