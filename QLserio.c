@@ -242,6 +242,8 @@ int ser_close(int id, serdev_t *priv)
 {
 	tty_close(priv->fd);
 	sparams[priv->unit] = NULL;
+
+	return 0;
 }
 
 #endif /* NEWSERIAL */
@@ -519,7 +521,7 @@ int readio(serdev_t *sd, char *buf, long *pno, short tc)
 							sts = QERR_TE;
 							break;
 						}
-#if 0		      
+#if 0
 			if (errno == EINTR)
 			    sts = -1;
 			else
