@@ -49,7 +49,7 @@ void FilenameFromQL(unsigned char *fName)
 {
 	short l, i, j;
 	unsigned char c;
-	unsigned char *s = "-noASCII-                      ";
+	char *s = "-noASCII-                      ";
 	Cond lastAscii = false;
 	char *hexDigit = "0123456789ABCDEF";
 
@@ -106,7 +106,7 @@ static void NameToQL(Str255 name)
 	l = name[0];
 	if (l < 10)
 		return;
-	p = name + 1;
+	p = (unsigned char *)name + 1;
 	if (*p++ != '-')
 		return;
 	if (((*p++) & 223) != 'N')
@@ -274,7 +274,7 @@ void *Cleandir(char *nam)
 	d = opendir(nam);
 	if (d) {
 		struct dirent *p;
-		while (p = readdir(d)) {
+		while ((p = readdir(d))) {
 			char *pd, d_name[PATH_MAX];
 
 			if (*p->d_name == '.' &&
@@ -551,7 +551,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 		SET_KEY(f, key);
 		res = 0;
 		if (key != Q_DIR && !onDisk)
-			FilenameFromQL(NAME_REF(f));
+			FilenameFromQL((unsigned char *)NAME_REF(f));
 		if (key >= Q_DIR || key < 0) {
 			if (key == Q_DIR) /* open directory */
 			{
@@ -566,7 +566,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 				if (onDisk == 0 || onDisk == 2)
 					res = HDelete(mdvVol[drive],
 						      mdvDir[drive],
-						      NAME_REF(f), f, 2);
+						      (unsigned char *)NAME_REF(f), f, 2);
 				else
 					res = QDiskDelete(f);
 			} else
@@ -580,7 +580,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 				perm = (key == 1 ? O_RDONLY : O_RDWR) |
 				       (canExist && canCreate ? O_CREAT : 0);
 				e = HOpenDF(mdvVol[drive], mdvDir[drive],
-					    NAME_REF(f), perm, f, 0, onDisk);
+					    (unsigned char *)NAME_REF(f), perm, f, 0, onDisk);
 
 				if (e && (key != 2)) {
 					perm = O_RDONLY |
@@ -588,7 +588,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 							      O_CREAT :
 							      0);
 					e = HOpenDF(mdvVol[drive],
-						    mdvDir[drive], NAME_REF(f),
+						    mdvDir[drive], (unsigned char *)NAME_REF(f),
 						    perm, f, 0, onDisk);
 				}
 
@@ -613,7 +613,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 							e = HOpenDF(
 								mdvVol[drive],
 								mdvDir[drive],
-								NAME_REF(f),
+								(unsigned char *)NAME_REF(f),
 								perm | O_CREAT,
 								f, canCreate,
 								onDisk);
@@ -625,7 +625,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 								e = HOpenDF(
 									mdvVol[drive],
 									mdvDir[drive],
-									NAME_REF(
+									(unsigned char *)NAME_REF(
 										f),
 									perm, f,
 									0,
