@@ -413,8 +413,6 @@ qstr *bas_getstr()
 	if (reg[0] < 0 || reg[3] != 1)
 		return 0;
 
-	/*else return (char*)theROM+aReg[1]+aReg[6]; /* dealloc!!! */
-
 	l = ReadWord(aReg[1] + aReg[6]);
 	p = (qstr *)malloc(l + 1);
 	p->len = l;
@@ -597,7 +595,7 @@ bas_err UQLX_getXargc()
 
 bas_err UQLX_getXarg()
 {
-	uw32 n;
+	w32 n;
 	char *r;
 
 #ifdef HPR_STYLE
