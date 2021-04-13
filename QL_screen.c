@@ -6,13 +6,13 @@
 #include "QL_config.h"
 #include "QL_screen.h"
 
-screen_specs qlscreen = 
+screen_specs qlscreen =
 {
-   128 * 1024, 
-   128 * 1024 + 32 * 1024, 
-   0x8000, 
-   128, 
-   256, 
+   128 * 1024,
+   128 * 1024 + 32 * 1024,
+   0x8000,
+   128,
+   256,
    512,
 };
 
@@ -28,7 +28,7 @@ struct SCREENDEF
 static int PtrPatchOk=0;
 void QLPatchPTRENV(void)
 {
-    w32 scrdef_search;
+    uw32 scrdef_search;
     //struct SCREENDEF *scrdef;
     int flag;
 
