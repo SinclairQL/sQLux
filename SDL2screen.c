@@ -64,7 +64,7 @@ static void QLSDLSetDestRect(int w, int h)
 	}
 }
 
-int QLSDLScreen(void)
+void QLSDLScreen(void)
 {
 	uint32_t sdl_window_mode;
 	int i, w, h;
@@ -100,7 +100,7 @@ int QLSDLScreen(void)
 
 	if (ql_window == NULL) {
 		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
-		return 0;
+		exit(-1);
 	}
 
 	ql_windowid = SDL_GetWindowID(ql_window);
@@ -121,6 +121,7 @@ int QLSDLScreen(void)
 
 	if (ql_screen == NULL) {
 		printf("Error Creating Surface\n");
+		exit(-1);
 	}
 
 	ql_texture = SDL_CreateTexture(ql_renderer, SDL_PIXELFORMAT_RGBA32,
@@ -476,7 +477,7 @@ static void QLSDLProcessMouse(int x, int y)
 	QLMovePointer(qlx, qly);
 }
 
-int QLSDLProcessEvents(void)
+void QLSDLProcessEvents(void)
 {
 	SDL_Event event;
 	int keypressed;

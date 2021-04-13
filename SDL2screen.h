@@ -3,9 +3,9 @@
 
 #include <SDL.h>
 
-int QLSDLScreen(void);
+void QLSDLScreen(void);
 void QLSDLRenderScreen(void);
-int QLSDLProcessEvents(void);
+void QLSDLProcessEvents(void);
 void QLSDLExit(void);
 Uint32 QLSDL50Hz(Uint32 interval, void *param);
 void QLSDLUpdatePixelBuffer(void);
