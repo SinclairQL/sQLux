@@ -164,7 +164,7 @@ int ip_open(int id, void **priv)
 
 	} else if (dindx == 4) {
 		if (reg[3] > 4) {
-			int nlen = sizeof(name);
+			socklen_t nlen = sizeof(name);
 			char *f;
 			int a0 = aReg[0];
 			ipdev_t *ip;
@@ -221,7 +221,7 @@ void static check_status(ipdev_t *s)
 		if (check_pend(s->sock, SLC_WRITE) > 0)
 			s->status = 0;
 		else if (check_pend(s->sock, SLC_ERR) > 0) {
-			int e = sizeof(errno);
+			socklen_t e = sizeof(errno);
 
 			s->status = -2;
 			perror("asynchronous connect ");
@@ -251,6 +251,8 @@ int ip_pend(ipdev_t *p)
 	case -1:
 		return QERR_NC;
 	}
+
+	return 0;
 }
 
 static int ip_read(ipdev_t *sd, void *buf, int pno)
@@ -522,7 +524,7 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 	hql += n * sizeof(int);
 
 	{
-		char **q, *s; 
+		char **q, *s;
 		w32 sql;
 		int l;
 
@@ -922,7 +924,7 @@ static int ip_inet_netof(struct in_addr *in, unsigned long int *u)
 }
 
 static int ip_recv(ipdev_t *p, void *buf, long blen, int flag,
-		   struct sockaddr *from, int *flen)
+		   struct sockaddr *from, socklen_t *flen)
 {
 	int qerr, res;
 
@@ -1090,7 +1092,7 @@ static int ip_setsockopt(ipdev_t *ip, int level, int optname, void *optval,
 	return qerr;
 }
 
-static int ip_getsockname(ipdev_t *ip, struct sockaddr *sa, int *len)
+static int ip_getsockname(ipdev_t *ip, struct sockaddr *sa, socklen_t *len)
 {
 	int res, qerr;
 	res = getsockname(ip->sock, sa, len);
@@ -1098,7 +1100,7 @@ static int ip_getsockname(ipdev_t *ip, struct sockaddr *sa, int *len)
 	return qerr;
 }
 
-static int ip_getpeername(ipdev_t *ip, struct sockaddr *sa, int *len)
+static int ip_getpeername(ipdev_t *ip, struct sockaddr *sa, socklen_t *len)
 {
 	int res, qerr;
 	res = getpeername(ip->sock, sa, len);
@@ -1144,7 +1146,8 @@ void ip_io(int id, void *p)
 {
 	ipdev_t *priv = p;
 	int op = (w8)reg[0];
-	int res, count, flag = 0;
+	int res, flag = 0;
+	socklen_t count;
 	struct sockaddr *sa = NULL;
 	w32 params;
 	w32 qaddr;
