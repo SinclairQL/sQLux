@@ -9,7 +9,7 @@ void InitROM(void);
 void EmulatorTable(Ptr);
 void save_regs(void *p);
 void restore_regs(void *p);
-Cond LookFor(w32 *a, uw32 w, long nMax);
+Cond LookFor(uw32 *a, uw32 w, long nMax);
 short LoadMainRom(void);
 
 #endif /*_QL_CONFIG_H*/

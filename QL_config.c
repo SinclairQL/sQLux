@@ -39,17 +39,13 @@ uw32 orig_kbenc;
 
 int testMinervaVersion(char *ver);
 
-Cond RamCheck(void)
-{ /* check ram preferences and available RAM */
-}
-
-Cond LookFor(w32 *a, uw32 w, long nMax)
+Cond LookFor(uw32 *a, uw32 w, long nMax)
 {
 	while (nMax-- > 0 && RL((Ptr)theROM + (*a)) != w)
 		(*a) += 2;
 	return nMax > 0;
 }
-static Cond LookFor2(w32 *a, uw32 w, uw16 w1, long nMax)
+static Cond LookFor2(uw32 *a, uw32 w, uw16 w1, long nMax)
 {
 rty:
 	while (nMax-- > 0 && RL((Ptr)theROM + (*a)) != w)
@@ -224,7 +220,7 @@ short LoadMainRom(void) /* load and modify QL ROM */
 {
 	short e;
 	long l;
-	w32 a;
+	uw32 a;
 	Cond p;
 
 	qemlPatch = false;
