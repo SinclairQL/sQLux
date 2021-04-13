@@ -156,12 +156,13 @@ int ql2iso(int c)
 	return q2i[c];
 }
 
-int iso2ql_mem(unsigned char *buf, int len)
+void iso2ql_mem(unsigned char *buf, int len)
 {
 	while (len-- > 0)
 		buf[len] = i2q[buf[len]];
 }
-int ql2iso_mem(unsigned char *buf, int len)
+
+void ql2iso_mem(unsigned char *buf, int len)
 {
 	while (len-- > 0)
 		buf[len] = q2i[buf[len]];
