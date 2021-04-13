@@ -358,7 +358,8 @@ void InitDrivers()
 	qlux_table[DEVC_CMD_CODE] = DrvClose;
 
 	while (p->open != NULL) {
-		InitDevDriver(p++, p - Drivers);
+		struct DRV *old_p = p++;
+		InitDevDriver(old_p, p - Drivers);
 		num_drivers++;
 	}
 }
