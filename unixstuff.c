@@ -656,7 +656,7 @@ void SetParams(int ac, char **av)
 					 SHGFP_TYPE_CURRENT, my_documents);
 
 	if (result == S_OK) {
-		strncat(my_documents, "sQLux", MAX_PATH);
+		strncat(my_documents, "\\sQLux", MAX_PATH);
 		if (stat(my_documents, &stat_res) < 0) {
 			res = mkdir(my_documents);
 			if (res < 0) {
