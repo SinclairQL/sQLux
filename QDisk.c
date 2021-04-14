@@ -386,9 +386,9 @@ OSErr QFOpenDisk(struct mdvFile *f)
 		}
 #endif
 
-		fd = open(qdevs[fs].mountPoints[drnum], O_RDWR);
+		fd = open(qdevs[fs].mountPoints[drnum], O_RDWR | O_BINARY);
 		if (fd < 0 && (errno == EACCES || errno == EROFS)) {
-			fd = open(qdevs[fs].mountPoints[drnum], O_RDONLY);
+			fd = open(qdevs[fs].mountPoints[drnum], O_RDONLY | O_BINARY);
 			readonly = 1;
 		}
 

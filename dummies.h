@@ -14,4 +14,8 @@ void CustomErrorAlert(char *x);
 char * stpcpy(char *, const char *);
 #endif /* HAS_STPCPY */
 
+#ifndef __WIN32__
+#define O_BINARY 0
+#endif
+
 #endif /* DUMMIES_H */
