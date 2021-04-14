@@ -1202,7 +1202,7 @@ static FileNum Sub_FileNumber(uw8 *name, FileNum DirFn, int DirLen, int isdir,
 				}
 			}
 		}
-		h = (struct fileHeader *)(64 + (long)h);
+		h = (struct fileHeader *)(64 + (uintptr_t)h);
 	}
 	if (isdir) {
 		*nlen = 0;
