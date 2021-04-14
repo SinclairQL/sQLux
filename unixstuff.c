@@ -461,7 +461,7 @@ int load_rom(char *name, w32 addr)
 	int r;
 	int fd;
 
-	fd = impopen(name, O_RDONLY, 0);
+	fd = impopen(name, O_RDONLY | O_BINARY, 0);
 	if (fd < 0) {
 		perror("Warning: could not find ROM image ");
 		printf(" - rom name %s\n", name);

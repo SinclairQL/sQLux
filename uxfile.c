@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "unix.h"
+#include "dummies.h"
 #include "QL.h"
 #include "QLfiles.h"
 #include "QFilesPriv.h"
@@ -215,7 +216,7 @@ int match(char *mount, char *where, char *name, int isdir, int createp,
 		return memoize(where, name);
 	}
 	if (!isdir &&
-	    (fd = qopenfile(mount, where, O_RDONLY, 0, maxnlen)) > -1) {
+	    (fd = qopenfile(mount, where, O_RDONLY | O_BINARY, 0, maxnlen)) > -1) {
 		close(fd);
 		return memoize(where, name);
 	} else {
@@ -375,9 +376,9 @@ void reopen_uxfile(struct mdvFile *f)
 	printf("reopening file %s, pos %zu\n", GET_FCB(f)->uxname, cpos);
 
 	strncpy(mount, qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)], 320);
-	fd = qopenfile(mount, GET_FCB(f)->uxname, O_RDWR, 0666, 400);
+	fd = qopenfile(mount, GET_FCB(f)->uxname, O_RDWR | O_BINARY, 0666, 400);
 	if (fd < 0)
-		fd = qopenfile(mount, GET_FCB(f)->uxname, O_RDONLY, 0666, 400);
+		fd = qopenfile(mount, GET_FCB(f)->uxname, O_RDONLY | O_BINARY, 0666, 400);
 	if (fd < 0)
 		perror("sorry, could not reopen file:");
 
@@ -398,7 +399,7 @@ void deleteheader(char *mount, char *fname, int fstype)
 		strcat(dpath, "/.-UQLX-");
 	else
 		strcpy(dpath, ".-UQLX-");
-	fd = qopenfile(mount, dpath, O_RDWR, 0, 256);
+	fd = qopenfile(mount, dpath, O_RDWR | O_BINARY, 0, 256);
 	if (fd < 0)
 		return;
 
@@ -505,7 +506,7 @@ void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
 	else
 		strcpy(dpath, ".-UQLX-");
 
-	ff = qopenfile(mount, dpath, O_RDWR | O_CREAT, 0666, 4000);
+	ff = qopenfile(mount, dpath, O_RDWR | O_CREAT | O_BINARY, 0666, 4000);
 	getname(dpath, uxname, 4000);
 	/* printf("QHSetHeader %s\n",dpath);*/
 
@@ -606,14 +607,14 @@ void QHFillHeader(struct fileHeader *h, int pof,
 			strcat(dpath, "/.-UQLX-");
 		else
 			strcpy(dpath, ".-UQLX-");
-		fd = qopenfile(mount, dpath, O_RDWR, 0, 4000);
+		fd = qopenfile(mount, dpath, O_RDWR | O_BINARY, 0, 4000);
 		if (fd >= 0) {
 			getname(dpath, file.pth, 4000);
 			found = FillXH(fd, dpath, h, fstype);
 		}
 
 		if (!found) {
-			fd2 = qopenfile(mount, file.pth, O_RDONLY, 0, 4000);
+			fd2 = qopenfile(mount, file.pth, O_RDONLY | O_BINARY, 0, 4000);
 			if (fd2 >= 0) {
 				FillXHXtcc(fd2, h);
 				close(fd2);
@@ -634,13 +635,13 @@ void QHFillHeader(struct fileHeader *h, int pof,
 			strcat(dpath, "/.-UQLX-");
 		else
 			strcpy(dpath, ".-UQLX-");
-		fd = qopenfile(mp, dpath, O_RDWR, 0, 4000);
+		fd = qopenfile(mp, dpath, O_RDWR | O_BINARY, 0, 4000);
 		if (fd >= 0) {
 			getname(dpath, GET_FCB(f)->uxname, 4000);
 			found = FillXH(fd, dpath, h, fstype);
 		}
 		if (!found) {
-			fd2 = qopenfile(mp, GET_FCB(f)->uxname, O_RDONLY, 0,
+			fd2 = qopenfile(mp, GET_FCB(f)->uxname, O_RDONLY | O_BINARY, 0,
 					4000);
 			if (fd2 >= 0) {
 				FillXHXtcc(fd2, h);
@@ -797,7 +798,7 @@ int HOpenDF(int drive, long dir, unsigned char *name, long perm,
 
 	if (!err)
 		return -7;
-	fd = qopenfile(mount, mname, perm, 0666, 400);
+	fd = qopenfile(mount, mname, perm | O_BINARY, 0666, 400);
 
 	SET_HFILE(f, fd);
 	if (fd < 0)
