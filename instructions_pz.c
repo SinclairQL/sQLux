@@ -145,8 +145,8 @@ void rts(void)
 	SetPCB((uw16 *)((Ptr)theROM + (ReadLong(*m68k_sp) & ADDR_MASK)), RTS);
 #else
 	/* uggly cast to avoid warning */
-	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)theROM +
-					(ReadLong(*m68k_sp) & ADDR_MASK)))) &
+	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)theROM + (ReadLong(*m68k_sp) &
+							     ADDR_MASK)))) &
 	     1) != 0) {
 		exception = 3;
 		extraFlag = true;
@@ -174,6 +174,9 @@ void sbcd(void)
 	w8 s, d, r;
 	w8 s2, d2, r2;
 	w8 *dx;
+	uw16 sbcd_lo, sbcd_hi, sbcd_res;
+	int bcd = 0;
+
 	if ((code & 8) != 0) {
 		s = GetFromEA_b_m4();
 		d = ModifyAtEA_b(4, (code >> 9) & 7);
@@ -182,25 +185,30 @@ void sbcd(void)
 		d = *dx;
 		s = (w8)reg[code & 7];
 	}
-	s2 = ((s & 0x0f) > 9 ? 9 : (s & 0x0f));
-	s >>= 4;
-	if (s >= 9)
-		s2 += 90;
-	else
-		s2 += s * 10;
-	d2 = ((d & 0x0f) > 9 ? 9 : (d & 0x0f));
-	d >>= 4;
-	if (d >= 9)
-		d2 += 90;
-	else
-		d2 += d * 10;
-	r2 = d2 - s2;
-	if (xflag)
-		r2--;
-	if ((xflag = carry = r2 < 0))
-		r2 += 100;
-	zero = zero && r2 == 0;
-	r = (r2 % 10) + ((r2 / 10) << 4);
+
+	sbcd_lo = (d & 0xF) - (s & 0xF) - (xflag ? 1 : 0);
+	sbcd_hi = (d & 0xF0) - (s & 0xF0);
+
+	sbcd_res = sbcd_hi + sbcd_lo;
+	if (sbcd_lo & 0xF0) {
+		sbcd_res -= 6;
+		bcd = 6;
+	};
+	if (((((uw16)d & 0xFF) - ((uw16)s & 0xFF) - (xflag ? 1 : 0)) & 0x100) >
+	    0xFF) {
+		sbcd_res -= 0x60;
+	}
+
+	r = sbcd_res;
+
+	xflag = carry = (((((uw16)d & 0xFF) - ((uw16)s & 0xFF) - bcd -
+			   (xflag ? 1 : 0)) &
+			  0x300) > 0xFF) ?
+				      1 :
+				      0;
+	zero = (zero ? 1 : 0) & (r ? 0 : 1);
+	negative = (r < 0) ? 1 : 0;
+
 	if ((code & 8) != 0)
 		RewriteEA_b(r);
 	else
