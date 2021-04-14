@@ -13,6 +13,8 @@
 
 #ifdef __WIN32__
 #define __USE_MINGW_ALARM
+#include <windows.h>
+#include <shlobj.h>
 #endif
 
 #include "QL68000.h"
@@ -75,8 +77,13 @@ extern int screen_drawable;
 
 int do_update = 0; /* initial delay for screen drawing */
 
+#ifndef min
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)
+#endif
+
+#ifndef max
 #define max(_a_, _b_) (_a_ > _b_ ? _a_ : _b_)
+#endif
 
 int rx1, rx2, ry1, ry2, finishflag, doscreenflush;
 int QLdone = 0;
@@ -348,7 +355,8 @@ void DbgInfo(void)
 
 	/* "ssp" is ssp *before* sv-mode was entered (if active now) */
 	/* USP is saved value of a7 or meaningless if not in sv-mode */
-	printf("DebugInfo: PC=%" PRIXPTR ", code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
+	printf("DebugInfo: PC=%" PRIXPTR
+	       ", code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
 	       (Ptr)pc - (Ptr)theROM, code, (supervisor ? "yes" : "no"), usp,
 	       ssp, *m68k_sp);
 	printf("Register Dump:\t Dn\t\tAn\n");
@@ -640,9 +648,32 @@ void SetParams(int ac, char **av)
 	int gg = 0;
 	char *home;
 
+#ifdef __WIN32__
+	int res;
+	struct stat stat_res;
+	char my_documents[MAX_PATH+1];
+	HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL,
+					 SHGFP_TYPE_CURRENT, my_documents);
+
+	if (result == S_OK) {
+		strncat(my_documents, "sQLux", MAX_PATH);
+		if (stat(my_documents, &stat_res) < 0) {
+			res = mkdir(my_documents);
+			if (res < 0) {
+				perror("Error");
+				printf("Creating Home %s", my_documents);
+			} else {
+				homedir = strdup(my_documents);
+			}
+		} else {
+			homedir = strdup(my_documents);
+		}
+	}
+#else
 	home = getenv("HOME");
 	if (home)
 		homedir = strdup(home);
+#endif
 
 	setvbuf(stdout, obuf, _IOLBF, BUFSIZ);
 
