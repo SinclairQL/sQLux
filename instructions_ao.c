@@ -2096,21 +2096,28 @@ void mulu(void)
 void nbcd(void)
 {
 	w8 d, r;
-	w8 d2, r2;
+	uw16 nbcd_lo, nbcd_hi, nbcd_res;
+	int nbcd_carry;
+
 	d = ModifyAtEA_b((code >> 3) & 7, code & 7);
-	d2 = ((d & 0x0f) > 9 ? 9 : (d & 0x0f));
-	d >>= 8;
-	if (d > 9)
-		d2 += 90;
-	else
-		d2 += d * 10;
-	carry = d2 != 0;
-	r2 = 100 - d2;
-	if (xflag)
-		r2--;
-	xflag = carry;
-	zero = zero && r2 == 0;
-	r = (r2 % 10) + ((r2 / 10) << 4);
+	nbcd_lo = -(d & 0xF) - (xflag ? 1 : 0);
+	nbcd_hi = -(d & 0xF0);
+
+	if (nbcd_lo > 9) {
+		nbcd_lo -= 6;
+	}
+	nbcd_res = nbcd_hi + nbcd_lo;
+	nbcd_carry = (nbcd_res & 0x1F0) > 0x90;
+	if (nbcd_carry)
+		nbcd_res -= 0x60;
+
+	r = nbcd_res & 0xFF;
+
+	/* Set the flags */
+	zero = (zero ? 1 : 0) & (r ? 0 : 1);
+	negative = r < 0 ? 1 : 0;
+	xflag = carry = nbcd_carry ? 1 : 0;
+
 	RewriteEA_b(r);
 }
 
