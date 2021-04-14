@@ -6,10 +6,10 @@
 #include <sys/types.h>
 
 Cond SetBaudRate(short);
+void InstallSerial(void);
 
 #if defined(SERIAL) || defined(NEWPTY)
 
-void InstallSerial(void);
 void InitSerial(void);
 void CloseSerial(void);
 
