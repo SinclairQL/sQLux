@@ -1311,7 +1311,7 @@ void dbcc(void)
 #endif
 #endif
 
-			if ((long)pc & 1) {
+			if ((uintptr_t)pc & 1) {
 				exception = 3;
 				extraFlag = true;
 				nInst2 = nInst;
@@ -1337,7 +1337,7 @@ void dbf(void)
 		CheckTrace();
 #endif
 #endif
-		if ((long)pc & 1) {
+		if ((uintptr_t)pc & 1) {
 			exception = 3;
 			extraFlag = true;
 			nInst2 = nInst;
