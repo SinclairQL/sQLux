@@ -2,6 +2,8 @@
  * (c) UQLX - see COPYRIGHT
  */
 
+#include <stdio.h>
+
 #include "QL68000.h"
 #include "SDL2screen.h"
 #include "memaccess.h"
@@ -458,7 +460,7 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
 
 void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 {
-  if((long)pc&1) return;
+  if((uintptr_t)pc&1) return;
 
   extraFlag=false;
   ProcessInterrupts();
