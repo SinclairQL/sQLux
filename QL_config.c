@@ -316,9 +316,9 @@ void InitROM(void)
 	char *initstr = "UQLX v%s, release\012      %s\012QDOS Version %s\012";
 	long sysvars, sxvars;
 
-	if ((long)((Ptr)gPC - (Ptr)theROM) - 2 != ROMINIT_CMD_ADDR) {
+	if ((uintptr_t)((Ptr)gPC - (Ptr)theROM) - 2 != ROMINIT_CMD_ADDR) {
 		printf("PC %8x is not patched with ROMINIT\n",
-		       (unsigned)((long)gPC - (long)theROM));
+		       (unsigned)((uintptr_t)gPC - (uintptr_t)theROM));
 		exception = 4;
 		extraFlag = true;
 		return;
