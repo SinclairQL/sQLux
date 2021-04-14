@@ -2,6 +2,7 @@
  *
  */
 #include <inttypes.h>
+#include <math.h>
 #include <SDL.h>
 
 #include "QL_hardware.h"
