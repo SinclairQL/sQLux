@@ -9,6 +9,9 @@ void abcd(void)
 {
 	w8 s, d, r;
 	w8 *dx;
+	uw16 abcd_lo, abcd_hi, abcd_res;
+	int abcd_carry;
+
 	if ((code & 8) != 0) {
 		s = GetFromEA_b_m4();
 		d = ModifyAtEA_b(4, (code >> 9) & 7);
@@ -17,14 +20,24 @@ void abcd(void)
 		d = *dx;
 		s = (w8)reg[code & 7];
 	}
-	r = d + s;
-	if (xflag)
-		r++;
-	if ((r & 0x0f) > 9)
-		r += 6;
-	if ((xflag = carry = (uw8)r > 0x09f))
-		r += 0x60;
-	zero = zero && r == 0;
+
+	abcd_lo = (s & 0xF) + (d & 0xF) + (xflag ? 1 : 0);
+	abcd_hi = (s & 0xF0) + (d & 0xF0);
+
+	abcd_res = abcd_hi + abcd_lo;
+	if (abcd_lo > 9) {
+		abcd_res += 6;
+	}
+	abcd_carry = (abcd_res & 0x3F0) > 0x90;
+	if (abcd_carry)
+		abcd_res += 0x60;
+
+	r = abcd_res;
+
+	xflag = carry = abcd_carry ? 1 : 0;
+	zero = (zero ? 1 : 0) & (r ? 0 : 1);
+	negative = (r < 0) ? 1 : 0;
+
 	if ((code & 8) != 0)
 		RewriteEA_b(r);
 	else
