@@ -1,2 +1,2 @@
 #include "QL68000.h"
-char *release="2018-10-28";
+char *release="2021-04-14";

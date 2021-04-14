@@ -529,7 +529,7 @@ void CoreDump()
 	}
 }
 
-char *uqlx_version = "0.50";
+char *uqlx_version = "0.99-rc1";
 
 #include "uqlx_cfg.h"
 
