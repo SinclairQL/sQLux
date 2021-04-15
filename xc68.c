@@ -18,9 +18,13 @@ int c68err(int err)
       case EPROTOTYPE: return C68ERR_EPROTOTYPE;
       case ENOPROTOOPT: return C68ERR_ENOPROTOOPT;
       case EPROTONOSUPPORT: return C68ERR_EPROTONOSUPPORT;
+#ifndef __WIN32__
       case ESOCKTNOSUPPORT: return C68ERR_ESOCKTNOSUPPORT;
+#endif
       case EOPNOTSUPP: return C68ERR_EOPNOTSUPP;
+#ifndef __WIN32__
       case EPFNOSUPPORT: return C68ERR_EPFNOSUPPORT;
+#endif
       case EAFNOSUPPORT: return C68ERR_EAFNOSUPPORT;
       case EADDRINUSE: return C68ERR_EADDRINUSE;
       case EADDRNOTAVAIL: return C68ERR_EADDRNOTAVAIL;
@@ -32,11 +36,15 @@ int c68err(int err)
       case ENOBUFS: return C68ERR_ENOBUFS;
       case EISCONN: return C68ERR_EISCONN;
       case ENOTCONN: return C68ERR_ENOTCONN;
+#ifndef __WIN32__
       case ESHUTDOWN: return C68ERR_ESHUTDOWN;
       case ETOOMANYREFS: return C68ERR_ETOOMANYREFS;
+#endif
       case ETIMEDOUT: return C68ERR_ETIMEDOUT;
       case ECONNREFUSED: return C68ERR_ECONNREFUSED;
+#ifndef __WIN32__
       case EHOSTDOWN: return C68ERR_EHOSTDOWN;
+#endif
       case EHOSTUNREACH: return C68ERR_EHOSTUNREACH;
       case EALREADY: return C68ERR_EALREADY;
       case EINPROGRESS: return C68ERR_EINPROGRESS;

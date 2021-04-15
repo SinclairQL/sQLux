@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #ifdef __WIN32__
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <netdb.h>
 #include <netinet/in.h>
@@ -72,8 +73,27 @@ int getdomainname(char *name, size_t len)
 
 static open_arg ip_par[2];
 
+#ifdef __WIN32__
+int ws2_init = 0;
+WSADATA wsaData;
+#endif
+
 int ip_init(int idx, void *p)
 {
+	printf("Initialising IP Driver\n");
+#ifdef __WIN32__
+	if (!ws2_init) {
+		int iResult;
+
+		// Initialize Winsock
+		iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		if (iResult != 0) {
+			printf("WSAStartup failed: %d\n", iResult);
+			return -1;
+		}
+		ws2_init = 1;
+	}
+#endif
 	return 0;
 }
 
@@ -99,6 +119,9 @@ int ip_open(int id, void **priv)
 	static const char *dnms[] = { "tcp,", "udp", "uxs", "uxd", "sck", NULL };
 	const char **dp;
 	short dindx;
+#ifdef __WIN32__
+	u_long iMode = 1;
+#endif
 
 	host = ip_par[0].s;
 	aport = ip_par[1].s;
@@ -108,6 +131,7 @@ int ip_open(int id, void **priv)
 			break;
 	}
 
+	printf("host %s\n", host);
 	if (dindx < 4 && (reg[3] >= 0 && reg[3] < 4)) {
 		int proto = (dindx & 1) ? SOCK_DGRAM : SOCK_STREAM;
 		int domain = (dindx < 2) ? AF_INET : AF_UNIX;
@@ -123,14 +147,14 @@ int ip_open(int id, void **priv)
 					int (*func)();
 
 					s = getservbyname(aport, (dindx & 1) ?
-									       "udp" :
-									       "tcp");
+									 "udp" :
+									 "tcp");
 
 					port = (s) ? s->s_port :
-							   htons(atoi(aport));
+						     htons(atoi(aport));
 					if (port) {
 						func = (reg[3] > 1) ? bind :
-									    connect;
+								      connect;
 						name.sin_family = h->h_addrtype;
 						name.sin_port = port;
 						name.sin_addr =
@@ -142,9 +166,20 @@ int ip_open(int id, void **priv)
 							sizeof(struct sockaddr_in));
 						/*printf("connect, result %d, errno %d, status %d\n",rv,errno,cnstatus);*/
 						/*if (rv<0) perror("connect/bind problem");*/
-						if (rv == 0)
+						if (rv == 0) {
+							int iResult;
+
 							cnstatus =
 								0; /* connection complete */
+#ifdef __WIN32__
+							iResult = ioctlsocket(
+								fd, FIONBIO,
+								&iMode);
+							if (iResult != NO_ERROR)
+								printf("ioctlsocket failed with error: %ld\n",
+								       iResult);
+#endif
+						}
 						if (rv < 0 && reg[3] == 1 &&
 						    errno == EINTR) {
 							cnstatus = -1;
@@ -214,6 +249,9 @@ void static check_status(ipdev_t *s)
 	struct timeval tv;
 	fd_set wfd, errfd;
 	int res;
+#ifdef __WIN32__
+	DWORD werrno;
+#endif
 
 	/*printf("calling check_status, status %d\n",s->status);*/
 
@@ -225,9 +263,16 @@ void static check_status(ipdev_t *s)
 
 			s->status = -2;
 			perror("asynchronous connect ");
+#ifndef __WIN32__
 			printf("getsockopt res %d\n",
 			       getsockopt(s->sock, SOL_SOCKET, SO_ERROR, &errno,
 					  &e));
+#else
+			printf("getsockopt res %d\n",
+			       getsockopt(s->sock, SOL_SOCKET, SO_ERROR,
+					  (char *)&werrno, &e));
+			errno = werrno;
+#endif
 		}
 
 		/*printf("check_status returns, status %d\n",s->status);*/
@@ -261,11 +306,24 @@ static int ip_read(ipdev_t *sd, void *buf, int pno)
 	long ci;
 	long res;
 	char *c;
-
+#ifdef __WIN32__
+	int iError;
+#endif
 	ci = 0;
 	c = buf;
 
+#ifndef __WIN32__
 	res = recv(sd->sock, buf, pno, MSG_DONTWAIT);
+#else
+	res = recv(sd->sock, buf, pno, 0);
+	if (res == SOCKET_ERROR) {
+		iError = WSAGetLastError();
+		if (iError == WSAEWOULDBLOCK) {
+			res = -1;
+			errno = EAGAIN;
+		}
+	}
+#endif
 
 	if (res < 0)
 		res = qmaperr();
@@ -281,7 +339,11 @@ static int ip_write(ipdev_t *sd, void *buf, int pno)
   if (!res || count>0 ) return count;
   else return res;
 #else
+#ifndef __WIN32__
 	res = write(sd->sock, buf, pno);
+#else
+	res = send(sd->sock, buf, pno, 0);
+#endif
 	/*printf("write res %d\n",res);*/
 	/*if (res<0) perror("write");  */
 	if (res < 0)
@@ -660,6 +722,7 @@ static int ip_gethostbyaddr(const char *addr, int len, int type,
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_sethostent(int stayopen)
 {
 	sethostent(stayopen);
@@ -671,6 +734,7 @@ static int ip_endhostent(void)
 	endhostent();
 	return 0;
 }
+#endif
 
 static int ip_h_errno(int *s)
 {
@@ -706,6 +770,7 @@ static int ip_gethostname(char *buf, int len)
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_getdomainname(char *buf, int len)
 {
 	int qerr, res;
@@ -726,6 +791,7 @@ static int ip_getservent(struct servent *s)
 		qerr = -15;
 	return qerr;
 }
+#endif
 
 static int ip_getservbyname(const char *name, const char *proto,
 			    struct servent *s)
@@ -754,18 +820,23 @@ static int ip_getservbyport(int port, const char *proto, struct servent *s)
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_setservent(int stayopen)
 {
 	setservent(stayopen);
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_endservent(void)
 {
 	endservent();
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_getnetent(struct netent *n)
 {
 	int qerr = 0;
@@ -778,7 +849,9 @@ static int ip_getnetent(struct netent *n)
 		qerr = -15;
 	return qerr;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_getnetbyname(const char *name, struct netent *n)
 {
 	int qerr = 0;
@@ -791,7 +864,9 @@ static int ip_getnetbyname(const char *name, struct netent *n)
 		qerr = -15;
 	return qerr;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_getnetbyaddr(unsigned long net, int type, struct netent *n)
 {
 	int qerr = 0;
@@ -804,19 +879,25 @@ static int ip_getnetbyaddr(unsigned long net, int type, struct netent *n)
 		qerr = -15;
 	return qerr;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_setnetent(int stayopen)
 {
 	setnetent(stayopen);
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_endnetent(void)
 {
 	endnetent();
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_getprotoent(struct protoent *p)
 {
 	int qerr = 0;
@@ -829,6 +910,7 @@ static int ip_getprotoent(struct protoent *p)
 		qerr = -15;
 	return qerr;
 }
+#endif
 
 static int ip_getprotobyname(const char *name, struct protoent *p)
 {
@@ -856,17 +938,21 @@ static int ip_getprotobynumber(int proto, struct protoent *p)
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_setprotoent(int stayopen)
 {
 	setprotoent(stayopen);
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_endprotoent(void)
 {
 	endprotoent();
 	return 0;
 }
+#endif
 
 static int ip_inet_aton(const char *cp, struct in_addr *inp, int *res)
 {
@@ -911,17 +997,21 @@ static int ip_inet_makeaddr(int net, int host, struct in_addr *in)
 }
 #endif
 
+#ifndef __WIN32__
 static int ip_inet_lnaof(struct in_addr *in, unsigned long int *u)
 {
 	*u = inet_lnaof(*in);
 	return 0;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_inet_netof(struct in_addr *in, unsigned long int *u)
 {
 	*u = inet_netof(*in);
 	return 0;
 }
+#endif
 
 static int ip_recv(ipdev_t *p, void *buf, long blen, int flag,
 		   struct sockaddr *from, socklen_t *flen)
@@ -985,6 +1075,7 @@ static int ip_send(ipdev_t *p, void *buf, long blen, int flag,
 	return qerr;
 }
 
+#ifndef __WIN32__
 static int ip_fcntl(ipdev_t *p, int act, int val)
 {
 	int qerr, res;
@@ -993,7 +1084,9 @@ static int ip_fcntl(ipdev_t *p, int act, int val)
 	QERRNO(qerr, res);
 	return qerr;
 }
+#endif
 
+#ifndef __WIN32__
 static int ip_ioctl(ipdev_t *p, int act, w32 *val)
 {
 	int qerr, res;
@@ -1003,6 +1096,7 @@ static int ip_ioctl(ipdev_t *p, int act, w32 *val)
 	QERRNO(qerr, res);
 	return qerr;
 }
+#endif
 
 static int ip_bind(ipdev_t *ip, struct sockaddr *sa, int len)
 {
@@ -1166,9 +1260,11 @@ void ip_io(int id, void *p)
 	}
 
 	switch (op) {
+#ifndef __WIN32__
 	case IP_GETDOMAIN:
 		*reg = ip_getdomainname((Ptr)theROM + aReg[1], count);
 		break;
+#endif
 	case IP_GETHOSTNAME:
 		*reg = ip_gethostname((Ptr)theROM + aReg[1], count);
 		break;
@@ -1188,12 +1284,14 @@ void ip_io(int id, void *p)
 		*reg = ip_gethostbyaddr((Ptr)theROM + aReg[1], reg[1], reg[2],
 					(Ptr)theROM + aReg[2]);
 		break;
+#ifndef __WIN32__
 	case IP_SETHOSTENT:
 		*reg = ip_sethostent(reg[1]);
 		break;
 	case IP_ENDHOSTENT:
 		*reg = ip_endhostent();
 		break;
+#endif
 	case IP_H_ERRNO:
 		*reg = ip_h_errno(&res);
 		reg[1] = res;
@@ -1201,9 +1299,11 @@ void ip_io(int id, void *p)
 	case IP_H_STRERROR:
 		*reg = ip_h_strerror((Ptr)theROM + aReg[1]);
 		break;
+#ifndef __WIN32__
 	case IP_GETSERVENT:
 		*reg = ip_getservent((Ptr)theROM + aReg[2]);
 		break;
+#endif
 	case IP_GETSERVBYNAME:
 		*reg = ip_getservbyname((Ptr)theROM + aReg[1],
 					(Ptr)theROM + reg[1],
@@ -1213,6 +1313,7 @@ void ip_io(int id, void *p)
 		*reg = ip_getservbyport(reg[1], (Ptr)theROM + aReg[3],
 					(Ptr)theROM + aReg[2]);
 		break;
+#ifndef __WIN32__
 	case IP_SETSERVENT:
 		*reg = ip_setservent(reg[1]);
 		break;
@@ -1238,6 +1339,7 @@ void ip_io(int id, void *p)
 	case IP_GETPROTOENT:
 		*reg = ip_getprotoent((Ptr)theROM + aReg[2]);
 		break;
+#endif
 	case IP_GETPROTOBYNAME:
 		*reg = ip_getprotobyname((Ptr)theROM + aReg[1],
 					 (Ptr)theROM + aReg[2]);
@@ -1245,12 +1347,16 @@ void ip_io(int id, void *p)
 	case IP_GETPROTOBYNUMBER:
 		*reg = ip_getprotobynumber(reg[1], (Ptr)theROM + aReg[2]);
 		break;
+#ifndef __WIN32__
 	case IP_SETPROTOENT:
 		*reg = ip_setprotoent(reg[1]);
 		break;
+#endif
+#ifndef __WIN32__
 	case IP_ENDPROTOENT:
 		*reg = ip_endprotoent();
 		break;
+#endif
 	case IP_INET_ATON:
 		*reg = ip_inet_aton((Ptr)theROM + aReg[1],
 				    (Ptr)theROM + aReg[2], &res);
@@ -1272,27 +1378,35 @@ void ip_io(int id, void *p)
 		*reg = ip_inet_ntoa((Ptr)theROM + aReg[1],
 				    (Ptr)theROM + aReg[2]);
 		break;
-#ifdef __WIN32__
+#ifndef __WIN32__
 	case IP_INET_MAKEADDR:
 		*reg = ip_inet_makeaddr(reg[1], reg[2], (Ptr)theROM + aReg[2]);
 		break;
 #endif
+#ifndef __WIN32__
 	case IP_INET_LNAOF:
 		*reg = ip_inet_lnaof((Ptr)theROM + aReg[1],
 				     (unsigned long *)&res);
 		reg[1] = res;
 		break;
+#endif
+#ifndef __WIN32__
 	case IP_INET_NETOF:
 		*reg = ip_inet_netof((Ptr)theROM + aReg[1],
 				     (unsigned long *)&res);
 		reg[1] = res;
 		break;
+#endif
+#ifndef __WIN32__
 	case IP_FCNTL:
 		*reg = ip_fcntl(priv, reg[1], reg[2]);
 		break;
+#endif
+#ifndef __WIN32__
 	case IP_IOCTL:
 		*reg = ip_ioctl(priv, reg[1], ((Ptr)theROM + aReg[1]));
 		break;
+#endif
 	case IP_BIND:
 		sa = setsockaddr(priv, aReg[2]);
 		*reg = ip_bind(priv, sa, len);

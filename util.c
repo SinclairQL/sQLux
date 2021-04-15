@@ -21,13 +21,19 @@
 #include <signal.h>
 #include <sys/time.h>
 #ifdef IPDEV
+#ifdef __WIN32__
+#include <winsock2.h>
+#else
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #endif
+#endif
+#ifndef __WIN32__
 #include <sys/select.h>
+#endif
 
 #include "QSerial.h"
 #include "QDOS.h"
