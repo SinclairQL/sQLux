@@ -17,7 +17,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNO_LOCK -DNO_FORK -D_POSIX")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -47,5 +47,5 @@ else()
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(sqlux -mconsole)
+	target_link_libraries(sqlux -mconsole -lwsock32)
 endif()
