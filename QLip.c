@@ -131,7 +131,6 @@ int ip_open(int id, void **priv)
 			break;
 	}
 
-	printf("host %s\n", host);
 	if (dindx < 4 && (reg[3] >= 0 && reg[3] < 4)) {
 		int proto = (dindx & 1) ? SOCK_DGRAM : SOCK_STREAM;
 		int domain = (dindx < 2) ? AF_INET : AF_UNIX;
