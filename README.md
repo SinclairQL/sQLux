@@ -18,7 +18,7 @@ Basic instructions
     cmake ..
     make
 
-## Building MinGW
+## Building MinGW on Linux
 
 sQLux not fully buildable on MinGW system yet
 
@@ -40,6 +40,28 @@ Now mingw version of SDL2 is available and we can build sQLux for Win64
     cd mingw
     cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
     make
+
+## Building MinGW on Windows
+
+Install MSYS2 from here https://www.msys2.org/
+
+Run the mingw64 environment
+
+Install the toolchain and SDL2
+
+    pacman -Sy mingw-w64-x86_64-toolchain
+    pacman -Sy mingw-w64-x86_64-SDL2
+
+Create the build directory and compile
+
+    mkdir mingw
+    cd mingw
+    cmake.exe -G "MinGW Makefiles" ..
+    mingw32-make
+
+This will generate a sqlux.exe, to run under windows explorer or shell yo
+just need to place SDL2.dll from /mingw64/bin/ in the same directory. In
+mingw64 env it will be found automatically.
 
 # uqlxrc
 
