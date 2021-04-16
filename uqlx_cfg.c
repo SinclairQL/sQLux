@@ -334,10 +334,9 @@ FILE *lopen(const char *s, const char *mode)
 	if (*s == '~') {
 		char *p = fnam;
 		char *pf = homedir;
-		printf("HERE\n");
+
 		if (pf)
 			strcpy(p, homedir);
-		printf("NOT HERE\n");
 		strcat(p, s + 1);
 		s = p;
 	}
@@ -349,7 +348,7 @@ FILE *lopen(const char *s, const char *mode)
 
 		if ((pf = homedir)) {
 			short n;
-			printf("HOME %p\n", pf);
+
 			strcpy(pname, pf);
 			n = strlen(pname);
 			if (*(pname + n - 1) != '/'
