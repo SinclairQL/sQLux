@@ -65,7 +65,6 @@ int ux_bfd = 0;
 char *ux_bname = "";
 int start_iconic = 0;
 char *pwindow = NULL;
-int is_patching = 0;
 int UQLX_optind;
 int UQLX_argc;
 char **UQLX_argv;
@@ -621,20 +620,14 @@ void usage(char **argv)
 	       argv[0]);
 	printf("\t options:\n"
 	       "\t\t -?                  : list options \n"
-	       "\t\t -??                 : browse manuals, may set $BROWSER \n"
 	       "\t\t -f config_file      : read alternative config file\n"
-	       "\t\t -m                  : use greyscale display \n"
-	       "\t\t -c                  : display colors [if possible] \n"
-	       "\t\t -i                  : start iconified \n"
-	       "\t\t -h                  : waste all cpu time available \n"
 	       "\t\t -r MEM              : set RAMTOP to this many Kb \n"
 	       "\t\t -o romname          : use this ROM \n"
 	       "\t\t -b 'boot_cmd'       : define BOOT device with boot_cmd \n"
-	       "\t\t -s 'boot_cmd'       :    .. and do scripting \n"
 	       "\t\t -d 'boot_dev'       : device where BOOT should be read eg. 'mdv1'\n"
 	       "\t\t -g NxM              : define screen size to NxM \n"
 	       "\t\t -v num              : set verbosity\n"
-	       "\t\t -W window           : reparent root window \n"
+	       "\t\t -w 1x,2x,3x,max,full: window size 1x, 2x, 3x, maximize, fullscreen \n"
 	       "\t\t -n                  : dont patch anything (xuse only)\n\n"
 	       "\t arguments: available through Superbasic commands\n\n");
 	exit(0);
@@ -651,7 +644,7 @@ void SetParams(int ac, char **av)
 #ifdef __WIN32__
 	int res;
 	struct stat stat_res;
-	char my_documents[MAX_PATH+1];
+	char my_documents[MAX_PATH + 1];
 	HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL,
 					 SHGFP_TYPE_CURRENT, my_documents);
 
@@ -680,7 +673,7 @@ void SetParams(int ac, char **av)
 	*sysrom = 0;
 
 #ifndef NO_GETOPT
-	while ((c = getopt(ac, av, "f:micnhr:o:s:b:g:W:p?::v:d:")) != EOF) {
+	while ((c = getopt(ac, av, "f:r:o:b:d:g:v:w:n?")) != EOF) {
 		switch (c) {
 		case 'g':
 			gg = 0;
@@ -708,20 +701,9 @@ void SetParams(int ac, char **av)
 		case 'n':
 			no_patch = 1;
 			break;
-		case 'i':
-			start_iconic = 1;
-			break;
 		case 'v':
 			verbose = atoi(optarg);
 			break;
-		case 'p':
-			is_patching = 1;
-			verbose = 0;
-			/* FALLTHRU */
-		case 's':
-			script = 1;
-			redir_std = 1;
-			/* FALLTHRU */
 		case 'b': {
 			int len;
 
@@ -734,14 +716,26 @@ void SetParams(int ac, char **av)
 				ux_bname[len + 1] = 0;
 			}
 		} break;
-		case 'W':
-			pwindow = optarg;
+		case 'w':
+			if (optarg && (strlen(optarg) < 5)) {
+				int valid = 1;
+				valid &= strcmp("1x", optarg) ? 1 : 0;
+				valid &= strcmp("2x", optarg) ? 1 : 0;
+				valid &= strcmp("3x", optarg) ? 1 : 0;
+				valid &= strcmp("max", optarg) ? 1 : 0;
+				valid &= strcmp("full", optarg) ? 1 : 0;
+
+				if (!valid) {
+					strcpy(QMD.winsize, optarg);
+				} else {
+					usage(av);
+				}
+			} else {
+				usage(av);
+			}
 			break;
 		case '?':
-			if (optarg)
-				browse_manuals();
-			else
-				usage(av);
+			usage(av);
 			break;
 		case 'd':
 			if (optarg && strcmp("", optarg)) {

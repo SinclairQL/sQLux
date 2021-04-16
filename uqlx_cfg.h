@@ -35,6 +35,7 @@ typedef struct {
 	char prtcmd[64];
 	char bootdev[5];
 	char bdi1[64];
+	char winsize[5];
 	short cpu_hog;
 	short fastStartup;
 	short skip_boot;
