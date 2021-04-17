@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
+#include <SDL_timer.h>
 
 #include "instructions.h"
 #include "xcodes.h"
