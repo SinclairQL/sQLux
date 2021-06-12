@@ -1,4 +1,4 @@
-10 REMark UQLX
+10 REMark sQLux
 100 OPEN#4,con_512x256a0x0
 110 BORDER#4,2,4,2
 120 PAPER#4,2:INK#4,7
@@ -12,6 +12,8 @@
 200 PRINT#4
 210 PRINT#4
 220 PRINT#4, "Date",DATE$,"QDOS version:",VER$
+222 PRINT#4
+225 PRINT#4, "Ram Size: ";(PEEK_L(163872)/1024 - 128);"k"
 230 PRINT#4
 240 PRINT#4, "Start as: '";getXarg$(0);" -?' to get a list of startup options"
 250 PRINT#4, "          '";getXarg$(0);" -??' to browse manuals"

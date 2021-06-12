@@ -69,3 +69,7 @@ The emulator currently reads your existing uqlxrc file so will re-use any uQlx s
 
 NOTE: ROMIM has changed to now only accept 1 rom name
 
+NOTE: RAMTOP is where in memory the top of the ram is, not the amount of ram.
+As ram on QL starts at 128k in memory map then to created a 128k QL you
+need to set RAMTOP = 256
+
