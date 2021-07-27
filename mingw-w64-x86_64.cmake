@@ -13,6 +13,7 @@ set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
 set(CMAKE_Fortran_COMPILER ${TOOLCHAIN_PREFIX}-gfortran)
 set(CMAKE_RC_COMPILER ${TOOLCHAIN_PREFIX}-windres)
+set(CMAKE_AR ${TOOLCHAIN_PREFIX}-ar)
 
 # target environment on the build host system
 set(CMAKE_FIND_ROOT_PATH /usr/${TOOLCHAIN_PREFIX})
