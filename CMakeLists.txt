@@ -47,5 +47,5 @@ else()
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(sqlux -mconsole -lwsock32)
+	target_link_libraries(sqlux -mconsole -lwsock32 -static-libgcc)
 endif()
