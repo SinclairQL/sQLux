@@ -48,23 +48,6 @@
 #include "QLip.h"
 #include "xc68.h"
 
-/* some (many?) OS's don't know this yet ...*/
-#ifdef SOLARIS
-int getdomainname(char *name, size_t len)
-{
-	char *p = getenv("DOMAIN");
-
-	if (strlen(p) > len) {
-		errno = EINVAL;
-		return -1;
-	}
-	strncpy(name, p, len);
-
-	return 0;
-}
-
-#endif
-
 #define IPDEBUGGER 1
 
 #ifdef IPDEBUGGER
