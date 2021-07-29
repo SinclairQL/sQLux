@@ -12,7 +12,7 @@ struct ql_sockaddr {
 };
 
 struct ql_in_addr {
-    uint32_t    s_addr;
+    uint32_t    ql_s_addr;
 };
 
 struct ql_sockaddr_in {
