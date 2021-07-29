@@ -1130,7 +1130,7 @@ struct sockaddr *setsockaddr(ipdev_t *priv, long qladdr, struct sockaddr_in *sin
 	if (qladdr) {
 		qlsa = (struct ql_sockaddr *)((Ptr)theROM + qladdr);
 	} else {
-		qlsa = (struct ql_sockaddr *)&priv->name;
+		return (struct sockaddr *)&priv->name;
 	}
 
 	ql_sa_family = RW(&qlsa->sa_family);
