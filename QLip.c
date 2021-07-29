@@ -12,6 +12,7 @@
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,6 +39,7 @@
 #include "QL_driver.h"
 #include "QSerial.h"
 #include "QDOS.h"
+#include "QDOS_driver_ip.h"
 #include "driver.h"
 #include "uqlx_cfg.h"
 
@@ -100,8 +102,7 @@ int ip_init(int idx, void *p)
 int ip_test(int id, char *name)
 {
 	int res = decode_name(name, Drivers[id].namep, ip_par);
-	if (res)
-		printf("ip_test: matched %s", name);
+
 	return res;
 }
 
@@ -532,31 +533,28 @@ void serv_convert(struct servent *h1, struct servent *h2)
 	WL(&h2->s_port, ntohs(h1->s_port));
 }
 
-#if 1
-void host_convert(struct hostent *h1, struct hostent *h2)
+void host_convert(struct hostent *h1, struct ql_hostent *h2)
 {
 	int i, m, n;
 	char *h;
 	w32 hql;
 	int tmp;
 
-	h = (char *)h2 + sizeof(struct hostent); /* start of free space */
+	assert (sizeof(struct ql_hostent) == 20);
+
+	h = (char *)h2 + sizeof(struct ql_hostent); /* start of free space */
 	hql = (uintptr_t)h - (uintptr_t)theROM; /* address in QDOS */
-#if 1 /* def O3BUG */
+
 	WL((w32 *)&h2->h_name, hql); /* set address for name */
-#else
-	h2->h_name = (char *)htonl((int)hql);
-#endif
+
 	m = 1 + strlen(h1->h_name); /* length + 0 */
 	strcpy(h, h1->h_name); /* copy in name */
 	m = (m + 3) & ~3; /* get long address */
 	h = h + m; /* next free */
 	hql = hql + m; /* next free in QDOS speak */
-#if 1 /* def O3BUG */
+
 	WL((w32 *)&h2->h_addr_list, hql); /* set addr list for QDOS */
-#else
-	h2->h_addr_list = (void *)htonl((int)hql);
-#endif
+
 	for (i = 0; h1->h_addr_list[i]; i++) /* loop for addresses */
 		; /* count aliases */
 	n = i + 1;
@@ -564,25 +562,27 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 	for (i = 0; h1->h_addr_list[i]; i++) /* loop for addresses  */
 	{
 		int x;
+		uint32_t xql;
+
 		memcpy(&x, h1->h_addr_list[i],
 		       sizeof(int)); /* ip in net format */
-#if 1 /*def O3BUG */
-		WL((w32 *)h, hql + n * sizeof(int)); /* set up address */
-#else
-		*(char **)h = (void *)htonl((int)hql + n * sizeof(int));
-#endif
-		memcpy(h + n * sizeof(int), &x,
-		       sizeof(int)); /* copy in net order addr */
-		h += sizeof(int); /* next free */
-		hql += sizeof(int); /* ditto */
+
+		WL((w32 *)h, hql + n * sizeof(uint32_t)); /* set up address */
+
+		xql = x;
+
+		memcpy(h + n * sizeof(uint32_t), &xql,
+		       sizeof(uint32_t)); /* copy in net order addr */
+		h += sizeof(uint32_t); /* next free */
+		hql += sizeof(uint32_t); /* ditto */
 	}
 
 	/* Ensure list is terminated */
 
 	WL((w32 *)h, 0); /* set up address */
 
-	h += n * sizeof(int);
-	hql += n * sizeof(int);
+	h += n * sizeof(uint32_t);
+	hql += n * sizeof(uint32_t);
 
 	{
 		char **q, *s;
@@ -600,18 +600,13 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 
 		sql = hql + l;
 		s = h + l;
-#if 1 /* def O3BUG */
+
 		WL((w32 *)&h2->h_aliases, sql);
-#else
-		h2->h_aliases = (void *)htonl((int)sql);
-#endif
+
 		for (q = h1->h_aliases; *q; q++) {
-#if 1 /* def O3BUG */
 			WL((w32 *)s, hql);
-#else
-			*(char **)s = (void *)htonl((int)hql);
-#endif
-			s += sizeof(int);
+
+			s += sizeof(int32_t);
 			hql = hql + 1 + strlen(*q);
 		}
 		WL((w32 *)s, 0);
@@ -621,78 +616,7 @@ void host_convert(struct hostent *h1, struct hostent *h2)
 	WL(&h2->h_length, h1->h_length);
 }
 
-#else
-void host_convert(struct hostent *h1, struct hostent *h2)
-{
-	int i, m, n;
-	char *h, *hql;
-	int tmp;
-
-	n = sizeof(int) + h1->h_length;
-
-	h = (char *)h2 + sizeof(struct hostent);
-	hql = h - (int)theROM;
-
-	WL((w32 *)&h2->h_name, (w32)hql);
-	m = 1 + strlen(h1->h_name);
-	strcpy(h, h1->h_name);
-	m = (m + 3) & ~3;
-	h = h + m;
-	hql = hql + m;
-
-	WL((w32 *)&h2->h_addr_list, (w32)hql);
-
-	for (i = 0; i < 1 /*h1->h_addr_list[i]*/; i++) {
-		int x;
-		/*x = *(int *)h1->h_addr_list[i];*/
-		memcpy(&x, h1->h_addr_list[i], sizeof(int));
-		WL((w32 *)h, (w32)(hql + n));
-		/* *(int *)(h+n) =  x;  */
-		memcpy(h + n, &x, sizeof(int));
-
-		h += sizeof(int);
-		hql += sizeof(int);
-		if (x == 0)
-			break;
-	}
-
-	/* *(w32 *)h =  0;*/
-	WL((w32 *)h, 0);
-
-	h += n + sizeof(int);
-	hql += n + sizeof(int);
-
-	{
-		char **q, *s, *sql;
-		int l;
-
-		s = h;
-		for (q = h1->h_aliases; *q; q++) {
-			strcpy(s, *q);
-			s = s + 1 + strlen(s);
-		}
-
-		l = s - h;
-		l = (l + 3) & ~3;
-
-		sql = hql + l;
-		s = h + l;
-
-		WL((w32 *)&h2->h_aliases, (w32)sql);
-		for (q = h1->h_aliases; *q; q++) {
-			WL((w32 *)s, (w32)hql);
-			s += sizeof(int);
-			hql = hql + 1 + strlen(*q);
-		}
-		WL((w32 *)s, 0);
-		/* *(w32*)s = 0;*/
-	}
-	WL(&h2->h_addrtype, h1->h_addrtype);
-	WL(&h2->h_length, h1->h_length);
-}
-#endif
-
-static int ip_gethostbyname(const char *name, struct hostent *h)
+static int ip_gethostbyname(const char *name, struct ql_hostent *h)
 {
 	int qerr = 0;
 	struct hostent *ph;
@@ -707,7 +631,7 @@ static int ip_gethostbyname(const char *name, struct hostent *h)
 }
 
 static int ip_gethostbyaddr(const char *addr, int len, int type,
-			    struct hostent *h)
+			    struct ql_hostent *h)
 {
 	int qerr = 0;
 	struct hostent *ph;
@@ -764,6 +688,7 @@ static int ip_h_strerror(char *s)
 static int ip_gethostname(char *buf, int len)
 {
 	int qerr, res;
+
 	res = gethostname(buf, len);
 	QERRNO(qerr, res);
 	return qerr;
@@ -1213,18 +1138,32 @@ static int ip_shutdown(ipdev_t *ip, int how)
 	return qerr;
 }
 
-struct sockaddr *setsockaddr(ipdev_t *priv, long qladdr)
+struct sockaddr *setsockaddr(ipdev_t *priv, long qladdr, struct sockaddr_in *sin)
 {
-	struct sockaddr *sa;
+	struct ql_sockaddr *qlsa;
+	struct ql_sockaddr_in *qlsin;
+	int ql_sa_family;
 
 	if (qladdr) {
-		sa = (struct sockaddr *)((Ptr)theROM + qladdr);
-		WW((w16 *)&((struct sockaddr_in *)sa)->sin_family,
-		   (w16)((struct sockaddr_in *)sa)->sin_family);
+		qlsa = (struct ql_sockaddr *)((Ptr)theROM + qladdr);
 	} else {
-		sa = (struct sockaddr *)&priv->name;
+		qlsa = (struct ql_sockaddr *)&priv->name;
 	}
-	return sa;
+
+	ql_sa_family = RW(&qlsa->sa_family);
+
+	if (ql_sa_family != AF_INET) {
+		printf("IP: Error only AF_INET supported\n");
+		return NULL;
+	}
+	qlsin = (struct ql_sockaddr_in *)qlsa;
+
+	sin->sin_family = RW(&qlsin->sin_family);
+	sin->sin_port = qlsin->sin_port;
+
+	memcpy(&sin->sin_addr, &qlsin->sin_addr, sizeof(uint32_t));
+
+	return (struct sockaddr *)sin;
 }
 
 void resetsockaddr(ipdev_t *priv, struct sockaddr *sa)
@@ -1245,6 +1184,7 @@ void ip_io(int id, void *p)
 	w32 params;
 	w32 qaddr;
 	socklen_t len;
+	struct sockaddr_in ip_sockaddr = {0};
 
 	len = (reg[1]) ? reg[1] : sizeof(struct sockaddr_in);
 	count = reg[2];
@@ -1407,12 +1347,12 @@ void ip_io(int id, void *p)
 		break;
 #endif
 	case IP_BIND:
-		sa = setsockaddr(priv, aReg[2]);
+		sa = setsockaddr(priv, aReg[2], &ip_sockaddr);
 		*reg = ip_bind(priv, sa, len);
 		resetsockaddr(priv, sa);
 		break;
 	case IP_CONNECT:
-		sa = setsockaddr(priv, aReg[2]);
+		sa = setsockaddr(priv, aReg[2], &ip_sockaddr);
 		*reg = ip_connect(priv, sa, len);
 		break;
 	case IP_LISTEN:
@@ -1437,7 +1377,7 @@ void ip_io(int id, void *p)
 	case IP_SENDTO:
 		params = aReg[2];
 		len = ReadLong(params + 4);
-		sa = setsockaddr(priv, ReadLong(params));
+		sa = setsockaddr(priv, ReadLong(params), &ip_sockaddr);
 		*reg = ip_send(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
 			       len);
 		resetsockaddr(priv, sa);
@@ -1476,7 +1416,7 @@ void ip_io(int id, void *p)
 	case IP_RECVFM:
 		params = aReg[2];
 		len = ReadLong(params + 4);
-		sa = setsockaddr(priv, ReadLong(params));
+		sa = setsockaddr(priv, ReadLong(params), &ip_sockaddr);
 		*reg = ip_recv(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
 			       &len);
 		resetsockaddr(priv, sa);
