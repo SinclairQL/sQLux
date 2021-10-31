@@ -45,7 +45,7 @@ uint32_t SDLcolors[8];
 void QLSDLScreen(void)
 {
 	uint32_t sdl_window_mode;
-	int i, w, h;
+	int i, w, h, ay;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP / 1024);
 
@@ -60,9 +60,16 @@ void QLSDLScreen(void)
 	printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
 	       sdl_mode.w, sdl_mode.h);
 
+	/* Fix the aspect ratio to more like real hardware */
+	if (QMD.aspect) {
+		ay = (qlscreen.yres * 3) / 2;
+	} else {
+		ay = qlscreen.yres;
+	}
+
 	/* Ensure width and height are always initialised to sane values */
 	w = qlscreen.xres;
-	h = qlscreen.yres;
+	h = ay;
 
 	if (sdl_video_driver != NULL &&
 	    (strcmp(sdl_video_driver, "x11") == 0) ||
@@ -75,17 +82,13 @@ void QLSDLScreen(void)
 
 		if (!strcmp("2x", QMD.winsize)) {
 			w = qlscreen.xres * 2;
-			h = qlscreen.yres * 2;
+			h = ay * 2;
 		} else if (!strcmp("3x", QMD.winsize)) {
 			w = qlscreen.xres * 3;
-			h = qlscreen.yres * 3;
+			h = ay * 3;
 		} else if (!strcmp("max", QMD.winsize)) {
-			w = qlscreen.xres;
-			h = qlscreen.yres;
 			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
 		} else if (!strcmp("full", QMD.winsize)) {
-			w = qlscreen.xres;
-			h = qlscreen.yres;
 			sdl_window_mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 			ql_fullscreen = true;
 		}
@@ -108,14 +111,17 @@ void QLSDLScreen(void)
 					 SDL_RENDERER_ACCELERATED |
 						 SDL_RENDERER_PRESENTVSYNC);
 
-	SDL_RenderSetLogicalSize(ql_renderer, qlscreen.xres, qlscreen.yres);
+	SDL_RenderSetLogicalSize(ql_renderer, qlscreen.xres, ay);
 
 	dest_rect.x = dest_rect.y = 0;
 	dest_rect.w = qlscreen.xres;
-	dest_rect.h = qlscreen.yres;
+	dest_rect.h = ay;
 
 	SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+
+	if (QMD.filter)
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
 	ql_screen = SDL_CreateRGBSurfaceWithFormat(
 		0, qlscreen.xres, qlscreen.yres, 32, SDL_PIXELFORMAT_RGBA32);

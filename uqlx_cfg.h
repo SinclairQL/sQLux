@@ -41,6 +41,8 @@ typedef struct {
 	short skip_boot;
 	short strict_lock;
 	short no_patch;
+	short aspect;
+	short filter;
 } QMDATA;
 
 #define QMFILE "~/.uqlxrc"

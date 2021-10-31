@@ -43,6 +43,8 @@ QMDATA QMD = {
 	.skip_boot = 1, /* skip_boot=true */
 	.strict_lock = 1, /* do strict locking for disk images */
 	.no_patch = 0, /* no_patch, default off */
+	.aspect = 0, /* fix aspect ration */
+	.filter = 0, /* enable bilinear filter */
 };
 
 static char *strim(char *s)
@@ -325,6 +327,8 @@ static PARSELIST pl[] = {
 	{ "BOOT_DEV", (PVFV)pString, offsetof(QMDATA, bootdev), 4 },
 	{ "BDI1", (PVFV)pString, offsetof(QMDATA, bdi1), 63 },
 	{ "WIN_SIZE", (PVFV)pString, offsetof(QMDATA, winsize), 4 },
+	{ "FIXASPECT", (PVFV)pInt2, offsetof(QMDATA, aspect) },
+	{ "FILTER", (PVFV)pInt2, offsetof(QMDATA, filter) },
 	{ NULL, NULL },
 };
 
