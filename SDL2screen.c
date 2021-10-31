@@ -60,17 +60,20 @@ void QLSDLScreen(void)
 	printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
 	       sdl_mode.w, sdl_mode.h);
 
+	/* Ensure width and height are always initialised to sane values */
+	w = qlscreen.xres;
+	h = qlscreen.yres;
+
 	if (sdl_video_driver != NULL &&
-		    (strcmp(sdl_video_driver, "x11") == 0) ||
+	    (strcmp(sdl_video_driver, "x11") == 0) ||
 	    (strcmp(sdl_video_driver, "cocoa") == 0) ||
-	    (strcmp(sdl_video_driver, "windows") == 0) && sdl_mode.w >= 800 &&
-		    sdl_mode.h >= 600) {
+	    (strcmp(sdl_video_driver, "windows") == 0) ||
+	    (strcmp(sdl_video_driver, "wayland") == 0) &&
+	    sdl_mode.w >= 800 &&
+	    sdl_mode.h >= 600) {
 		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
-		if (!strcmp("1x", QMD.winsize)) {
-			w = qlscreen.xres;
-			h = qlscreen.yres;
-		} else if (!strcmp("2x", QMD.winsize)) {
+		if (!strcmp("2x", QMD.winsize)) {
 			w = qlscreen.xres * 2;
 			h = qlscreen.yres * 2;
 		} else if (!strcmp("3x", QMD.winsize)) {
