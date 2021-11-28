@@ -34,11 +34,68 @@ else()
 	endif()
 endif()
 
+find_package(Git)
+
+add_custom_target( SubmarineGitVersion
+    COMMAND ${CMAKE_COMMAND}
+        -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
+        -D INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/version.c.in
+        -D OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake
+)
+
+
 find_package(SDL2 REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_NET_INCLUDE_DIRS})
 
-add_executable(sqlux Init.c QDisk.c QL_basext.c QL_boot.c QL_cconv.c QL_config.c QL_driver.c QL_files.c QL_hardware.c QL_poll.c QL_screen.c QL_serial.c QL_sound.c QLip.c QLserio.c QLtraps.c QVFS.c SDL2screen.c Xscreen.c dummies.c general.c iexl_general.c instructions_ao.c instructions_pz.c mach_exception.c memaccess.c pty.c qmtrap.c trace.c unixstuff.c uqlx_cfg.c util.c uxfile.c version.c vm.c xc68.c xcodes.c xlmain.c xqlmouse.c sqlux_bdi.c mmodes.c)
+add_executable(sqlux
+    Init.c
+    QDisk.c
+    QL_basext.c
+    QL_boot.c
+    QL_cconv.c
+    QL_config.c
+    QL_driver.c
+    QL_files.c
+    QL_hardware.c
+    QL_poll.c
+    QL_screen.c
+    QL_serial.c
+    QL_sound.c
+    QLip.c
+    QLserio.c
+    QLtraps.c
+    QVFS.c
+    SDL2screen.c
+    Xscreen.c
+    dummies.c
+    general.c
+    iexl_general.c
+    instructions_ao.c
+    instructions_pz.c
+    mach_exception.c
+    memaccess.c
+    pty.c
+    qmtrap.c
+    trace.c
+    unixstuff.c
+    uqlx_cfg.c
+    util.c
+    uxfile.c
+    vm.c
+    xc68.c
+    xcodes.c
+    xlmain.c
+    xqlmouse.c
+    sqlux_bdi.c
+    mmodes.c
+    ${CMAKE_CURRENT_BINARY_DIR}/version.c
+    )
+set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
+PROPERTIES GENERATED TRUE)
+
+add_dependencies(sqlux SubmarineGitVersion)
 
 if (SDL2_LIBRARIES)
     target_link_libraries(sqlux m ${SDL2_LIBRARIES} ${SDL2_NET_LIBRARIES})
