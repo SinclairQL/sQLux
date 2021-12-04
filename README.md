@@ -1,3 +1,6 @@
+![Build x86-64](https://github.com/SinclairQL/sQLux/actions/workflows/build-native.yml/badge.svg)
+![Build ARM](https://github.com/SinclairQL/sQLux/actions/workflows/build-arm.yml/badge.svg)
+
 # sQLux (or QL Sux according to DaveP)
 
 This is an emulator based on uQlx but with SDL2 used as its OS layer.
