@@ -75,5 +75,6 @@ typedef struct {
 extern QMDATA QMD;
 
 void QMParams(void);
+int QMParseParam(char *pbuf);
 
 #endif

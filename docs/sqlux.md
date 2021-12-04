@@ -22,7 +22,7 @@ Contents
  11. [FAQ](#FAQ)
  12. [History](#History)
  13. [Benchmarks](#Benchmarks)
- 
+
 1 Introduction {#introduction .chapter}
 ==============
 
@@ -47,8 +47,8 @@ features and possibilities are:
     features
 
   ------------------------------------------------- ---- --
-  [1.1 System Requirements](#System-Requirements)        
-  [1.2 COPYRIGHT](#COPYRIGHT)                            
+  [1.1 System Requirements](#System-Requirements)     
+  [1.2 COPYRIGHT](#COPYRIGHT)                         
   ------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -147,7 +147,7 @@ other Unices make sure you use gnu-make (called eg gmake on Suns) and
 <div class="example">
 
 ``` {.example}
-make config     # 
+make config     #
 make
 make install
 ```
@@ -183,12 +183,12 @@ There are some other interesting targets,
 -   `make docs` will build ‘`docs/uqlx.dvi`’ and ‘`docs/uqlx.info`’
 
   ------------------------------------------------------------------------------- ---- --
-  [2.0.1 Misc Hints](#Misc-Hints)                                                      
-  [2.0.2 Compiling Preferences](#Compiling-Preferences)                                
-  [2.0.3 Further Options](#Further-Options)                                            
-  [2.0.4 Adding CPU specific optimizations](#Adding-CPU-specific-optimizations)        
-  [2.0.5 Unsupported Machines](#Unsupported-Machines)                                  
-  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)                                    
+  [2.0.1 Misc Hints](#Misc-Hints)                                                   
+  [2.0.2 Compiling Preferences](#Compiling-Preferences)                             
+  [2.0.3 Further Options](#Further-Options)                                         
+  [2.0.4 Adding CPU specific optimizations](#Adding-CPU-specific-optimizations)     
+  [2.0.5 Unsupported Machines](#Unsupported-Machines)                               
+  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)                                 
   ------------------------------------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -409,7 +409,7 @@ following information:
 -   any special compile flags, libraries etc ...
 
   --------------------------------------------------- ---- --
-  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)        
+  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)     
   --------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -569,7 +569,7 @@ be copied to your application defaults directory, you will probably also
 want to change the button names.
 
   ----------------------------------------------------- ---- --
-  [4.1 About .uqlxrc files](#About-_002euqlxrc-files)        
+  [4.1 About .uqlxrc files](#About-_002euqlxrc-files)     
   ----------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -706,7 +706,7 @@ The keys available are:
     ``` {.example}
              SIZE_1 = 640x400
              SIZE_2 = 1024x768
-             SIZE_3 = 4096x4096  
+             SIZE_3 = 4096x4096
     ```
 
     </div>
@@ -819,7 +819,7 @@ The keys available are:
     <div class="example">
 
     ``` {.example}
-             XKEY_SWITCH = F16      
+             XKEY_SWITCH = F16
     ```
 
     </div>
@@ -938,7 +938,7 @@ addition, the following defaults are also set.
          RAMTOP = 4096
          COLOUR = 1
 
-         PRINT = /usr/bin/lpr 
+         PRINT = /usr/bin/lpr
          CPU_HOG = 1
 ```
 
@@ -1023,13 +1023,13 @@ ln -s BOOT boot         # in mdv1_
   [5.1 Program Name](#Program-Name)                                        important shortcut to select configurations
   [5.2 Command Line options](#Command-Line-options)                        to override defaults
   [5.3 BOOT Files](#BOOT-Files)                                            a few points to know
-  [5.4 GUI](#GUI)                                                          
-  [5.5 Signals - Terminating UQLX](#Signals-_002d-Terminating-UQLX)        
-  [5.6 ROM Images](#ROM-Images)                                            
-  [5.7 The big screen feature](#The-big-screen-feature)                    
-  [5.8 X Window Managers](#X-Window-Managers)                              
-  [5.9 Keyboard](#Keyboard)                                                
-  [5.10 Scripting](#Scripting)                                             
+  [5.4 GUI](#GUI)                                                       
+  [5.5 Signals - Terminating UQLX](#Signals-_002d-Terminating-UQLX)     
+  [5.6 ROM Images](#ROM-Images)                                         
+  [5.7 The big screen feature](#The-big-screen-feature)                 
+  [5.8 X Window Managers](#X-Window-Managers)                           
+  [5.9 Keyboard](#Keyboard)                                             
+  [5.10 Scripting](#Scripting)                                          
   ------------------------------------------------------------------- ---- ---------------------------------------------
 
 ------------------------------------------------------------------------
@@ -1095,14 +1095,10 @@ uqlx supports the following command line options; these override
 settings in ‘`~/.uqlxrc.`’ Note that options in turn can be overridden
 by program name as described above.
 
-<div class="example">
-
-``` {.example}
-         qm [-r RAMTOP] [-i] [[-c][-m]] [-f file] [-h] [-o romname] 
+```
+         qm [-r RAMTOP] [-i] [-f file] [-h] [-o romname]
             [-s [string]] [-b [string]]
 ```
-
-</div>
 
 where:
 
@@ -1113,7 +1109,10 @@ where:
 
 `-c`
 
-:   Forces colour mode.
+:   Configuration line from in sqlux.ini format
+    ```
+    -c "DEVICE = FLP1,/tmp/flp.img,qdos-native"
+    ```
 
 `-m`
 
@@ -1314,8 +1313,8 @@ are:
     if possible, 2.10 works very well for me.
 
   ------------------------------------------------------- ---- --
-  [5.7 The big screen feature](#The-big-screen-feature)        
-  [5.9 Keyboard](#Keyboard)                                    
+  [5.7 The big screen feature](#The-big-screen-feature)     
+  [5.9 Keyboard](#Keyboard)                                 
   ------------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -1481,26 +1480,26 @@ X defines:
 1) keycodes - each keyboard button has a number that is completely OS dependent
    This number is only useful to find out what KeySyms are associated with the
    button as I do in keycode_from_XKeycode()
-   keycodes are used to see how X translates them - if the same result could 
+   keycodes are used to see how X translates them - if the same result could
    be achieved with "less" modifiers, a QDOS translation is preferred.
 
-   state - is a value indicating which modifiers are to be applied to the 
-   keycode. Unfortunately state is wrong when keyboard is grabbed and XKB 
+   state - is a value indicating which modifiers are to be applied to the
+   keycode. Unfortunately state is wrong when keyboard is grabbed and XKB
    being used.
 
-2) keysyms - gives some portable name to keycodes and is to some extent 
+2) keysyms - gives some portable name to keycodes and is to some extent
    in an 'unportable way' dependent on the modifiers (shift, ctrl, meta).
-   The Keysym data type is an integer that is associated to the keysymname by 
+   The Keysym data type is an integer that is associated to the keysymname by
    XKeysymToString().
    Keysyms associated with ASCII chars have the ASCII value of the char - some
    tests in the code are based on this.
 
 3) XLookupString is basically the default ASCII/ISO value associated with the key
-   combination described by the XEvent. Unfortunately XlookupString is no 
+   combination described by the XEvent. Unfortunately XlookupString is no
    longer supported - it is not politically correct in the days of i18n.
-   The advertised replacements for it are not only complete overkill for 
-   a QDOS emulator that understands less than the ISO-1 charset by definition 
-   - they would also increase the complexity of this 3 level translation 
+   The advertised replacements for it are not only complete overkill for
+   a QDOS emulator that understands less than the ISO-1 charset by definition
+   - they would also increase the complexity of this 3 level translation
    scheme to ludicrous levels.
 ```
 
@@ -1606,7 +1605,7 @@ filesystem.
 
   ------------------------------------------------------------- ---- -------------------------------
   [6.1 UNIX Filesystem Interface](#UNIX-Filesystem-Interface)        Make Unix-FS QDOS compatible
-  [6.2 QDOS floppy and QXL.WIN](#QDOS-floppy-and-QXL_002eWIN)        
+  [6.2 QDOS floppy and QXL.WIN](#QDOS-floppy-and-QXL_002eWIN)     
   [6.3 uQVFSx Filesystem](#uQVFSx-Filesystem)                        Accessing very long pathnames
   ------------------------------------------------------------- ---- -------------------------------
 
@@ -1722,7 +1721,7 @@ On Linux anything works, unless you have a very special floppy use
 `/dev/fd0` as filename.
 
   ------------------------------------ ---- --
-  [6.2.1 qxl\_fschk](#qxl_005ffschk)        
+  [6.2.1 qxl\_fschk](#qxl_005ffschk)     
   ------------------------------------ ---- --
 
 ------------------------------------------------------------------------
@@ -1828,7 +1827,7 @@ restricted set of `trap#3` commands will work for this file.
 Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.
 
   ------------------------------- ---- ----------------------------------------------------
-  [7.1 TCP/IP](#TCP_002fIP)            
+  [7.1 TCP/IP](#TCP_002fIP)         
   [7.2 pty device](#pty-device)        launch and control unix applications through QDOS!
   [7.3 ser device](#ser-device)        serial communication
   ------------------------------- ---- ----------------------------------------------------
@@ -2015,10 +2014,10 @@ legal address.
 320 CLOSE#6
 330 DEFine PROCedure get_resp
 340  INPUT#6,c$:PRINT c$
-350 END DEFine 
+350 END DEFine
 360 DEFine PROCedure sa
 370 SAVE_O mdv1_script
-380 END DEFine 
+380 END DEFine
 ```
 
 </div>
@@ -2356,13 +2355,13 @@ For a general overview of the Emulator see also Daniele’s original
 QM.README.
 
   -------------------------------------------------------------------------------- ---- --
-  [10.1 ByteOrder Issues](#ByteOrder-Issues)                                            
-  [10.2 Debugging](#Debugging)                                                          
-  [10.3 ROMs and Patching](#ROMs-and-Patching)                                          
-  [10.4 Calling 68K code from the emulator](#Calling-68K-code-from-the-emulator)        
-  [10.5 Directory Device Drivers](#Directory-Device-Drivers)                            
-  [10.6 Patch Database](#Patch-Database)                                                
-  [10.7 Device Drivers](#Device-Drivers)                                                
+  [10.1 ByteOrder Issues](#ByteOrder-Issues)                                         
+  [10.2 Debugging](#Debugging)                                                       
+  [10.3 ROMs and Patching](#ROMs-and-Patching)                                       
+  [10.4 Calling 68K code from the emulator](#Calling-68K-code-from-the-emulator)     
+  [10.5 Directory Device Drivers](#Directory-Device-Drivers)                         
+  [10.6 Patch Database](#Patch-Database)                                             
+  [10.7 Device Drivers](#Device-Drivers)                                             
   -------------------------------------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -2379,9 +2378,9 @@ QM.README.
 ---------------------
 
   ------------------------------------------------------------------ ---- --
-  [10.1.1 Memory](#Memory)                                                
-  [10.1.2 PC - the program counter](#PC-_002d-the-program-counter)        
-  [10.1.3 Registers](#Registers)                                          
+  [10.1.1 Memory](#Memory)                                             
+  [10.1.2 PC - the program counter](#PC-_002d-the-program-counter)     
+  [10.1.3 Registers](#Registers)                                       
   ------------------------------------------------------------------ ---- --
 
 ------------------------------------------------------------------------
@@ -2567,7 +2566,7 @@ generated (including modified tracetable and software used) - see next
 section.
 
   ------------------------ ---- --
-  [10.2.1 Trace](#Trace)        
+  [10.2.1 Trace](#Trace)     
   ------------------------ ---- --
 
 ------------------------------------------------------------------------
@@ -2863,9 +2862,9 @@ The members of ’struct DRV’:
   ------------------------------------------------ ---- ------------------------------------------------
   [10.7.1 Memory Management](#Memory-Management)        where to store channel specific data
   [10.7.2 io\_handle](#io_005fhandle)                   translate QDOS trap\#3 semantics to read/write
-  [10.7.3 decode\_name](#decode_005fname)               
-  [10.7.4 Name Description](#Name-Description)          
-  [10.7.5 Examples](#Examples)                          
+  [10.7.3 decode\_name](#decode_005fname)            
+  [10.7.4 Name Description](#Name-Description)       
+  [10.7.5 Examples](#Examples)                       
   ------------------------------------------------ ---- ------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -3033,7 +3032,7 @@ gotcha’s ;-)
 ==========
 
   ---------------------------------------------------------- ---- --
-  [12.1 Daniele Terdinas README](#Daniele-Terdinas-README)        
+  [12.1 Daniele Terdinas README](#Daniele-Terdinas-README)     
   ---------------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -3054,9 +3053,9 @@ TECHREF for updates. Much of the information contained herein is more or
 less outdated.
 
   ---------------------------------------------------------------------- ---- --
-  [12.1.1 Q-emuLator](#Q_002demuLator)                                        
-  [12.1.2 A brief note about endianess](#A-brief-note-about-endianess)        
-  [12.1.3 Daniels FAQ](#Daniels-FAQ)                                          
+  [12.1.1 Q-emuLator](#Q_002demuLator)                                     
+  [12.1.2 A brief note about endianess](#A-brief-note-about-endianess)     
+  [12.1.3 Daniels FAQ](#Daniels-FAQ)                                       
   ---------------------------------------------------------------------- ---- --
 
 ------------------------------------------------------------------------
@@ -3366,7 +3365,7 @@ Linux/Cyrix 686 PR166   |  3.1s                 |  6.3s
 Linux AMD 5x86 P75 UMC  |                       |
 256KB Cache, 16 MB      |       8s              |       19s
 ---------------------------------------------------------------------
-HP-9000/715-65/64MB     |  7s                   | 15s  
+HP-9000/715-65/64MB     |  7s                   | 15s
 ---------------------------------------------------------------------
 SGI MIPS R5000/64MB     |  4s                   |  8s
 ---------------------------------------------------------------------

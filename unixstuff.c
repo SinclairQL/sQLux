@@ -637,9 +637,10 @@ void SetParams(int ac, char **av)
 {
 	char sysrom[200];
 	int c;
-	int mem = -1, col = -1, hog = -1, no_patch = -1;
+	int mem = -1, hog = -1, no_patch = -1;
 	int gg = 0;
 	char *home;
+	int res;
 
 #ifdef __WIN32__
 	int res;
@@ -673,7 +674,7 @@ void SetParams(int ac, char **av)
 	*sysrom = 0;
 
 #ifndef NO_GETOPT
-	while ((c = getopt(ac, av, "f:r:o:b:d:g:v:w:n?")) != EOF) {
+	while ((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
 		switch (c) {
 		case 'g':
 			gg = 0;
@@ -685,12 +686,6 @@ void SetParams(int ac, char **av)
 		} break;
 		case 'o':
 			strcpy(sysrom, optarg);
-			break;
-		case 'm':
-			col = 0;
-			break;
-		case 'c':
-			col = 1;
 			break;
 		case 'r':
 			mem = atoi(optarg);
@@ -745,6 +740,11 @@ void SetParams(int ac, char **av)
 					strncpy(QMD.bootdev, optarg, 4);
 				}
 			}
+			break;
+		case 'c':
+			res = QMParseParam(optarg);
+			if (res < 0)
+				printf("Invalid arg %s\n", optarg);
 			break;
 		default:
 			usage(av);

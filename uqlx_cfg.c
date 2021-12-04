@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <limits.h>
+#include <errno.h>
 
 #include "unix.h"
 #include "uxfile.h"
@@ -373,6 +374,32 @@ FILE *lopen(const char *s, const char *mode)
 	return fp;
 }
 
+int QMParseParam(char *pbuf)
+{
+	PARSELIST *ppl;
+	int l;
+	char *s, *ptr = (char *)&QMD;
+
+	for (ppl = pl; ppl->id; ppl++) {
+		if (strncasecmp(pbuf, ppl->id, strlen(ppl->id)) == 0) {
+			if ((s = strchr(pbuf, '='))) {
+				s++;
+				l = strspn(s, " \t");
+			}
+
+			if (s) {
+				(ppl->func)((ptr + ppl->offset), s + l,
+					    ppl->mx.mfun);
+				break;
+			}
+		}
+	}
+	if (!ppl->id)
+		return -EINVAL;
+
+	return 0;
+}
+
 void QMParams(void)
 {
 	FILE *fp;
@@ -398,37 +425,18 @@ void QMParams(void)
 
 	printf("Using Config: %s\n", pf);
 
-	p = &QMD;
-
 	if (fp) {
 		char buff[128];
-		char *ptr;
-		ptr = (char *)p;
+		int res;
 
 		while (fgets(buff, 128, fp) == buff) {
 			char *s;
-			PARSELIST *ppl;
 
 			strim(buff);
 
-			for (ppl = pl; ppl->id; ppl++) {
-				if (strncasecmp(buff, ppl->id,
-						strlen(ppl->id)) == 0) {
-					int l;
-
-					if ((s = strchr(buff, '='))) {
-						s++;
-						l = strspn(s, " \t");
-					}
-
-					if (s) {
-						(ppl->func)((ptr + ppl->offset),
-							    s + l,
-							    ppl->mx.mfun);
-						break;
-					}
-				}
-			}
+			res = QMParseParam(buff);
+			if (res < 0)
+				printf("WARNING: unknown parameter %s\n", buff);
 		}
 		fclose(fp);
 	} else
