@@ -407,27 +407,28 @@ void QMParams(void)
 	int rv = 0, iil;
 	QMDATA *p;
 
-	pf = QMD.config_file;
-	if (!(fp = lopen(pf, "r"))) {
-		pf = QLUXFILE;
-		if (!(fp = lopen(pf, "r")) && !QMD.config_file_opt) {
-			pf = QMFILE;
-			if (!(fp = lopen(pf, "r"))) {
-				printf("ERROR: did not locate config file\n");
-				exit(0);
-			}
-		} else {
-			printf("ERROR: did not locate config file %s\n",
-			       QMD.config_file);
+	if (QMD.config_file_opt) {
+		pf = QMD.config_file;
+		if (!(fp = lopen(pf, "r"))) {
+			printf("ERROR: did not locate config file\n");
 			exit(0);
 		}
+	} else {
+		pf = QMD.config_file;
+		if (!(fp = lopen(QMD.config_file, "r"))) {
+			pf = QLUXFILE;
+			if (!(fp = lopen(pf, "r"))) {
+				pf = QMFILE;
+				fp = lopen(pf, "r");
+			}
+		}
 	}
-
-	printf("Using Config: %s\n", pf);
 
 	if (fp) {
 		char buff[128];
 		int res;
+
+		printf("Using Config: %s\n", pf);
 
 		while (fgets(buff, 128, fp) == buff) {
 			char *s;
@@ -439,6 +440,5 @@ void QMParams(void)
 				printf("WARNING: unknown parameter %s\n", buff);
 		}
 		fclose(fp);
-	} else
-		printf("Warning: could not find %s\n", pf);
+	}
 }
