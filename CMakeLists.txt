@@ -106,3 +106,7 @@ endif()
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(sqlux -mconsole -lwsock32 -static-libgcc)
 endif()
+
+install(TARGETS sqlux
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/
+	)
