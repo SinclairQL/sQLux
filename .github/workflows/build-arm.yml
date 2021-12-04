@@ -1,4 +1,4 @@
-name: sQLux Linux Build
+name: Build arm
 
 on:
   push:
