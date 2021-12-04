@@ -4,27 +4,27 @@ sQLux
 **UQLX original Richard Zidlicky**
 **sQLux alterations Graeme Gregory**
 Copyright © 1996,1997,1998,1999 Richard Zidlicky
-Copyright © 2020 Graeme Gregory
+Copyright © 2020,2021 Graeme Gregory
 
 Contents
 --------
 
- 1. [Introduction](#Introduction)
- 2. [Compiling](#Compiling)
- 3. [Installation](#Installation) not much to do, but
- 4. [Customization](#Customization) nothing works without this
- 5. [Program Invocation](#Program-Invocation)
- 6. [Filesystems](#Filesystems)
- 7. [Other Devices](#Other-Devices) pty,ser,prt
- 8. [Printing](#Printing)
- 9. [SuperBasic Extensions](#SuperBasic-Extensions)
- 10. [TECHREF](#TECHREF) how it works
- 11. [FAQ](#FAQ)
- 12. [History](#History)
- 13. [Benchmarks](#Benchmarks)
+1. [Introduction](#Introduction)
+2. [Compiling](#Compiling)
+3. [Installation](#Installation) not much to do, but
+4. [Customization](#Customization) nothing works without this
+5. [Program Invocation](#Program-Invocation)
+6. [Filesystems](#Filesystems)
+7. [Other Devices](#Other-Devices) pty,ser,prt
+8. [Printing](#Printing)
+9. [SuperBasic Extensions](#SuperBasic-Extensions)
+10. [TECHREF](#TECHREF) how it works
+11. [FAQ](#FAQ)
+12. [History](#History)
+13. [Benchmarks](#Benchmarks)
 
-1 Introduction {#introduction .chapter}
-==============
+1 Introduction
+=======================================
 
 UQLX is an software emulator emulating a Sinclair QL on UNIX and similar
 systems. It works by emulating the 68000 CPU and some hardware. It can
@@ -35,169 +35,105 @@ antique hardware. Nevertheless it works well enough even for most games.
 UQLX is designed to cooperate neatly with the underlying OS, some of the
 features and possibilities are:
 
--   don’t waste CPU time when not needed by QDOS programs. Can save you
-    some trouble with the sysadmin if you start it on a Cray
-    accidentally
--   launch and control of UNIX programs by the use of the `pty` device
--   support for use of QDOS in UNIX scripts, screen IO redirection
--   the emulator can fork (clone) itself
--   access to every unix file - long filenames
--   TCP/IP device for QDOS
--   simple GUI with pasting into QL keyboard buffer and some more exotic
-    features
+- don’t waste CPU time when not needed by QDOS programs. Can save you
+  some trouble with the sysadmin if you start it on a Cray
+  accidentally
+- launch and control of UNIX programs by the use of the `pty` device
+- support for use of QDOS in UNIX scripts, screen IO redirection
+- the emulator can fork (clone) itself
+- access to every unix file - long filenames
+- TCP/IP device for QDOS
+- simple GUI with pasting into QL keyboard buffer and some more exotic
+  features
 
-  ------------------------------------------------- ---- --
-  [1.1 System Requirements](#System-Requirements)     
-  [1.2 COPYRIGHT](#COPYRIGHT)                         
-  ------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[1.1 System Requirements](#system-requirements)
+[1.2 COPYRIGHT](#copyright)
 
-[]{#System-Requirements}
+1.1 System Requirements
+-------------------------------------------------------
 
-  ------------------------------------------------------------------------------- --------------------------------------------------------------- -------------------------------------- -------------------------------------------------------- ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Introduction "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Introduction "Previous section in reading order")\]   \[[Up](#Introduction "Up section")\]   \[[&gt;](#COPYRIGHT "Next section in reading order")\]   \[[&gt;&gt;](#Compiling "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------- --------------------------------------------------------------- -------------------------------------- -------------------------------------------------------- ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+Nearly any UNIX or similar system will do, provided you have gcc and SDL2
+installed.
 
-[]{#System-Requirements-1}
-
-1.1 System Requirements {#system-requirements .section}
------------------------
-
-Nearly any UNIX or similar system will do, provided you have gcc and X11
-installed. UQLX even works with OS/2, however this port was not
-maintained for some time.
-
-**When I say `gcc`, I mean it! You may try pgcc but you have been
-warned.**
-
-Typically any improved c compiler couldn’t optimize anything measurable.
-
--   between 2 and 32 MB SWAP for UQLX at runtime, may require much more
-    for compilation. Contact me if this is a problem.
--   gcc, X and GNU make. At least gcc versions 2.7.2.\*,2.8.\*,2.91 and
-    2.95.\[12\] work, some broken versions require additional defines to
-    compile. egcs generally works well, 2.91.66 does even work with the
-    -DUSE\_AREGP option.
-
-------------------------------------------------------------------------
-
-[]{#COPYRIGHT}
-
-  ------------------------------------------------------------------------------- ---------------------------------------------------------------------- -------------------------------------- -------------------------------------------------------- ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Introduction "Beginning of this chapter or previous chapter")\]   \[[&lt;](#System-Requirements "Previous section in reading order")\]   \[[Up](#Introduction "Up section")\]   \[[&gt;](#Compiling "Next section in reading order")\]   \[[&gt;&gt;](#Compiling "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------- ---------------------------------------------------------------------- -------------------------------------- -------------------------------------------------------- ------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-
-[]{#COPYRIGHT-1}
-
-1.2 COPYRIGHT {#copyright .section}
--------------
+1.2 COPYRIGHT
+-----------------------------------
 
 Make sure you read the copyright notice carefully before you use, modify
 or distribute this product or parts of it.
 
 The copyright notice can be found in the file ‘`COPYRIGHT`’ – if not try
-to email me at `rdzidlic@geocities.com` [(1)](#FOOT1){#DOCF1}.
+to email me at `rdzidlic@geocities.com` [(1)](#FOOT1).
 
-------------------------------------------------------------------------
+2 Compiling
+=================================
 
-[]{#Compiling}
-
-  ------------------------------------------------------------------------------- ------------------------------------------------------------ ---------- --------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Introduction "Beginning of this chapter or previous chapter")\]   \[[&lt;](#COPYRIGHT "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Misc-Hints "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------- ------------------------------------------------------------ ---------- --------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-
-[]{#Compiling-1}
-
-2 Compiling {#compiling .chapter}
-===========
-
-Several machines/OS versions are directly supported, others may need a
-little guessing. Even if your machine is in the list of supported types,
-you may consider using the [Compiling
-Preferences](#Compiling-Preferences).
+Several machines/OS versions are directly supported.
 
 So far the supported machines/OS are:
 
--   SUN with Solaris
--   Linux on i486 or better, Power PC, Alpha, m68k
--   NetBSD
--   FreeBSD
--   SGI with IRIX, traditionally the most difficult one to compile for
--   SUN running old SunOS, not tested for a long time
--   HP PA with HP-UX, not much tested lately
--   OS/2, not tested for a long time
+Linux on i486 or better, Power PC, Alpha, m68k
+
+
+- Linux on x86, x86_64, arm, arm64
+- Windows on x86. x86_64
+- MacOS on x86_64, arm64
 
 If your machine is not yet supported, [Unsupported
 Machines](#Unsupported-Machines).
 
-To make it on Linux, type
+To make it
 
-<div class="example">
-
-``` {.example}
-./MK.all
-make install
 ```
-
-</div>
-
-other Unices make sure you use gnu-make (called eg gmake on Suns) and
-
-<div class="example">
-
-``` {.example}
-make config     #
+mkdir linux
+cd linux
+cmake ..
 make
-make install
 ```
-
-</div>
 
 Do not delete the directory where you compiled it unless you know what
 you are doing.
 
-If you build for Linux-x86 then `-DUSE_VM` is enabled by default. This
-means that for every new combination of ROMs a patch database must be
-built. This happens automatically but can be rather irritating in some
-circumstances.
-
-The name of the executable will be ’qm’ resp. ’qm-aw’, depending on the
-target and preferences.
+The name of the executable will be ’sqlux’.
 
 If there are any complications like libraries not found, try [Compiling
 Preferences](#Compiling-Preferences).
 
 There are some other interesting targets,
 
--   `make gui` will create a simple GUI for UQLX, only non-aw versions.
-    A much better (nicer) GUI is available from Jonathan Hudson’s
-    Homepage `http://www.jrhudson.demon.co.uk`
--   `make xaw` *Currently not supported.* Will build the qm-aw version.
-    This version is a bit slower (5-20% ) than the `noaw` version. Also
-    some features like `Fork_UQLX` will probably never get implemented
-    in the `xaw` version.
--   `make noaw` will always build the qm version, on most systems this
-    executes a bit better than the `xaw` version
--   `make tags` build emacs TAG table
--   `make docs` will build ‘`docs/uqlx.dvi`’ and ‘`docs/uqlx.info`’
+- `make gui` will create a simple GUI for UQLX, only non-aw versions.
+  A much better (nicer) GUI is available from Jonathan Hudson’s
+  Homepage `http://www.jrhudson.demon.co.uk`
+- `make xaw` *Currently not supported.* Will build the qm-aw version.
+  This version is a bit slower (5-20% ) than the `noaw` version. Also
+  some features like `Fork_UQLX` will probably never get implemented
+  in the `xaw` version.
+- `make noaw` will always build the qm version, on most systems this
+  executes a bit better than the `xaw` version
+- `make tags` build emacs TAG table
+- `make docs` will build ‘`docs/uqlx.dvi`’ and ‘`docs/uqlx.info`’
 
-  ------------------------------------------------------------------------------- ---- --
-  [2.0.1 Misc Hints](#Misc-Hints)                                                   
-  [2.0.2 Compiling Preferences](#Compiling-Preferences)                             
-  [2.0.3 Further Options](#Further-Options)                                         
-  [2.0.4 Adding CPU specific optimizations](#Adding-CPU-specific-optimizations)     
-  [2.0.5 Unsupported Machines](#Unsupported-Machines)                               
-  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)                                 
-  ------------------------------------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[2.0.1 Misc Hints](#Misc-Hints)                                                   
+[2.0.2 Compiling Preferences](#Compiling-Preferences)                             
+[2.0.3 Further Options](#Further-Options)                                         
+[2.0.4 Adding CPU specific optimizations](#Adding-CPU-specific-optimizations)     
+[2.0.5 Unsupported Machines](#Unsupported-Machines)                               
+[2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)                                 
+
+---
+
+---
 
 []{#Misc-Hints}
 
-  ---------------------------------------------------------------------------- ------------------------------------------------------------ ----------------------------------- -------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Compiling "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Compiling-Preferences "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ------------------------------------------------------------ ----------------------------------- -------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Compiling "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Compiling-Preferences "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Misc-Hints-1}
 
@@ -218,7 +154,7 @@ an addition to your ‘`~/uqlx_cprefs`’:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 BUILD_SPECIALFLAGS= -D__i486__
 ```
 
@@ -230,7 +166,7 @@ this to disable them. This also helps if your compiler exits with signal
 
 <div class="example">
 
-``` {.example}
+```{.example}
 BUILD_SPECIALFLAGS= -DNO_REGP
 # or
 BUILD_SPECIALFLAGS= -DNO_AREGP
@@ -247,26 +183,30 @@ Specifying compiler version may work like this:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 make CC="gcc -V 2.7.2.3" config    #compiles with gcc 2.7.2.3 (if installed)
 make CC="gcc272" config            #another version of it..
 ```
 
 </div>
 
-  ------------------------------------------------------- ---- -------------------------------------------------
-  [2.0.2 Compiling Preferences](#Compiling-Preferences)        very useful if you have an exotic configuration
-  [2.0.5 Unsupported Machines](#Unsupported-Machines)          it may still work...
-  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)            if it doesn’t
-  ------------------------------------------------------- ---- -------------------------------------------------
+---
 
-------------------------------------------------------------------------
+[2.0.2 Compiling Preferences](#Compiling-Preferences)        very useful if you have an exotic configuration
+[2.0.5 Unsupported Machines](#Unsupported-Machines)          it may still work...
+[2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)            if it doesn’t
+
+---
+
+---
 
 []{#Compiling-Preferences}
 
-  ---------------------------------------------------------------------------- ------------------------------------------------------------- ----------------------------------- -------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Misc-Hints "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Further-Options "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ------------------------------------------------------------- ----------------------------------- -------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Misc-Hints "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Further-Options "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Compiling-Preferences-1}
 
@@ -278,7 +218,7 @@ Following variables can be set:
 
 <div class="example">
 
-``` {.example}
+```{.example}
    PREFIX=/usr                          # install here
    DEF_CPU="-mcpu=i586"                 # use if automatic config didn't work
    DEF_CPU= -m68040                     # old style def..
@@ -301,13 +241,15 @@ Following variables can be set:
 The `DEBUG_FILES` has no effect on certain special files, you have to
 change the ‘`Makefile`’ by hand.
 
-------------------------------------------------------------------------
+---
 
 []{#Further-Options}
 
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------------ ----------------------------------- -------------------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Compiling-Preferences "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Adding-CPU-specific-optimizations "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------------ ----------------------------------- -------------------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Compiling-Preferences "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Adding-CPU-specific-optimizations "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Further-Options-1}
 
@@ -329,15 +271,15 @@ BUILD\_SPECIALFLAGS line as described in the previous section.
 `QVFS`
 
 :   enable direct access to unix-fs using unix-like infinite long
-    pathnames!(enabled as default). Also allows access to device special
-    and /proc files.
+pathnames!(enabled as default). Also allows access to device special
+and /proc files.
 
 `XVIS`
 
 :   useful for xlib version only, chooses visual to minimize memory
-    waste and improve performance. Best selection policy still to be
-    found - choosing some other than default visual often has sideffects
-    like flashing color pallete.
+waste and improve performance. Best selection policy still to be
+found - choosing some other than default visual often has sideffects
+like flashing color pallete.
 
 `U_NODDOT`
 
@@ -346,16 +288,18 @@ BUILD\_SPECIALFLAGS line as described in the previous section.
 `DEBUG_ROM`
 
 :   enable breakpoints in ROM \[0-64K\], also enables many sorts of
-    beautiful crashes. Not very useful anymore because GUI allows this
-    interactively.
+beautiful crashes. Not very useful anymore because GUI allows this
+interactively.
 
-------------------------------------------------------------------------
+---
 
 []{#Adding-CPU-specific-optimizations}
 
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------ ----------------------------------- ------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Further-Options "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Unsupported-Machines "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------ ----------------------------------- ------------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Further-Options "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Unsupported-Machines "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Adding-CPU-specific-optimizations-1}
 
@@ -380,13 +324,15 @@ For RISC CPUs defining global register variables is the easiest
 optimization, all I need to know is a list of register names and their
 typical usage - this simple trick often improves performance by &gt;10%.
 
-------------------------------------------------------------------------
+---
 
 []{#Unsupported-Machines}
 
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------------------------ ----------------------------------- ----------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Adding-CPU-specific-optimizations "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Obscure-BUILDFLAGS "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ------------------------------------------------------------------------------------ ----------------------------------- ----------------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Adding-CPU-specific-optimizations "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Obscure-BUILDFLAGS "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Unsupported-Machines-1}
 
@@ -404,21 +350,25 @@ your CPU.
 Contact me so that I can add support for your machines; I need the
 following information:
 
--   output of the ’uname’ cmd or other safe way to recognize this
-    architecture
--   any special compile flags, libraries etc ...
+- output of the ’uname’ cmd or other safe way to recognize this
+  architecture
+- any special compile flags, libraries etc ...
 
-  --------------------------------------------------- ---- --
-  [2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)     
-  --------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[2.0.6 Obscure `BUILDFLAGS`](#Obscure-BUILDFLAGS)     
+
+---
+
+---
 
 []{#Obscure-BUILDFLAGS}
 
-  ---------------------------------------------------------------------------- ----------------------------------------------------------------------- ----------------------------------- ----------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Unsupported-Machines "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Installation "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- ----------------------------------------------------------------------- ----------------------------------- ----------------------------------------------------------- ---------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Unsupported-Machines "Previous section in reading order")\]   \[[Up](#Compiling "Up section")\]   \[[&gt;](#Installation "Next section in reading order")\]   \[[&gt;&gt;](#Installation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Obscure-BUILDFLAGS-1}
 
@@ -430,14 +380,14 @@ here is some info:
 `SERIAL`
 
 :   enables ser and pty drivers for Linux. On other OS’s you may need to
-    define `-NO_FIONREAD` if `FIONREAD` is not supported. You should
-    also define `NEWSERIAL` and `NEWPTY`
+define `-NO_FIONREAD` if `FIONREAD` is not supported. You should
+also define `NEWSERIAL` and `NEWPTY`
 
-`NEWSERIAL`\
+`NEWSERIAL`
 `NEWPTY`
 
 :   somewhat changed serial ports, this is required to get them work
-    with Minerva ROMs. Can’t be defined independently
+with Minerva ROMs. Can’t be defined independently
 
 `USE_IPC`
 
@@ -446,45 +396,45 @@ here is some info:
 `XAW`
 
 :   use Xt/Athena Frame around UQLX main window. The problems with SUNs
-    OpenWindow now disappeared. This flag is now easier controlled by
-    make’s `target` and compiling preferences.
+OpenWindow now disappeared. This flag is now easier controlled by
+make’s `target` and compiling preferences.
 
 `DO_GRAB`
 
 :   useful to keep window managers from snatching away alt- and ctrl-
-    key combinations. Disables ALL WM hotkeys – you must move the
-    pointer out of the QL window to have the WM hotkey available again.
-    Currently this is the default behavior, unfortunately it interacts
-    badly with the broken by design XKB extension. See keyboard for more
-    info.
+key combinations. Disables ALL WM hotkeys – you must move the
+pointer out of the QL window to have the WM hotkey available again.
+Currently this is the default behavior, unfortunately it interacts
+badly with the broken by design XKB extension. See keyboard for more
+info.
 
 `SH_MEM`
 
 :   use MIT Shared memory to speed up screen conversion. Obviously this
-    works only for local screens. While most Xserver/Xlib combinations
-    are clever enough to figure this out, other need to disable
-    `SH_MEM`. This `X` extension is not very well standardized and
-    therefore good for all kinds of trouble..
+works only for local screens. While most Xserver/Xlib combinations
+are clever enough to figure this out, other need to disable
+`SH_MEM`. This `X` extension is not very well standardized and
+therefore good for all kinds of trouble..
 
 `VM_SCR`
 
 :   use virtual memory tricks to detect screen changes, this is
-    recommended with SYSV systems that support it - your compiler will
-    complain if it isn’t. Strangely the XAW appears to use up most of
-    the speed advantage...
+recommended with SYSV systems that support it - your compiler will
+complain if it isn’t. Strangely the XAW appears to use up most of
+the speed advantage...
 
 `USE_VM`
 
 :   detect r/w to QL hardware registers and screen change by doing nasty
-    VM tricks. Supported on Solaris and Linux ix86 2.0.x - 2.2.x
+VM tricks. Supported on Solaris and Linux ix86 2.0.x - 2.2.x
 
 `BSD`
 
 :   some BSD related hacks, avoids compile time errors in pty.c
-    SunOS&lt;5 needs this as well as the next 2 defines. Worth a try for
-    any BSD like systems if it doesn’t compile.
+SunOS&lt;5 needs this as well as the next 2 defines. Worth a try for
+any BSD like systems if it doesn’t compile.
 
-`NO_MEMMOVE if memmove() is missing, try this`\
+`NO_MEMMOVE if memmove() is missing, try this`
 `NO_GETOPT  .. getopt() .... Actually you would better get and compile`
 
 :   the getopt() library.
@@ -494,34 +444,36 @@ Debugging flags:
 `VTIME`
 
 :   simulate a virtual time/interrupts by instruction counting, useful
-    to get exactly reproducible results with `TRACE`
+to get exactly reproducible results with `TRACE`
 
 `TRACE`
 
 :   output loads of information for each instruction executed. Regions
-    of code to be traced must be specified in ‘`trace.c`’.
+of code to be traced must be specified in ‘`trace.c`’.
 
 `DEBUG_ROM`
 
 :   enable breakpoints in ROM, also enables many sorts of beautiful
-    crashes
+crashes
 
-------------------------------------------------------------------------
+---
 
 []{#Installation}
 
-  ---------------------------------------------------------------------------- --------------------------------------------------------------------- ---------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Obscure-BUILDFLAGS "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Customization "Next section in reading order")\]   \[[&gt;&gt;](#Customization "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------- --------------------------------------------------------------------- ---------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Compiling "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Obscure-BUILDFLAGS "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Customization "Next section in reading order")\]   \[[&gt;&gt;](#Customization "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Installation-1}
 
 3 Installation {#installation .chapter}
-==============
+=======================================
 
 <div class="example">
 
-``` {.example}
+```{.example}
 make install
 ```
 
@@ -545,18 +497,20 @@ program’s handle it gracefully if they encounter a readonly file.
 Thus all filesystems except floppy and CD are created private per user
 by default
 
-------------------------------------------------------------------------
+---
 
 []{#Customization}
 
-  ------------------------------------------------------------------------------- --------------------------------------------------------------- ---------- ---------------------------------------------------------------------- ---------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Installation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Installation "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#About-_002euqlxrc-files "Next section in reading order")\]   \[[&gt;&gt;](#Program-Invocation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------- --------------------------------------------------------------- ---------- ---------------------------------------------------------------------- ---------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Installation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Installation "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#About-_002euqlxrc-files "Next section in reading order")\]   \[[&gt;&gt;](#Program-Invocation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Customization-1}
 
 4 Customization {#customization .chapter}
-===============
+=========================================
 
 There are several configuration files, ‘`~/.uqlxrc`’ is by far the most
 important one. It is used to configure QL filesystems, rom, ram and
@@ -568,22 +522,26 @@ and ‘`Xqlaw`’, the qm-aw application defaults file. The later two should
 be copied to your application defaults directory, you will probably also
 want to change the button names.
 
-  ----------------------------------------------------- ---- --
-  [4.1 About .uqlxrc files](#About-_002euqlxrc-files)     
-  ----------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[4.1 About .uqlxrc files](#About-_002euqlxrc-files)     
+
+---
+
+---
 
 []{#About-_002euqlxrc-files}
 
-  -------------------------------------------------------------------------------- ---------------------------------------------------------------- --------------------------------------- ----------------------------------------------------------------- ---------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Customization "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Customization "Previous section in reading order")\]   \[[Up](#Customization "Up section")\]   \[[&gt;](#Program-Invocation "Next section in reading order")\]   \[[&gt;&gt;](#Program-Invocation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- ---------------------------------------------------------------- --------------------------------------- ----------------------------------------------------------------- ---------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Customization "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Customization "Previous section in reading order")\]   \[[Up](#Customization "Up section")\]   \[[&gt;](#Program-Invocation "Next section in reading order")\]   \[[&gt;&gt;](#Program-Invocation "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#About-_002euqlxrc-files-1}
 
 4.1 About .uqlxrc files {#about-.uqlxrc-files .section}
------------------------
+-------------------------------------------------------
 
 uqlx looks for an options file ‘`~/.uqlxrc`’ This file describes all
 other settings uqlx requires; thus uqlx can exist in any directory as
@@ -603,323 +561,321 @@ The keys available are:
 
 :   The name of the QDOS ROM to boot.
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-             SYSROM = js_rom
-    ```
+```{.example}
+         SYSROM = js_rom
+```
 
-    </div>
-
+</div>
 `ROMDIR`
 
-:   The directory where ’SYSROM’ (and other ROMS) may be found.
 
-    <div class="example">
+`ROMDIR`:   The directory where ’SYSROM’ (and other ROMS) may be found.
 
-    ``` {.example}
-             ROMDIR = /ql/ROMS/
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         ROMDIR = /ql/ROMS/
+```
 
+</div>
 `RAMTOP`
 
-:   The upper limit of memory; usual QDOS rules apply. The value is in
-    kB. Be warned that large values for this will cause long startup
-    delays unless FAST\_START is enabled. I have largely tested UQLX
-    with 4MB, but at least Minerva should handle 16MB. Currently UQLX
-    won’t allow more than 16MB, but this could be easily changed if you
-    need more. If a larger screen size is used it has to fit into this
-    value.
 
-    <div class="example">
+`RAMTOP`:   The upper limit of memory; usual QDOS rules apply. The value is in
+kB. Be warned that large values for this will cause long startup
+delays unless FAST\_START is enabled. I have largely tested UQLX
+with 4MB, but at least Minerva should handle 16MB. Currently UQLX
+won’t allow more than 16MB, but this could be easily changed if you
+need more. If a larger screen size is used it has to fit into this
+value.
 
-    ``` {.example}
-             RAMTOP = 4096
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         RAMTOP = 4096
+```
 
+</div>
 `COLOUR`
 
-:   The usage of a colour or mono display. Values are 0 for mono, 1 for
-    colour. This may be used to simulate grayscale on a color monitor,
-    not the opposite unfortunately. This option may get overridden to
-    mono if a specific visual or visual class is requested as specified
-    below.
 
-    <div class="example">
+`COLOUR`:   The usage of a colour or mono display. Values are 0 for mono, 1 for
+colour. This may be used to simulate grayscale on a color monitor,
+not the opposite unfortunately. This option may get overridden to
+mono if a specific visual or visual class is requested as specified
+below.
 
-    ``` {.example}
-             COLOUR = 1
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         COLOUR = 1
+```
 
+</div>
 `XVID`
 
-:   specify X visual ID to be used. Overrides `XDEPTH` and `XVIS_CLASS`.
-    See ‘xdpyinfo‘ for list of available visuals.
 
-    <div class="example">
+`XVID`:   specify X visual ID to be used. Overrides `XDEPTH` and `XVIS_CLASS`.
+See ‘xdpyinfo‘ for list of available visuals.
 
-    ``` {.example}
-            XVID = 0x24
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+        XVID = 0x24
+```
 
+</div>
 `XVIS_CLASS`
 
-:   Specify preferred XVisualClass. This will affect whether color or
-    mono is used and color cell allocation policy. Try experimenting if
-    you have color palette flashing.
 
-    <div class="example">
+`XVIS_CLASS`:   Specify preferred XVisualClass. This will affect whether color or
+mono is used and color cell allocation policy. Try experimenting if
+you have color palette flashing.
 
-    ``` {.example}
-            XVIS_CLASS = StaticColor
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+        XVIS_CLASS = StaticColor
+```
 
+</div>
 `XDEPTH`
 
-:   Specify preferred display depth to be used. Should be 8 where
-    possible
+
+`XDEPTH`:   Specify preferred display depth to be used. Should be 8 where
+possible
 
 `REAL_WHITE`
 
 :   Set to 0 if you prefer greyish screens like me - useful with bad
-    VUD’s with insufficient refresh rates.. Redefines QL white to Gray95
+VUD’s with insufficient refresh rates.. Redefines QL white to Gray95
 
-`SIZE_1`\
-`SIZE_2`\
+`SIZE_1`
+`SIZE_2`
 `SIZE_3`
 
 :   Screen size definitions to be used for fast selection via program
-    name argument(’x’,’xx’,’xx’). See Program Name.
+name argument(’x’,’xx’,’xx’). See Program Name.
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-             SIZE_1 = 640x400
-             SIZE_2 = 1024x768
-             SIZE_3 = 4096x4096
-    ```
+```{.example}
+         SIZE_1 = 640x400
+         SIZE_2 = 1024x768
+         SIZE_3 = 4096x4096
+```
 
-    </div>
-
+</div>
 `SER1`
 
-:   The Unix device used for QDOS ser1.
 
-    <div class="example">
+`SER1`:   The Unix device used for QDOS ser1.
 
-    ``` {.example}
-             SER1 = /dev/ttyS0
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         SER1 = /dev/ttyS0
+```
 
+</div>
 `SER2`
 
-:   The Unix device used for QDOS ser2.
 
-    <div class="example">
+`SER2`:   The Unix device used for QDOS ser2.
 
-    ``` {.example}
-             SER1 = /dev/ttyS1
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         SER1 = /dev/ttyS1
+```
 
+</div>
 `PRINT`
 
-:   The Unix command used to queue print jobs, it used to output data
-    sent to the PRT device. popen() is used to send the data, so you may
-    specify options, flags etc.
 
-    <div class="example">
+`PRINT`:   The Unix command used to queue print jobs, it used to output data
+sent to the PRT device. popen() is used to send the data, so you may
+specify options, flags etc.
 
-    ``` {.example}
-             PRINT = lpr -Pmy_printer
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         PRINT = lpr -Pmy_printer
+```
 
+</div>
 `CPU_HOG`
 
-:   Define it 0 to make UQLX try to behave multitasking friendly, it
-    will go sleeping when it believes that QDOS is idle. The detection
-    whether QDOS is idle usually works pretty well, but in some cases it
-    may get fooled by very frequent IO, eg an high speed serial
-    connection - in this case define it to 1 to get all time UNIX will
-    give us. Alternatively the `-h` option can be used to enforce
-    CPU\_HOG mode. Largely obsolete now as it may be toggled through
-    GUI.
 
-    <div class="example">
+`CPU_HOG`:   Define it 0 to make UQLX try to behave multitasking friendly, it
+will go sleeping when it believes that QDOS is idle. The detection
+whether QDOS is idle usually works pretty well, but in some cases it
+may get fooled by very frequent IO, eg an high speed serial
+connection - in this case define it to 1 to get all time UNIX will
+give us. Alternatively the `-h` option can be used to enforce
+CPU\_HOG mode. Largely obsolete now as it may be toggled through
+GUI.
 
-    ``` {.example}
-             CPU_HOG = 1
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         CPU_HOG = 1
+```
 
+</div>
 `FAST_START`
 
-:   Set to 1 if you want to skip the usual RAM test(default), or set it
-    to 0 if you want to enjoy the Ram test pattern.
 
-    <div class="example">
+`FAST_START`:   Set to 1 if you want to skip the usual RAM test(default), or set it
+to 0 if you want to enjoy the Ram test pattern.
 
-    ``` {.example}
-             FAST_START=1
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         FAST_START=1
+```
 
+</div>
 `ROMIMG`
 
-:   The ROMIMG option defines additional ROMS to be loaded at specific
-    addresses. These should include TK2 if required.
 
-    <div class="example">
+`ROMIMG`:   The ROMIMG option defines additional ROMS to be loaded at specific
+addresses. These should include TK2 if required.
 
-    ``` {.example}
-             ROMIMG = tk2_rom,0xc000
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         ROMIMG = tk2_rom,0xc000
+```
 
-    It is assumed that the ROM image can be found in the ROMDIR
-    directory. The address should be specified in ’C’ numeric format.
+</div>
 
+It is assumed that the ROM image can be found in the ROMDIR
+directory. The address should be specified in ’C’ numeric format.
 `XKEY_ON`
 
 :   A value of 1 can be used to indicate that qm should start with the
-    alternative input method. This involves using ungrabbed keyboard (if
-    configured) and preferring the X11 input method over QDOS
-    translation of key events See section [Keyboard](#Keyboard). You
-    might prefer this when you have a non-english keyboard and don’t use
-    many special QL key combinations. The downside is that typical QL
-    hotkeys are very often interpreted by window managers - these won’t
-    be available for QDOS programs and may additionally screw up your
-    desktop or even kill applications. Default is 0.
+alternative input method. This involves using ungrabbed keyboard (if
+configured) and preferring the X11 input method over QDOS
+translation of key events See section [Keyboard](#Keyboard). You
+might prefer this when you have a non-english keyboard and don’t use
+many special QL key combinations. The downside is that typical QL
+hotkeys are very often interpreted by window managers - these won’t
+be available for QDOS programs and may additionally screw up your
+desktop or even kill applications. Default is 0.
 
 `XKEY_SWITCH`
 
 :   Defines Keysym to be used to switch keyboard input method See
-    section [Keyboard](#Keyboard). The Keysym name should be in the form
-    returned by ’xev’, ie without the leading ’XK\_’. It should be
-    accessible without modifiers. Default is to use the "F11" key.
+section [Keyboard](#Keyboard). The Keysym name should be in the form
+returned by ’xev’, ie without the leading ’XK\_’. It should be
+accessible without modifiers. Default is to use the "F11" key.
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-             XKEY_SWITCH = F16
-    ```
+```{.example}
+         XKEY_SWITCH = F16
+```
 
-    </div>
-
+</div>
 `DO_GRAB`
 
-:   Whether to do keyboard grabbing. This is used to avoid confusion
-    when window manager would try to interpret QDOS key like ALT-F1.
-    Proper fix is to disable it and get a ICCM compliant wm (eg.
-    windowmaker) Enabling it will interfere with the broken Xkb
-    extension See section [Keyboard](#Keyboard)
 
-    <div class="example">
+`DO_GRAB`:   Whether to do keyboard grabbing. This is used to avoid confusion
+when window manager would try to interpret QDOS key like ALT-F1.
+Proper fix is to disable it and get a ICCM compliant wm (eg.
+windowmaker) Enabling it will interfere with the broken Xkb
+extension See section [Keyboard](#Keyboard)
 
-    ``` {.example}
-             DO_GRAB = 0
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         DO_GRAB = 0
+```
 
+</div>
 `XKEY_ALT`
 
-:   Defines Keysym to be used as (additional) alternative to the Alt
-    keys to simulate QDOS ALT. Reason for this is that many window
-    managers catch away the Alt keys to use them as their hotkeys.
-    Should be accessible without modifiers. Default "F12"
 
-    <div class="example">
+`XKEY_ALT`:   Defines Keysym to be used as (additional) alternative to the Alt
+keys to simulate QDOS ALT. Reason for this is that many window
+managers catch away the Alt keys to use them as their hotkeys.
+Should be accessible without modifiers. Default "F12"
 
-    ``` {.example}
-            XKEY_ALT = Mode_switch  ## frequently this is Alt_R
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+        XKEY_ALT = Mode_switch  ## frequently this is Alt_R
+```
 
+</div>
 `STRICT_LOCK`
 
-:   Controls whether strict locking applies for disk image files, the
-    alternative being advisory locking. True by default, disable if you
-    hate the ugly warnings. BTW never rely on locking in UNIX anyway.
 
-    <div class="example">
+`STRICT_LOCK`:   Controls whether strict locking applies for disk image files, the
+alternative being advisory locking. True by default, disable if you
+hate the ugly warnings. BTW never rely on locking in UNIX anyway.
 
-    ``` {.example}
-             STRICT_LOCK=1
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+         STRICT_LOCK=1
+```
 
+</div>
 `DEVICE`
 
-:   All directory devices may be defined in the options file. The format
-    is
 
-    <div class="example">
+`DEVICE`:   All directory devices may be defined in the options file. The format
+is
 
-    ``` {.example}
-    DEVICE = QDOS_name,  UNIX_pathname[,  flags]
-    ```
+<div class="example">
 
-    </div>
+```{.example}
+DEVICE = QDOS_name,  UNIX_pathname[,  flags]
+```
 
-    `QDOS_name` is the name of the QDOS volume to be defined, eg `FLP1`,
-    `WIN6`, `QXL1`. Currently `RAMx` is the only name that receives
-    special attention. UQLX does not enforce any further naming
-    conventions, however most QDOS software requires a 3 chars name
-    length.
+</div>
 
-    `UNIX_pathname` refers to a file, directory or device used to
-    simulate the QDOS device.
+`QDOS_name` is the name of the QDOS volume to be defined, eg `FLP1`,
+`WIN6`, `QXL1`. Currently `RAMx` is the only name that receives
+special attention. UQLX does not enforce any further naming
+conventions, however most QDOS software requires a 3 chars name
+length.
 
-    The optional `flags` field supports this options.
+`UNIX_pathname` refers to a file, directory or device used to
+simulate the QDOS device.
 
-    `clean`
+The optional `flags` field supports this options.
 
-    :   clean together with a "%x" in the unix pathname can be used to
-        simulate RAMdisk. The "%x" is replaced with the process number
-        at runtime so that multitasking QMs don’t disturb each other and
-        after killing QM the directory is deleted.
+`clean`
 
-    `qdos-fs`\
-    `native`
+:   clean together with a "%x" in the unix pathname can be used to
+simulate RAMdisk. The "%x" is replaced with the process number
+at runtime so that multitasking QMs don’t disturb each other and
+after killing QM the directory is deleted.
 
-    :   Both flags are synonyms. The qdos-fs option indicates that
-        `UNIX_pathname` is the name of a file or device in the QDOS
-        floppy disk or QXL.WIN formats; otherwise a Unix directory is
-        assumed.
+`qdos-fs`
+`native`
 
-    `qdos-like`
+:   Both flags are synonyms. The qdos-fs option indicates that
+`UNIX_pathname` is the name of a file or device in the QDOS
+floppy disk or QXL.WIN formats; otherwise a Unix directory is
+assumed.
 
-    :   applicable only to non-`qdos-fs`. Filenames are not case
-        sensitive and (sub)directory creation mimics SMSQ behaviour.
+`qdos-like`
 
+:   applicable only to non-`qdos-fs`. Filenames are not case
+sensitive and (sub)directory creation mimics SMSQ behaviour.
 Devices may be removed from the device list by not supplying a unit
 (volume) number. This is useful if some devices that are defined by
 default, eg ’mdv’,’flp’ are unused.
 
 <div class="example">
 
-``` {.example}
+```{.example}
          DEVICE = CD
 ```
 
@@ -932,7 +888,7 @@ addition, the following defaults are also set.
 
 <div class="example">
 
-``` {.example}
+```{.example}
          SYSROM = jsrom
          ROMDIR = /ql/
          RAMTOP = 4096
@@ -951,7 +907,7 @@ recent versions of it with every UQLX distribution.
 
 <div class="example">
 
-``` {.example}
+```{.example}
 SYSROM = js_rom                         # default ROM to use
 ROMIM = tk2_rom,0xc000                  # extra ROM
 ROMDIR = ~/qm/romdir/                   # ...search them here
@@ -983,18 +939,20 @@ FAST_START = 1                 # skip ramtest
 
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#Program-Invocation}
 
-  -------------------------------------------------------------------------------- -------------------------------------------------------------------------- ---------- ----------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Customization "Beginning of this chapter or previous chapter")\]   \[[&lt;](#About-_002euqlxrc-files "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Program-Name "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- -------------------------------------------------------------------------- ---------- ----------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Customization "Beginning of this chapter or previous chapter")\]   \[[&lt;](#About-_002euqlxrc-files "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Program-Name "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Program-Invocation-1}
 
 5 Program Invocation {#program-invocation .chapter}
-====================
+===================================================
 
 If compiled with `-DUSE_VM` - currently Linux-x86 and SPARC, a patch
 database must be built on first startup. This is usually done
@@ -1013,37 +971,41 @@ other ROMS I would recommend a soft link like
 
 <div class="example">
 
-``` {.example}
+```{.example}
 ln -s BOOT boot         # in mdv1_
 ```
 
 </div>
 
-  ------------------------------------------------------------------- ---- ---------------------------------------------
-  [5.1 Program Name](#Program-Name)                                        important shortcut to select configurations
-  [5.2 Command Line options](#Command-Line-options)                        to override defaults
-  [5.3 BOOT Files](#BOOT-Files)                                            a few points to know
-  [5.4 GUI](#GUI)                                                       
-  [5.5 Signals - Terminating UQLX](#Signals-_002d-Terminating-UQLX)     
-  [5.6 ROM Images](#ROM-Images)                                         
-  [5.7 The big screen feature](#The-big-screen-feature)                 
-  [5.8 X Window Managers](#X-Window-Managers)                           
-  [5.9 Keyboard](#Keyboard)                                             
-  [5.10 Scripting](#Scripting)                                          
-  ------------------------------------------------------------------- ---- ---------------------------------------------
+---
 
-------------------------------------------------------------------------
+[5.1 Program Name](#Program-Name)                                        important shortcut to select configurations
+[5.2 Command Line options](#Command-Line-options)                        to override defaults
+[5.3 BOOT Files](#BOOT-Files)                                            a few points to know
+[5.4 GUI](#GUI)                                                       
+[5.5 Signals - Terminating UQLX](#Signals-_002d-Terminating-UQLX)     
+[5.6 ROM Images](#ROM-Images)                                         
+[5.7 The big screen feature](#The-big-screen-feature)                 
+[5.8 X Window Managers](#X-Window-Managers)                           
+[5.9 Keyboard](#Keyboard)                                             
+[5.10 Scripting](#Scripting)                                          
+
+---
+
+---
 
 []{#Program-Name}
 
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------------- -------------------------------------------- ------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Program-Invocation "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Command-Line-options "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------------- -------------------------------------------- ------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Program-Invocation "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Command-Line-options "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Program-Name-1}
 
 5.1 Program Name {#program-name .section}
-----------------
+-----------------------------------------
 
 ‘`qm`’ is the recommended name for normal usage. A different name will
 be interpreted as follows: if either ’`min`’ or ’`js`’ is part of the
@@ -1056,7 +1018,7 @@ to arrange some soft links approximately like this:
 
 <div class="example">
 
-``` {.example}
+```{.example}
          ln -s qm qjs
          ln -s qm qmin
 ```
@@ -1070,7 +1032,7 @@ size are
 
 <div class="example">
 
-``` {.example}
+```{.example}
          SIZE_X   = 632x400
          SIZE_XX  = 720x512
          SIZE_XXX = 800x600
@@ -1078,41 +1040,42 @@ size are
 
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#Command-Line-options}
 
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------- -------------------------------------------- --------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Program-Name "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#BOOT-Files "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------- -------------------------------------------- --------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
 
-[]{#Command-Line-options-1}
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Program-Name "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#BOOT-Files "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
 
-5.2 Command Line options {#command-line-options .section}
+---
+
+5.2 Command Line options
 ------------------------
 
-uqlx supports the following command line options; these override
-settings in ‘`~/.uqlxrc.`’ Note that options in turn can be overridden
+sqlux supports the following command line options; these override
+settings in the config file. Note that options in turn can be overridden
 by program name as described above.
 
 ```
-         qm [-r RAMTOP] [-i] [-f file] [-h] [-o romname]
-            [-s [string]] [-b [string]]
+sqlux [-r RAMTOP] [-i] [-f file] [-h] [-o romname]
+      [-s [string]] [-b [string]]
 ```
 
 where:
 
 `-r RAMTOP`
 
-:   Defines the RAMTOP value in kB. Any enlarged screen also has to fit
-    into this value.
+Defines the RAMTOP value in kB. Any enlarged screen also has to fit
+into this value.
 
 `-c`
 
-:   Configuration line from in sqlux.ini format
-    ```
-    -c "DEVICE = FLP1,/tmp/flp.img,qdos-native"
-    ```
+Configuration line from in sqlux.ini format
+
+```
+-c "DEVICE = FLP1,/tmp/flp.img,qdos-native"
+```
 
 `-m`
 
@@ -1121,7 +1084,7 @@ where:
 `-g nXm`
 
 :   Start with screen size nXm, effective only with Minerva roms. **See
-    big screen**
+big screen**
 
 `-f file`
 
@@ -1138,33 +1101,35 @@ where:
 `-s boot_cmd`
 
 :   No attempt is made to make a connection to the Xserver, See section
-    [Scripting](#Scripting). `boot_cmd` must be present, it defines a
-    QDOS ’BOOT’ device to be used, see `-b` option.
+[Scripting](#Scripting). `boot_cmd` must be present, it defines a
+QDOS ’BOOT’ device to be used, see `-b` option.
 
 `-b boot_cmd`
 
 :   Define QDOS ’BOOT’ device that will return the `boot_cmd` string on
-    read. The `boot_cmd` should be a string of the form
-    `"10 lrun mdv1_progxx"` or similar; quoting newlines is tricky and
-    therefore only 1 line expressions are recommended. A QDOS newline
-    char is automatically appended to the string.
+read. The `boot_cmd` should be a string of the form
+`"10 lrun mdv1_progxx"` or similar; quoting newlines is tricky and
+therefore only 1 line expressions are recommended. A QDOS newline
+char is automatically appended to the string.
 
 `-i`
 
 :   Start with UQLX window iconised - if supported by window manager
 
-------------------------------------------------------------------------
+---
 
 []{#BOOT-Files}
 
-  ------------------------------------------------------------------------------------- ----------------------------------------------------------------------- -------------------------------------------- -------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Command-Line-options "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#GUI "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ----------------------------------------------------------------------- -------------------------------------------- -------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Command-Line-options "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#GUI "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#BOOT-Files-1}
 
 5.3 BOOT Files {#boot-files .section}
---------------
+-------------------------------------
 
 Usually there are no special requirements for UQLX boot files, just
 remember to store it as ‘`mdv1_BOOT`’ - case will be significant in the
@@ -1176,7 +1141,7 @@ try inserting this after `LRESPR Ptr_gen`:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 PAUSE#2,1
 ```
 
@@ -1189,18 +1154,20 @@ You may query the UNIX environment variables and the startup parameters
 of the emulator from your bootfile - [SuperBasic
 Extensions](#SuperBasic-Extensions)
 
-------------------------------------------------------------------------
+---
 
 []{#GUI}
 
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------- -------------------------------------------- ----------------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#BOOT-Files "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Signals-_002d-Terminating-UQLX "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------- -------------------------------------------- ----------------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#BOOT-Files "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Signals-_002d-Terminating-UQLX "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#GUI-1}
 
 5.4 GUI {#gui .section}
--------
+-----------------------
 
 The supplied GUI is intentionally very simple - it is supposed to
 compile and work on every system with X without requiring additional
@@ -1219,13 +1186,13 @@ The GUI supports this actions:
 `Clone UQLX`
 
 :   Create an exact copy of this UQLX program, complete with jobs etc.
-    Files are kept open mainly for the UnixFS, accessing same floppy or
-    QXL devices from two applications will cause problems.
+Files are kept open mainly for the UnixFS, accessing same floppy or
+QXL devices from two applications will cause problems.
 
 `ROM breakpoints`
 
 :   Toggle whether setting ROM breakpoints is possible. This will
-    completely remove ROM protection so use only when needed.
+completely remove ROM protection so use only when needed.
 
 `Redraw QL screen`
 
@@ -1234,56 +1201,60 @@ The GUI supports this actions:
 `XKeyLookup`
 
 :   Switch whether X or QDOS key translation method is applied, similar
-    as `XKEY_ON` in ‘`~/.uqlxrc`’ resp. the key configured by
-    `XKEY_SWITCH`
+as `XKEY_ON` in ‘`~/.uqlxrc`’ resp. the key configured by
+`XKEY_SWITCH`
 
 `cpu hog`
 
 :   Toggle CPU saving mode, similar to `-h` or `CPU_HOG`
 
-------------------------------------------------------------------------
+---
 
 []{#Signals-_002d-Terminating-UQLX}
 
-  ------------------------------------------------------------------------------------- ------------------------------------------------------ -------------------------------------------- --------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#GUI "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#ROM-Images "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ------------------------------------------------------ -------------------------------------------- --------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#GUI "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#ROM-Images "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Signals-_002d-Terminating-UQLX-1}
 
 5.5 Signals - Terminating UQLX {#signals---terminating-uqlx .section}
-------------------------------
+---------------------------------------------------------------------
 
 UQLX handles all signals, currently they will have this effect:
 
 `SIGINT`
 
 :   typically bound to `^C` will do a ’soft termination’, cleaning up
-    all temporary files and directories.
+all temporary files and directories.
 
 `SIGQUIT`
 
 :   typically bound to `^\` will cause an immediate exit, this is useful
-    in the unlikely case that `SIGINT` fails due to some recursive
-    error.
+in the unlikely case that `SIGINT` fails due to some recursive
+error.
 
 `SIGABRT`
 
 :   is generated internally for debugging reasons when UQLX encounters
-    an virtual memory error it is unable to handle.
+an virtual memory error it is unable to handle.
 
-------------------------------------------------------------------------
+---
 
 []{#ROM-Images}
 
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------------------------- -------------------------------------------- --------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Signals-_002d-Terminating-UQLX "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#The-big-screen-feature "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- --------------------------------------------------------------------------------- -------------------------------------------- --------------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Signals-_002d-Terminating-UQLX "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#The-big-screen-feature "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#ROM-Images-1}
 
 5.6 ROM Images {#rom-images .section}
---------------
+-------------------------------------
 
 Thanks to Tony Firshman, Minerva v1.89 is now PD and can be bundled with
 UQLX - it is ‘`romdir/min.189`’.
@@ -1292,43 +1263,46 @@ For various reasons you may run into some trouble when trying romimages
 other than the supplied js\_rom or min.189. Roughly, the known causes
 are:
 
--   rom image not supported by UQLX. Maybe some old, never tested QDOS
-    roms
--   rom image has been patched by GC, SGC or similar. All QL extensions
-    that have something better than a 68008 CPU are likely to do this.
+- rom image not supported by UQLX. Maybe some old, never tested QDOS
+  roms
+- rom image has been patched by GC, SGC or similar. All QL extensions
+  that have something better than a 68008 CPU are likely to do this.
 
-    On a SGC, according to Zeljko Nastasic you may retrieve the original
-    ROM by this command:
+  On a SGC, according to Zeljko Nastasic you may retrieve the original
+  ROM by this command:
 
-    <div class="example">
+  <div class="example">
 
-    ``` {.example}
-    SBYTES <device><filename>,hex('400000'),48*1024
-    ```
+  ```{.example}
+  SBYTES <device><filename>,hex('400000'),48*1024
+  ```
 
-    </div>
+  </div>
+- some TK2 roms fail possibly because they get confused by the UQLX
+  filesystem which is a mix of the basic and FS II. Use some older rom
+  if possible, 2.10 works very well for me.
 
--   some TK2 roms fail possibly because they get confused by the UQLX
-    filesystem which is a mix of the basic and FS II. Use some older rom
-    if possible, 2.10 works very well for me.
+---
 
-  ------------------------------------------------------- ---- --
-  [5.7 The big screen feature](#The-big-screen-feature)     
-  [5.9 Keyboard](#Keyboard)                                 
-  ------------------------------------------------------- ---- --
+[5.7 The big screen feature](#The-big-screen-feature)     
+[5.9 Keyboard](#Keyboard)                                 
 
-------------------------------------------------------------------------
+---
+
+---
 
 []{#The-big-screen-feature}
 
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------- -------------------------------------------- ---------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ROM-Images "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#X-Window-Managers "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------- -------------------------------------------- ---------------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ROM-Images "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#X-Window-Managers "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#The-big-screen-feature-1}
 
 5.7 The big screen feature {#the-big-screen-feature .section}
---------------------------
+-------------------------------------------------------------
 
 If you choose to work with a screen bigger than 512x256, there are a few
 important points.
@@ -1348,8 +1322,9 @@ may improve performance for very big screen sizes by a factor of 2.
 If you are an extremist, there are several window managers that will
 allow you to have rather big screen sizes, eg fvwm. The maximum I have
 tested so far is 8192x4096 with SunOS/Solaris. The theoretical limit is
+
 - because of Pointer Environment’s bad habits that the screen must fit
-with all RAM into 16 MB
+  with all RAM into 16 MB
 
 Pointer Environment is patched when activated to recognise the new
 screen parameters - there are ’cleaner’ solutions, unfortunately with
@@ -1361,18 +1336,20 @@ x-resolution/sd.linel ratio. Length of screen buffer must always be
 truncated nearest 32K boundary, therefore some screen sizes may result
 in a certain waste of memory.
 
-------------------------------------------------------------------------
+---
 
 []{#X-Window-Managers}
 
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------------------- -------------------------------------------- ------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#The-big-screen-feature "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Keyboard "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------------------- -------------------------------------------- ------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#The-big-screen-feature "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Keyboard "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#X-Window-Managers-1}
 
 5.8 X Window Managers {#x-window-managers .section}
----------------------
+---------------------------------------------------
 
 Some of them work better than others, and some don’t work at all. UQLX
 is slightly more demanding on them because it has to do keyboard
@@ -1385,18 +1362,20 @@ now).
 Tested to work: olvwm, fvwm2, afterstep, windowmaker. Many of these have
 settings which can make a big improvement.
 
-------------------------------------------------------------------------
+---
 
 []{#Keyboard}
 
-  ------------------------------------------------------------------------------------- -------------------------------------------------------------------- -------------------------------------------- -------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#X-Window-Managers "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Scripting "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- -------------------------------------------------------------------- -------------------------------------------- -------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#X-Window-Managers "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Scripting "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Keyboard-1}
 
 5.9 Keyboard {#keyboard .section}
-------------
+---------------------------------
 
 There are 2 points of concern when emulating a QDOS type keyboard under
 X11:
@@ -1415,7 +1394,7 @@ following lines in ‘`/etc/XF86Config`’
 
 <div class="example">
 
-``` {.example}
+```{.example}
 XkbDisable
 RightAlt    ModeShift
 ```
@@ -1428,7 +1407,7 @@ Create it in a xkb-enabled session like this:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 xmodmap -pke >~/.Xmodmap
 ```
 
@@ -1440,12 +1419,12 @@ otherwise.
 
 To resolve the problems, I have added a switch, switching this states:
 
--   default state: \[grabbed keyboard\] & preferred QDOS interpretation
-    of key events, indicated by arrow mouse cursor (indication only when
-    PE cursor inactive!)
--   \[ungrabbed keyboard\] & preferred X11 interpretation of key events,
-    indicated by crossbar mouse cursor. All characters returned by ’xev’
-    should be available in this state.
+- default state: \[grabbed keyboard\] & preferred QDOS interpretation
+  of key events, indicated by arrow mouse cursor (indication only when
+  PE cursor inactive!)
+- \[ungrabbed keyboard\] & preferred X11 interpretation of key events,
+  indicated by crossbar mouse cursor. All characters returned by ’xev’
+  should be available in this state.
 
 The switch is bound to a key, F11 by default and in default state unless
 configured otherwise See section [About .uqlxrc
@@ -1475,7 +1454,7 @@ The result is a 3 level key-combination translation scheme:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 X defines:
 1) keycodes - each keyboard button has a number that is completely OS dependent
    This number is only useful to find out what KeySyms are associated with the
@@ -1505,18 +1484,20 @@ X defines:
 
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#Scripting}
 
-  ------------------------------------------------------------------------------------- ----------------------------------------------------------- -------------------------------------------- ---------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Keyboard "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Filesystems "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ----------------------------------------------------------- -------------------------------------------- ---------------------------------------------------------- --------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Keyboard "Previous section in reading order")\]   \[[Up](#Program-Invocation "Up section")\]   \[[&gt;](#Filesystems "Next section in reading order")\]   \[[&gt;&gt;](#Filesystems "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Scripting-1}
 
 5.10 Scripting {#scripting .section}
---------------
+------------------------------------
 
 `qm` can now be used to run QDOS programs as scripts. This feature is
 not yet completed but I already used it in some `cron` commands. With
@@ -1538,7 +1519,7 @@ strings, something like
 
 <div class="example">
 
-``` {.example}
+```{.example}
 qm -s "10 lrun mdv1_prog"
 ```
 
@@ -1552,18 +1533,20 @@ scripts and access environment variables, namely `getXargc`, `getXarg$`
 and `getXenv$`. see section [SuperBasic
 Extensions](#SuperBasic-Extensions)
 
-------------------------------------------------------------------------
+---
 
 []{#Filesystems}
 
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------ ---------- ------------------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Scripting "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#UNIX-Filesystem-Interface "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------------- ------------------------------------------------------------ ---------- ------------------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Program-Invocation "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Scripting "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#UNIX-Filesystem-Interface "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Filesystems-1}
 
 6 Filesystems {#filesystems .chapter}
-=============
+=====================================
 
 Both QDOS/SMSQ diskimages and the UNIX host filesystem can be accessed,
 for configuration details see the ‘`.uqlxrc`’ file.
@@ -1575,6 +1558,7 @@ closed.
 There is no file locking for the UnixFS. QDOS diskimages and QXL.WIN
 files are locked before accessed, because the potential for damage is
 much greater. However not every Unix will support locking block devices
+
 - test this if you intend to run more than 1 emulators at a time.
 
 **File locking is mandatory ONLY when the mode (chmod(2)) of the file is
@@ -1603,24 +1587,28 @@ of which you know the (Unix)filename or simply need very long pathnames.
 It can be also used to access raw and special devices, eg the /proc
 filesystem.
 
-  ------------------------------------------------------------- ---- -------------------------------
-  [6.1 UNIX Filesystem Interface](#UNIX-Filesystem-Interface)        Make Unix-FS QDOS compatible
-  [6.2 QDOS floppy and QXL.WIN](#QDOS-floppy-and-QXL_002eWIN)     
-  [6.3 uQVFSx Filesystem](#uQVFSx-Filesystem)                        Accessing very long pathnames
-  ------------------------------------------------------------- ---- -------------------------------
+---
 
-------------------------------------------------------------------------
+[6.1 UNIX Filesystem Interface](#UNIX-Filesystem-Interface)        Make Unix-FS QDOS compatible
+[6.2 QDOS floppy and QXL.WIN](#QDOS-floppy-and-QXL_002eWIN)     
+[6.3 uQVFSx Filesystem](#uQVFSx-Filesystem)                        Accessing very long pathnames
+
+---
+
+---
 
 []{#UNIX-Filesystem-Interface}
 
-  ------------------------------------------------------------------------------ -------------------------------------------------------------- ------------------------------------- -------------------------------------------------------------------------- ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Filesystems "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#QDOS-floppy-and-QXL_002eWIN "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------ -------------------------------------------------------------- ------------------------------------- -------------------------------------------------------------------------- ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Filesystems "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#QDOS-floppy-and-QXL_002eWIN "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#UNIX-Filesystem-Interface-1}
 
 6.1 UNIX Filesystem Interface {#unix-filesystem-interface .section}
------------------------------
+-------------------------------------------------------------------
 
 The UNIX FS Interface provides access to the underlying UNIX (or
 similar) host filesystem. Standard QDOS and most QDOS-FS II file
@@ -1656,7 +1644,7 @@ Thus
 
 <div class="example">
 
-``` {.example}
+```{.example}
 open#6,mdv1_BoOt
 open#4,mdv1_BOOT      REM still accessing mdv1_BoOt !!
 ```
@@ -1679,18 +1667,20 @@ pathologic cases may result in certain files being shadowed.
 The ‘`.`’ and ‘`..`’ directories are accessible just like that in QDOS
 but aren’t listed in directories anymore.
 
-------------------------------------------------------------------------
+---
 
 []{#QDOS-floppy-and-QXL_002eWIN}
 
-  ------------------------------------------------------------------------------ ---------------------------------------------------------------------------- ------------------------------------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#UNIX-Filesystem-Interface "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#qxl_005ffschk "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------ ---------------------------------------------------------------------------- ------------------------------------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#UNIX-Filesystem-Interface "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#qxl_005ffschk "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#QDOS-floppy-and-QXL_002eWIN-1}
 
 6.2 QDOS floppy and QXL.WIN {#qdos-floppy-and-qxl.win .section}
----------------------------
+---------------------------------------------------------------
 
 QXL.WIN files are now supported as well as direct use of floppy/QXL.WIN
 devices. Currently,
@@ -1705,7 +1695,7 @@ well (and much faster on SUN). On SUNOS the exact syntax is
 
 <div class="example">
 
-``` {.example}
+```{.example}
 dd if=/dev/rfd0 of=DiskImagename
 ```
 
@@ -1720,17 +1710,21 @@ vold’.
 On Linux anything works, unless you have a very special floppy use
 `/dev/fd0` as filename.
 
-  ------------------------------------ ---- --
-  [6.2.1 qxl\_fschk](#qxl_005ffschk)     
-  ------------------------------------ ---- --
+---
 
-------------------------------------------------------------------------
+[6.2.1 qxl\_fschk](#qxl_005ffschk)     
+
+---
+
+---
 
 []{#qxl_005ffschk}
 
-  ------------------------------------------------------------------------------ ------------------------------------------------------------------------------ ----------------------------------------------------- ---------------------------------------------------------------- ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#QDOS-floppy-and-QXL_002eWIN "Previous section in reading order")\]   \[[Up](#QDOS-floppy-and-QXL_002eWIN "Up section")\]   \[[&gt;](#uQVFSx-Filesystem "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------ ------------------------------------------------------------------------------ ----------------------------------------------------- ---------------------------------------------------------------- ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#QDOS-floppy-and-QXL_002eWIN "Previous section in reading order")\]   \[[Up](#QDOS-floppy-and-QXL_002eWIN "Up section")\]   \[[&gt;](#uQVFSx-Filesystem "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#qxl_005ffschk-1}
 
@@ -1741,18 +1735,20 @@ run before exchanging QXL.WIN filesystems images with SMSQ software, it
 will spot some potential compatibility problems and detect many types of
 filesystem damage.
 
-------------------------------------------------------------------------
+---
 
 []{#uQVFSx-Filesystem}
 
-  ------------------------------------------------------------------------------ ---------------------------------------------------------------- ------------------------------------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#qxl_005ffschk "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#Other-Devices "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------ ---------------------------------------------------------------- ------------------------------------- ------------------------------------------------------------ ----------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#qxl_005ffschk "Previous section in reading order")\]   \[[Up](#Filesystems "Up section")\]   \[[&gt;](#Other-Devices "Next section in reading order")\]   \[[&gt;&gt;](#Other-Devices "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#uQVFSx-Filesystem-1}
 
 6.3 uQVFSx Filesystem {#uqvfsx-filesystem .section}
----------------------
+---------------------------------------------------
 
 UQLX now offers access to (almost) unlimited pathname lengths. So far I
 have tested pathnames up to 1017 bytes which appears to be some limit in
@@ -1780,7 +1776,7 @@ Examples:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 view '/etc/motd'
 view 'XVFS_/etc/motd'
 view '/usr/include/sys/signal.h'
@@ -1797,7 +1793,7 @@ For now, getting directories works like this:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 copy 'pty_ls -a /usr/include' to con_
 spl 'pty_ls -a /usr/lib',#1
 ```
@@ -1811,63 +1807,71 @@ the 2nd example! See section [pty device](#pty-device) for details.
 When this filesystem is used to access special files (devices), only a
 restricted set of `trap#3` commands will work for this file.
 
-------------------------------------------------------------------------
+---
 
 []{#Other-Devices}
 
-  ------------------------------------------------------------------------------ -------------------------------------------------------------------- ---------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#uQVFSx-Filesystem "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#TCP_002fIP "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ------------------------------------------------------------------------------ -------------------------------------------------------------------- ---------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Filesystems "Beginning of this chapter or previous chapter")\]   \[[&lt;](#uQVFSx-Filesystem "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#TCP_002fIP "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Other-Devices-1}
 
 7 Other Devices {#other-devices .chapter}
-===============
+=========================================
 
 Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.
 
-  ------------------------------- ---- ----------------------------------------------------
-  [7.1 TCP/IP](#TCP_002fIP)         
-  [7.2 pty device](#pty-device)        launch and control unix applications through QDOS!
-  [7.3 ser device](#ser-device)        serial communication
-  ------------------------------- ---- ----------------------------------------------------
+---
 
-------------------------------------------------------------------------
+[7.1 TCP/IP](#TCP_002fIP)         
+[7.2 pty device](#pty-device)        launch and control unix applications through QDOS!
+[7.3 ser device](#ser-device)        serial communication
+
+---
+
+---
 
 []{#TCP_002fIP}
 
-  -------------------------------------------------------------------------------- ---------------------------------------------------------------- --------------------------------------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Other-Devices "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#pty-device "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- ---------------------------------------------------------------- --------------------------------------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Other-Devices "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#pty-device "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#TCP_002fIP-1}
 
 7.1 TCP/IP {#tcpip .section}
-----------
+----------------------------
 
 The `TCP/IP` features are described in the files ‘`docs/socket.*`’ that
 came with this UQLX distribution or here:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 http://www.geocities.com/SiliconValley/rdzidlic/socket_main.html
 ```
 
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#pty-device}
 
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- --------------------------------------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#TCP_002fIP "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#ser-device "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- --------------------------------------- --------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#TCP_002fIP "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#ser-device "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#pty-device-1}
 
 7.2 pty device {#pty-device .section}
---------------
+-------------------------------------
 
 `pty`*jt*`_program name` *par1* ....
 
@@ -1875,34 +1879,32 @@ http://www.geocities.com/SiliconValley/rdzidlic/socket_main.html
 
 :   job control options
 
-    `i`
+`i`
 
-    :   don’t care if child process exits. Default behaviour is to
-        indicate EOF on read after the child process exited and all
-        buffers were read, but theoretically someone might reconnect the
-        tty.
+:   don’t care if child process exits. Default behaviour is to
+indicate EOF on read after the child process exited and all
+buffers were read, but theoretically someone might reconnect the
+tty.
 
-    `k`
+`k`
 
-    :   kill child job after closing the QDOS channel. Default is don’t
-        care.
-
+:   kill child job after closing the QDOS channel. Default is don’t
+care.
 *t*
 
 :   translation options
 
-    `c`
+`c`
 
-    :   translate carriage returns
+:   translate carriage returns
 
-    `z`
+`z`
 
-    :   translate char 26 (`^Z`)as end of file
+:   translate char 26 (`^Z`)as end of file
 
-    `t`
+`t`
 
-    :   translate QDOS &lt;–&gt; ISO-8859-1 font
-
+:   translate QDOS &lt;–&gt; ISO-8859-1 font
 *program name*
 
 :   name of program to be executed and parameters
@@ -1910,40 +1912,38 @@ http://www.geocities.com/SiliconValley/rdzidlic/socket_main.html
 *parn*
 
 :   arguments to be passed to the invoked program. This can be
-    unix-style options, filenames etc.
+unix-style options, filenames etc.
 
-    A special syntax allows the specification of UQLX filenames and
-    redirection: \[following stuff isn’t yet implemented at all\]
+A special syntax allows the specification of UQLX filenames and
+redirection: \[following stuff isn’t yet implemented at all\]
 
-    `' (single quote,\')`
+`' (single quote,\')`
 
-    :   can be used avoid expansion of the following symbols
+:   can be used avoid expansion of the following symbols
 
-    `'#name'`
+`'#name'`
 
-    :   denotes a QDOS filename. The path of the underlying Unix file is
-        looked up and passed as argument to the program.
+:   denotes a QDOS filename. The path of the underlying Unix file is
+looked up and passed as argument to the program.
 
-        The next example will run german ispell on the file
-        ‘`mdv1_kant.tex`’. Note that even though the *t* flag is
-        selected it applies only to the `pty` I/O - thus if
-        ‘`mdv1_kant.tex`’ contains any non ASCII codes a separate
-        translation is required.
+The next example will run german ispell on the file
+‘`mdv1_kant.tex`’. Note that even though the *t* flag is
+selected it applies only to the `pty` I/O - thus if
+‘`mdv1_kant.tex`’ contains any non ASCII codes a separate
+translation is required.
 
-        <div class="example">
+<div class="example">
 
-        ``` {.example}
-        open#4,"ptyt_ispell -d #mdv1_kant.tex"
-        ```
+``` {.example}
+open#4,"ptyt_ispell -d #mdv1_kant.tex"
+```
 
-        </div>
+</div>
+`[n]>`
+`[n]>>`
+`[n]<`
 
-    `[n]>`\
-    `[n]>>`\
-    `[n]<`
-
-    :   redirects stdin/out/err or fd `n` when given
-
+:   redirects stdin/out/err or fd `n` when given
 A pty is a pseudo-terminal that enables you to run a program as if it
 were connected to a real tty. The terminal output of the program is is
 available as input from the connected QDOS channel, likewise output into
@@ -1956,19 +1956,18 @@ examples:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 open#6,pty_date     REM get unix time and date
 input$#6,a$         REM should be same like QDOS date
 print a$:close#6
 ```
-
 </div>
 
 A bit more complicated example, `'pty_ls -al'` would do the same easier.
 
 <div class="example">
 
-``` {.example}
+```{.example}
 10 open#6,pty_csh
 20 print#6,"ls -al"
 30 print#6,"exit"       rem otherwise we can't detect the end!
@@ -1978,7 +1977,6 @@ A bit more complicated example, `'pty_ls -al'` would do the same easier.
 60 end repeat xx
 70 close#6
 ```
-
 </div>
 
 Connect to an NNTP server and post a test message. Most likely you will
@@ -1987,7 +1985,7 @@ legal address.
 
 <div class="example">
 
-``` {.example}
+```{.example}
 100 PRINT "NNTP Posting software"
 110 PRINT
 120 OPEN#6,'pty_telnet  rznews.rrze.uni-erlangen.de 119'
@@ -2019,7 +2017,6 @@ legal address.
 370 SAVE_O mdv1_script
 380 END DEFine
 ```
-
 </div>
 
 If the pty driver (pty.c) compiles on your system; try setting the QTPI
@@ -2033,30 +2030,31 @@ The pty code is taken from the ’emu’ X Window terminal program; the
 original archive contains many clues on getting it to work on different
 platforms. You can find out about ’emu’ from emu@pcs.com.
 
-*In this context, beware of an*` TK2` *bug -* ` SPL ` *may accidentally
+*In this context, beware of an*` TK2` *bug -* `SPL` *may accidentally
 close a basic channel passed as* `#ch ` *if the channel returns an
 immediate* `EOF ` *as the* `pty `*device can do*
 
 <div class="example">
 
-``` {.example}
+```{.example}
 SPL 'pty_ls emptydir',#1        REM #1 gets closed! (-:
 ```
-
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#ser-device}
 
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- --------------------------------------- ------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#pty-device "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#Printing "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- --------------------------------------- ------------------------------------------------------- ------------------------------------------ --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#pty-device "Previous section in reading order")\]   \[[Up](#Other-Devices "Up section")\]   \[[&gt;](#Printing "Next section in reading order")\]   \[[&gt;&gt;](#Printing "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#ser-device-1}
 
 7.3 ser device {#ser-device .section}
---------------
+-------------------------------------
 
 `ser`*npht*`_`*b*baudrate
 
@@ -2125,10 +2123,9 @@ not much use. The extended syntax is, for example:
 
 <div class="example">
 
-``` {.example}
+```{.example}
         ser2hr_b57600   (57600 baud)
 ```
-
 </div>
 
 The data transfer rate appears CPU bound, but 5100 cps TX and 4800 cps
@@ -2137,18 +2134,20 @@ RX are achievable for QTPI/ZMODEM.
 The serial device names should be specified in the ‘`.uqlxrc`’ file,
 good choice for Linux is ‘`/dev/ttyS0`’ and ‘`/dev/ttyS1`’.
 
-------------------------------------------------------------------------
+---
 
 []{#Printing}
 
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- ---------- -------------------------------------------------------------------- ------------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ser-device "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#SuperBasic-Extensions "Next section in reading order")\]   \[[&gt;&gt;](#SuperBasic-Extensions "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------------- ------------------------------------------------------------- ---------- -------------------------------------------------------------------- ------------------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Other-Devices "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ser-device "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#SuperBasic-Extensions "Next section in reading order")\]   \[[&gt;&gt;](#SuperBasic-Extensions "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Printing-1}
 
 8 Printing {#printing .chapter}
-==========
+===============================
 
 The `prt` device can be used for printing. The data sent to `prt` is
 piped to the printer command specified in ‘`.~/.uqlxrc`’ which may be
@@ -2165,15 +2164,14 @@ device.
 
 :   translation: use active TRA table
 
-    `add_options`
+`add_options`
 
-    :   specify additional options to be passed to default printer
-        command
+:   specify additional options to be passed to default printer
+command
 
-    `alt_command`
+`alt_command`
 
-    :   specify alternative command to be executed
-
+:   specify alternative command to be executed
 Data sent to the `prt` device is piped to the specified filter. If you
 have QDOS printer drivers for the printer in use, try to send your
 output to `lpr`. If this doesn’t work, try following definition in
@@ -2181,10 +2179,9 @@ output to `lpr`. If this doesn’t work, try following definition in
 
 <div class="example">
 
-``` {.example}
+```{.example}
 PRINT = lpr -Praw
 ```
-
 </div>
 
 If your system doesn’t have a `-Praw` you can add it by editing
@@ -2192,10 +2189,9 @@ If your system doesn’t have a `-Praw` you can add it by editing
 
 <div class="example">
 
-``` {.example}
+```{.example}
 PRINT = cat >/dev/lp0
 ```
-
 </div>
 
 For this to work you will probably need to change ‘`/dev/lp0`’
@@ -2208,18 +2204,20 @@ command(s) exits – in this situation uqlx may appear to hang.*
 
 If this happens, kill the filter process from another xterm.
 
-------------------------------------------------------------------------
+---
 
 []{#SuperBasic-Extensions}
 
-  --------------------------------------------------------------------------- ----------------------------------------------------------- ---------- ------------------------------------------------------ ----------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#Printing "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Printing "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#TECHREF "Next section in reading order")\]   \[[&gt;&gt;](#TECHREF "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  --------------------------------------------------------------------------- ----------------------------------------------------------- ---------- ------------------------------------------------------ ----------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#Printing "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Printing "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#TECHREF "Next section in reading order")\]   \[[&gt;&gt;](#TECHREF "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#SuperBasic-Extensions-1}
 
 9 SuperBasic Extensions {#superbasic-extensions .chapter}
-=======================
+=========================================================
 
 []{#index-Kill_005fUQLX}Procedure: **Kill\_UQLX** *result*
 
@@ -2242,79 +2240,75 @@ If this happens, kill the filter process from another xterm.
 []{#index-Fork_005fUQLX}Function: **Fork\_UQLX**
 
 :   Create an exact copy of this UQLX process. A new Xwindow is created,
-    files on directory device drivers recreated. However beware that a
-    file that remained opened during a fork may now be writable by two
-    or more UQLX instances. Also using same stream i/o channel from both
-    instances of the process will result in chaos, especially `pty`
-    channels have to loose EOF.
+files on directory device drivers recreated. However beware that a
+file that remained opened during a fork may now be writable by two
+or more UQLX instances. Also using same stream i/o channel from both
+instances of the process will result in chaos, especially `pty`
+channels have to loose EOF.
 
-    It appears as if UQLX and/or X can get easily confused when
-    `Fork_UQLX` is applied while the mouse pointer/focus is in the UQLX
-    window. This doesn’t seem to be a serious problem, as forking should
-    be most useful when used in scripts anyway.
+It appears as if UQLX and/or X can get easily confused when
+`Fork_UQLX` is applied while the mouse pointer/focus is in the UQLX
+window. This doesn’t seem to be a serious problem, as forking should
+be most useful when used in scripts anyway.
 
-    Returns `pid` for the parent process, `0` for its child.
+Returns `pid` for the parent process, `0` for its child.
 
-    An utterly useful example program is:
+An utterly useful example program is:
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-    10 for i=1 to 4
-    20 print Fork_UQLX
-    30 end for i
-    ```
-
-    </div>
-
+```{.example}
+10 for i=1 to 4
+20 print Fork_UQLX
+30 end for i
+```
+</div>
 <!-- -->
+
 
 []{#index-getXargc}Function: **getXargc**
 
 :   Returns the number of arguments that were given to the emulator at
-    startup, options or arguments that have been consumed away by Xtk
-    not counted.
+startup, options or arguments that have been consumed away by Xtk
+not counted.
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-    qm -m -r 1024 arg1 arg2 arg3
+```{.example}
+qm -m -r 1024 arg1 arg2 arg3
 
-    PRINT getXargc          => 4   (arg0=qm !)
-    ```
-
-    </div>
-
+PRINT getXargc          => 4   (arg0=qm !)
+```
+</div>
 <!-- -->
+
 
 []{#index-getXarg_0024}Function: **getXarg\$** *nth*
 
 :   Returns the nth argument, continuing from above example
 
-    <div class="example">
+<div class="example">
 
-    ``` {.example}
-    for i=0 to getXargc-1 : PRINT i, getXarg$(i)
-    ```
+```{.example}
+for i=0 to getXargc-1 : PRINT i, getXarg$(i)
+```
+</div>
 
-    </div>
+results in
 
-    results in
+<div class="example">
 
-    <div class="example">
-
-    ``` {.example}
-    0       /user80/rdzidlic/qm/qm
-    1       arg1
-    2       arg2
-    3       arg3
-    4       arg4
-    5       arg5
-    ```
-
-    </div>
-
+```{.example}
+0       /user80/rdzidlic/qm/qm
+1       arg1
+2       arg2
+3       arg3
+4       arg4
+5       arg5
+```
+</div>
 <!-- -->
+
 
 []{#index-getXres}Function: **getXres**
 
@@ -2338,58 +2332,68 @@ If this happens, kill the filter process from another xterm.
 
 :   same as `getYres`
 
-------------------------------------------------------------------------
+---
 
 []{#TECHREF}
 
-  ---------------------------------------------------------------------------------------- ------------------------------------------------------------------------ ---------- --------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#SuperBasic-Extensions "Beginning of this chapter or previous chapter")\]   \[[&lt;](#SuperBasic-Extensions "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#ByteOrder-Issues "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------------------------- ------------------------------------------------------------------------ ---------- --------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#SuperBasic-Extensions "Beginning of this chapter or previous chapter")\]   \[[&lt;](#SuperBasic-Extensions "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#ByteOrder-Issues "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#TECHREF-1}
 
 10 TECHREF {#techref .chapter}
-==========
+==============================
 
 For a general overview of the Emulator see also Daniele’s original
 QM.README.
 
-  -------------------------------------------------------------------------------- ---- --
-  [10.1 ByteOrder Issues](#ByteOrder-Issues)                                         
-  [10.2 Debugging](#Debugging)                                                       
-  [10.3 ROMs and Patching](#ROMs-and-Patching)                                       
-  [10.4 Calling 68K code from the emulator](#Calling-68K-code-from-the-emulator)     
-  [10.5 Directory Device Drivers](#Directory-Device-Drivers)                         
-  [10.6 Patch Database](#Patch-Database)                                             
-  [10.7 Device Drivers](#Device-Drivers)                                             
-  -------------------------------------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[10.1 ByteOrder Issues](#ByteOrder-Issues)                                         
+[10.2 Debugging](#Debugging)                                                       
+[10.3 ROMs and Patching](#ROMs-and-Patching)                                       
+[10.4 Calling 68K code from the emulator](#Calling-68K-code-from-the-emulator)     
+[10.5 Directory Device Drivers](#Directory-Device-Drivers)                         
+[10.6 Patch Database](#Patch-Database)                                             
+[10.7 Device Drivers](#Device-Drivers)                                             
+
+---
+
+---
 
 []{#ByteOrder-Issues}
 
-  -------------------------------------------------------------------------- ---------------------------------------------------------- --------------------------------- ----------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#TECHREF "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Memory "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ---------------------------------------------------------- --------------------------------- ----------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#TECHREF "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Memory "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#ByteOrder-Issues-1}
 
 10.1 ByteOrder Issues {#byteorder-issues .section}
----------------------
+--------------------------------------------------
 
-  ------------------------------------------------------------------ ---- --
-  [10.1.1 Memory](#Memory)                                             
-  [10.1.2 PC - the program counter](#PC-_002d-the-program-counter)     
-  [10.1.3 Registers](#Registers)                                       
-  ------------------------------------------------------------------ ---- --
+---
 
-------------------------------------------------------------------------
+[10.1.1 Memory](#Memory)                                             
+[10.1.2 PC - the program counter](#PC-_002d-the-program-counter)     
+[10.1.3 Registers](#Registers)                                       
+
+---
+
+---
 
 []{#Memory}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------- ------------------------------------------ --------------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ByteOrder-Issues "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#PC-_002d-the-program-counter "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------- ------------------------------------------ --------------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ByteOrder-Issues "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#PC-_002d-the-program-counter "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Memory-1}
 
@@ -2398,48 +2402,47 @@ QM.README.
 QDOS memory is always in 68k format, that is big-endian. There are some
 possible ways access memory:
 
-1.  raw always takes absolute (host) address, only byte order conversion
-    is done here.
-    <div class="example">
+1. raw always takes absolute (host) address, only byte order conversion
+   is done here.
 
-    ``` {.example}
-            RW(),WW()       read,write 16bit word
-            RL(),WL()                  32bit
-    ```
+   <div class="example">
 
-    </div>
+   ```{.example}
+           RW(),WW()       read,write 16bit word
+           RL(),WL()                  32bit
+   ```
+   </div>
+2. cooked always takes QL address, checks bounds, adds QLmem base and
+   determines what sort of memory is used(ROM.screen,RAM,hardware)
 
-2.  cooked always takes QL address, checks bounds, adds QLmem base and
-    determines what sort of memory is used(ROM.screen,RAM,hardware)
+   <div class="example">
 
-    <div class="example">
+   ```{.example}
+           w8 ReadHWByte(w32 addr);
+           w8 ReadByte(w32 addr);
+           w16 ReadWord(w32 addr);
+           w32 ReadLong(w32 addr);
+           void WriteByte(w32 addr,w8 d);
+           void WriteWord(w32 addr,w16 d);
+           void WriteLong(w32 addr,w32 d);
+   ```
+   </div>
 
-    ``` {.example}
-            w8 ReadHWByte(w32 addr);
-            w8 ReadByte(w32 addr);
-            w16 ReadWord(w32 addr);
-            w32 ReadLong(w32 addr);
-            void WriteByte(w32 addr,w8 d);
-            void WriteWord(w32 addr,w16 d);
-            void WriteLong(w32 addr,w32 d);
-    ```
+   This must be done only in a very controlled way, bad alignment or
+   other errors may cause very hard to debug m68k exceptions
+3. arbitrary, eg strcpy() or read() into QL memory you must carefully
+   obey all restrictions and call ChangedMemory(from,to) to indicate
+   the change to screen-flush manager
 
-    </div>
-
-    This must be done only in a very controlled way, bad alignment or
-    other errors may cause very hard to debug m68k exceptions
-
-3.  arbitrary, eg strcpy() or read() into QL memory you must carefully
-    obey all restrictions and call ChangedMemory(from,to) to indicate
-    the change to screen-flush manager
-
-------------------------------------------------------------------------
+---
 
 []{#PC-_002d-the-program-counter}
 
-  -------------------------------------------------------------------------- --------------------------------------------------------- ------------------------------------------ -------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Memory "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#Registers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- --------------------------------------------------------- ------------------------------------------ -------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Memory "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#Registers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#PC-_002d-the-program-counter-1}
 
@@ -2450,13 +2453,15 @@ special in that it already has the base of QL memory, "theROM" added to
 it. Thus if you need the QL-relative pc value `((long)pc-(long)theROM)`
 will do.
 
-------------------------------------------------------------------------
+---
 
 []{#Registers}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------- ------------------------------------------ -------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#PC-_002d-the-program-counter "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#Debugging "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------- ------------------------------------------ -------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#PC-_002d-the-program-counter "Previous section in reading order")\]   \[[Up](#ByteOrder-Issues "Up section")\]   \[[&gt;](#Debugging "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Registers-1}
 
@@ -2470,39 +2475,39 @@ thus
 
 <div class="example">
 
-``` {.example}
+```{.example}
         *(uw8*)((Ptr)reg+RBO)           is d0.b
         *(uw16*)((Ptr)(reg+1)+RWO)      is d1.w
 ```
-
 </div>
 
 A more complicated example is:
 
 <div class="example">
 
-``` {.example}
+```{.example}
         (w32)*(((w16*)((Ptr)reg+RWO+((displ>>10)&60))))+
                         aReg[code&7]+(w32)((w8)displ));
 ```
-
 </div>
 
 this will compute the the xx(An,Rn.w) address, `code`, is the first
 instruction word and `displ` the extend instruction code.
 
-------------------------------------------------------------------------
+---
 
 []{#Debugging}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------ --------------------------------- ---------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Registers "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Trace "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------ --------------------------------- ---------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Registers "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Trace "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Debugging-1}
 
 10.2 Debugging {#debugging .section}
---------------
+------------------------------------
 
 It is recommended to compile with the ‘`-ggdb3`’ option if you use gdb,
 this flag can be set eg by setting ‘`LOCAL_OPTFLAGS`’. Older gcc
@@ -2521,21 +2526,19 @@ start qm within gdb:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 >gdb qm
 gdb>run
 ```
-
 </div>
 
 if you run into an exception,
 
 <div class="example">
 
-``` {.example}
+```{.example}
 gdb> call DbgInfo()
 ```
-
 </div>
 
 will give me an idea what is happening.
@@ -2547,11 +2550,10 @@ It is possible to activate normal QL debuggers from `gdb` by typing
 
 <div class="example">
 
-``` {.example}
+```{.example}
 qldbg
 continue
 ```
-
 </div>
 
 This causes UQLX to generate a `trap# $e` exception with the current
@@ -2565,17 +2567,21 @@ trouble, email me the TRACE output with exact description of how it was
 generated (including modified tracetable and software used) - see next
 section.
 
-  ------------------------ ---- --
-  [10.2.1 Trace](#Trace)     
-  ------------------------ ---- --
+---
 
-------------------------------------------------------------------------
+[10.2.1 Trace](#Trace)     
+
+---
+
+---
 
 []{#Trace}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------ ----------------------------------- ---------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Debugging "Previous section in reading order")\]   \[[Up](#Debugging "Up section")\]   \[[&gt;](#ROMs-and-Patching "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------ ----------------------------------- ---------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Debugging "Previous section in reading order")\]   \[[Up](#Debugging "Up section")\]   \[[&gt;](#ROMs-and-Patching "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Trace-1}
 
@@ -2589,7 +2595,7 @@ not sync. Thus if you get output like this
 
 <div class="example">
 
-``` {.example}
+```{.example}
 DebugInfo: PC=48de, code=4eba, SupervisorMode: no USP=fffbc SSp=28480 A7=fffc8
 Register Dump:   Dn             An
 0                      0             107
@@ -2612,25 +2618,26 @@ Register Dump:   Dn             An
 6                      1           ff068
 7                      0           fffbc
 ```
-
 </div>
 
 beware that code=48e7 belongs to PC=48de and to find the instruction;
 gdb&gt; print table\[0x48e7\] however the program must have been started
 before this, otherwise ’table’ would not have been initialised.
 
-------------------------------------------------------------------------
+---
 
 []{#ROMs-and-Patching}
 
-  -------------------------------------------------------------------------- -------------------------------------------------------- --------------------------------- --------------------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Trace "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Calling-68K-code-from-the-emulator "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- -------------------------------------------------------- --------------------------------- --------------------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Trace "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Calling-68K-code-from-the-emulator "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#ROMs-and-Patching-1}
 
 10.3 ROMs and Patching {#roms-and-patching .section}
-----------------------
+----------------------------------------------------
 
 the supplied JS\_ROM is original. The patching process is implemented in
 QL\_configure.c and is designed to work for many js-similar ROMS without
@@ -2638,9 +2645,9 @@ change.
 
 The patches are:
 
--   correct some table access routine at 0x250 that apparently causes
-    crashes of QLs &gt;2MB
--   install special handlers for IPC access and MDV vectors
+- correct some table access routine at 0x250 that apparently causes
+  crashes of QLs &gt;2MB
+- install special handlers for IPC access and MDV vectors
 
 Installing handlers is done by overwriting the ROM at a suitable address
 with a specific A-line opcode and modifying the emulators instruction
@@ -2653,7 +2660,7 @@ usually is a statement in the form
 
 <div class="example">
 
-``` {.example}
+```{.example}
 if((long)gPC-(long)theROM-2==EMUL_IPC_LOC)
 {      if(IPC_Command()) rts();
         else table[code=0x40e7]();
@@ -2665,7 +2672,6 @@ else
         nInst=0;
         }
 ```
-
 </div>
 
 where `EMUL_IPC_LOC` is the stored address of the patch. If it is indeed
@@ -2679,31 +2685,32 @@ emulators A7 and PC but not do any other action (as returning from the
 c-function itself). Thus you might write ’rts();rts();rts(); return;’
 and it may make perfectly sense, depending on the context of the patch.
 
-------------------------------------------------------------------------
+---
 
 []{#Calling-68K-code-from-the-emulator}
 
-  -------------------------------------------------------------------------- -------------------------------------------------------------------- --------------------------------- ----------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ROMs-and-Patching "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Directory-Device-Drivers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- -------------------------------------------------------------------- --------------------------------- ----------------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#ROMs-and-Patching "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Directory-Device-Drivers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Calling-68K-code-from-the-emulator-1}
 
 10.4 Calling 68K code from the emulator {#calling-68k-code-from-the-emulator .section}
----------------------------------------
+--------------------------------------------------------------------------------------
 
 this is perfectly possible, provided QDOS is an a state where it allows
 this particular request. A trap\#0 call may be done as
 
 <div class="example">
 
-``` {.example}
+```{.example}
 savedA0=*aReg;
 QLtrap(1,0,20000l);
 printf("QDOS vars at %x, trap res=%d, RTOP=%d\n",aReg[0],reg[0],RTOP);
 *aReg=savedA0;
 ```
-
 </div>
 
 The 200000l is the instruction-count limit may be chosen arbitrarily -
@@ -2712,10 +2719,9 @@ call:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 QLvector(0xd0,200000);
 ```
-
 </div>
 
 However not all vectors may be safely called, those that manipulate its
@@ -2723,42 +2729,46 @@ return point may fail.
 
 Following must be arranged:
 
--   saving and restoring all registers
--   ensuring no QDOS context switch happens within the code
+- saving and restoring all registers
+- ensuring no QDOS context switch happens within the code
 
 The risk of encountering a context switch is reduced by switching off
 the 50Hz interrupts in such calls, often other precautions may be wise
 (clearing SV.POLM or entering SU mode)
 
-------------------------------------------------------------------------
+---
 
 []{#Directory-Device-Drivers}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------------- --------------------------------- ------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Calling-68K-code-from-the-emulator "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Patch-Database "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------------- --------------------------------- ------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Calling-68K-code-from-the-emulator "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Patch-Database "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Directory-Device-Drivers-1}
 
 10.5 Directory Device Drivers {#directory-device-drivers .section}
------------------------------
+------------------------------------------------------------------
 
 are defined in QL\_files.h and designed to serve every kind of filling
 systems attached to UQLX. Currently the code is very messy so don’t
 bother to understand it.
 
-------------------------------------------------------------------------
+---
 
 []{#Patch-Database}
 
-  -------------------------------------------------------------------------- --------------------------------------------------------------------------- --------------------------------- ------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Directory-Device-Drivers "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Device-Drivers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- --------------------------------------------------------------------------- --------------------------------- ------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Directory-Device-Drivers "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Device-Drivers "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Patch-Database-1}
 
 10.6 Patch Database {#patch-database .section}
--------------------
+----------------------------------------------
 
 This is stored in `~/.uqlxpatch` directory if the emulator was compiled
 with `-DUSE_VM`. There is a checksum to identify a ROM (everything from
@@ -2769,20 +2779,23 @@ The files must be writable! UQLX usually takes care of that, just don’t
 try neat tricks like `'umask 222'`.
 
 This files are not meant to be user editable but can be deleted anytime
+
 - in fact this may be necessary if something went seriously wrong.
 
-------------------------------------------------------------------------
+---
 
 []{#Device-Drivers}
 
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- --------------------------------- ---------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Patch-Database "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Memory-Management "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- --------------------------------- ---------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Patch-Database "Previous section in reading order")\]   \[[Up](#TECHREF "Up section")\]   \[[&gt;](#Memory-Management "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Device-Drivers-1}
 
 10.7 Device Drivers {#device-drivers .section}
--------------------
+----------------------------------------------
 
 simple (nondir) devices like the printer "PRT" are handled in
 QL\_driver.c The attempted approach is to have a single generic driver
@@ -2804,49 +2817,47 @@ The members of ’struct DRV’:
 `init`
 
 :   pointer to an init routine that will be called at the time the
-    driver is linked into QDOS.
+driver is linked into QDOS.
 
 `open_test`
 
 :   routine to test whether `'name'` is a legal channel name for this
-    channel.
+channel.
 
-    should return:
+should return:
 
-    `0`
+`0`
 
-    :   not this device
+:   not this device
 
-    `1`
+`1`
 
-    :   ok, name fully decoded
+:   ok, name fully decoded
 
-    `-1`
+`-1`
 
-    :   bad name
+:   bad name
 
-    If NAME\_PARS points to an appropriate structure the ’decode\_name’
-    utility can be used to do the decoding. The open\_test routine
-    should not itself allocate any memory, decoded parameters might be
-    passed in an array of global values to the ’open’ routine that gets
-    called subsequently.
-
+If NAME\_PARS points to an appropriate structure the ’decode\_name’
+utility can be used to do the decoding. The open\_test routine
+should not itself allocate any memory, decoded parameters might be
+passed in an array of global values to the ’open’ routine that gets
+called subsequently.
 `open:`
 
 :   this routine should do the actual open and allocate memory for
-    status information. See section [Memory
-    Management](#Memory-Management)
+status information. See section [Memory
+Management](#Memory-Management)
 
-    returns:
+returns:
 
-    `0`
+`0`
 
-    :   success
+:   success
 
-    `<>0 & reg[0]= QDOS_ERR set:`
+`<>0 & reg[0]= QDOS_ERR set:`
 
-    :   error
-
+:   error
 `close`
 
 :   may return memory allocated by open etc.
@@ -2859,21 +2870,25 @@ The members of ’struct DRV’:
 
 :   not yet used
 
-  ------------------------------------------------ ---- ------------------------------------------------
-  [10.7.1 Memory Management](#Memory-Management)        where to store channel specific data
-  [10.7.2 io\_handle](#io_005fhandle)                   translate QDOS trap\#3 semantics to read/write
-  [10.7.3 decode\_name](#decode_005fname)            
-  [10.7.4 Name Description](#Name-Description)       
-  [10.7.5 Examples](#Examples)                       
-  ------------------------------------------------ ---- ------------------------------------------------
+---
 
-------------------------------------------------------------------------
+[10.7.1 Memory Management](#Memory-Management)        where to store channel specific data
+[10.7.2 io\_handle](#io_005fhandle)                   translate QDOS trap\#3 semantics to read/write
+[10.7.3 decode\_name](#decode_005fname)            
+[10.7.4 Name Description](#Name-Description)       
+[10.7.5 Examples](#Examples)                       
+
+---
+
+---
 
 []{#Memory-Management}
 
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- ---------------------------------------- ------------------------------------------------------------ ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Device-Drivers "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#io_005fhandle "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- ---------------------------------------- ------------------------------------------------------------ ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Device-Drivers "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#io_005fhandle "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Memory-Management-1}
 
@@ -2886,13 +2901,15 @@ pointer as an argument (observe the \*\* in the declaration!) The driver
 should not attempt to store anything in the QDOS channel definition
 block!
 
-------------------------------------------------------------------------
+---
 
 []{#io_005fhandle}
 
-  -------------------------------------------------------------------------- -------------------------------------------------------------------- ---------------------------------------- -------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Memory-Management "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#decode_005fname "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- -------------------------------------------------------------------- ---------------------------------------- -------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Memory-Management "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#decode_005fname "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#io_005fhandle-1}
 
@@ -2903,13 +2920,15 @@ QDOS io.serio vector. Calls that may block must be handled specifically.
 Also, be warned that most unix io calls can get interrupted by the
 SIGALRM used for emulating interrupts.
 
-------------------------------------------------------------------------
+---
 
 []{#decode_005fname}
 
-  -------------------------------------------------------------------------- ---------------------------------------------------------------- ---------------------------------------- --------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#io_005fhandle "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#Name-Description "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ---------------------------------------------------------------- ---------------------------------------- --------------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#io_005fhandle "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#Name-Description "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#decode_005fname-1}
 
@@ -2919,10 +2938,9 @@ is an utility function similar to io.name.
 
 <div class="example">
 
-``` {.example}
+```{.example}
 int decode_name(char *name, struct NAME_PARS *ndescr, open_arg *parblk)
 ```
-
 </div>
 
 `ndescr`
@@ -2932,19 +2950,21 @@ int decode_name(char *name, struct NAME_PARS *ndescr, open_arg *parblk)
 `parblk`
 
 :   points to an array of (long long) that should be large enough for
-    all parameters.
+all parameters.
 
 `open_arg`
 
 :   is union used to store either char \* or int type arguments
 
-------------------------------------------------------------------------
+---
 
 []{#Name-Description}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------ ---------------------------------------- ------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#decode_005fname "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#Examples "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------ ---------------------------------------- ------------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#decode_005fname "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#Examples "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Name-Description-1}
 
@@ -2963,13 +2983,15 @@ pound.
 Also consider that for option letters and separators upper and lower
 case is not distinguished for alphabetic characters.
 
-------------------------------------------------------------------------
+---
 
 []{#Examples}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------- ---------------------------------------- -------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Name-Description "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#FAQ "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------- ---------------------------------------- -------------------------------------------------- ------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Name-Description "Previous section in reading order")\]   \[[Up](#Device-Drivers "Up section")\]   \[[&gt;](#FAQ "Next section in reading order")\]   \[[&gt;&gt;](#FAQ "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Examples-1}
 
@@ -2983,24 +3005,25 @@ An example call to open a ’bg’ channel is:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 open#4,'bg299F_119/999x333-string 1 ****xxx++++-,string====,,,,,,'
 ```
-
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#FAQ}
 
-  -------------------------------------------------------------------------- ----------------------------------------------------------- ---------- ------------------------------------------------------ ----------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Examples "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#History "Next section in reading order")\]   \[[&gt;&gt;](#History "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ----------------------------------------------------------- ---------- ------------------------------------------------------ ----------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#TECHREF "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Examples "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#History "Next section in reading order")\]   \[[&gt;&gt;](#History "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#FAQ-1}
 
 11 FAQ {#faq .chapter}
-======
+======================
 
 I have just started it so there is not yet any structure in it, just a
 few points that did strike me. Even with the best docs there are many
@@ -3009,62 +3032,72 @@ gotcha’s ;-)
 `The AltGr keys don't work even if I use the X11 lookup method.`
 
 :   You probably also have the XKEY\_ALT bound to `Mode_switch` – thus
-    an extra char `"\255"` is inserted with each `AltGr` key
+an extra char `"\255"` is inserted with each `AltGr` key
 
 `How do I access Unix devices from UQLX?`
 
 :   The uQVFSx Filesystem does it, provided you don’t need any ioctls,
-    [uQVFSx Filesystem](#uQVFSx-Filesystem). For more complicated cases
-    writing a device driver for UQLX is not as difficult and many
-    examples as well as description exist.
+[uQVFSx Filesystem](#uQVFSx-Filesystem). For more complicated cases
+writing a device driver for UQLX is not as difficult and many
+examples as well as description exist.
 
-------------------------------------------------------------------------
+---
 
 []{#History}
 
-  ---------------------------------------------------------------------- ------------------------------------------------------ ---------- ---------------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#FAQ "Beginning of this chapter or previous chapter")\]   \[[&lt;](#FAQ "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Daniele-Terdinas-README "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------------------------- ------------------------------------------------------ ---------- ---------------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#FAQ "Beginning of this chapter or previous chapter")\]   \[[&lt;](#FAQ "Previous section in reading order")\]   \[ Up \]   \[[&gt;](#Daniele-Terdinas-README "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#History-1}
 
 12 History {#history .chapter}
-==========
+==============================
 
-  ---------------------------------------------------------- ---- --
-  [12.1 Daniele Terdinas README](#Daniele-Terdinas-README)     
-  ---------------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[12.1 Daniele Terdinas README](#Daniele-Terdinas-README)     
+
+---
+
+---
 
 []{#Daniele-Terdinas-README}
 
-  -------------------------------------------------------------------------- ---------------------------------------------------------- --------------------------------- ------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#History "Previous section in reading order")\]   \[[Up](#History "Up section")\]   \[[&gt;](#Q_002demuLator "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ---------------------------------------------------------- --------------------------------- ------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#History "Previous section in reading order")\]   \[[Up](#History "Up section")\]   \[[&gt;](#Q_002demuLator "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Daniele-Terdinas-README-1}
 
 12.1 Daniele Terdinas README {#daniele-terdinas-readme .section}
-----------------------------
+----------------------------------------------------------------
 
 This is the original README I received with Daniele’s sources; refer to
 TECHREF for updates. Much of the information contained herein is more or
 less outdated.
 
-  ---------------------------------------------------------------------- ---- --
-  [12.1.1 Q-emuLator](#Q_002demuLator)                                     
-  [12.1.2 A brief note about endianess](#A-brief-note-about-endianess)     
-  [12.1.3 Daniels FAQ](#Daniels-FAQ)                                       
-  ---------------------------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
+[12.1.1 Q-emuLator](#Q_002demuLator)                                     
+[12.1.2 A brief note about endianess](#A-brief-note-about-endianess)     
+[12.1.3 Daniels FAQ](#Daniels-FAQ)                                       
+
+---
+
+---
 
 []{#Q_002demuLator}
 
-  -------------------------------------------------------------------------- -------------------------------------------------------------------------- ------------------------------------------------- --------------------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Daniele-Terdinas-README "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#A-brief-note-about-endianess "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- -------------------------------------------------------------------------- ------------------------------------------------- --------------------------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Daniele-Terdinas-README "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#A-brief-note-about-endianess "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Q_002demuLator-1}
 
@@ -3137,10 +3170,11 @@ a fair amount of time. To speed it up a little the effective drawing
 operation is delayed as long as the modified bytes are adjacent to each
 other. So the final conversion may involve entire rows instead of single
 pixels. - QL’s hardware: the hardware ports behaviour must be emulated.
+
 - any other address: writing has no effect, to avoid to randomly
-overwrite the Macintosh memory. This means that whatever the QL does,
-the Mac environment can’t be corrupted; in other words these controls on
-each read/write operations result in a program which is very stable.
+  overwrite the Macintosh memory. This means that whatever the QL does,
+  the Mac environment can’t be corrupted; in other words these controls on
+  each read/write operations result in a program which is very stable.
 
 Exception processing: exceptions are caused by instructions (like TRAP
 or CHK), by the 50/60Hz interrupt (generated by a timer), by
@@ -3196,13 +3230,15 @@ of the shift instructions.
 
 June, 4th 1995 Daniele Terdina
 
-------------------------------------------------------------------------
+---
 
 []{#A-brief-note-about-endianess}
 
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- ------------------------------------------------- ---------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Q_002demuLator "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#Daniels-FAQ "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ----------------------------------------------------------------- ------------------------------------------------- ---------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Q_002demuLator "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#Daniels-FAQ "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#A-brief-note-about-endianess-1}
 
@@ -3234,13 +3270,15 @@ On little endian processors this byte should be the first in the table
 instead of the fourth. Similar changes are needed for many other
 instructions which use only the byte or word lowest part of registers
 
-------------------------------------------------------------------------
+---
 
 []{#Daniels-FAQ}
 
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------- ------------------------------------------------- --------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#A-brief-note-about-endianess "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#Benchmarks "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- ------------------------------------------------------------------------------- ------------------------------------------------- --------------------------------------------------------- -------------------------------------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#A-brief-note-about-endianess "Previous section in reading order")\]   \[[Up](#Daniele-Terdinas-README "Up section")\]   \[[&gt;](#Benchmarks "Next section in reading order")\]   \[[&gt;&gt;](#Benchmarks "Next chapter")\]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Daniels-FAQ-1}
 
@@ -3275,25 +3313,26 @@ register.
 
 <div class="example">
 
-``` {.example}
+```{.example}
 Daniele Terdina               e-mail: sistest@ictp.trieste.it
                               Feedback is always welcome!
 ```
-
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#Benchmarks}
 
-  -------------------------------------------------------------------------- -------------------------------------------------------------- ---------- ------------ ---------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Daniels-FAQ "Previous section in reading order")\]   \[ Up \]   \[ &gt; \]   \[ &gt;&gt; \]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  -------------------------------------------------------------------------- -------------------------------------------------------------- ---------- ------------ ---------------- --- --- --- --- ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[&lt;&lt;](#History "Beginning of this chapter or previous chapter")\]   \[[&lt;](#Daniels-FAQ "Previous section in reading order")\]   \[ Up \]   \[ &gt; \]   \[ &gt;&gt; \]                   \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 []{#Benchmarks-1}
 
 13 Benchmarks {#benchmarks .chapter}
-=============
+====================================
 
 These are mainly interesting for me, but also intended to give new users
 some idea what to expect. Remember, these are the times with JSROM, you
@@ -3304,28 +3343,29 @@ reasonably precise. The preferred method is now this:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 make bench1             # mainly CPU emulation
 make bench2             # mainly text output
 ```
-
 </div>
 
 I have again changed the details for `bench1` so these are now *old*
 results:
 
-  --------------------------------------------- ----------------- --------------------------
-  Hardware/OS                                   bench1            bench2
-  SUNW SPARCserver 1000, 384 MB                 18.4r,11.3u,.5s   105.9r,41.1u,4.6s
-  Linux i686                                    xx,5.87u,.11s,    too slow X connection...
-  Linux i80486DX, 33MHz, 256kB Cache 32MB RAM   xx,58.4u,1.s      xx,199.4u,.9s
-  --------------------------------------------- ----------------- --------------------------
+---
+
+Hardware/OS                                   bench1            bench2
+SUNW SPARCserver 1000, 384 MB                 18.4r,11.3u,.5s   105.9r,41.1u,4.6s
+Linux i686                                    xx,5.87u,.11s,    too slow X connection...
+Linux i80486DX, 33MHz, 256kB Cache 32MB RAM   xx,58.4u,1.s      xx,199.4u,.9s
+
+---
 
 Here are some old benchmarks:
 
 <div class="example">
 
-``` {.example}
+```{.example}
 B1:
 10 t=date
 20 for i=1 to 2000:a=sin(1)
@@ -3370,148 +3410,159 @@ HP-9000/715-65/64MB     |  7s                   | 15s
 SGI MIPS R5000/64MB     |  4s                   |  8s
 ---------------------------------------------------------------------
 ```
-
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#SEC_Foot}
 
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 Footnotes
 =========
 
-### [(1)](#DOCF1){#FOOT1}
+### [(1)](#DOCF1) {#FOOT1}
 
 try `rdzidlic@cip.informatik.uni-erlangen.de` or
 `rdzidlic@mailandnews.com` if that fails
 
-### [(2)](#DOCF2){#FOOT2}
+### [(2)](#DOCF2) {#FOOT2}
 
 for the very daring, a compile option in ‘`uxfile.c`’ will avoid file
 name translation altogether – technically this has only an effect when
 opening directories
 
-### [(3)](#DOCF3){#FOOT3}
+### [(3)](#DOCF3) {#FOOT3}
 
 reportedly some users used hacked diskimages to allow up to 100 MB per
 image
 
-------------------------------------------------------------------------
+---
 
 []{#SEC_Contents}
 
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 Table of Contents
 =================
 
 <div class="contents">
 
--   [1 Introduction](#Introduction){#toc-Introduction-1}
-    -   [1.1 System
-        Requirements](#System-Requirements){#toc-System-Requirements-1}
-    -   [1.2 COPYRIGHT](#COPYRIGHT){#toc-COPYRIGHT-1}
--   [2 Compiling](#Compiling){#toc-Compiling-1}
-    -   [2.0.1 Misc Hints](#Misc-Hints){#toc-Misc-Hints-1}
-    -   [2.0.2 Compiling
-        Preferences](#Compiling-Preferences){#toc-Compiling-Preferences-1}
-    -   [2.0.3 Further
-        Options](#Further-Options){#toc-Further-Options-1}
-    -   [2.0.4 Adding CPU specific
-        optimizations](#Adding-CPU-specific-optimizations){#toc-Adding-CPU-specific-optimizations-1}
-    -   [2.0.5 Unsupported
-        Machines](#Unsupported-Machines){#toc-Unsupported-Machines-1}
-    -   [2.0.6 Obscure
-        `BUILDFLAGS`](#Obscure-BUILDFLAGS){#toc-Obscure-BUILDFLAGS-1}
+- [1 Introduction](#Introduction){#toc-Introduction-1}
+  - [1.1 System
+    Requirements](#System-Requirements){#toc-System-Requirements-1}
+  - [1.2 COPYRIGHT](#COPYRIGHT){#toc-COPYRIGHT-1}
+- [2 Compiling](#Compiling){#toc-Compiling-1}
+  - [2.0.1 Misc Hints](#Misc-Hints){#toc-Misc-Hints-1}
+  - [2.0.2 Compiling
+    Preferences](#Compiling-Preferences){#toc-Compiling-Preferences-1}
+  - [2.0.3 Further
+    Options](#Further-Options){#toc-Further-Options-1}
+  - [2.0.4 Adding CPU specific
+    optimizations](#Adding-CPU-specific-optimizations){#toc-Adding-CPU-specific-optimizations-1}
+  - [2.0.5 Unsupported
+    Machines](#Unsupported-Machines){#toc-Unsupported-Machines-1}
+  - [2.0.6 Obscure
+    `BUILDFLAGS`](#Obscure-BUILDFLAGS){#toc-Obscure-BUILDFLAGS-1}
 
 [3 Installation](#Installation){#toc-Installation-1}
 [4 Customization](#Customization){#toc-Customization-1}
--   [4.1 About .uqlxrc
-    files](#About-_002euqlxrc-files){#toc-About-_002euqlxrc-files-1}
+
+- [4.1 About .uqlxrc
+  files](#About-_002euqlxrc-files){#toc-About-_002euqlxrc-files-1}
 
 [5 Program Invocation](#Program-Invocation){#toc-Program-Invocation-1}
--   [5.1 Program Name](#Program-Name){#toc-Program-Name-1}
--   [5.2 Command Line
-    options](#Command-Line-options){#toc-Command-Line-options-1}
--   [5.3 BOOT Files](#BOOT-Files){#toc-BOOT-Files-1}
--   [5.4 GUI](#GUI){#toc-GUI-1}
--   [5.5 Signals - Terminating
-    UQLX](#Signals-_002d-Terminating-UQLX){#toc-Signals-_002d-Terminating-UQLX-1}
--   [5.6 ROM Images](#ROM-Images){#toc-ROM-Images-1}
--   [5.7 The big screen
-    feature](#The-big-screen-feature){#toc-The-big-screen-feature-1}
--   [5.8 X Window
-    Managers](#X-Window-Managers){#toc-X-Window-Managers-1}
--   [5.9 Keyboard](#Keyboard){#toc-Keyboard-1}
--   [5.10 Scripting](#Scripting){#toc-Scripting-1}
+
+- [5.1 Program Name](#Program-Name){#toc-Program-Name-1}
+- [5.2 Command Line
+  options](#Command-Line-options){#toc-Command-Line-options-1}
+- [5.3 BOOT Files](#BOOT-Files){#toc-BOOT-Files-1}
+- [5.4 GUI](#GUI){#toc-GUI-1}
+- [5.5 Signals - Terminating
+  UQLX](#Signals-_002d-Terminating-UQLX){#toc-Signals-_002d-Terminating-UQLX-1}
+- [5.6 ROM Images](#ROM-Images){#toc-ROM-Images-1}
+- [5.7 The big screen
+  feature](#The-big-screen-feature){#toc-The-big-screen-feature-1}
+- [5.8 X Window
+  Managers](#X-Window-Managers){#toc-X-Window-Managers-1}
+- [5.9 Keyboard](#Keyboard){#toc-Keyboard-1}
+- [5.10 Scripting](#Scripting){#toc-Scripting-1}
 
 [6 Filesystems](#Filesystems){#toc-Filesystems-1}
--   [6.1 UNIX Filesystem
-    Interface](#UNIX-Filesystem-Interface){#toc-UNIX-Filesystem-Interface-1}
--   [6.2 QDOS floppy and
-    QXL.WIN](#QDOS-floppy-and-QXL_002eWIN){#toc-QDOS-floppy-and-QXL_002eWIN-1}
-    -   [6.2.1 qxl\_fschk](#qxl_005ffschk){#toc-qxl_005ffschk-1}
--   [6.3 uQVFSx
-    Filesystem](#uQVFSx-Filesystem){#toc-uQVFSx-Filesystem-1}
+
+- [6.1 UNIX Filesystem
+  Interface](#UNIX-Filesystem-Interface){#toc-UNIX-Filesystem-Interface-1}
+- [6.2 QDOS floppy and
+  QXL.WIN](#QDOS-floppy-and-QXL_002eWIN){#toc-QDOS-floppy-and-QXL_002eWIN-1}
+  - [6.2.1 qxl\_fschk](#qxl_005ffschk){#toc-qxl_005ffschk-1}
+- [6.3 uQVFSx
+  Filesystem](#uQVFSx-Filesystem){#toc-uQVFSx-Filesystem-1}
 
 [7 Other Devices](#Other-Devices){#toc-Other-Devices-1}
--   [7.1 TCP/IP](#TCP_002fIP){#toc-TCP_002fIP-1}
--   [7.2 pty device](#pty-device){#toc-pty-device-1}
--   [7.3 ser device](#ser-device){#toc-ser-device-1}
+
+- [7.1 TCP/IP](#TCP_002fIP){#toc-TCP_002fIP-1}
+- [7.2 pty device](#pty-device){#toc-pty-device-1}
+- [7.3 ser device](#ser-device){#toc-ser-device-1}
 
 [8 Printing](#Printing){#toc-Printing-1}
 [9 SuperBasic
 Extensions](#SuperBasic-Extensions){#toc-SuperBasic-Extensions-1}
 [10 TECHREF](#TECHREF){#toc-TECHREF-1}
--   [10.1 ByteOrder Issues](#ByteOrder-Issues){#toc-ByteOrder-Issues-1}
-    -   [10.1.1 Memory](#Memory){#toc-Memory-1}
-    -   [10.1.2 PC - the program
-        counter](#PC-_002d-the-program-counter){#toc-PC-_002d-the-program-counter-1}
-    -   [10.1.3 Registers](#Registers){#toc-Registers-1}
--   [10.2 Debugging](#Debugging){#toc-Debugging-1}
-    -   [10.2.1 Trace](#Trace){#toc-Trace-1}
--   [10.3 ROMs and
-    Patching](#ROMs-and-Patching){#toc-ROMs-and-Patching-1}
--   [10.4 Calling 68K code from the
-    emulator](#Calling-68K-code-from-the-emulator){#toc-Calling-68K-code-from-the-emulator-1}
--   [10.5 Directory Device
-    Drivers](#Directory-Device-Drivers){#toc-Directory-Device-Drivers-1}
--   [10.6 Patch Database](#Patch-Database){#toc-Patch-Database-1}
--   [10.7 Device Drivers](#Device-Drivers){#toc-Device-Drivers-1}
-    -   [10.7.1 Memory
-        Management](#Memory-Management){#toc-Memory-Management-1}
-    -   [10.7.2 io\_handle](#io_005fhandle){#toc-io_005fhandle-1}
-    -   [10.7.3 decode\_name](#decode_005fname){#toc-decode_005fname-1}
-    -   [10.7.4 Name
-        Description](#Name-Description){#toc-Name-Description-1}
-    -   [10.7.5 Examples](#Examples){#toc-Examples-1}
+
+- [10.1 ByteOrder Issues](#ByteOrder-Issues){#toc-ByteOrder-Issues-1}
+  - [10.1.1 Memory](#Memory){#toc-Memory-1}
+  - [10.1.2 PC - the program
+    counter](#PC-_002d-the-program-counter){#toc-PC-_002d-the-program-counter-1}
+  - [10.1.3 Registers](#Registers){#toc-Registers-1}
+- [10.2 Debugging](#Debugging){#toc-Debugging-1}
+  - [10.2.1 Trace](#Trace){#toc-Trace-1}
+- [10.3 ROMs and
+  Patching](#ROMs-and-Patching){#toc-ROMs-and-Patching-1}
+- [10.4 Calling 68K code from the
+  emulator](#Calling-68K-code-from-the-emulator){#toc-Calling-68K-code-from-the-emulator-1}
+- [10.5 Directory Device
+  Drivers](#Directory-Device-Drivers){#toc-Directory-Device-Drivers-1}
+- [10.6 Patch Database](#Patch-Database){#toc-Patch-Database-1}
+- [10.7 Device Drivers](#Device-Drivers){#toc-Device-Drivers-1}
+  - [10.7.1 Memory
+    Management](#Memory-Management){#toc-Memory-Management-1}
+  - [10.7.2 io\_handle](#io_005fhandle){#toc-io_005fhandle-1}
+  - [10.7.3 decode\_name](#decode_005fname){#toc-decode_005fname-1}
+  - [10.7.4 Name
+    Description](#Name-Description){#toc-Name-Description-1}
+  - [10.7.5 Examples](#Examples){#toc-Examples-1}
 
 [11 FAQ](#FAQ){#toc-FAQ-1}
 [12 History](#History){#toc-History-1}
--   [12.1 Daniele Terdinas
-    README](#Daniele-Terdinas-README){#toc-Daniele-Terdinas-README-1}
-    -   [12.1.1 Q-emuLator](#Q_002demuLator){#toc-Q_002demuLator-1}
-    -   [12.1.2 A brief note about
-        endianess](#A-brief-note-about-endianess){#toc-A-brief-note-about-endianess-1}
-    -   [12.1.3 Daniels FAQ](#Daniels-FAQ){#toc-Daniels-FAQ-1}
+
+- [12.1 Daniele Terdinas
+  README](#Daniele-Terdinas-README){#toc-Daniele-Terdinas-README-1}
+  - [12.1.1 Q-emuLator](#Q_002demuLator){#toc-Q_002demuLator-1}
+  - [12.1.2 A brief note about
+    endianess](#A-brief-note-about-endianess){#toc-A-brief-note-about-endianess-1}
+  - [12.1.3 Daniels FAQ](#Daniels-FAQ){#toc-Daniels-FAQ-1}
 
 [13 Benchmarks](#Benchmarks){#toc-Benchmarks-1}
 
 </div>
 
-------------------------------------------------------------------------
+---
 
 []{#SEC_About}
 
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
-  \[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
-  ---------------------------------------------------- --------------------------------------------------- ----------- ------------------------------------
+---
+
+\[[Top](#Introduction "Cover (top) of document")\]   \[[Contents](#SEC_Contents "Table of contents")\]   \[Index\]   \[[?](#SEC_About "About (help)")\]
+
+---
 
 About This Document
 ===================
@@ -3521,36 +3572,38 @@ This document was generated on *January 15, 2017* using [*texi2html
 
 The buttons in the navigation panels have the following meaning:
 
-  Button           Name          Go to                                           From 1.2.3 go to
-  ---------------- ------------- ----------------------------------------------- ------------------
-  \[ &lt;&lt; \]   FastBack      Beginning of this chapter or previous chapter   1
-  \[ &lt; \]       Back          Previous section in reading order               1.2.2
-  \[ Up \]         Up            Up section                                      1.2
-  \[ &gt; \]       Forward       Next section in reading order                   1.2.4
-  \[ &gt;&gt; \]   FastForward   Next chapter                                    2
-  \[Top\]          Top           Cover (top) of document                          
-  \[Contents\]     Contents      Table of contents                                
-  \[Index\]        Index         Index                                            
-  \[ ? \]          About         About (help)                                     
+Button           Name          Go to                                           From 1.2.3 go to
+
+---
+
+\[ &lt;&lt; \]   FastBack      Beginning of this chapter or previous chapter   1
+\[ &lt; \]       Back          Previous section in reading order               1.2.2
+\[ Up \]         Up            Up section                                      1.2
+\[ &gt; \]       Forward       Next section in reading order                   1.2.4
+\[ &gt;&gt; \]   FastForward   Next chapter                                    2
+\[Top\]          Top           Cover (top) of document                          
+\[Contents\]     Contents      Table of contents                                
+\[Index\]        Index         Index                                            
+\[ ? \]          About         About (help)                                     
 
 where the **Example** assumes that the current position is at
 **Subsubsection One-Two-Three** of a document of the following
 structure:
 
--   1\. Section One
-    -   1.1 Subsection One-One
-        -   ...
-    -   1.2 Subsection One-Two
-        -   1.2.1 Subsubsection One-Two-One
-        -   1.2.2 Subsubsection One-Two-Two
-        -   1.2.3 Subsubsection One-Two-Three     **&lt;== Current
-            Position**
-        -   1.2.4 Subsubsection One-Two-Four
-    -   1.3 Subsection One-Three
-        -   ...
-    -   1.4 Subsection One-Four
+- 1\. Section One
+  - 1.1 Subsection One-One
+    - ...
+  - 1.2 Subsection One-Two
+    - 1.2.1 Subsubsection One-Two-One
+    - 1.2.2 Subsubsection One-Two-Two
+    - 1.2.3 Subsubsection One-Two-Three     **&lt;== Current
+      Position**
+    - 1.2.4 Subsubsection One-Two-Four
+  - 1.3 Subsection One-Three
+    - ...
+  - 1.4 Subsection One-Four
 
-------------------------------------------------------------------------
+---
 
 This document was generated on *January 15, 2017* using [*texi2html
 5.0*](http://www.nongnu.org/texi2html/).\
