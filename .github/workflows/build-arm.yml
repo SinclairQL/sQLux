@@ -20,6 +20,10 @@ jobs:
         include:
           - arch: aarch64
             distro: ubuntu20.04
+          - arch: armv6
+            distro: buster
+          - arch: armv7
+            distro: ubuntu20.04
 
     steps:
       - uses: actions/checkout@v2.1.0
@@ -78,3 +82,10 @@ jobs:
         # ${PWD}/artifacts on the host.
         run: |
           ls -al "${PWD}/artifacts"
+
+      - name: Upload the artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-arm-artifact
+          path: "${PWD}/artifacts
+          retention-days: 1
