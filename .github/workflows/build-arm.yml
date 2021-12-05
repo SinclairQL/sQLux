@@ -62,7 +62,7 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y git libsdl2-dev cmake gcc g++
+                apt-get install -q -y git libsdl2-dev cmake gcc g++ make
                 ;;
               fedora*)
                 dnf -y update
