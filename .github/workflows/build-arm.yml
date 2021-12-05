@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
 jobs:
   build_job:
     # The host should always be linux
@@ -64,10 +68,10 @@ jobs:
 
           # Produce a binary artifact and place it in the mounted volume
           run: |
-            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX:PATH=/artifacts
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX:PATH=${{github.workspace}}/install
             cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
             cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
+            tar zcvf /artifacts/sqlux_${{ matrix.arch }}.tgz -C ${{github.workspace}}/install .
 
       - name: Show the artifact
         # Items placed in /artifacts in the container will be in
