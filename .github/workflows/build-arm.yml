@@ -87,5 +87,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: build-arm-artifact
-          path: "${PWD}/artifacts
+          path: "${PWD}/artifacts"
           retention-days: 1
