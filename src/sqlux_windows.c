@@ -1,3 +1,5 @@
+#ifdef __WIN32__
+
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -6,8 +8,6 @@
 #include <sysinfoapi.h>
 #include <sys/stat.h>
 #include <time.h>
-
-#ifdef __WIN32__
 
 #define POW10_7                 10000000
 #define DELTA_EPOCH_IN_100NS    INT64_C(116444736000000000)
