@@ -528,8 +528,6 @@ void CoreDump()
 	}
 }
 
-char *uqlx_version = "0.99-rc1";
-
 #include "uqlx_cfg.h"
 
 char *qm_findx(char *name)
@@ -810,8 +808,7 @@ void uqlxInit()
 	finishflag = 0;
 
 	if (V1)
-		printf("*** QL Emulator v%s ***\nrelease %s\n\n", uqlx_version,
-		       release);
+		printf("*** sQLux release %s\n\n", release);
 	tzset();
 
 	theROM = malloc(RTOP);

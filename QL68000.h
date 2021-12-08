@@ -68,7 +68,6 @@ extern void (**qlux_table)(void);
 
 typedef int OSErr;
 extern char *release;
-extern char *uqlx_version;
 
 #ifndef NULL
 #define NULL (void *)0
