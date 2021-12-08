@@ -643,7 +643,6 @@ void SetParams(int ac, char **av)
 	int res;
 
 #ifdef __WIN32__
-	int res;
 	struct stat stat_res;
 	char my_documents[MAX_PATH + 1];
 	HRESULT result = SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL,

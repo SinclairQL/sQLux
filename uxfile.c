@@ -685,7 +685,11 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 	long i, j, mlen;
 
 	strcpy(templ, template);
+#ifdef __WIN32__
+	fd = sqlux_mkstemp(templ);
+#else
 	fd = mkstemp(templ);
+#endif
 	if (fd < 0) {
 		perror("QHOpenDir mkstemp");
 		return -7;
