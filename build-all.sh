@@ -52,6 +52,7 @@ ROMIM = TK232.rom
 RAMTOP = 4096
 FAST_STARTUP = 1
 DEVICE = FLP1,198ad.img,qdos-native
+BOOT_DEV = FLP1
 WIN_SIZE = max
 FILTER = 1
 FIXASPECT = 1
@@ -61,6 +62,8 @@ curl -O http://www.dilwyn.me.uk/games/adventures/198-adventure.zip
 unzip 198-adventure.zip "198adDisk ImageFinal.img"
 mv "198adDisk ImageFinal.img" sqlux-$VERSION/198ad.img
 rm 198-adventure.zip
+
+cp -r roms sqlux-$VERSION/
 
 cp x86_64/sqlux sqlux-$VERSION/sqlux_x86_64
 cp x86_32/sqlux sqlux-$VERSION/sqlux_x86_32
