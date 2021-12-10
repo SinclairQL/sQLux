@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <fcntl.h>
+#include <fileapi.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
@@ -11,6 +12,11 @@
 
 #define POW10_7                 10000000
 #define DELTA_EPOCH_IN_100NS    INT64_C(116444736000000000)
+
+void sqlux_getemppath(int length, char *buffer)
+{
+	GetTempPath(length, buffer);
+}
 
 char *__randname(char *template)
 {

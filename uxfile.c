@@ -33,6 +33,10 @@
 #include "unixstuff.h"
 #include "QL_driver.h"
 
+#ifdef __WIN32__
+#include <sqlux_windows.h>
+#endif
+
 /* DIR_SEPARATOR specifies how directories will be listed, I prefer the unixish variant */
 /* but QPAC2 doesn't */
 #define DIR_SEPARATOR '_'
@@ -684,10 +688,12 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 
 	long i, j, mlen;
 
-	strcpy(templ, template);
 #ifdef __WIN32__
+	sqlux_getemppath(sizeof(templ), templ);
+	strcat(templ, "/QDOSXXXXXX");
 	fd = sqlux_mkstemp(templ);
 #else
+	strcpy(templ, template);
 	fd = mkstemp(templ);
 #endif
 	if (fd < 0) {
