@@ -57,8 +57,9 @@ void QLSDLScreen(void)
 	sdl_video_driver = SDL_GetCurrentVideoDriver();
 	SDL_GetCurrentDisplayMode(0, &sdl_mode);
 
-	printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
-	       sdl_mode.w, sdl_mode.h);
+	if (V1)
+		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
+			sdl_mode.w, sdl_mode.h);
 
 	/* Fix the aspect ratio to more like real hardware */
 	if (QMD.aspect) {
