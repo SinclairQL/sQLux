@@ -69,9 +69,15 @@ cp x86_64/sqlux sqlux-$VERSION/sqlux_x86_64
 cp x86_32/sqlux sqlux-$VERSION/sqlux_x86_32
 cp w64/sqlux.exe sqlux-$VERSION/sqlux_w64.exe
 cp w32/sqlux.exe sqlux-$VERSION/sqlux_w32.exe
-cp armv6/sqlux sqlux-$VERSION/sqlux_pi
-cp armv7/sqlux sqlux-$VERSION/sqlux_armv7
-cp arm64/sqlux sqlux-$VERSION/sqlux_arm64
+if [ "x$PI_HOST" != "x" ]; then
+	cp armv6/sqlux sqlux-$VERSION/sqlux_pi
+fi
+if [ "x$ARMV7_HOST" != "x" ]; then
+	cp armv7/sqlux sqlux-$VERSION/sqlux_armv7
+fi
+if [ "x$ARM64_HOST" != "x" ]; then
+	cp arm64/sqlux sqlux-$VERSION/sqlux_arm64
+fi
 
 zip -r sqlux-$VERSION.zip sqlux-$VERSION/
 
