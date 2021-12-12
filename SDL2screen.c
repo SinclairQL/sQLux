@@ -515,6 +515,12 @@ void QLSDLProcessEvents(void)
 		case SDL_WINDOWEVENT:
 			if (event.window.windowID == ql_windowid) {
 				switch (event.window.event) {
+				case SDL_WINDOWEVENT_ENTER:
+					SDL_ShowCursor(SDL_DISABLE);
+					break;
+				case SDL_WINDOWEVENT_LEAVE:
+					SDL_ShowCursor(SDL_ENABLE);
+					break;
 				case SDL_WINDOWEVENT_RESIZED:
 					SDL_AtomicSet(&screenUpdate, 1);
 					QLSDLRenderScreen();
