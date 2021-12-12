@@ -473,7 +473,9 @@ bas_err Kill_UQLX()
 	if (bas_getln(&rx) < 0)
 		rx = 0;
 
-	printf("\nexiting UQLX: Kill_UQLX %d\n\n", rx);
+	if (V1)
+		printf("\nexiting UQLX: Kill_UQLX %d\n\n", rx);
+
 	cleanup(rx);
 	return 0;
 }
