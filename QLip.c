@@ -65,7 +65,6 @@ WSADATA wsaData;
 
 int ip_init(int idx, void *p)
 {
-	printf("Initialising IP Driver\n");
 #ifdef __WIN32__
 	if (!ws2_init) {
 		int iResult;
