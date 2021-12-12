@@ -428,7 +428,8 @@ void QMParams(void)
 		char buff[128];
 		int res;
 
-		printf("Using Config: %s\n", pf);
+		if (V1)
+			printf("Using Config: %s\n", pf);
 
 		while (fgets(buff, 128, fp) == buff) {
 			char *s;
