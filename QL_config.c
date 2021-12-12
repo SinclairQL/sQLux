@@ -208,8 +208,9 @@ static void PatchBootDev()
 	while (bootpatchaddr[i]) {
 		if (!strncasecmp((void *)theROM + bootpatchaddr[i], "mdv1",
 				 4)) {
-			printf("Patching Boot Device %s at 0x%x\n", QMD.bootdev,
-			       bootpatchaddr[i]);
+			if (V2)
+				printf("Patching Boot Device %s at 0x%x\n",
+					QMD.bootdev, bootpatchaddr[i]);
 
 			strncpy((void *)theROM + bootpatchaddr[i], QMD.bootdev,
 				4);
@@ -230,7 +231,7 @@ short LoadMainRom(void) /* load and modify QL ROM */
 	p = 1; /*ReasonableROM(theROM);*/
 
 	isMinerva = testMinerva();
-	if (isMinerva)
+	if (isMinerva && V1)
 		printf("using Minerva ROM\n");
 
 	//if(V1)printf("no_patch: %d\n",QMD.no_patch);
