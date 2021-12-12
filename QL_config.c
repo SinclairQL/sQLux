@@ -193,10 +193,12 @@ int testMinervaVersion(char *ver)
 	return 0;
 }
 
-static uint32_t bootpatchaddr[] = { 0x842A, /* Minerva 1.89 */
-				    0x83CA, /* Minerva 1.98 */
-				    0x4BE6, /* JS */
-				    0 };
+static uint32_t bootpatchaddr[] = {
+                    0x842A, /* Minerva 1.89 */
+                    0x83CA, /* Minerva 1.98 */
+                    0x83CC, /* Minerva 1.98a1 */
+                    0x4BE6, /* JS */
+                    0 };
 
 static void PatchBootDev()
 {
