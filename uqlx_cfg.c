@@ -436,8 +436,6 @@ void QMParams(void)
 			strim(buff);
 
 			res = QMParseParam(buff);
-			if (res < 0)
-				printf("WARNING: unknown parameter %s\n", buff);
 		}
 		fclose(fp);
 	}
