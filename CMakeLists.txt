@@ -47,7 +47,7 @@ add_custom_target( SubmarineGitVersion
 
 find_package(SDL2 REQUIRED)
 
-include_directories(include/ ${SDL2_INCLUDE_DIRS} ${SDL2_NET_INCLUDE_DIRS})
+include_directories(include/ ${SDL2_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
@@ -99,13 +99,13 @@ PROPERTIES GENERATED TRUE)
 add_dependencies(sqlux SubmarineGitVersion)
 
 if (SDL2_LIBRARIES)
-    target_link_libraries(sqlux m ${SDL2_LIBRARIES} ${SDL2_NET_LIBRARIES})
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        target_link_libraries(sqlux -mconsole -Wl,-Bstatic ${SDL2_LIBRARIES} -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
+    else()
+        target_link_libraries(sqlux ${SDL2_LIBRARIES})
+    endif()
 else()
-    target_link_libraries(sqlux SDL2::SDL2 ${SDL2_NET_LIBRARIES})
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(sqlux -mconsole -lwsock32 -static-libgcc)
+    target_link_libraries(sqlux SDL2::SDL2)
 endif()
 
 install(TARGETS sqlux
