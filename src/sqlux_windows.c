@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021 Graeme Gregory
+ *
+ * SPDX: Zlib
+ */
+
 #ifdef __WIN32__
 
 #include <string.h>
