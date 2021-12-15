@@ -498,13 +498,6 @@ int verbose = 2;
 extern int shmflag;
 #endif
 
-#ifndef XSCREEN
-void parse_screen(char *x)
-{
-	printf("sorry, '-g' option works only with XSCREEN enabled,\ncheck your Makefile\n");
-}
-#endif
-
 int sct_size;
 //char *scrModTable,
 char *oldscr;
