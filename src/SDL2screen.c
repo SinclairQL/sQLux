@@ -1,6 +1,9 @@
 /*
+ * Copyright (c) 2020-2021 Graeme Gregory
  *
+ * SPDX: Zlib
  */
+
 #include <inttypes.h>
 #include <math.h>
 #include <SDL.h>

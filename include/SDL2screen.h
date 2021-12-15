@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020-2021 Graeme Gregory
+ *
+ * SPDX: Zlib
+ */
+
 #ifndef _SDL2SCREEN_H
 #define _SDL2SCREEN_H
 

@@ -47,7 +47,7 @@ add_custom_target( SubmarineGitVersion
 
 find_package(SDL2 REQUIRED)
 
-include_directories(include/ ${SDL2_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_LIST_DIR} include/ ${SDL2_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
@@ -67,7 +67,7 @@ add_executable(sqlux
     QLserio.c
     QLtraps.c
     QVFS.c
-    SDL2screen.c
+    src/SDL2screen.c
     Xscreen.c
     dummies.c
     general.c
