@@ -33,6 +33,7 @@ typedef struct {
 	char ser3[64];
 	char ser4[64];
 	char prtcmd[64];
+	char resolution[64];
 	char bootdev[5];
 	char bdi1[64];
 	char winsize[5];

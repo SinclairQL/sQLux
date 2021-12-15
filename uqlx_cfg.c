@@ -36,6 +36,7 @@ QMDATA QMD = {
 	.ser3 = "", /* ser3 */
 	.ser4 = "", /* ser4 */
 	.prtcmd = "lpr", /* print cmd */
+	.resolution = "512x256", /* screen resolution */
 	.bootdev = "mdv1", /* boot device */
 	.bdi1 = "", /* BDI Unit 1 */
 	.winsize = "max", /* Default Window Size */
@@ -330,6 +331,7 @@ static PARSELIST pl[] = {
 	{ "WIN_SIZE", (PVFV)pString, offsetof(QMDATA, winsize), 4 },
 	{ "FIXASPECT", (PVFV)pInt2, offsetof(QMDATA, aspect) },
 	{ "FILTER", (PVFV)pInt2, offsetof(QMDATA, filter) },
+	{ "RESOLUTION", (PVFV)pString, offsetof(QMDATA, resolution), 63 },
 	{ NULL, NULL },
 };
 

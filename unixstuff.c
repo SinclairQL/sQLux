@@ -751,6 +751,10 @@ void SetParams(int ac, char **av)
 	UQLX_optind = 1;
 #endif
 	QMParams();
+	if (strcmp(QMD.resolution, "512x256")) {
+		parse_screen(QMD.resolution);
+	}
+
 	if (mem > 0 && mem < 17)
 		mem = mem * 1024;
 
