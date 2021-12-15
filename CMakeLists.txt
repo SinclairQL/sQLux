@@ -109,5 +109,5 @@ else()
 endif()
 
 install(TARGETS sqlux
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 	)
