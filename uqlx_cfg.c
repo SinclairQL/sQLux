@@ -412,7 +412,8 @@ void QMParams(void)
 	if (QMD.config_file_opt) {
 		pf = QMD.config_file;
 		if (!(fp = lopen(pf, "r"))) {
-			printf("ERROR: did not locate config file\n");
+			printf("ERROR: did not locate config file %s\n",
+				pf);
 			exit(0);
 		}
 	} else {
@@ -429,9 +430,6 @@ void QMParams(void)
 	if (fp) {
 		char buff[128];
 		int res;
-
-		if (V1)
-			printf("Using Config: %s\n", pf);
 
 		while (fgets(buff, 128, fp) == buff) {
 			char *s;

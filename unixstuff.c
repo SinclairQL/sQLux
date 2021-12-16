@@ -663,6 +663,21 @@ void SetParams(int ac, char **av)
 
 	*sysrom = 0;
 
+	while((c = getopt(ac, av, "f:")) != EOF) {
+		switch (c) {
+		case 'f':
+			strncpy(QMD.config_file, optarg, PATH_MAX);
+			QMD.config_file_opt = 1;
+			break;
+		}
+	}
+
+	QMParams();
+
+	if (strcmp(QMD.resolution, "512x256")) {
+		parse_screen(QMD.resolution);
+	}
+
 #ifndef NO_GETOPT
 	while ((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
 		switch (c) {
@@ -670,10 +685,8 @@ void SetParams(int ac, char **av)
 			gg = 0;
 			parse_screen(optarg);
 			break;
-		case 'f': {
-			strncpy(QMD.config_file, optarg, PATH_MAX);
-			QMD.config_file_opt = 1;
-		} break;
+		case 'f':
+			break;
 		case 'o':
 			strcpy(sysrom, optarg);
 			break;
@@ -750,10 +763,6 @@ void SetParams(int ac, char **av)
 	UQLX_argv = av;
 	UQLX_optind = 1;
 #endif
-	QMParams();
-	if (strcmp(QMD.resolution, "512x256")) {
-		parse_screen(QMD.resolution);
-	}
 
 	if (mem > 0 && mem < 17)
 		mem = mem * 1024;
