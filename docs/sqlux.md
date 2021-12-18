@@ -51,6 +51,8 @@ UQLX is designed to cooperate neatly with the underlying OS, some of the feature
 
 Nearly any UNIX or similar system will do, provided you have gcc and SDL2 installed.
 
+---
+
 1.2 COPYRIGHT
 -------------
 
@@ -59,6 +61,8 @@ New parts of sQLux are license under the zlib license, files are marked where ap
 Make sure you read the copyright notice carefully before you use, modify or distribute this product or parts of it.
 
 The copyright notice can be found in the file ‘`COPYRIGHT`’ – if not try to email me at `rdzidlic@geocities.com` [(1)](#FOOT1).
+
+---
 
 2 Compiling
 ===========
@@ -85,6 +89,7 @@ you are doing.
 
 The name of the executable will be ’sqlux’.
 
+---
 
 3 Installation
 ==============
@@ -120,84 +125,85 @@ The keys available are:
 
 `SYSROM`
 
-:   The name of the QDOS ROM to boot.
+The name of the QDOS ROM to boot.
 
 ```
 SYSROM = js_rom
 ```
 
 `ROMDIR`
-:   The directory where ’SYSROM’ (and other ROMS) may be found.
+
+The directory where ’SYSROM’ (and other ROMS) may be found.
 
 ```
 ROMDIR = /ql/ROMS/
 ```
 
 `RAMTOP`
-:   The upper limit of memory; usual QDOS rules apply. The value is in kB. Be warned that large values for this will cause long startup delays unless FAST_START is enabled. I have largely tested sQLux with 4MB, but at least Minerva should handle 16MB. Currently sQLux won’t allow more than 16MB, but this could be easily changed if you need more. If a larger screen size is used it has to fit into this value.
+The upper limit of memory; usual QDOS rules apply. The value is in kB. Be warned that large values for this will cause long startup delays unless FAST_START is enabled. I have largely tested sQLux with 4MB, but at least Minerva should handle 16MB. Currently sQLux won’t allow more than 16MB, but this could be easily changed if you need more. If a larger screen size is used it has to fit into this value.
 
 ```
 RAMTOP = 4096
 ```
 
 `SER1`
-:   The Unix device used for QDOS ser1.
+The Unix device used for QDOS ser1.
 
 ```
 SER1 = /dev/ttyS0
 ```
 
 `SER2`
-:   The Unix device used for QDOS ser2.
+The Unix device used for QDOS ser2.
 
 ```
 SER2 = /dev/ttyS1
 ```
 
 `SER3`
-:   The Unix device used for QDOS ser3.
+The Unix device used for QDOS ser3.
 
 ```
 SER3 = /dev/ttyS1
 ```
 
 `SER4`
-:   The Unix device used for QDOS ser4.
+The Unix device used for QDOS ser4.
 
 ```
 SER4 = /dev/ttyS1
 ```
 
 `PRINT`
-:   The Unix command used to queue print jobs, it used to output data sent to the PRT device. popen() is used to send the data, so you may specify options, flags etc.
+The Unix command used to queue print jobs, it used to output data sent to the PRT device. popen() is used to send the data, so you may specify options, flags etc.
 
 ```
          PRINT = lpr -Pmy_printer
 ```
 
 `CPU_HOG`
-:   Define it 0 to make UQLX try to behave multitasking friendly, it will go sleeping when it believes that QDOS is idle. The detection whether QDOS is idle usually works pretty well, but in some cases it may get fooled by very frequent IO, eg an high speed serial connection - in this case define it to 1 to get all time UNIX will give us. Alternatively the `-h` option can be used to enforce CPU_HOG mode.
+Define it 0 to make UQLX try to behave multitasking friendly, it will go sleeping when it believes that QDOS is idle. The detection whether QDOS is idle usually works pretty well, but in some cases it may get fooled by very frequent IO, eg an high speed serial connection - in this case define it to 1 to get all time UNIX will give us. Alternatively the `-h` option can be used to enforce CPU_HOG mode.
 
 ```
 CPU_HOG = 1
 ```
 
 `FAST_START`
-:   Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern.
+Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern.
 
 ```
 FAST_START = 1
 ```
 
 `SKIP_BOOT`
-:   Skip the F1/F2 screen on boot. 1 to skip, 0 to show screen.
+Skip the F1/F2 screen on boot. 1 to skip, 0 to show screen.
 
 ```
 SKIP_BOOT = 0
 ```
 
 `ROMIM`
-:   The ROMIMG specifies the rom to be loaded at 0xC000.
+The ROMIMG specifies the rom to be loaded at 0xC000.
 
 ```
 ROMIMG = tk2_rom
@@ -207,14 +213,14 @@ It is assumed that the ROM image can be found in the ROMDIR
 directory. The address should be specified in ’C’ numeric format.
 
 `NO_PATCH`
-:   disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.
+disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.
 
 ```
 NO_PATCH = 0
 ```
 
 `DEVICE`
-:   All directory devices may be defined in the options file. The format is
+All directory devices may be defined in the options file. The format is
 
 ```
 DEVICE = QDOS_name,  UNIX_pathname[,  flags]
@@ -229,57 +235,57 @@ The optional `flags` field supports this options.
 
 `clean`
 
-:   clean together with a "%x" in the unix pathname can be used to simulate RAMdisk. The "%x" is replaced with the process number at runtime so that multitasking QMs don’t disturb each other and after killing QM the directory is deleted.
+clean together with a "%x" in the unix pathname can be used to simulate RAMdisk. The "%x" is replaced with the process number at runtime so that multitasking QMs don’t disturb each other and after killing QM the directory is deleted.
 
 `qdos-fs`
 `native`
 
-:   Both flags are synonyms. The qdos-fs option indicates that
+Both flags are synonyms. The qdos-fs option indicates that
 `UNIX_pathname` is the name of a file or device in the QDOS
 floppy disk or QXL.WIN formats; otherwise a Unix directory is
 assumed.
 
 `qdos-like`
 
-:   applicable only to non-`qdos-fs`. Filenames are not case sensitive and (sub)directory creation mimics SMSQ behaviour.
+applicable only to non-`qdos-fs`. Filenames are not case sensitive and (sub)directory creation mimics SMSQ behaviour.
 
 `BDI1`
-:   file that is exposed by the BDI interface, this is normally the file from an old style QL-SD device.
+file that is exposed by the BDI interface, this is normally the file from an old style QL-SD device.
 
 ```
 BDI1 = QL_BDI.bin
 ```
 
 `BOOT_DEVICE`
-:   changes the device the QDOS rom boots from, in rom the default is mdv1_. Set this to any valid device from above, but it is limited to 4 characters.
+changes the device the QDOS rom boots from, in rom the default is mdv1_. Set this to any valid device from above, but it is limited to 4 characters.
 
 ```
 BOOT_DEVICE = FLP1
 ```
 
 `WIN_SIZE`
-:   1x, 2x, 3x, max, full, the zoom for the window. max is the maximum size window for the desktop, full is a fullscreen borderless window.
+1x, 2x, 3x, max, full, the zoom for the window. max is the maximum size window for the desktop, full is a fullscreen borderless window.
 
 ```
 WIN_SIZE = max
 ```
 
 `RESOLUTION`
-:    The screen resulution for sQLux. The same as the -g option, normally used for creating the extended screen.
+The screen resulution for sQLux. The same as the -g option, normally used for creating the extended screen.
 
 ```
 RESOLUTION = 512x512
 ```
 
 `FILTER`
-:   control the bilinear filtering in SDL when using zoomed screen, 1 enables filter, 0 disables filter. The can produce a smoother screen when zoom is not exact number of pixels, but also has a slight blur effect.
+control the bilinear filtering in SDL when using zoomed screen, 1 enables filter, 0 disables filter. The can produce a smoother screen when zoom is not exact number of pixels, but also has a slight blur effect.
 
 ```
 FILTER = 1
 ```
 
 `FIXASPECT`
-:   On BBQL the pixels are not square, this option enables sQLux to produce pixels nearer BBQL aspect ratio. 1 enables and 0 disables this.
+On BBQL the pixels are not square, this option enables sQLux to produce pixels nearer BBQL aspect ratio. 1 enables and 0 disables this.
 
 ```
 FIXASPECT = 1
@@ -346,8 +352,7 @@ where:
 
 `-r RAMTOP`
 
-Defines the RAMTOP value in kB. Any enlarged screen also has to fit
-into this value.
+Defines the RAMTOP value in kB. Any enlarged screen also has to fit into this value.
 
 `-c configuration_line`
 
@@ -359,8 +364,7 @@ Configuration line from in sqlux.ini format
 
 `-g resolution`
 
-:   Start with screen size nXm, effective only with Minerva roms. **See
-big screen**
+Start with screen size nXm, effective only with Minerva roms. **See big screen**
 
 ```
 -g 512x512
@@ -368,7 +372,7 @@ big screen**
 
 `-f file`
 
-:   Defines an alternative options file.
+Defines an alternative options file.
 
 ```
 -f $TMP/sqlux.ini
@@ -376,36 +380,39 @@ big screen**
 
 `-h`
 
-:   Force CPU_HOG mode, take all available CPU time for the emulator.
+Force CPU_HOG mode, take all available CPU time for the emulator.
 
 `-o romname`
 
-:   Use romname instead of ROM defined in ‘`sqlux.ini`’ file
+Use romname instead of ROM defined in ‘`sqlux.ini`’ file
 
 `-b boot_cmd`
 
-:   Define commands to be executed when sQLux runs. This is a standard basic line without line number.
+Define commands to be executed when sQLux runs. This is a standard basic line without line number.
 
 ```
 -b 'PRINT "HELLO WORLD"'
 ```
 
 `-d bood_dev`
-:   Define the QDOS device the rom will automatically load the BOOT file from. This is limited to 4 characters in ROM. The default in rom is MDV1.
+
+Define the QDOS device the rom will automatically load the BOOT file from. This is limited to 4 characters in ROM. The default in rom is MDV1.
 
 ```
 -d FLP1
 ```
 
 `-w window_size`
-:   set the window size, 1x, 2x, 3x, max, full where max is a maximum sized window for the desktop and full is a borderless fullscreen window.
+
+set the window size, 1x, 2x, 3x, max, full where max is a maximum sized window for the desktop and full is a borderless fullscreen window.
 
 ```
 -w 2x
 ```
 
 `-v verbosity_level`
-:   set the verbosity level, so make sQLux quiet set to 0, level 1 is the default for level 2 with added messages.
+
+set the verbosity level, so make sQLux quiet set to 0, level 1 is the default for level 2 with added messages.
 
 ```
 -v 0
@@ -422,20 +429,16 @@ The below is from uQLx manual, but has not been seen in sQLux but may occur in s
 
 ---
 
-There seems to be a problem with some versions of `Ptr_gen`. If your
-boot file fails with random errors near the place where it is loaded,
-try inserting this after `LRESPR Ptr_gen`:
+There seems to be a problem with some versions of `Ptr_gen`. If your boot file fails with random errors near the place where it is loaded, try inserting this after `LRESPR Ptr_gen`:
 
 ```
 PAUSE#2,1
 ```
 
-This will not work with JS ROMS, use a for loop or similar to cause the
-delay there..
+This will not work with JS ROMS, use a for loop or similar to cause the delay there..
 
-You may query the UNIX environment variables and the startup parameters
-of the emulator from your bootfile - [SuperBasic
-Extensions](#SuperBasic-Extensions)
+You may query the UNIX environment variables and the startup parameters of the emulator from your bootfile - [SuperBasic
+Extensions](#9-SuperBasic-Extensions)
 
 ---
 
@@ -444,7 +447,7 @@ Extensions](#SuperBasic-Extensions)
 
 Thanks to Tony Firshman, Minerva v1.89 onwards is now GPL and can be bundled with sQLux - it is ‘`roms/MIN198`’.
 
-For various reasons you may run into some trouble when trying romimages other than the supplied js.rom or MIN189/MIN198. Roughly, the known causes are:
+For various reasons you may run into some trouble when trying romimages other than the supplied MIN198, or Minerver1.89/JS. Roughly, the known causes are:
 
 - rom image not supported by sQLux. Maybe some old, never tested QDOS roms
 - rom image has been patched by GC, SGC or similar. All QL extensions that have something better than a 68008 CPU are likely to do this.
@@ -544,8 +547,8 @@ dd if=/dev/fd0 of=DiskImagename
 
 On Linux anything works, unless you have a very special floppy use `/dev/fd0` as filename.
 
-7 Other Devices {#other-devices .chapter}
-=========================================
+7 Other Devices
+===============
 
 Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.
 
@@ -569,39 +572,39 @@ The `TCP/IP` features are described in the files ‘`docs/socket.*`’ that came
 
 *j*
 
-:   job control options
+job control options
 
 `i`
 
-:   don’t care if child process exits. Default behaviour is to indicate EOF on read after the child process exited and all buffers were read, but theoretically someone might reconnect the tty.
+don’t care if child process exits. Default behaviour is to indicate EOF on read after the child process exited and all buffers were read, but theoretically someone might reconnect the tty.
 
 `k`
 
-:   kill child job after closing the QDOS channel. Default is don’t care.
+kill child job after closing the QDOS channel. Default is don’t care.
 
 *t*
 
-:   translation options
+translation options
 
 `c`
 
-:   translate carriage returns
+translate carriage returns
 
 `z`
 
-:   translate char 26 (`^Z`)as end of file
+translate char 26 (`^Z`)as end of file
 
 `t`
 
-:   translate QDOS <–> ISO-8859-1 font
+translate QDOS <–> ISO-8859-1 font
 
 *program name*
 
-:   name of program to be executed and parameters
+name of program to be executed and parameters
 
 *parm*
 
-:   arguments to be passed to the invoked program. This can be
+arguments to be passed to the invoked program. This can be
 unix-style options, filenames etc.
 
 ```
@@ -660,11 +663,11 @@ except for the `_baudrate`, the options have the same meaning as in QDOS where a
 
 *n*
 
-:   unit number, currently 1,2
+unit number, currently 1,2
 
 *p*
 
-:   parity
+parity
 
 `O`
 
@@ -676,41 +679,39 @@ except for the `_baudrate`, the options have the same meaning as in QDOS where a
 
 *h*
 
-:   handshake
+handshake
 
 `H`
 
-:   use handshake
+use handshake
 
 `I`
 
-:   ignore handshake
+ignore handshake
 
 *t*
 
-:   translation
+translation
 
 `R`
 
-:   no translation
+no translation
 
 `Z`
 
-:   recognise `^Z` as EOF
+recognise `^Z` as EOF
 
 `C`
 
-:   carriage return
+carriage return
 
-Here is some documentation for `ser` and `pty` devices, originally
-compiled by Jonathan Hudson
+Here is some documentation for `ser` and `pty` devices, originally compiled by Jonathan Hudson
 
 ```
 ser2hr_b57600   (57600 baud)
 ```
 
-The data transfer rate appears CPU bound, but 5100 cps TX and 4800 cps
-RX are achievable for QTPI/ZMODEM.
+The data transfer rate appears CPU bound, but 5100 cps TX and 4800 cps RX are achievable for QTPI/ZMODEM.
 
 The serial device names should be specified in the ‘`sqlux.ini`’ file, good choice for Linux is ‘`/dev/ttyS0`’ and ‘`/dev/ttyS1`’.
 
@@ -725,20 +726,20 @@ The `prt` device can be used for printing. The data sent to `prt` is piped to th
 
 *f*
 
-:   ignore for QDOS compatibility
+ignore for QDOS compatibility
 
 *t*
 
-:   translation: use active TRA table
+translation: use active TRA table
 
 `add_options`
 
-:   specify additional options to be passed to default printer
+specify additional options to be passed to default printer
 command
 
 `alt_command`
 
-:   specify alternative command to be executed
+specify alternative command to be executed
 
 Data sent to the `prt` device is piped to the specified filter. If you
 have QDOS printer drivers for the printer in use, try to send your
@@ -767,19 +768,19 @@ If this happens, kill the filter process from another xterm.
 
 **Kill_UQLX** *result*
 
-:   Kill the emulator returning result to the calling program
+Kill the emulator returning result to the calling program
 
 **UQLX_RELEASE$**
 
-:   Returns release identification as string
+Returns release identification as string
 
 **getXenv$** *name*
 
-:   Returns value of the (UNIX) environment variable name as string
+Returns value of the (UNIX) environment variable name as string
 
 **Fork_UQLX**
 
-:   Create an exact copy of this UQLX process. A new Xwindow is created, files on directory device drivers recreated. However beware that a file that remained opened during a fork may now be writable by two or more UQLX instances. Also using same stream i/o channel from both instances of the process will result in chaos, especially `pty` channels have to loose EOF.
+Create an exact copy of this UQLX process. A new Xwindow is created, files on directory device drivers recreated. However beware that a file that remained opened during a fork may now be writable by two or more UQLX instances. Also using same stream i/o channel from both instances of the process will result in chaos, especially `pty` channels have to loose EOF.
 
 Returns `pid` for the parent process, `0` for its child.
 
@@ -793,7 +794,7 @@ An utterly useful example program is:
 
 **getXargc**
 
-:   Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
+Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
 
 ```
 qm -m -r 1024 arg1 arg2 arg3
@@ -803,7 +804,7 @@ PRINT getXargc          => 4   (arg0=qm !)
 
 **getXarg$** *nth*
 
-:   Returns the nth argument, continuing from above example
+Returns the nth argument, continuing from above example
 
 ```
 for i=0 to getXargc-1 : PRINT i, getXarg$(i)
@@ -823,16 +824,16 @@ results in
 
 **getXres**
 
-:   Returns x-size of screen
+Returns x-size of screen
 
 **getYres**
 
-:   Returns y-size of screen
+Returns y-size of screen
 
 **scr_xlim**
 
-:   same as `getXres`
+same as `getXres`
 
 **scr_ylim**
 
-:   same as `getYres`
+same as `getYres`
