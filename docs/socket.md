@@ -1,91 +1,13 @@
----
-Generator: makeinfo
-description: 'QDOS TCP/IP and socket functionality'
-distribution: global
-keywords: 'QDOS TCP/IP and socket functionality'
-resource-type: document
-title: 'QDOS TCP/IP and socket functionality'
----
-
-QDOS TCP/IP and socket functionality {#qdos-tcpip-and-socket-functionality .settitle align="center"}
+QDOS TCP/IP and socket functionality
 ====================================
 
-[]{#Top}
+ - [Introduction](#1-Introduction)
+ - [TCP/IP device driver interface](#2-tcpip-device-driver-interface)
+ - [Socket Library](#3-Socket-Library)
 
-::: {.header}
-Next: [Introduction](#Introduction), Previous: [(dir)](dir.html#Top),
-Up: [(dir)](dir.html#Top)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
+---
 
-Top {#top .node-heading}
-===
-
-• [Introduction](#Introduction):
-
-  
-
-• [TCP/IP device driver interface](#TCP_002fIP-device-driver-interface):
-
-  
-
-• [Socket Library](#Socket-Library):
-
-  
-
-``` {.menu-comment}
-
- — The Detailed Node Listing —
-
-TCP/IP device driver interface
-```
-
-• [open](#open):
-
-  
-
-• [IO operation](#IO-operation):
-
-  
-
-``` {.menu-comment}
-
-IO operation
-```
-
-• [Basic IO operations](#Basic-IO-operations):
-
-  
-
-• [Constants and Datatypes](#Constants-and-Datatypes):
-
-  
-
-• [Socket control and management](#Socket-control-and-management):
-
-  
-
-• [Socket specific IO](#Socket-specific-IO):
-
-  
-
-• [Netdb functions](#Netdb-functions):
-
-  
-
-------------------------------------------------------------------------
-
-[]{#Introduction}
-
-::: {.header}
-Next: [TCP/IP device driver
-interface](#TCP_002fIP-device-driver-interface), Previous: [Top](#Top),
-Up: [Top](#Top)   \[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Introduction-1}
-
-1 Introduction {#introduction .chapter}
+1 Introduction
 --------------
 
 This document implements TCP/IP as implemented in UQLX. The
@@ -104,52 +26,28 @@ be used from Assembler/Basic follow QDOS interfacing conventions, those
 used from C/unix like applications follow conventions that make it
 easier to interface for such programs.
 
-------------------------------------------------------------------------
+---
 
-[]{#TCP_002fIP-device-driver-interface}
-
-::: {.header}
-Next: [Socket Library](#Socket-Library), Previous:
-[Introduction](#Introduction), Up: [Top](#Top)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#TCP_002fIP-device-driver-interface-1}
-
-2 TCP/IP device driver interface {#tcpip-device-driver-interface .chapter}
+2 TCP/IP device driver interface
 --------------------------------
 
-  ---------------------------------- ---- --
-  • [open](#open):                        
-  • [IO operation](#IO-operation):        
-  ---------------------------------- ---- --
+- [open](#21-open):
+- [IO operation](#22-IO-operation):
 
-------------------------------------------------------------------------
+---
 
-[]{#open}
-
-::: {.header}
-Next: [IO operation](#IO-operation), Previous: [TCP/IP device driver
-interface](#TCP_002fIP-device-driver-interface), Up: [TCP/IP device
-driver interface](#TCP_002fIP-device-driver-interface)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#open-1}
-
-### 2.1 open {#open .section}
+### 2.1 open
 
 Following new devices are available for the `trap#2,open` call:
 
 `SCK_`
 
-:   generic socket, can be used for accepting connections or netdb
-    access.
+generic socket, can be used for accepting connections or netdb access.
 
 `TCP_host:port`\
 `UDP_host:port`
 
-:   TCP or UDP protocol sockets. Both parameters optional
+TCP or UDP protocol sockets. Both parameters optional
 
 `host` and `port` can be both given either by numerical value or name.
 Eg `"129.69.1.59:119"` or `"news.uni-stuttgart.de:nntp"`
@@ -158,41 +56,31 @@ Supported `keys` in `D3` are:
 
 `D3=0`
 
-:   creates a socket of requested type/protocol.
+creates a socket of requested type/protocol.
 
 `D3=1`
 
-:   `TCP` and `UDP`. `host` and `port` must be specified. Opens a
-    connection `TCP`, or sets peer address for `UDP` sockets
+`TCP` and `UDP`. `host` and `port` must be specified. Opens a
+connection `TCP`, or sets peer address for `UDP` sockets
 
-    returns without error if connection can't be completed within
-    1-2/50s, internally the connection buildup continues. Every i/o
-    operation will be blocked until the connection succeeds or fails.
+returns without error if connection can't be completed within
+1-2/50s, internally the connection buildup continues. Every i/o
+operation will be blocked until the connection succeeds or fails.
 
 `D3=2`
 
-:   bind `TCP` or `UDP` socket to an address. Such sockets can be used
-    for accepting incoming connections
+bind `TCP` or `UDP` socket to an address. Such sockets can be used
+for accepting incoming connections
 
 `D3=channel_id`
 
-:   `SCK` only. accpet connection for socket specified by `channel_id`
+`SCK` only. accept connection for socket specified by `channel_id`
 
-    returns error if can't complete immediately.
+returns error if can't complete immediately.
 
-------------------------------------------------------------------------
+---
 
-[]{#IO-operation}
-
-::: {.header}
-Previous: [open](#open), Up: [TCP/IP device driver
-interface](#TCP_002fIP-device-driver-interface)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#IO-operation-1}
-
-### 2.2 IO operation {#io-operation .section}
+### 2.2 IO operation
 
 Many operations typically not regarded as IO were provided by `trap#3`
 calls to gain flexibility.
@@ -205,31 +93,13 @@ clear whether they are meaningful and thus may not be supported.
 Generally, TCP/IP aware software should probably use the socket specific
 IO functions - send,recv,sendto,recvfrom.
 
-When a trap\#3 returns with an error, an additional c68 conforming error
-code may be queried by IP\_ERRNO, IP\_H\_ERRNO and IP\_H\_STRERROR
+When a trap#3 returns with an error, an additional c68 conforming error
+code may be queried by IP_ERRNO, IP_H_ERRNO and IP_H_STRERROR
 operations. This code is valid unless -1.
 
-  -------------------------------------------------------------------- ---- --
-  • [Basic IO operations](#Basic-IO-operations):                            
-  • [Constants and Datatypes](#Constants-and-Datatypes):                    
-  • [Socket control and management](#Socket-control-and-management):        
-  • [Socket specific IO](#Socket-specific-IO):                              
-  • [Netdb functions](#Netdb-functions):                                    
-  -------------------------------------------------------------------- ---- --
+---
 
-------------------------------------------------------------------------
-
-[]{#Basic-IO-operations}
-
-::: {.header}
-Next: [Constants and Datatypes](#Constants-and-Datatypes), Previous: [IO
-operation](#IO-operation), Up: [IO operation](#IO-operation)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Basic-IO-operations-1}
-
-#### 2.2.1 Basic IO operations {#basic-io-operations .subsection}
+#### 2.2.1 Basic IO operations
 
 These are compatible to QDOS. The only questionable issue here is
 whether io.fstrg should always fill its buffer before returning as it
@@ -237,26 +107,14 @@ does now, or rather mimic the behaviour of recv/recvfrom. Since the
 number of received characters will be in `D1` anyway, this should not
 disturb any QDOS applications.
 
-------------------------------------------------------------------------
+---
 
-[]{#Constants-and-Datatypes}
-
-::: {.header}
-Next: [Socket control and management](#Socket-control-and-management),
-Previous: [Basic IO operations](#Basic-IO-operations), Up: [IO
-operation](#IO-operation)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Constants-and-Datatypes-1}
-
-#### 2.2.2 Constants and Datatypes {#constants-and-datatypes .subsection}
+#### 2.2.2 Constants and Datatypes
 
 Here only the most important constants that are defined, the rest is in
 socket library header files.
 
-::: {.example}
-``` {.example}
+```
 EQU IP_LISTEN           $50
 EQU IP_SEND             $51
 EQU IP_SENDTO           $52
@@ -309,18 +167,16 @@ EQU IP_IOCTL            $79
 EQU IP_GETDOMAIN        $7a
 EQU IP_H_STRERROR       $7b
 ```
-:::
 
 Following constants and datatypes are a mix from AmiTCP/IP and Linux
 definitions. Not every of them is meaningful or supported on every
 implementation.
 
 Next some definitions useful for socket(), bind() and connect() calls
-and their trap\#2/\#3 equivalents.
+and their trap#2/#3 equivalents.
 
-::: {.example}
-``` {.example}
-#define    SOCK_STREAM 1       /* stream socket */
+```
+#define SOCK_STREAM 1       /* stream socket */
 #define SOCK_DGRAM  2       /* datagram socket */
 #define SOCK_RAW    3       /* raw-protocol interface */
 #define SOCK_RDM    4       /* reliably-delivered message */
@@ -364,13 +220,11 @@ struct sockproto {
 #define SO_LINGER     13        /* ignored, doesn't seem practicable in QDOS */
 #define SO_BSDCOMPAT  14
 ```
-:::
 
 Next, some netdb definitions. This seems like a nigthmare for assembler
 programmers..
 
-::: {.example}
-``` {.example}
+```
 
 struct  hostent {
     char    *h_name;    /* official name of host */
@@ -402,27 +256,14 @@ struct  protoent {
 };
 
 ```
-:::
 
-------------------------------------------------------------------------
+---
 
-[]{#Socket-control-and-management}
+#### 2.2.3 Socket control and management
 
-::: {.header}
-Next: [Socket specific IO](#Socket-specific-IO), Previous: [Constants
-and Datatypes](#Constants-and-Datatypes), Up: [IO
-operation](#IO-operation)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
+```
 
-[]{#Socket-control-and-management-1}
-
-#### 2.2.3 Socket control and management {#socket-control-and-management .subsection}
-
-::: {.example}
-``` {.example}
-
-IP_LISTEN 
+IP_LISTEN
 
 Provides listen(2) functionality.
 
@@ -451,7 +292,7 @@ Provides bind(2) functionality
     D0 = IP_BIND
     D1 = (int) namelen
     D3 = (short) timeout (-1)
-    
+
     A0 = (chanid_t) Channel ID
     A2 = (struct  sockaddr  *) name;
 
@@ -472,7 +313,7 @@ Provides connect(2) functionality
     D0 = IP_CONNECT
     D1 = (int) namelen
     D3 = (short) timeout (-1)
-    
+
     A0 = (chanid_t) Channel ID
     A2 = (struct  sockaddr  *) name;
 
@@ -483,10 +324,10 @@ Provides connect(2) functionality
   TCP: opens connection
   UDP: (re)sets peer address
 
-  regardless of the timeout specified, the socket will remain 
-  blocked (any IO will timeout or be delayed) until the connection 
+  regardless of the timeout specified, the socket will remain
+  blocked (any IO will timeout or be delayed) until the connection
   buildup succeeded or failed.
-        
+
 
 IP_FCNTL
 
@@ -495,7 +336,7 @@ Provides fcntl(2) functionality for IPDEV sockets only.
 An awful hack for now.. don't use it unless you have to.
 
     Input
-    
+
     D0 = IP_FCNTL
     D1 = (int) cmd;
     D2 = (int) arg;
@@ -515,7 +356,7 @@ Provides (some) getsockopt functionality
     Input
 
     D0 = IP_GETOPT
-    D1 = (int) optlen 
+    D1 = (int) optlen
     D2 = (int) level
     D3 = (short) timeout (-1)
 
@@ -524,7 +365,7 @@ Provides (some) getsockopt functionality
     A2 = (int) optname
 
     Output
-    
+
     D0 = result
     D1 = optlen
 
@@ -535,7 +376,7 @@ Provides (some) setsockopt functionality
     Input
 
     D0 = IP_SETOPT
-    D1 = (int) optlen 
+    D1 = (int) optlen
     D2 = (int) level
     D3 = (short) timeout (-1)
 
@@ -544,7 +385,7 @@ Provides (some) setsockopt functionality
     A2 = (int) optname
 
     Output
-    
+
     D0 = result
 
 
@@ -555,33 +396,21 @@ Provides shutdown(2) functionality
     Input
 
     D0 = IP_SHUTDWN
-    D1 = (int) how          # how=0 disable receive ,1 send, 
+    D1 = (int) how          # how=0 disable receive ,1 send,
                                 #     2 send&receive
     D3 = (short) timeout (-1);
-    
+
     A0 = (chanid_t) Channel ID
 
     Output
-    
+
     D0 = result
 
 ```
-:::
 
-------------------------------------------------------------------------
+---
 
-[]{#Socket-specific-IO}
-
-::: {.header}
-Next: [Netdb functions](#Netdb-functions), Previous: [Socket control and
-management](#Socket-control-and-management), Up: [IO
-operation](#IO-operation)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Socket-specific-IO-1}
-
-#### 2.2.4 Socket specific IO {#socket-specific-io .subsection}
+#### 2.2.4 Socket specific IO
 
 send and recv differ from io.sstrg and io.fstrg in that they message
 oriented and allow chunks longer than 32k.
@@ -592,8 +421,7 @@ the first message arrives.
 send and recv can be (unlike sendto, recvfrom for UDP) applied only to
 sockets that have been connected previously.
 
-::: {.example}
-``` {.example}
+```
 IP_SEND
 
 Provides send(2) functionality
@@ -631,7 +459,7 @@ Provides sendto(2) functionality
     A2 = parameter block (2 long words)
         params[0] = (struct sockaddr*) to
         params[1] = (int) tolen;
-    
+
 
     Output
 
@@ -674,7 +502,7 @@ Provides recvfrom(2) functionality
     A2 = parameter block (2 long words)
         params[0] = (struct sockaddr*) from
         params[1] = (int) fromlen;
-    
+
     Output
 
     D0 = result
@@ -682,24 +510,12 @@ Provides recvfrom(2) functionality
         -ve => error code
     D1 = size of returned struct sockaddr
 ```
-:::
 
-------------------------------------------------------------------------
+---
 
-[]{#Netdb-functions}
+#### 2.2.5 Netdb functions
 
-::: {.header}
-Previous: [Socket specific IO](#Socket-specific-IO), Up: [IO
-operation](#IO-operation)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Netdb-functions-1}
-
-#### 2.2.5 Netdb functions {#netdb-functions .subsection}
-
-::: {.example}
-``` {.example}
+```
 IP_GETHOSTNAME
 
 Provides gethostname(2) functionality
@@ -800,10 +616,10 @@ largest struct hostent returned.
 
 
 
-IP_SETHOSTENT      
-IP_SETSERVENT      
-IP_SETNETENT        
-IP_SETPROTOENT      
+IP_SETHOSTENT
+IP_SETSERVENT
+IP_SETNETENT
+IP_SETPROTOENT
 
 Provides set*ent(2) functionality
 
@@ -819,10 +635,10 @@ Provides set*ent(2) functionality
     D0 = result
 
 
-IP_ENDHOSTENT     
-IP_ENDSERVENT       
-IP_ENDNETENT        
-IP_ENDPROTOENT      
+IP_ENDHOSTENT
+IP_ENDSERVENT
+IP_ENDNETENT
+IP_ENDPROTOENT
 
 Provides end*ent(2) functionality
 
@@ -838,9 +654,9 @@ Provides end*ent(2) functionality
 
 
 
-IP_GETSERVBYNAME    
-IP_GETSERVBYPORT    
-IP_GETSERVENT       
+IP_GETSERVBYNAME
+IP_GETSERVBYPORT
+IP_GETSERVENT
 
 Provides get*ent(2) functionality
 
@@ -857,7 +673,7 @@ Provides get*ent(2) functionality
 
 
 IP_GETNETBYNAME
- 
+
 Provides getnetbyname(2) functionality
 
     Input
@@ -872,8 +688,8 @@ Provides getnetbyname(2) functionality
 
     D0 = result
 
- 
-IP_GETNETBYADDR     
+
+IP_GETNETBYADDR
 
 Provides getnetbyname(2) functionality
 
@@ -908,7 +724,7 @@ Provides getprotobyname(2) functionality
     D0 = result
 
 
-IP_GETPROTOBYNUMBER 
+IP_GETPROTOBYNUMBER
 
 Provides getprotobynumber(2) functionality
 
@@ -925,7 +741,7 @@ Provides getprotobynumber(2) functionality
     D0 = result
 
 
-IP_INET_ATON        
+IP_INET_ATON
 
 Provides inet_aton(2) functionality
 
@@ -935,7 +751,7 @@ Provides inet_aton(2) functionality
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
         A1 = (char *) name
-        A2 = ( struct in_addr *)inaddr buffer            
+        A2 = ( struct in_addr *)inaddr buffer
 
     Output
 
@@ -943,7 +759,7 @@ Provides inet_aton(2) functionality
 
 
 
-IP_INET_ADDR        
+IP_INET_ADDR
 
 Provides inet_addr(2) functionality
 
@@ -960,7 +776,7 @@ Provides inet_addr(2) functionality
 
 
 
-IP_INET_NETWORK     
+IP_INET_NETWORK
 
 Provides inet_network(2) functionality
 
@@ -977,7 +793,7 @@ Provides inet_network(2) functionality
 
 
 
-IP_INET_NTOA        
+IP_INET_NTOA
 
 Provides (2) functionality
 
@@ -987,7 +803,7 @@ Provides (2) functionality
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
         A1 = (struct in_addr *) net address buffer
-        A2 = (char *) result buffer            
+        A2 = (char *) result buffer
 
     Output
 
@@ -995,7 +811,7 @@ Provides (2) functionality
 
 
 
-IP_INET_MAKEADDR    
+IP_INET_MAKEADDR
 
 Provides (2) functionality
 
@@ -1006,7 +822,7 @@ Provides (2) functionality
         D2 = (int) host address
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
-        A2 = (struct in_addr *) result buffer            
+        A2 = (struct in_addr *) result buffer
 
     Output
 
@@ -1014,7 +830,7 @@ Provides (2) functionality
 
 
 
-IP_INET_LNAOF       
+IP_INET_LNAOF
 
 Provides inet_lnaof (2) functionality
 
@@ -1023,7 +839,7 @@ Provides inet_lnaof (2) functionality
         D0 = IP_INET_LNAOF;
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
-        A1 = (struct in_addr *) net address buffer            
+        A1 = (struct in_addr *) net address buffer
 
     Output
 
@@ -1031,7 +847,7 @@ Provides inet_lnaof (2) functionality
 
 
 
-IP_INET_NETOF       
+IP_INET_NETOF
 
 Provides inet_netof(2) functionality
 
@@ -1040,14 +856,14 @@ Provides inet_netof(2) functionality
         D0 = IP_INET_NETOF;
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
-        A1 = (struct in_addr *) net address buffer            
+        A1 = (struct in_addr *) net address buffer
 
     Output
 
     D0 = result
 
 
-IP_IOCTL            
+IP_IOCTL
 
 Provides ioctl(2) functionality
 
@@ -1064,7 +880,7 @@ Provides ioctl(2) functionality
     D0 = result
 
 
-IP_GETDOMAIN        
+IP_GETDOMAIN
 
 Provides getdomainname(2) functionality
 
@@ -1081,24 +897,24 @@ Provides getdomainname(2) functionality
     D0 = result
 
 
-IP_H_ERRNO        
+IP_H_ERRNO
 
 Provides h_errno (2) functionality
 
-    Input   
-    
+    Input
+
     D0 = IP_H_ERRNO
         D3 = (short) timeout (-1)
     A0 = (chanid_t) channel ID
 
     Output
-    
+
     D0 = result
     D1 = h_errno
 
 
 
-IP_H_STRERROR   
+IP_H_STRERROR
 
 Provides special functionality to return the text for h_errno
 
@@ -1115,35 +931,23 @@ Provides special functionality to return the text for h_errno
 
 
 ```
-:::
 
-------------------------------------------------------------------------
+---
 
-[]{#Socket-Library}
-
-::: {.header}
-Previous: [TCP/IP device driver
-interface](#TCP_002fIP-device-driver-interface), Up: [Top](#Top)  
-\[[Contents](#SEC_Contents "Table of contents")\]
-:::
-
-[]{#Socket-Library-1}
-
-3 Socket Library {#socket-library .chapter}
+3 Socket Library
 ----------------
 
-::: {.example}
-``` {.example}
+```
 
 int socket(int domain, int type, int protocol);
 int bind(int s, const struct sockaddr *name, int namelen);
 int listen(int s, int backlog);
 int accept(int s, struct sockaddr *addr, int *addrlen);
 int connect(int s, const struct sockaddr *name, int namelen);
-int sendto(int s, const void *msg, int len, unsigned int flags, 
+int sendto(int s, const void *msg, int len, unsigned int flags,
         struct sockaddr *to, int tolen);
 int send(int s, const void *msg, int len, unsigned int flags);
-int recvfrom(int s, void *buf, int len, unsigned int flags, 
+int recvfrom(int s, void *buf, int len, unsigned int flags,
           struct sockaddr *from, int *fromlen);
 int recv(int s, void *buf, int len, unsigned int flags);
 int shutdown(int s, int how);
@@ -1175,30 +979,3 @@ int gethostname(char *name, size_t len);
 int ioctl(int,int,void *);
 int sock_fcntl(int s, int action, int val);
 ```
-:::
-
-[]{#SEC_Contents}
-
-Table of Contents {#table-of-contents .contents-heading}
------------------
-
-::: {.contents}
--   [1 Introduction](#Introduction){#toc-Introduction-1}
--   [2 TCP/IP device driver
-    interface](#TCP_002fIP-device-driver-interface){#toc-TCP_002fIP-device-driver-interface-1}
-    -   [2.1 open](#open){#toc-open-1}
-    -   [2.2 IO operation](#IO-operation){#toc-IO-operation-1}
-        -   [2.2.1 Basic IO
-            operations](#Basic-IO-operations){#toc-Basic-IO-operations-1}
-        -   [2.2.2 Constants and
-            Datatypes](#Constants-and-Datatypes){#toc-Constants-and-Datatypes-1}
-        -   [2.2.3 Socket control and
-            management](#Socket-control-and-management){#toc-Socket-control-and-management-1}
-        -   [2.2.4 Socket specific
-            IO](#Socket-specific-IO){#toc-Socket-specific-IO-1}
-        -   [2.2.5 Netdb
-            functions](#Netdb-functions){#toc-Netdb-functions-1}
--   [3 Socket Library](#Socket-Library){#toc-Socket-Library-1}
-:::
-
-------------------------------------------------------------------------
