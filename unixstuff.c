@@ -679,7 +679,9 @@ void SetParams(int ac, char **av)
 	}
 
 	/* reset the option parsing for second pass */
+#ifdef __APPLE__
 	optreset = 1;
+#endif
 	optind = 1;
 
 #ifndef NO_GETOPT
