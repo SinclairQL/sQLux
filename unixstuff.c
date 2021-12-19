@@ -678,6 +678,10 @@ void SetParams(int ac, char **av)
 		parse_screen(QMD.resolution);
 	}
 
+	/* reset the option parsing for second pass */
+	optreset = 1;
+	optind = 1;
+
 #ifndef NO_GETOPT
 	while ((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
 		switch (c) {
