@@ -56,6 +56,8 @@ bas_err UQLX_getXargc();
 bas_err UQLX_getXarg();
 bas_err UQLX_getXres();
 bas_err UQLX_getYres();
+bas_err UQLX_scr_llen();
+bas_err UQLX_scr_base();
 static bas_err MakeDir();
 
 struct BAS_PFENTRY *ext_list = NULL;
@@ -235,6 +237,8 @@ void add_bas_proc(char *name, bas_err (*command)())
 #define BN_GETYRES "getYres"
 #define BN_SCR_XLIM "SCR_XLIM"
 #define BN_SCR_YLIM "SCR_YLIM"
+#define BN_SCR_LLEN "SCR_LLEN"
+#define BN_SCR_BASE "SCR_BASE"
 #if 0
 #define BN_MAKEDIR "MakeDir"
 #endif
@@ -254,7 +258,8 @@ void init_bas_exts()
 	add_bas_fun(BN_GETYRES, UQLX_getYres);
 	add_bas_fun(BN_SCR_XLIM, UQLX_getXres);
 	add_bas_fun(BN_SCR_YLIM, UQLX_getYres);
-
+	add_bas_fun(BN_SCR_LLEN, UQLX_scr_llen);
+	add_bas_fun(BN_SCR_BASE, UQLX_scr_base);
 	create_link_table(ext_list);
 }
 
@@ -460,6 +465,63 @@ int bas_retint(int i)
 	return 0;
 }
 
+int bas_retfloat(int i)
+{
+	w32 p;
+	int shift = 0;
+	int mantissa = 0;
+	int exponent = 0x81F;
+	int negative = 0;
+
+	p = bas_resstack(6);
+
+	if (i == 0) {
+		WriteWord(p, 0);
+		WriteLong(p + 2, 0);
+
+		return 0;
+	}
+
+	if (i == -1) {
+		i = 0x80000000;
+		shift = 31;
+
+		goto output;
+	}
+
+	if (i < 0) {
+		negative = 1;
+		i = ~i;
+	}
+
+	if (!(i & 0xFFFFFF00)) {
+		shift = 23;
+		i <<= shift;
+	} else if (!(i & 0xFFFF00)) {
+		shift = 15;
+		i <<= shift;
+	}
+
+	while (! (i & 0x40000000)) {
+		shift ++;
+		i <<= 1;
+	}
+
+	if (negative) {
+		i ^= (0xFFFFFFFF << shift);
+	}
+
+output:
+	exponent -= shift;
+
+	WriteWord(p, exponent);
+
+	WriteLong(p+2, i);
+
+	reg[4] = 2;
+
+	return 0;
+}
 /*************************************************************/
 /**/
 /* the extensions itself */
@@ -583,6 +645,26 @@ bas_err UQLX_getYres()
 #endif
 
 	return bas_retint(qlscreen.yres);
+}
+
+bas_err UQLX_scr_llen()
+{
+#ifndef HPR_STYLE
+	if (bas_argcount() != 0)
+		return QERR_BP;
+#endif
+
+	return bas_retint(qlscreen.linel);
+}
+
+bas_err UQLX_scr_base()
+{
+#ifndef HPR_STYLE
+	if (bas_argcount() != 0)
+		return QERR_BP;
+#endif
+
+	return bas_retfloat(qlscreen.qm_lo);
 }
 
 bas_err UQLX_getXargc()
