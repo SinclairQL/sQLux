@@ -663,7 +663,7 @@ void SetParams(int ac, char **av)
 
 	*sysrom = 0;
 
-	while((c = getopt(ac, av, "f:")) != EOF) {
+	while((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
 		switch (c) {
 		case 'f':
 			strncpy(QMD.config_file, optarg, PATH_MAX);
