@@ -33,6 +33,8 @@
 #include "unixstuff.h"
 #include "QL_driver.h"
 
+#include "SDL2screen.h"
+
 #ifdef __WIN32__
 #include <sqlux_windows.h>
 #endif
