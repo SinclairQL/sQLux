@@ -64,6 +64,7 @@ mv "198adDisk ImageFinal.img" sqlux-$VERSION/198ad.img
 rm 198-adventure.zip
 
 cp -r roms sqlux-$VERSION/
+cp -r docs sqlux-$VERSION/
 
 cp x86_64/sqlux sqlux-$VERSION/sqlux_x86_64
 cp x86_32/sqlux sqlux-$VERSION/sqlux_x86_32
