@@ -837,3 +837,12 @@ same as `getXres`
 **scr_ylim**
 
 same as `getYres`
+
+**scr_base**
+
+Returns the base address of the screen
+
+**scr_llen**
+
+Returns the number of bytes a line on the screen occupies
+
