@@ -1263,6 +1263,8 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 
 		aReg[1] = qaddr + count;
 
+		QLSDLUpdatePixelBuffer();
+
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];
