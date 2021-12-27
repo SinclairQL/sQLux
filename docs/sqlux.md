@@ -203,10 +203,10 @@ SKIP_BOOT = 0
 ```
 
 `ROMIM`
-The ROMIMG specifies the rom to be loaded at 0xC000.
+The ROMIM specifies the rom to be loaded at 0xC000.
 
 ```
-ROMIMG = tk2_rom
+ROMIM = tk2_rom
 ```
 
 It is assumed that the ROM image can be found in the ROMDIR
