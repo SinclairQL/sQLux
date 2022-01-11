@@ -96,7 +96,10 @@ char *strncpy(char *dest, const char *src, size_t n)
 
 
 #ifndef SERIAL
-Cond SetBaudRate(short dummy){}
+Cond SetBaudRate(short dummy)
+{
+	return 1;
+}
 #endif
 
 
