@@ -47,6 +47,7 @@ QMDATA QMD = {
 	.no_patch = 0, /* no_patch, default off */
 	.aspect = 0, /* fix aspect ration */
 	.filter = 0, /* enable bilinear filter */
+	.kbd = "US", /* Default keyboard layout (American English) */
 };
 
 static char *strim(char *s)
@@ -332,6 +333,7 @@ static PARSELIST pl[] = {
 	{ "FIXASPECT", (PVFV)pInt2, offsetof(QMDATA, aspect) },
 	{ "FILTER", (PVFV)pInt2, offsetof(QMDATA, filter) },
 	{ "RESOLUTION", (PVFV)pString, offsetof(QMDATA, resolution), 63 },
+	{ "KBD", (PVFV)pString, offsetof(QMDATA, kbd), 2 },
 	{ NULL, NULL },
 };
 

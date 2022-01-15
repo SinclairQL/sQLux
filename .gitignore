@@ -16,3 +16,6 @@ docs/socket.html
 *.toc
 *.vr
 
+# Visual studio
+.vscode/*
+*.code-workspace

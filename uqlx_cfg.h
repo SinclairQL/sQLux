@@ -44,6 +44,7 @@ typedef struct {
 	short no_patch;
 	short aspect;
 	short filter;
+	char kbd[2];
 } QMDATA;
 
 #define QMFILE "~/.uqlxrc"

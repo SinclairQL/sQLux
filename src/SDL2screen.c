@@ -49,6 +49,14 @@ struct QLcolor QLcolors[16] = {
 
 uint32_t SDLcolors[16];
 
+struct SDLQLMap {
+	SDL_Keycode sdl_kc;
+	int code;
+	int qchar;
+};
+
+static struct SDLQLMap *sdlqlmap;
+static void setKeyboardLayout (void);
 
 /* GIMP RGBA C-Source image dump (sQLuxLogo2.c) */
 
@@ -300,6 +308,9 @@ void QLSDLScreen(void)
 	/* Ensure width and height are always initialised to sane values */
 	w = qlscreen.xres;
 	h = ay;
+
+	/* Initialize keyboard table (doesn't belong here, but was convenient...) */
+	setKeyboardLayout ();
 
 	if (sdl_video_driver != NULL &&
 	    (strcmp(sdl_video_driver, "x11") == 0) ||
@@ -567,13 +578,8 @@ static void SDLQLKeyrowChg(int code, int press)
 	}
 }
 
-struct SDLQLMap {
-	SDL_Keycode sdl_kc;
-	int code;
-	int qchar;
-};
-
-static struct SDLQLMap sdlqlmap[] = { { SDLK_LEFT, 49, 0 },
+static struct SDLQLMap sdlqlmap_DE[] = {
+                                      { SDLK_LEFT, 49, 0 },
 				      { SDLK_UP, 50, 0 },
 				      { SDLK_RIGHT, 52, 0 },
 				      { SDLK_DOWN, 55, 0 },
@@ -589,6 +595,91 @@ static struct SDLQLMap sdlqlmap[] = { { SDLK_LEFT, 49, 0 },
 				      { SDLK_TAB, 19, 0 },
 				      { SDLK_ESCAPE, 51, 0 },
 				      { SDLK_CAPSLOCK, 33, 0},
+				      { SDLK_RIGHTBRACKET, 40, 0 },
+				      { SDLK_5, 58, 0 },
+				      { SDLK_4, 62, 0 },
+				      { SDLK_7, 63, 0 },
+				      { SDLK_LEFTBRACKET, 32, 0 },
+				      { SDLK_z, 22, 0 },
+
+				      { SDLK_PERIOD, 42, 0 },
+				      { SDLK_c, 43, 0 },
+				      { SDLK_b, 44, 0 },
+				      //{ SDLK_BACKQUOTE, 45, 0 },
+
+				      { SDLK_m, 46, 0 },
+				      { SDLK_QUOTE, 47, 0 },
+				      { SDLK_BACKSLASH, 53, 0 },
+				      { SDLK_k, 34, 0 },
+				      { SDLK_s, 35, 0 },
+				      { SDLK_f, 36, 0 },
+				      { SDLK_EQUALS, 37, 0 },
+				      { SDLK_g, 38, 0 },
+				      { SDLK_SEMICOLON, 39, 0 },
+				      { SDLK_l, 24, 0 },
+				      { SDLK_3, 25, 0 },
+				      { SDLK_h, 26, 0 },
+				      { SDLK_1, 27, 0 },
+				      { SDLK_a, 28, 0 },
+				      { SDLK_p, 29, 0 },
+				      { SDLK_d, 30, 0 },
+				      { SDLK_j, 31, 0 },
+				      { SDLK_9, 16, 0 },
+				      { SDLK_w, 17, 0 },
+				      { SDLK_i, 18, 0 },
+				      { SDLK_r, 20, 0 },
+				      { SDLK_MINUS, 69, 0 }, /* minus */
+				      { SDLK_y, 41, 0 },
+				      { SDLK_o, 23, 0 },
+				      { SDLK_8, 8, 0 },
+				      { SDLK_2, 9, 0 },
+				      { SDLK_6, 10, 0 },
+				      { SDLK_q, 11, 0 },
+				      { SDLK_e, 12, 0 },
+				      { SDLK_0, 13, 0 },
+				      { SDLK_t, 14, 0 },
+				      { SDLK_u, 15, 0 },
+				      { SDLK_x, 3, 0 },
+				      { SDLK_v, 4, 0 },
+				      { SDLK_SLASH, 5, 0 },
+				      { SDLK_n, 6, 0 },
+				      { SDLK_COMMA, 7, 0 },
+				      { 180, 45, 0 },       /* accent */
+				      { 228, 47, 0 }, 	    /* Ä OK */
+				      { 246, 103, 0 },       /* Ö OK */
+				      { 252, 32, 0 },       /* Ü OK */
+				      { 94, 53, 0 },       /* < OK */
+				      { 35, 101, 0 },       /* # OK */
+				      { 43, 40, 0 },       /* + OK */
+				      { 223, 21, 0 },       /* ß OK */
+				      { 60, 109, 0 },       /* ^ */
+
+				      /* Accent ^ and \ is 109 */
+
+				      /*
+  {SDLK_Next,-1,220},
+  {SDLK_Prior,-1,212},
+  {SDLK_Home,-1,193},
+  {SDLK_End,-1,201},
+		 */
+				      { 0, 0, 0 } };
+
+static struct SDLQLMap sdlqlmapDefault[] = { { SDLK_LEFT, 49, 0 },
+				      { SDLK_UP, 50, 0 },
+				      { SDLK_RIGHT, 52, 0 },
+				      { SDLK_DOWN, 55, 0 },
+
+				      { SDLK_F1, 57, 0 },
+				      { SDLK_F2, 59, 0 },
+				      { SDLK_F3, 60, 0 },
+				      { SDLK_F4, 56, 0 },
+				      { SDLK_F5, 61, 0 },
+
+				      { SDLK_RETURN, 48, 0 },
+				      { SDLK_SPACE, 54, 0 },
+				      { SDLK_TAB, 19, 0 },
+				      { SDLK_ESCAPE, 51, 0 },
+				      { SDLK_CAPSLOCK, 33, 0 },
 				      { SDLK_RIGHTBRACKET, 40, 0 },
 				      { SDLK_5, 58, 0 },
 				      { SDLK_4, 62, 0 },
@@ -646,6 +737,8 @@ static struct SDLQLMap sdlqlmap[] = { { SDLK_LEFT, 49, 0 },
 		 */
 				      { 0, 0, 0 } };
 
+/* static struct SDLQLMap *sdlqlmap = sdlqlmap_DE; */
+
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
@@ -678,13 +771,25 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 	mod = sdl_altstate | sdl_controlstate << 1 | sdl_shiftstate << 2;
 
+	//printf ("Key pressed with Keysym %d \n", keysym->sym);
+
 	while (sdlqlmap[i].sdl_kc != 0) {
 		if (keysym->sym == sdlqlmap[i].sdl_kc) {
-			if (pressed)
+			if (pressed) {
 				queueKey(mod, sdlqlmap[i].code, 0);
+				// printf ("Sending key %d\n", sdlqlmap[i].code);
+			}
 			SDLQLKeyrowChg(sdlqlmap[i].code, pressed);
 		}
 		i++;
+	}
+}
+
+static void setKeyboardLayout (void) {
+	sdlqlmap = sdlqlmapDefault;
+
+	if (!strcmp("DE", QMD.kbd)) {
+		sdlqlmap = sdlqlmap_DE;
 	}
 }
 
