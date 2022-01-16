@@ -816,11 +816,15 @@ static struct SDLQLMap sdlqlmapDefault[] = { { SDLK_LEFT, 49, 0 },
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
-	int mod = 0;
 
 	/* Special case backspace */
 	if ((keysym->sym == SDLK_BACKSPACE) && pressed) {
 		queueKey(1 << 1, 49, 0);
+		return;
+	}
+	/* Special case delete maps to control right */
+	if ((keysym->sym == SDLK_DELETE) && pressed) {
+		queueKey(1 << 1, 52, 0);
 		return;
 	}
 
@@ -828,40 +832,42 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	case SDLK_LSHIFT:
 	case SDLK_RSHIFT:
 		sdl_shiftstate = pressed;
-		break;
+		return;
 	case SDLK_LCTRL:
 	case SDLK_RCTRL:
 		sdl_controlstate = pressed;
-		break;
+		return;
 	case SDLK_LALT:
 	case SDLK_RALT:
 		sdl_altstate = pressed;
-		break;
+		return;
 	case SDLK_F11:
 		if (pressed)
 			SDLQLFullScreen();
 		return;
 	}
 
-	mod = sdl_altstate | sdl_controlstate << 1 | sdl_shiftstate << 2;
-
 	while (sdlqlmap[i].sdl_kc != 0) {
 		if (keysym->sym == sdlqlmap[i].sdl_kc) {
-			if (pressed) {
-				/* Shift generates another key code? */
-				int code = ((!sdl_shiftstate) ||
-				            (!sdlqlmap[i].qchar)) ?
-					    sdlqlmap[i].code :
-					    sdlqlmap[i].qchar;
+			int mod = sdl_altstate | sdl_controlstate << 1 |
+				  sdl_shiftstate << 2;
 
-				/* Code requires a change in shift state? */
-				if (SWAP_SHIFT & code) {
-					code &= ~SWAP_SHIFT;
-					mod ^= (0x1 << 2);
-				}
+			/* Does non control shift generate another key code? */
+			int code = ((!sdl_shiftstate) ||
+				    sdl_controlstate ||
+			            (!sdlqlmap[i].qchar))
+				   ? sdlqlmap[i].code : sdlqlmap[i].qchar;
+
+			/* Code requires a change in shift state? */
+			if (SWAP_SHIFT & code) {
+				code &= ~SWAP_SHIFT;
+				mod ^= (0x1 << 2);
+			}
+			if (pressed) {
 				queueKey(mod, code, 0);
 			}
-			SDLQLKeyrowChg(sdlqlmap[i].code, pressed);
+			SDLQLKeyrowChg(code, pressed);
+			return; // Only one key can be mapped
 		}
 		i++;
 	}
