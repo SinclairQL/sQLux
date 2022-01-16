@@ -16,6 +16,7 @@
 #include "unixstuff.h"
 
 #include <signal.h>
+#include <time.h>
 
 void debug(char *);
 void debug2(char *, long);
