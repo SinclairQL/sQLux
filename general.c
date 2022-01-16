@@ -16,6 +16,7 @@
 #include "unixstuff.h"
 
 #include <signal.h>
+#include <time.h>
 
 void debug(char *);
 void debug2(char *, long);
@@ -218,9 +219,12 @@ void WriteHWByte(aw32 addr, aw8 d)
 	}
 }
 
+uint64_t nanotime;
+
 rw8 ReadHWByte(aw32 addr)
 {
 	int res = 0;
+	struct timespec timer;
 
 	/*printf("read HWreg %x, ",addr-0x18000);*/
 
@@ -246,6 +250,23 @@ rw8 ReadHWByte(aw32 addr)
 		break;
 	case 0x018103:
 		res = SQLUXBDIDataRead();
+		break;
+	case 0x01C060:
+		/* trigger nanotime update */
+		clock_gettime(CLOCK_MONOTONIC, &timer);
+		nanotime = timer.tv_sec * 1000000000 + timer.tv_nsec;
+		nanotime /= 25;
+		nanotime &= 0xFFFFFFFF;
+		return (nanotime & 0xFF000000) >> 24;
+		break;
+	case 0x01C061:
+		return (nanotime & 0x00FF0000) >> 16;
+		break;
+	case 0x01C062:
+		return (nanotime & 0x0000FF00) >> 8;
+		break;
+	case 0x01C063:
+		return (nanotime & 0xFF);
 		break;
 	default:
 		debug2("Read from HW register ", addr);
@@ -282,5 +303,23 @@ void WriteHWWord(aw32 addr, aw16 d)
 	default:
 		WriteByte(addr, d >> 8);
 		WriteByte(addr + 1, d & 255);
+	}
+}
+
+aw32 ReadHWLong(aw32 addr)
+{
+	uint64_t nanotime;
+	struct timespec timer;
+
+	switch(addr) {
+	case 0x01C060:
+		clock_gettime(CLOCK_MONOTONIC, &timer);
+		nanotime = timer.tv_sec * 1000000000 + timer.tv_nsec;
+		nanotime /= 25;
+		nanotime &= 0xFFFFFFFF;
+		return nanotime;
+		break;
+	default:
+		return ((w32)ReadWord(addr) << 16) | (uw16)ReadWord(addr + 2);
 	}
 }

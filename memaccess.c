@@ -25,6 +25,11 @@ static int is_hw(uint32_t addr)
 		return 1;
 	}
 
+	if ((addr >= QL_EXTERNAL_IO_BASE) &&
+		( addr < (QL_EXTERNAL_IO_BASE + QL_EXTERNAL_IO_SIZE))) {
+		return 1;
+	}
+
 	return 0;
 }
 rw8 ReadByte(aw32 addr)
@@ -63,7 +68,7 @@ rw32 ReadLong(aw32 addr)
 		return 0;
 
 	if (is_hw(addr)) {
-		return ((w32)ReadWord(addr) << 16) | (uw16)ReadWord(addr + 2);
+		return ((w32)ReadHWLong(addr));
 	}
 
 	return (w32)RL((Ptr)theROM + addr); /* make sure is is signed */
