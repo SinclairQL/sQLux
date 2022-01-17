@@ -291,6 +291,13 @@ On BBQL the pixels are not square, this option enables sQLux to produce pixels n
 FIXASPECT = 1
 ```
 
+`KBD`
+Select the keyboard language.
+
+```
+KBD = DE
+```
+
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
 ```
