@@ -251,6 +251,7 @@ rw8 ReadHWByte(aw32 addr)
 	case 0x018103:
 		res = SQLUXBDIDataRead();
 		break;
+#ifndef WINXP_COMPAT
 	case 0x01C060:
 		/* trigger nanotime update */
 		clock_gettime(CLOCK_MONOTONIC, &timer);
@@ -268,6 +269,7 @@ rw8 ReadHWByte(aw32 addr)
 	case 0x01C063:
 		return (nanotime & 0xFF);
 		break;
+#endif
 	default:
 		debug2("Read from HW register ", addr);
 		debug2("at (PC-2) ", (Ptr)pc - (Ptr)theROM - 2);
@@ -312,6 +314,7 @@ aw32 ReadHWLong(aw32 addr)
 	struct timespec timer;
 
 	switch(addr) {
+#ifndef WINXP_COMPAT
 	case 0x01C060:
 		clock_gettime(CLOCK_MONOTONIC, &timer);
 		nanotime = timer.tv_sec * 1000000000 + timer.tv_nsec;
@@ -319,6 +322,7 @@ aw32 ReadHWLong(aw32 addr)
 		nanotime &= 0xFFFFFFFF;
 		return nanotime;
 		break;
+#endif
 	default:
 		return ((w32)ReadWord(addr) << 16) | (uw16)ReadWord(addr + 2);
 	}

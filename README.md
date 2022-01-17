@@ -66,6 +66,14 @@ This will generate a sqlux.exe, to run under windows explorer or shell yo
 just need to place SDL2.dll from /mingw64/bin/ in the same directory. In
 mingw64 env it will be found automatically.
 
+## MinGW pthreads/win32 threads
+
+The 64bit build using mingw requries the winpthread library for the high definition timer
+support.
+
+The 32bit build can be built using win32 theads for XP compatability and therefore does
+not include the high resolution timer support.
+
 # uqlxrc
 
 The emulator currently reads your existing uqlxrc file so will re-use any uQlx setup already existing.
