@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <SDL.h>
+#include <string.h>
 
 #include "QL_hardware.h"
 #include "uqlx_cfg.h"
