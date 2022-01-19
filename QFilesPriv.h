@@ -35,7 +35,7 @@ struct mdvFile {
 struct mdvFile{ char dummy[130];};
 #endif
 
-/* unfortunately it gets packed differently on many systems so we need 
+/* unfortunately it gets packed differently on many systems so we need
    assembler style offstes instead   */
 
 #define PACKED  __attribute__ ((packed))
@@ -48,7 +48,7 @@ typedef struct {
 }FileNum;
 
 struct fileHeader *GetFileHeader(FileNum fileNum);
-  
+
 #define _QLF_fNumber 0
 #define _QLF_pos 2
 #define _QLF_eof 6
@@ -68,7 +68,8 @@ struct fileHeader *GetFileHeader(FileNum fileNum);
 #define _QLF_hfileref (_QLF_filesys+4)
 /*#define _nfn   (_hfileref+4)*/
 #define _QLF_hf_fcb (_QLF_hfileref+4)     /* sizeof == 8 !!*/
-#define mdvFile_len (_QLF_hf_fcb+8)
+#define _QLF_seekbase (_QLF_hf_fcb+8)
+#define mdvFile_len (_QLF_seekbase+2)
 
 /* Macros needed to avoid alignment errors on certain architectures  */
 #if 0
@@ -122,14 +123,16 @@ static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
 #define SET_FILESYS(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_QLF_filesys),(_val_)))
 #define GET_HFILE(_mdvf_)  ((RL((Ptr)((Ptr)(_mdvf_)+_QLF_hfileref))))
 #define SET_HFILE(_mdvf_,_val_)  (WL((Ptr)((Ptr)(_mdvf_)+_QLF_hfileref),(_val_)))
+#define SET_SEEKBASE(_mdvf_,_val_)  (WW((Ptr)((Ptr)(_mdvf_)+_QLF_seekbase),(_val_)))
+#define GET_SEEKBASE(_mdvf_)  (RW((Ptr)((Ptr)(_mdvf_)+_QLF_seekbase)))
 
 #define GET_FCB(_mdvf_)  ((struct HF_FCB *)(GET_POINTER((Ptr)(_mdvf_) + _QLF_hf_fcb)))
 /*(RL((Ptr)((Ptr)(_mdvf_)+_hf_fcb))))*/
 #define SET_FCB(_mdvf_,_val_)  SET_POINTER((Ptr)(_mdvf_)+_QLF_hf_fcb,(_val_))
 /*(WL((Ptr)((Ptr)(_mdvf_)+_hf_fcb),(_val_)))*/
 
-#define SET_FNUMBER(_mxdvf_,_num_)  (GET_FCB(_mxdvf_)->fileNum=_num_) 
-#define GET_FNUMBER(_mxdvf_)    (GET_FCB(_mxdvf_)->fileNum) 
+#define SET_FNUMBER(_mxdvf_,_num_)  (GET_FCB(_mxdvf_)->fileNum=_num_)
+#define GET_FNUMBER(_mxdvf_)    (GET_FCB(_mxdvf_)->fileNum)
 
 
 /* the addr of this struct is accessed by GET_FCB(f) */
