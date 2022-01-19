@@ -866,6 +866,8 @@ int HOpenDF(int drive, long dir, unsigned char *name, long perm,
 		return -7;
 	fd = qopenfile(mount, mname, perm | O_BINARY, 0666, 400);
 
+	FillQemulator(fd, (qdos_file_hdr *)&h, f);
+
 	SET_HFILE(f, fd);
 	if (fd < 0)
 		return -7;
@@ -910,7 +912,7 @@ int HDfLen(struct mdvFile *f, int fstype)
 }
 
 /*static char buff[512];*/
-int QHread(int fd, int offset, w32 *addr, long *count, Cond lf)
+int QHread(int fd, w32 *addr, long *count, Cond lf)
 {
 	int cnt, startpos;
 	int c, fn, err, sz, e;
@@ -919,7 +921,7 @@ int QHread(int fd, int offset, w32 *addr, long *count, Cond lf)
 
 	cnt = *count;
 	from = *addr;
-	startpos = lseek(fd, offset, SEEK_CUR);
+	startpos = lseek(fd, 0, SEEK_CUR);
 
 	if (cnt + startpos > flen(fd))
 		cnt = flen(fd) - startpos;
@@ -1214,7 +1216,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		count = (uw16)reg[2];
 		qaddr = aReg[1];
 
-		reg[0] = QHread(fd, seekbase, &qaddr, &count, true);
+		reg[0] = QHread(fd, &qaddr, &count, true);
 		reg[1] = count;
 		aReg[1] = qaddr + count;
 
@@ -1224,7 +1226,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		qaddr = aReg[1];
 		count = (uw16)reg[2];
 
-		reg[0] = QHread(fd, seekbase, &qaddr, &count, false);
+		reg[0] = QHread(fd, &qaddr, &count, false);
 
 		reg[1] = count;
 		aReg[1] = qaddr + count;
@@ -1316,7 +1318,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		qaddr = aReg[1];
 		count = reg[2];
 
-		reg[0] = QHread(fd, GET_SEEKBASE(f), &qaddr, &count, false);
+		reg[0] = QHread(fd, &qaddr, &count, false);
 
 		aReg[1] = qaddr + count;
 
