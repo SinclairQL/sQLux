@@ -164,6 +164,16 @@ int uxLookupFile(char *mount, char *qdname, struct mdvFile *f, char *uxname,
 	return match(mount, uxname, temp, 0, create, 320, fstype);
 }
 
+int path_match_char(char p, char u)
+{
+	if (tolower(p) == (tolower(u)))
+		return 1;
+
+	if ((p == '_') && (u == '.'))
+		return 1;
+
+	return 0;
+}
 char *nseg(char *qpath, char *uxname, char separator, int fstype)
 {
 	char *p = qpath;
@@ -177,7 +187,7 @@ char *nseg(char *qpath, char *uxname, char separator, int fstype)
 	maxlen = min(lp, lu);
 
 	if (fstype == 2)
-		while (tolower(*p++) == tolower(*u++) && l++ < maxlen)
+		while (path_match_char(*p++, *u++) && l++ < maxlen)
 			;
 	else
 		while (*p++ == *u++ && l++ < maxlen)
@@ -752,6 +762,7 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 
 	while ((dp = readdir(dirp)) != NULL) {
 		int unused;
+		char *dotptr;
 
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..") ||
 		    !strcmp(dp->d_name, ".-UQLX-"))
@@ -769,6 +780,13 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 		/* printf("pathname: %s\n",mname); */
 
 		QHFillHeader(&h, PATH, (pvf)mname, mount, NULL, fstype);
+
+		/* convert dots to underscores */
+		if (fstype == 2) {
+			while ((dotptr=memchr(REF_FNAME(&h) + 2, '.', 36))) {
+				*dotptr = '_';
+			}
+		}
 
 		unused = write(fd, &h, 64);
 	}
