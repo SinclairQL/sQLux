@@ -248,6 +248,8 @@ assumed.
 `qdos-like`
 
 applicable only to non-`qdos-fs`. Filenames are not case sensitive and (sub)directory creation mimics SMSQ behaviour.
+Dots in filenames/directory names are converted to underscores "\_" on load and directory listing (but the converse is
+not true). Be careful not to mix files with the same names on qdos side ie test.c and test\_c in same directory.
 
 `BDI1`
 file that is exposed by the BDI interface, this is normally the file from an old style QL-SD device.
