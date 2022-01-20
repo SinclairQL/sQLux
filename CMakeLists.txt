@@ -92,6 +92,7 @@ add_executable(sqlux
     mmodes.c
     ${CMAKE_CURRENT_BINARY_DIR}/version.c
     src/sqlux_windows.c
+    src/sqlux_hexdump.c
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)
