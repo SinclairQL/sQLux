@@ -490,19 +490,18 @@ int FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 int FillQemulator(int fd, qdos_file_hdr *h, struct mdvFile *m)
 {
 	q_emulator_hdr header;
-	ssize_t res;
+	int res = 0, curpos, bytes;
 
 	assert(sizeof(q_emulator_hdr) == 44);
 	assert(sizeof(qdos_file_hdr) == 64);
 
+	/* save file position */
+	curpos = lseek(fd, 0, SEEK_CUR);
+
 	lseek(fd, 0, SEEK_SET);
-	res = read (fd, (void *)&header, sizeof(header));
+	bytes = read (fd, (void *)&header, sizeof(header));
 
 	if(!strncmp((char *)header.h_header, "]!QDOS File Header", 18)) {
-		printf("Header Length %d\n", header.h_wordlen * 2);
-		printf("File Type %d\n", header.f_type);
-		printf("File Data Space %d\n", SDL_SwapBE32(header.f_datalen));
-
 		h->f_type = header.f_type;
 		h->f_datalen = header.f_datalen;
 
@@ -511,26 +510,32 @@ int FillQemulator(int fd, qdos_file_hdr *h, struct mdvFile *m)
 		}
 		lseek(fd, header.h_wordlen * 2, SEEK_SET);
 
-		return 1;
+		res = 1;
 	}
 
-	lseek(fd, 0, SEEK_SET);
-	return 0;
+	/* restore file position */
+	lseek(fd, curpos, SEEK_SET);
+
+	return res;
 }
 
-void FillXHXtcc(int fd, struct fileHeader *h)
+void FillXHXtcc(int fd, qdos_file_hdr *h)
 {
+	int curpos;
 	uint8_t buffer[8];
 	ssize_t res;
+
+	curpos = lseek(fd, 0, SEEK_CUR);
 
 	lseek(fd, -8, SEEK_END);
 	res = read(fd, buffer, 8);
 
 	if (!strncmp((char *)buffer, "XTcc", 4)) {
-		printf("Found XTcc setting data space 0x%x\n", RL(buffer + 4));
-		WW((Ptr)h + 4, 1);
-		WL(((Ptr)h) + 6, RL(buffer + 4));
+		h->f_type = 1;
+		h->f_datalen = *(uint32_t *)(buffer +4);
 	}
+
+	lseek(fd, curpos, SEEK_SET);
 }
 
 void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
@@ -587,17 +592,78 @@ void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
 	close(ff);
 }
 
-void QHSetHeader(struct fileHeader *h, int fd, struct mdvFile *f, int fstype)
+const q_emulator_hdr q_em_template = {
+	.h_header = "]!QDOS File Header",
+	.h_wordlen = 15,
+	.f_access = 0,
+	.f_type = 0,
+	.f_datalen = 0,
+};
+
+void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 {
 	char *fsmount, *uxname;
+	struct stat stat;
+	uint8_t buffer[512];
+	q_emulator_hdr q_em_hdr;
+	int startpos, curpos, flen, perms, err;
 
-	if (GET_FILESYS(f) >= 0)
-		fsmount = qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)];
-	else
-		fsmount = "";
-	uxname = GET_FCB(f)->uxname;
+	if (!fd) {
+		printf("Unexpected closed file\n");
+		return;
+	}
 
-	setheader(fsmount, uxname, h, fstype);
+	/* We only need a header if type is set */
+	if (!h->f_type && (h->f_type != 255))
+		return;
+
+	perms = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, O_RDWR);
+
+	startpos = lseek(fd, 0, SEEK_CUR);
+
+	/* Do we already have space or do we need to move */
+	if(!GET_SEEKBASE(f)) {
+		if (!fstat(fd, &stat)) {
+			perror("QHSetHeader: fstat:");
+		}
+		flen = stat.st_size;
+
+		/* start moving data */
+		curpos = lseek(fd, -(flen % 512), SEEK_END);
+		if (!ftruncate(fd, flen + QEMULATOR_SHORT_HEADER)) {
+			perror("QHSetHeader: ftruncate:");
+		}
+
+		if (flen % 512) {
+			err = read(fd, buffer, flen % 512);
+			lseek(fd, curpos + QEMULATOR_SHORT_HEADER, SEEK_SET);
+			err = write(fd, buffer, flen % 512);
+		}
+
+		while (flen / 512) {
+			curpos = lseek(fd, curpos - 512, SEEK_SET);
+			err = read(fd, buffer, 512);
+			lseek(fd, curpos + QEMULATOR_SHORT_HEADER, SEEK_SET);
+			err = write(fd, buffer, 512);
+
+			flen -= 512;
+		}
+
+		SET_SEEKBASE(f, QEMULATOR_SHORT_HEADER);
+
+		startpos += QEMULATOR_SHORT_HEADER;
+	}
+
+	memcpy(&q_em_hdr, &q_em_template, sizeof(q_em_hdr));
+	q_em_hdr.f_type = h->f_type;
+	q_em_hdr.f_datalen = h->f_datalen;
+
+	lseek(fd, 0, SEEK_SET);
+	err = write(fd, &q_em_hdr, QEMULATOR_SHORT_HEADER);
+	lseek(fd, startpos, SEEK_SET);
+
+	fcntl(fd, F_SETFL, perms);
 }
 
 typedef union {
@@ -607,6 +673,48 @@ typedef union {
 
 #define FILDES 0
 #define PATH 1
+
+void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
+{
+	int fd, err, seekbase, curpos, i, j;
+	struct stat buf;
+
+	fd = GET_HFILE(f);
+	curpos = lseek(fd, 0, SEEK_CUR);
+
+	err = fstat(fd, &buf);
+	if (err) {
+		perror("QGetHeaderFromFile fstat");
+		h->f_length = 0;
+		h->f_access = 0;
+		h->f_type = 0;
+		h->f_datalen = 0;
+		h->f_reserved = 0;
+	} else {
+
+		seekbase = GET_SEEKBASE(f);
+
+		h->f_length = SDL_SwapBE32((buf.st_size -seekbase) + 64);
+		h->f_update = SDL_SwapBE32(ux2qltime(buf.st_mtime));
+
+		if (buf.st_mode & S_IFDIR || (f && GET_ISDIR(f)))
+			i = 255;
+		else
+			i = 0;
+		h->f_type = i;
+
+		if (i == 255 && ((j = SDL_SwapBE16(h->f_szname)) < 36)) {
+			h->f_name[j] = DIR_SEPARATOR;
+		}
+	}
+
+	if (!FillQemulator(fd, h, f))
+		FillXHXtcc(fd, h);
+
+	lseek(fd, curpos, SEEK_SET);
+}
+
+
 void QHFillHeader(struct fileHeader *h, int pof,
 		  /*union {char *pth;int fd;} */ pvf file, char *mount,
 		  struct mdvFile *f, int fstype)
@@ -660,7 +768,7 @@ void QHFillHeader(struct fileHeader *h, int pof,
 			fd2 = qopenfile(mount, file.pth, O_RDONLY | O_BINARY, 0, 4000);
 			if (fd2 >= 0) {
 				if (!FillQemulator(fd2, (qdos_file_hdr *)h, f))
-					FillXHXtcc(fd2, h);
+					FillXHXtcc(fd2, (qdos_file_hdr *)h);
 				close(fd2);
 			}
 		}
@@ -689,7 +797,7 @@ void QHFillHeader(struct fileHeader *h, int pof,
 					4000);
 			if (fd2 >= 0) {
 				if (!FillQemulator(fd2, (qdos_file_hdr *)h, f))
-					FillXHXtcc(fd2, h);
+					FillXHXtcc(fd2, (qdos_file_hdr *)h);
 				close(fd2);
 			}
 		}
@@ -871,6 +979,8 @@ int HOpenDF(int drive, long dir, unsigned char *name, long perm,
 	SET_HFILE(f, fd);
 	if (fd < 0)
 		return -7;
+
+	lseek(fd, GET_SEEKBASE(f), SEEK_SET);
 
 	return 0;
 }
@@ -1078,7 +1188,7 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 		 correct file */
 			strncpy(GET_FCB(f)->uxname, mname,
 				(GET_FILESYS(f) < 0 ? 4000 : 256));
-			QHSetHeader(&hh, fd, f, fstype); /* set header */
+			QHSetHeader((qdos_file_hdr *)&hh, fd, f, fstype); /* set header */
 		}
 
 	rename_error:
@@ -1198,11 +1308,11 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 
 	*reg = 0;
 
-	/*printf("QHostIO op %x file %x, d1=%d, d2=%d, a1=%d  \n",op,f,reg[1],reg[2],aReg[1]);*/
+	/*printf("QHostIO op %x-%d file %x, d1=%d, d2=%d, a1=%d  \n",op,op,f,reg[1],reg[2],aReg[1]);*/
 
 	switch (op) {
 	case 0: /* check for pending input */
-		if (!(lseek(fd, seekbase, SEEK_CUR) < HDfLen(f, fstype)))
+		if (!(lseek(fd, 0, SEEK_CUR) < HDfLen(f, fstype)))
 			*reg = -10;
 		break;
 	case 1: /* fetch byte */
@@ -1274,7 +1384,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		/*count=(uw16)reg[1];*/
 		reg[1] = 14 | (reg[1] & (~0xffff));
 		memcpy(&hh, h, 64);
-		QHSetHeader(&hh, fd, f, fstype);
+		QHSetHeader((qdos_file_hdr *)&hh, fd, f, fstype);
 		/*aReg[1]+=14;*/ /* correct but nobody complained so far */
 		break;
 	case 0x47: /* read file header */
@@ -1292,12 +1402,10 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 
 		for (i = 0; i < 64; i++)
 			*(((char *)&hh) + i) = 0;
-		QHFillHeader(&hh, FILDES, (pvf)fd, NULL, f, fstype);
-#if 1
+		QGetHeaderFromFile((qdos_file_hdr *)&hh, f);
 		strncpy(REF_FNAME(&hh) + 2, (Ptr)NAME_REF(f) + 2,
 			min(36, RW(NAME_REF(f))));
 		WW((Ptr)REF_FNAME(&hh), min(36, RW(NAME_REF(f))));
-#endif
 
 		count = (count - 4) >> 1;
 		w = (w16 *)&hh;
@@ -1321,9 +1429,6 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		reg[0] = QHread(fd, &qaddr, &count, false);
 
 		aReg[1] = qaddr + count;
-
-		QLSDLUpdatePixelBuffer();
-
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];
@@ -1451,7 +1556,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		/*  D1=-1 read, increment version      */
 		/*  returns D1 = vers */
 
-		QHFillHeader(&hh, FILDES, (pvf)fd, NULL, f, fstype);
+		QGetHeaderFromFile((qdos_file_hdr *)&hh, f);
 		if (reg[1] == 0) {
 			reg[1] = GET_FVER(&hh);
 		} else {
@@ -1461,7 +1566,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 			} else
 				SET_FVER(&hh, reg[1]);
 
-			QHSetHeader(&hh, fd, f, fstype);
+			QHSetHeader((qdos_file_hdr *)&hh, fd, f, fstype);
 		}
 		break;
 

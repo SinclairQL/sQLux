@@ -18,3 +18,6 @@ typedef struct {
 	uint8_t		m_unused[14];   /* extra mdv info */
 } q_emulator_hdr;
 #pragma pack(pop)
+
+#define QEMULATOR_SHORT_HEADER 30
+#define QEMULATOR_LONG_HEADER 44
