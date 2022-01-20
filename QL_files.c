@@ -577,7 +577,7 @@ uw32 mdv_doopen(struct mdvFile *f, int filesys, int drive, int key, uw32 pdb)
 			canCreate = key >= Q_IO_NEW;
 			/*printf("open %s key=%d, cancreate: %d\n",NAME_REF(f)+2,key,canCreate);*/
 			if (onDisk == 0 || onDisk == 2) {
-				perm = (key == 1 ? O_RDONLY : O_RDWR) |
+				perm = O_RDWR |
 				       (canExist && canCreate ? O_CREAT : 0);
 				e = HOpenDF(mdvVol[drive], mdvDir[drive],
 					    (unsigned char *)NAME_REF(f), perm, f, 0, onDisk);
