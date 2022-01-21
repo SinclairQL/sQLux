@@ -336,13 +336,7 @@ void ChangedMemory(int from, int to)
 	/* QL screen memory involved? */
 	if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
 	    (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi)) {
-		dfrom = max(qlscreen.qm_lo, from);
-		dto = min(qlscreen.qm_hi, to);
-
-		for (i = 0; i < sct_size; i++)
-			scrModTable[i] =
-				(i * pagesize + qlscreen.qm_lo <= dto &&
-				 i * pagesize + qlscreen.qm_lo >= dfrom);
+		    QLSDLUpdatePixelBuffer();
 	}
 }
 
