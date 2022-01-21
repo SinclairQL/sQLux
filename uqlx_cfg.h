@@ -44,6 +44,7 @@ typedef struct {
 	short no_patch;
 	short aspect;
 	short filter;
+	float speed;
 	char kbd[3];	// Two characters + null terminator
 } QMDATA;
 

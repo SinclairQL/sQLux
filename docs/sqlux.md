@@ -189,7 +189,7 @@ CPU_HOG = 1
 ```
 
 `FAST_START`
-Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern.
+Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern. Has no effect with the Minerva ROM
 
 ```
 FAST_START = 1
@@ -298,6 +298,12 @@ Select the keyboard language.
 KBD = DE
 ```
 
+`SPEED`
+Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 approximates to the speed of an orginal QL. Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
+
+```
+SPEED = 1.5
+```
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
 ```

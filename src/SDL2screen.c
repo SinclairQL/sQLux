@@ -34,6 +34,8 @@ static char ql_fullscreen = false;
 SDL_atomic_t doPoll;
 SDL_atomic_t screenUpdate;
 
+SDL_sem* sem50Hz = NULL;
+
 struct QLcolor {
 	int r;
 	int g;
@@ -394,6 +396,7 @@ void QLSDLScreen(void)
 					  QLcolors[i].g, QLcolors[i].b);
 
 	SDL_AtomicSet(&doPoll, 0);
+	sem50Hz = SDL_CreateSemaphore(0);
 	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
 }
 
@@ -993,6 +996,10 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 	SDL_AtomicSet(&doPoll, 1);
 
 	schedCount = 0;
+
+	if (sem50Hz && !SDL_SemValue(sem50Hz)) {
+		SDL_SemPost(sem50Hz);
+	}
 
 	return interval;
 }

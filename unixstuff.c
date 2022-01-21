@@ -926,6 +926,8 @@ void uqlxInit()
 	if (!script)
 		QLSDLScreen();
 
+	if (V1 && (QMD.speed > 0)) printf("Speed %.1f\n",QMD.speed);
+
 #ifdef TRACE
 	TraceInit();
 #endif
@@ -986,12 +988,26 @@ Cond CPUWork(void)
 #endif
 {
 	int scrchange, i;
+	int loop = 0;
+
+	int speed = (int)(QMD.speed * 20);
+	speed = (speed >= 0) && (sem50Hz != NULL) ? speed : 0;
 
 #ifndef XAW
 exec:
 #endif
+	if (!speed) {
+		ExecuteChunk(3000);
+	}
+	else {
+		ExecuteChunk(300);
+		++loop;
 
-	ExecuteChunk(3000);
+		if (loop >= speed) {
+			SDL_SemWait(sem50Hz);
+			loop = 0;
+		}
+	}
 
 #ifdef UX_WAIT
 	if (run_reaper)
