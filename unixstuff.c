@@ -968,7 +968,7 @@ void uqlxInit()
 	InitialSetup();
 
 	if (isMinerva) {
-		reg[1] = RTOP & ((~16383) | 1 | 2 | 4 | 16);
+		reg[1] = (RTOP & ~16383) | 1 | 2 | 4 | 16;
 		SetPC(0x186);
 	}
 
