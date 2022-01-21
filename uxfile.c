@@ -617,9 +617,6 @@ void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 	if (!h->f_type && (h->f_type != 255))
 		return;
 
-	perms = fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, O_RDWR);
-
 	startpos = lseek(fd, 0, SEEK_CUR);
 
 	/* Do we already have space or do we need to move */
@@ -662,8 +659,6 @@ void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 	lseek(fd, 0, SEEK_SET);
 	err = write(fd, &q_em_hdr, QEMULATOR_SHORT_HEADER);
 	lseek(fd, startpos, SEEK_SET);
-
-	fcntl(fd, F_SETFL, perms);
 }
 
 typedef union {
