@@ -24,6 +24,7 @@ extern unsigned int sdl_keyrow[8];
 extern int sdl_shiftstate,sdl_controlstate, sdl_altstate;
 
 extern SDL_atomic_t doPoll;
+extern SDL_sem* sem50Hz;
 
 #endif
 

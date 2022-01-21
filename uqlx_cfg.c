@@ -47,6 +47,7 @@ QMDATA QMD = {
 	.no_patch = 0, /* no_patch, default off */
 	.aspect = 0, /* fix aspect ration */
 	.filter = 0, /* enable bilinear filter */
+	.speed = 0, /* Fastest speed */
 	.kbd = "US", /* Default keyboard layout (American English) */
 };
 
@@ -311,6 +312,11 @@ static void pInt2(short *p, char *s, ...)
 	*p = (short)strtol(s, NULL, 0);
 }
 
+static void pFloat(float *p, char *s, ...)
+{
+	*p = (float)strtod(s, NULL);
+}
+
 static PARSELIST pl[] = {
 	{ "DEVICE", (PVFV)ParseDevs, offsetof(QMDATA, qdev) },
 	{ "ROMIM", (PVFV)pString, offsetof(QMDATA, romim), 63 },
@@ -333,6 +339,7 @@ static PARSELIST pl[] = {
 	{ "FIXASPECT", (PVFV)pInt2, offsetof(QMDATA, aspect) },
 	{ "FILTER", (PVFV)pInt2, offsetof(QMDATA, filter) },
 	{ "RESOLUTION", (PVFV)pString, offsetof(QMDATA, resolution), 63 },
+	{ "SPEED", (PVFV)pFloat, offsetof(QMDATA, speed) },
 	{ "KBD", (PVFV)pString, offsetof(QMDATA, kbd), 2 },
 	{ NULL, NULL },
 };
