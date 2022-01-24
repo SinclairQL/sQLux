@@ -143,7 +143,7 @@ struct HF_FCB
   int mode;
   FileNum fileNum; /* DiskOp only */
   /* %--------------% */
-  char uxname[256]; /* must be last and unpadded in this struct for QVFS */
+  char uxname[4096]; /* must be last and unpadded in this struct for QVFS */
 };
 
 

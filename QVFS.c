@@ -43,9 +43,9 @@
 
 #include "QLfiles.h"
 #include "QFilesPriv.h"
+#include "QL_driver.h"
 #include "QVFS.h"
 #include "util.h"
-#include "qx_proto.h"
 
 
 static char qvf_mount[4096];

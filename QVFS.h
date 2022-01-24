@@ -8,6 +8,7 @@
 /* QVFS is (c) by HPR    */
 /* this file implements something remotely similar */
 
+#include "QFilesPriv.h"
 
 int qvf_init(int,void *); 
 int  qvf_open(int,void **);
