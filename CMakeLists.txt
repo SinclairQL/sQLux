@@ -109,6 +109,10 @@ else()
     target_link_libraries(sqlux SDL2::SDL2)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -Wl,-Bdynamic)
+endif()
+
 install(TARGETS sqlux
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 	)
