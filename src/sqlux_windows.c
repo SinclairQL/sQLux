@@ -55,7 +55,7 @@ int sqlux_mkstemp(char *template)
 	do {
 		__randname(template+l-6);
 		if ((fd = _open(template,
-				_O_CREAT | _O_TEMPORARY | _O_RDWR | O_EXCL | _O_SHORT_LIVED,
+				_O_CREAT | _O_TEMPORARY | _O_RDWR | O_EXCL | _O_SHORT_LIVED | _O_BINARY,
 				_S_IREAD | _S_IWRITE))>=0)
 			return fd;
 	} while (--retries && errno == EEXIST);
