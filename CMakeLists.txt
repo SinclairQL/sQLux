@@ -117,8 +117,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -Wl,-Bdynamic)
 endif()
 
-set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
-
 install(TARGETS sqlux
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
 	)
