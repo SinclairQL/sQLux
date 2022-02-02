@@ -709,6 +709,27 @@ void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 	lseek(fd, curpos, SEEK_SET);
 }
 
+void QGetHeaderFromPath(qdos_file_hdr *h, char *path, char *mount)
+{
+	int fd;
+	char mpath[4200];
+	struct mdvFile f;
+
+	strcpy(mpath, mount);
+
+	fd = qopenfile(mpath, path, O_RDWR | O_BINARY, 0, 4000);
+	if (fd < 0) {
+		perror("QGetHeaderFromFile: open");
+
+		return;
+	}
+
+	SET_HFILE(&f, fd);
+
+	QGetHeaderFromFile(h, &f);
+
+	close(fd);
+}
 
 void QHFillHeader(struct fileHeader *h, int pof,
 		  /*union {char *pth;int fd;} */ pvf file, char *mount,
@@ -918,7 +939,7 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 		strncpy(pname, dp->d_name, 255 - mlen);
 		/* printf("pathname: %s\n",mname); */
 
-		QHFillHeader(&h, PATH, (pvf)mname, mount, NULL, fstype);
+		QGetHeaderFromPath((qdos_file_hdr *)&h, mname, mount);
 
 		/* convert dots to underscores */
 		if (fstype == 2) {
