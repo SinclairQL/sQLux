@@ -101,7 +101,7 @@ add_dependencies(sqlux SubmarineGitVersion)
 
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        target_link_libraries(sqlux -mconsole -Wl,-Bstatic ${SDL2_LIBRARIES} -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
+        target_link_libraries(sqlux -mconsole -Wl,-Bstatic -L/usr/local/x86_64-w64-mingw32/lib -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
     else()
         target_link_libraries(sqlux ${SDL2_LIBRARIES})
     endif()
