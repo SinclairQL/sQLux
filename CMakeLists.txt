@@ -99,6 +99,10 @@ PROPERTIES GENERATED TRUE)
 
 add_dependencies(sqlux SubmarineGitVersion)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_sources(sqlux PRIVATE sQLuxLogo.rc)
+endif ()
+
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         target_link_libraries(sqlux -mconsole -Wl,-Bstatic -L/usr/local/x86_64-w64-mingw32/lib -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
