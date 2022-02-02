@@ -621,14 +621,14 @@ void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 
 	/* Do we already have space or do we need to move */
 	if(!GET_SEEKBASE(f)) {
-		if (!fstat(fd, &stat)) {
+		if (fstat(fd, &stat) < 0) {
 			perror("QHSetHeader: fstat:");
 		}
 		flen = stat.st_size;
 
 		/* start moving data */
 		curpos = lseek(fd, -(flen % 512), SEEK_END);
-		if (!ftruncate(fd, flen + QEMULATOR_SHORT_HEADER)) {
+		if (ftruncate(fd, flen + QEMULATOR_SHORT_HEADER) < 0) {
 			perror("QHSetHeader: ftruncate:");
 		}
 
