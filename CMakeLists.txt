@@ -74,7 +74,6 @@ add_executable(sqlux
     iexl_general.c
     instructions_ao.c
     instructions_pz.c
-    mach_exception.c
     memaccess.c
     pty.c
     qmtrap.c
