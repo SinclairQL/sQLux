@@ -275,13 +275,17 @@ void *Cleandir(char *nam)
 	if (d) {
 		struct dirent *p;
 		while ((p = readdir(d))) {
-			char *pd, d_name[PATH_MAX];
+			char *pd, d_name[PATH_MAX + 1];
+			int name_len;
 
 			if (*p->d_name == '.' &&
 			    (*(p->d_name + 1) == 0 || *(p->d_name + 1) == '.'))
 				continue;
 
-			pd = (char *)stpcpy(d_name, nam);
+			strncpy(d_name, nam, PATH_MAX);
+			name_len = strlen(d_name);
+			pd = (char *)d_name + name_len;
+
 			if (*(pd - 1) != '/') {
 				*pd++ = '/';
 			}

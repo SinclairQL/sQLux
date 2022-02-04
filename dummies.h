@@ -10,10 +10,6 @@ void BlockMoveData(void *source, void *dest,long len);
 void ErrorAlert(int x);
 void CustomErrorAlert(char *x);
 
-#ifndef HAS_STPCPY
-char * stpcpy(char *, const char *);
-#endif /* HAS_STPCPY */
-
 #ifndef __WIN32__
 #define O_BINARY 0
 #endif

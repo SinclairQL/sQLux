@@ -72,17 +72,6 @@ DUMMY(StopAlert,void)
 void ErrorAlert(int x){}
 void CustomErrorAlert(char *x){}
 
-
-
-
-#ifndef HAS_STPCPY
-char *stpcpy(char *s1, const char *s2)
-{
-  strcpy(s1,s2);
-  return s1+strlen(s1);
-}
-#endif
-
 #define min(_a_,_b_)  (_a_<_b_ ? _a_ : _b_)
 
 
