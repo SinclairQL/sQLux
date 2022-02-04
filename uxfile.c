@@ -509,17 +509,50 @@ void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 	uint8_t buffer[512];
 	q_emulator_hdr q_em_hdr;
 	int startpos, curpos, flen, perms, err;
+	void *fbuffer = NULL;
 
 	if (!fd) {
 		printf("Unexpected closed file\n");
 		return;
 	}
 
+	startpos = lseek(fd, 0, SEEK_CUR);
+
+	/*
+	 * if f_type has gone to zero we need to delete the
+	 * old header.
+	 */
+	if (!h->f_type && GET_SEEKBASE(f)) {
+		if (fstat(fd, &stat) < 0) {
+			perror("QHSetHeader: fstat:");
+		}
+		flen = stat.st_size;
+
+		fbuffer = malloc(flen - GET_SEEKBASE(f));
+
+		lseek(fd, GET_SEEKBASE(f), SEEK_SET);
+		err = read(fd, fbuffer, flen - GET_SEEKBASE(f));
+		if (err < flen) {
+			fprintf(stderr, "QHSetHeader: truncated read");
+		}
+
+		lseek(fd, 0, SEEK_SET);
+
+		write(fd, fbuffer, flen - GET_SEEKBASE(0));
+		ftruncate(fd, flen - GET_SEEKBASE(f));
+
+		lseek(fd, startpos - GET_SEEKBASE(f), SEEK_SET);
+
+		free(fbuffer);
+
+		SET_SEEKBASE(f, 0);
+
+		return;
+	}
+
 	/* We only need a header if type is set */
 	if (!h->f_type && (h->f_type != 255))
 		return;
-
-	startpos = lseek(fd, 0, SEEK_CUR);
 
 	/* Do we already have space or do we need to move */
 	if(!GET_SEEKBASE(f)) {
