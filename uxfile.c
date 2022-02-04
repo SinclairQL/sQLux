@@ -538,8 +538,8 @@ void QHSetHeader(qdos_file_hdr *h, int fd, struct mdvFile *f, int fstype)
 
 		lseek(fd, 0, SEEK_SET);
 
-		write(fd, fbuffer, flen - GET_SEEKBASE(0));
-		ftruncate(fd, flen - GET_SEEKBASE(f));
+		err = write(fd, fbuffer, flen - GET_SEEKBASE(0));
+		err = ftruncate(fd, flen - GET_SEEKBASE(f));
 
 		lseek(fd, startpos - GET_SEEKBASE(f), SEEK_SET);
 
