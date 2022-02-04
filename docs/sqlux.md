@@ -294,7 +294,7 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language.
+Select the keyboard language. Valid options are `GB`, `DE` and `US`. Defaults to `US`.
 
 ```
 KBD = DE
@@ -306,6 +306,14 @@ Sets the execution speed of the emulator. Useful when running software that was 
 ```
 SPEED = 1.5
 ```
+
+`SOUND`
+Enables sound support. By default sound is disabled (0). Values from 1 to 10 enables sound, and sets the output volume.
+
+```
+SOUND = 4
+```
+
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
 ```
@@ -324,6 +332,9 @@ DEVICE = RAM8,/tmp/.ram8-%x,clean,qdos-like
 WIN_SIZE = max
 FILTER = 1
 FIXASPECT = 1
+SOUND = 2
+SPEED = 0.8
+KBD = GB
 ```
 
 ---
@@ -486,11 +497,27 @@ Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel
 5.5 Keyboard
 ------------
 
-sQLux currently uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
+By default sQLux uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
 
-This scheme does not take into account international keyboard on the host of internation versions of the rom in the emulator.
+This scheme does not take into account international keyboard on the host of internation versions of the rom in the emulator. See the `KBD` option to select a British or German keyboard
 
-Suggest you get a USA keyboard or use stickers to give that genuine QL feel.
+Alternatively get a USA keyboard or use stickers to give that genuine QL feel.
+
+5.6 Sound
+---------
+sQLux can optionally generate sound. It supports the SuperBASIC BEEP command. Note that the QL manual states that the length parameter in a BEEP command is in units of 72 microseconds. This is incorrect. The original QL uses a unit length of 43.64 microseconds. sQLux also uses this unit of length.  
+
+sQLux attempts to faithfully reproduce the behaviour of the original QL. This includes support for negative values of grd_y, including the correct behaviour for -8. Behaviour when either pitch or pitch_2 equals 255 is also correctly emulated.  
+
+All optional parameters, including Fuzzy and Random, are fully supported. The slight click that occurs in the original QL when a pitch change occurs (even for a pitch change of 0) is emulated.
+
+Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL 8049 sound code.
+
+5.6.1 Known Issues
+------------------
+1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
+2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
+3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be esily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
 
 6 Filesystems
 =============

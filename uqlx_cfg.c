@@ -47,7 +47,8 @@ QMDATA QMD = {
 	.no_patch = 0, /* no_patch, default off */
 	.aspect = 0, /* fix aspect ration */
 	.filter = 0, /* enable bilinear filter */
-	.speed = 0, /* Fastest speed */
+	.speed = 0, /* 0 for fastest speed, 1 to roughly match BBQL */
+	.sound = 0, /* 0 for no sound, otherwise volume 1 to 10 */
 	.kbd = "US", /* Default keyboard layout (American English) */
 };
 
@@ -341,6 +342,7 @@ static PARSELIST pl[] = {
 	{ "RESOLUTION", (PVFV)pString, offsetof(QMDATA, resolution), 63 },
 	{ "SPEED", (PVFV)pFloat, offsetof(QMDATA, speed) },
 	{ "KBD", (PVFV)pString, offsetof(QMDATA, kbd), 2 },
+	{ "SOUND", (PVFV)pInt2, offsetof(QMDATA, sound) },
 	{ NULL, NULL },
 };
 

@@ -9,7 +9,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY -DHAS_STPCPY")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DSOUND -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY -DHAS_STPCPY")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -17,7 +17,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -104,7 +104,7 @@ endif ()
 
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        target_link_libraries(sqlux -mconsole -Wl,-Bstatic -L/usr/local/x86_64-w64-mingw32/lib -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
+        target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/x86_64-w64-mingw32/lib -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
     else()
         target_link_libraries(sqlux ${SDL2_LIBRARIES})
     endif()

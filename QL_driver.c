@@ -202,31 +202,6 @@ struct NAME_PARS scr_name = { "SCR", 6, (struct PARENTRY *)&scr_pars };
 struct NAME_PARS con_name = { "CON", 6, (struct PARENTRY *)&scr_pars };
 #endif
 
-#ifdef SOUND
-#include "QL_sound.h"
-extern int sound_init(int, void *);
-extern int sound_open(int, void **);
-extern int sound_test(int, char *);
-extern void sound_close(int, void *);
-extern void sound_io(int, void *);
-
-open_arg sound_oread[] = { -1, 'r' };
-open_arg sound_sm[] = { -1, 'm', 's' };
-open_arg sound_x[] = { 0, 'x' };
-open_arg sound_subdev[] = {
-	-1, '1', '2', '3', '4', '5', '6', '7', '8', '9', 's'
-};
-open_arg sound_sv2[] = { 20001 };
-
-struct PARENTRY sound_pars[] = { { parse_option, "r", sound_oread },
-				 { parse_option, "ms", sound_sm },
-				 { parse_option, "x", sound_x },
-				 { parse_option, "123456789", sound_subdev },
-				 { parse_separator, "_", sound_sv2 },
-				 { NULL, NULL, NULL } };
-struct NAME_PARS sound_name = { "SOUND", 5, (struct PARENTRY *)&sound_pars };
-#endif
-
 struct NAME_PARS qvf_name = { "VFS_", 0, NULL };
 
 struct DRV Drivers[] = {
@@ -259,10 +234,7 @@ struct DRV Drivers[] = {
   {0,scr_init, scr_test, scr_open, scr_close, scr_io, &scr_name, 0x100},
   {0,scr_init, con_test, scr_open, scr_close, scr_io, &con_name, 0x100},
 #endif
-#ifdef SOUND
-	{ 0, sound_init, sound_test, sound_open, sound_close, sound_io,
-	  &sound_name, 0x100 },
-#endif
+
 /* QVFS should always be LAST in the list */
 #ifdef QVFS
 	{ 0, qvf_init, qvf_test, qvf_open, qvf_close, qvf_io, &qvf_name, 0 },

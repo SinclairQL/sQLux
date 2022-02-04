@@ -8,12 +8,13 @@
 #include "QL.h"
 #include "xcodes.h"
 #include "QDOS.h"
-#include "QSound.h"
+#include "QL_sound.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
 #include "SDL2screen.h"
 #include "qmtrap.h"
 #include "unixstuff.h"
+#include "QL_sound.h"
 
 #define ALT 1
 #define SHIFT 4
@@ -31,7 +32,7 @@ uw16		asciiChar=0;
 
 int alphaLock, optionKey, gKeyDown, controlKey, shiftKey, altKey;
 
-volatile Cond soundOn;
+volatile bool soundOn;
 int display_mode=4;
 
 #if 0
@@ -62,9 +63,6 @@ void SetDisplay(w8 d, Cond flag)
   if (d==8) display_mode=8;
   set_rtc_emu();
 }
-
-void KillSound(){}
-void BeepSound(unsigned char *arg){}
 
 static uw8		IPC_len[16]={0,0,0,0,0,0,0,0,0,1,16,0,0,0,0,0};
 static uw8		charBuff[CHAR_BUFF_LEN][2];
@@ -117,10 +115,14 @@ Cond IPC_Command(void)	/* returns false for commands to handle low-level, true o
 		reg[1]=KeyRow(ReadByte(aReg[3]+6));
 		return true; /*break;*/
 	case 10: /* initiate sound generation */
-		BeepSound((unsigned char*)theROM+(aReg[3]&0x3ffffe));
+		if (sound_enabled) {
+			BeepSound((unsigned char*)theROM+(aReg[3]&0x3ffffe));
+		}
 		return true; /*break;*/
 	case 11: /* kill sound */
-		KillSound();
+		if (sound_enabled) {
+			KillSound();
+		}
 		return true; /*break;*/
 	case 15:	/* IPC test *//**//* neu, .hpr 21.5.99 */
 		reg[1]=~ReadByte(aReg[3]+6);
