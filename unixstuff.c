@@ -156,11 +156,6 @@ void dosignal()
 {
 	SDL_AtomicSet(&doPoll, 0);
 
-#ifdef SOUND
-	if (delay_list)
-		qm_sound();
-#endif
-
 #ifndef XAW
 	if (!script && !QLdone)
 		//process_events ();
@@ -922,6 +917,15 @@ void uqlxInit()
 
 	if (V1 && (QMD.speed > 0)) printf("Speed %.1f\n",QMD.speed);
 
+	sound_enabled = (QMD.sound > 0);
+	if (V1 && (QMD.sound > 0))
+		printf("sound enabled, volume %i.\n",QMD.sound);
+
+#ifdef SOUND
+	if ((!script) && sound_enabled)
+		sound_enabled = initSound(QMD.sound);
+#endif
+
 #ifdef TRACE
 	TraceInit();
 #endif
@@ -930,7 +934,7 @@ void uqlxInit()
 	reg = _reg;
 #endif
 	if (!isMinerva) {
-		qlux_table[IPC_CMD_CODE] = UseIPC; /* installl pseudoops */
+		qlux_table[IPC_CMD_CODE] = UseIPC; /* install pseudoops */
 		qlux_table[IPCR_CMD_CODE] = ReadIPC;
 		qlux_table[IPCW_CMD_CODE] = WriteIPC;
 		qlux_table[KEYTRANS_CMD_CODE] = QL_KeyTrans;
@@ -968,7 +972,7 @@ void uqlxInit()
 	InitialSetup();
 
 	if (isMinerva) {
-		reg[1] = ((RTOP) & ~16383) | 1;
+		reg[1] = (RTOP & ~16383) | 1 | 2 | 4 | 16;
 		SetPC(0x186);
 	}
 

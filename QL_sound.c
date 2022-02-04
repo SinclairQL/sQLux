@@ -1,472 +1,447 @@
-/* UQLX */
+/* Sound updated for SDL2 */
+#include <SDL2/SDL.h>
+#include "QL68000.h"
+#include "QL_sound.h"
 
 #ifdef SOUND
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <fcntl.h>
-#include <linux/soundcard.h>
+/*
+ * Structures only used in this file
+ */
+typedef struct {		// Beep parameters written to ipc8049
+    unsigned int length;
+    unsigned int pitch;
+    unsigned int pitch_2;
+    unsigned int grd_x;
+    int grd_y;
+    unsigned int wrap;
+    unsigned int random;
+    unsigned int fuzz;
+} ipc_sound;
 
-#include "QL68000.h"
-#include "QL_driver.h"
-#include "util.h"
-#include "driver.h"
-#include "QL_sound.h"
-#include "unixstuff.h"
+typedef struct {
+	SDL_mutex* mutex; 	// Mutex protecting writing to the structure
+	int in_use;		// Index to pic_sound buffer being played
+	int last_written;	// Latest buffer to play
+	ipc_sound beep[3];	// The buffers
+} sound_data;
 
-// FLUSH: sync (start playing)
-// FS.HEADR get parameters
-// FS.HEADS set ..
-// FS.MDINF get dsp capabilities (ni yet)
+typedef struct {
+    unsigned int current_pitch;	// currently playing pitch - may include random
+    int random;			// Random number to be added to pitch
+    int fuzz;			// Random adjustment in wavelength
+    int left;			// Total samples left to write
+    int pitch_left;		// Sample left for current pitch
+    int half_cycle;		// sample per half period
+    int wave_state;		// High or low (with silence in between)
+    int cycle_point;		// Current sample position in wave cycle
+    int w_count;		// wrap count
+    int direction;		// Direction of pitch travel
+} current_sound;
 
-//#define TESTNS
+/*
+ * Global variables
+ */
+bool sound_enabled = false;	// True if sound enabled successfully
 
-// right now only allow 1 device
-struct sound_data *delay_list=NULL;
-static int sound_iu=0;
-struct sound_data *sdata=NULL;
+/*
+ * Local variables
+ */
+static int audio_volume; 	// audio volume, 0 to 127
 
-open_arg sound_par[5];
-open_arg dsound_par[5]; // save pars for delayed call
+static SDL_AudioDeviceID QLSDLAudio;
+static SDL_AudioSpec want;
+static SDL_AudioSpec have;
 
-static int setpars(int fd, int channels, int freq);
-static int sndwritebuf(struct sound_data  *p, void *buf, int pno, int flush);
-static void ensure_flush(struct sound_data *p);
-static int do_open(int ix,void **p);
+static sound_data sound;
+static current_sound c_sound;
 
-int sound_init(int idx, void *d){/*printf("init test driver\n");*/}
+/*
+ * Local functions
+ */
+void audioCallback(void* userdata, Uint8* stream, int len);
 
-#define o_letter(x) (x>31?x:' ')
+static void setVolume(int volume);
+static void setPitchDuration();
+static void getNewPitch();
+static void randomAdjust();
+static void fuzzAdjust();
 
-#define SP_R    (dsound_par[0].i)
-#define SP_MS   (dsound_par[1].i)
-#define SP_X    (dsound_par[2].i)
-#define SP_N    (dsound_par[3].i)
-#define SP_FREQ (dsound_par[4].i)
+static int pitchToHalfSampleCount(int pitch);
+static void populateBuffer(int start, int samples, Sint8* buffer, int len);
+static void silenceBuffer(int start, Sint8* buffer, int len);
 
-static int delay_open(int ix, void **p)
-{
-  // only allow 1 delayed open AFTER preceeding channel was closed
-  //printf("delay open\n");
-  if (!sdata || !sdata->close)
-    return 0;
+/*
+ * Local definitions
+ */
+#define UNUSED(x) (void)(x)
+#define TICK_8049 22917		// Number of IPC ticks per second
 
-  //printf("...delaying open\n");
-  *p=sdata;
-  sdata->close=0;
-  sdata->reopen=1;
-  return 1;
+#define FREQUENCY 24000		// Requested sampling frequency
+#define SAMPLES 256		// Number of samples in a callback
+
+
+bool initSound(int volume) {
+	// Create the sound driver
+	if(SDL_Init(SDL_INIT_AUDIO)) {
+		if (V1) {
+			printf("Audio Failed to initialize: %s\n", SDL_GetError());
+		}
+		sound_enabled = false;
+		return sound_enabled;
+	}
+
+	SDL_zero(want);
+	want.freq = FREQUENCY;
+	want.format = AUDIO_S8;
+	want.channels = 1;
+	want.samples = SAMPLES;
+	want.callback = audioCallback;
+
+	QLSDLAudio = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+
+	if(!QLSDLAudio) {
+		if (V1) {
+			printf("Failed to open audio device: %s\n", SDL_GetError());
+		}
+		SDL_Quit();
+		sound_enabled = false;
+		return sound_enabled;
+	}
+
+	sound.mutex = SDL_CreateMutex();
+
+	if (sound.mutex) {
+		sound_enabled = true;
+		sound.in_use = -1; 		// index in use by callback (-1 = none)
+		sound.last_written = -1;	// index last written by by BeepSound (-1 = None)
+	}
+	setVolume(volume);
+
+	return sound_enabled;
 }
 
-int sound_open(int ix,void **p)
-{
-  //printf("sound channel opened:\n");
-  //printf("\t parsed values: %c,%c,%c,%c,%d\n",o_letter(SP_R),o_letter(SP_MS),o_letter(SP_X),o_letter(SP_N),SP_FREQ);
-  memcpy(dsound_par,sound_par,(5*sizeof(open_arg)));
-  if (sound_iu)
-    {
-      if (delay_open(ix,p))
-	return 0;
-      return QERR_IU;
-    }
+void closeSound() {
+	sound_enabled = false;
 
-  return do_open(ix,p);
+	if (sound.mutex)
+		SDL_DestroyMutex(sound.mutex);
+
+	if (QLSDLAudio) {
+		SDL_CloseAudioDevice(QLSDLAudio);
+	}
 }
 
-static int do_open(int ix,void **p)
+static void setVolume(int volume) {
+	volume = abs(volume);
+
+	if (volume >10)
+		volume = 10;
+
+	audio_volume = 12 * volume;
+}
+
+void BeepSound(unsigned char *arg) {
+	int mask = (arg[5] + (int)(arg[4] << 8) +
+		   (int)(arg[3] << 16) + (int)(arg[2] << 24));
+
+	/*
+	int bit;
+
+	for (int j=0; j<16; ++j) {
+		bit = 2 * j + 1;
+		(mask & (0x1 << bit)) ? printf("1") : printf("0");
+		--bit;
+		(mask & (0x1 << bit)) ? printf("1") : printf("0");
+
+		printf(" %i %x\n", j+6, arg[j+6]);
+	}
+	printf("Mask: %0x\n",mask);
+	*/
+
+	// Find correct param structure
+	int write_num;
+
+	soundOn = true; // Sound will soon be on!
+
+	SDL_LockMutex(sound.mutex);
+	for (write_num=0; write_num<3; ++write_num) {
+		if ((write_num != sound.in_use) && (write_num != sound.last_written))
+			break;
+	}
+
+	sound.beep[write_num].pitch = (((mask & 0x1) ? arg[7] : arg[6]));
+	sound.beep[write_num].pitch_2 = (((mask & 0x10) ? arg[9] : arg[8]));
+
+	sound.beep[write_num].grd_x = arg[10] | ((arg[11] & 0x7f) << 8);
+	sound.beep[write_num].length = arg[12] | ((arg[13] & 0x7f) << 8);
+
+	sound.beep[write_num].grd_y = ((mask & 0x00010000) ? arg[15] : arg[14]) & 0xf;
+	if (sound.beep[write_num].grd_y > 7)
+		sound.beep[write_num].grd_y -= 0x10;
+
+	sound.beep[write_num].wrap = ((mask & 0x00100000) ? arg[17] : arg[16]) & 0xf;
+	sound.beep[write_num].random = ((mask & 0x01000000) ? arg[19] : arg[18]) & 0xf;
+	sound.beep[write_num].fuzz = ((mask & 0x10000000) ? arg[21] : arg[20]) & 0xf;
+
+	// Calculate data and write
+	sound.last_written = write_num;
+	SDL_UnlockMutex(sound.mutex);
+
+	/*
+	printf("length %u pitch %u pitch2 %u grd_x %u grd_y %u wrap %u fuzz %u random %u\n",
+	sound.beep[write_num].length, sound.beep[write_num].pitch, sound.beep[write_num].pitch_2,
+	sound.beep[write_num].grd_x, sound.beep[write_num].grd_y, sound.beep[write_num].wrap,
+	sound.beep[write_num].fuzz, sound.beep[write_num].random);
+	*/
+
+	// Always unpause the sound here, in case the callback has paused itself
+	SDL_PauseAudioDevice(QLSDLAudio, 0);
+}
+
+void KillSound(){
+	SDL_LockMutex(sound.mutex);
+	sound.in_use = -1;
+	sound.last_written = -1;
+	SDL_UnlockMutex(sound.mutex);
+}
+
+void audioCallback(void* userdata, Uint8* stream, int len) {
+	UNUSED(userdata);
+
+	int written = 0;		// Total samples written this callback
+	int to_write = 0;		// Samples to write in next iteration
+
+	bool new_found = false;
+	SDL_LockMutex(sound.mutex);
+
+	if (c_sound.left < 0) {
+		// Used all of the buffer, so no longer in use
+		sound.in_use = -1;
+	}
+
+	if ((sound.last_written >=0) && (sound.last_written != sound.in_use)) {
+		sound.in_use = sound.last_written;
+		sound.last_written = -1;	// Have taken latest buffer
+		new_found = true;
+	}
+
+	SDL_UnlockMutex(sound.mutex);
+
+	if (new_found) {
+		c_sound.current_pitch = (sound.beep[sound.in_use].grd_y < 0)
+					? sound.beep[sound.in_use].pitch_2
+					: sound.beep[sound.in_use].pitch;
+		c_sound.random = 0;  	// No randomness on first pitch
+		c_sound.fuzz = 0;
+		c_sound.half_cycle = pitchToHalfSampleCount(c_sound.current_pitch);
+		c_sound.left = (sound.beep[sound.in_use].length * have.freq) / TICK_8049;
+
+		setPitchDuration();
+		c_sound.cycle_point = 0;
+		c_sound.wave_state = 0;
+		c_sound.direction = 1;
+		c_sound.w_count = sound.beep[sound.in_use].wrap;
+		fuzzAdjust();
+	}
+
+	if ((c_sound.left < 0) || (sound.in_use == -1)){
+		SDL_PauseAudioDevice(QLSDLAudio, 1);
+		soundOn = false;
+	}
+	else {
+		do {
+			if (c_sound.pitch_left == 0) {
+				// Play one note forever
+				to_write = len - written;
+			}
+			else if (c_sound.pitch_left > (len - written)) {
+				// Can fill buffer with current note
+				to_write = len - written;
+				c_sound.pitch_left -= to_write;
+				if (c_sound.left) {
+					c_sound.left -= to_write;
+				}
+			}
+			else {
+				// Need to change note or stop playing
+				to_write = c_sound.pitch_left;
+				if (c_sound.left) {
+					if (c_sound.left > c_sound.pitch_left) {
+						c_sound.left -= to_write;
+				    	}
+					else {
+						c_sound.left = -1;
+					}
+				}
+				c_sound.pitch_left = -1;
+			}
+
+			populateBuffer(written, to_write, (Sint8*)stream, len);
+			written += to_write;
+
+			if (written < len) {
+				// Reached the end of the pitch
+				// New pitch, or silence?
+				if (c_sound.left >= 0) {
+					getNewPitch();
+					setPitchDuration();
+				}
+				else {
+					silenceBuffer(written, (Sint8*)stream, len);
+					written = len;
+				}
+			}
+		}
+		while (written < len);
+	}
+}
+
+static void getNewPitch() {
+	int change = sound.beep[sound.in_use].grd_y;
+	unsigned int try_pitch = c_sound.current_pitch;
+
+	if (change) {
+		if (change == -8)
+		{
+			// we cycle through the whole set of pitches
+			// this is confirmed on a BBQL
+			c_sound.current_pitch = (c_sound.current_pitch + 248) % 0x100;
+		}
+		else {
+			// Now have -7 to +7
+			try_pitch += change * c_sound.direction;
+			try_pitch &= 0xff;
+
+			if ((try_pitch > sound.beep[sound.in_use].pitch) &&
+				(try_pitch < sound.beep[sound.in_use].pitch_2)) {
+				// Pitch in range
+				c_sound.current_pitch = try_pitch;
+			}
+			else {
+				// Reached the end of the sequence - are we wrapping?
+				if (c_sound.w_count > 0) {
+					// We are not so go back to the original pitch
+					c_sound.current_pitch = ((change * c_sound.direction) < 0)
+					? sound.beep[sound.in_use].pitch_2
+					: sound.beep[sound.in_use].pitch;
+
+					if (c_sound.w_count != 15) {
+						--c_sound.w_count;
+					}
+				}
+				else {
+					// Use the pitch we have calculated
+					c_sound.current_pitch = try_pitch;
+					c_sound.w_count = sound.beep[sound.in_use].wrap;
+					c_sound.direction *= -1;
+				}
+			}
+		}
+	}
+	randomAdjust();
+	c_sound.half_cycle = pitchToHalfSampleCount(c_sound.current_pitch +
+							c_sound.random +
+							c_sound.fuzz);
+
+	// Emulate the BBQL "click"
+	c_sound.cycle_point =
+		((c_sound.cycle_point + 1) < c_sound.half_cycle)
+		? c_sound.cycle_point + 1 : c_sound.cycle_point - 1;
+}
+
+/*
+ * Fuzz adjust is called whenever the wave_state changes
+ */
+static void fuzzAdjust() {
+
+	if (sound.beep[sound.in_use].fuzz > 7) {
+		int val = (sound.beep[sound.in_use].fuzz - 7);
+		c_sound.fuzz = rand() % (0x1 << val);
+		c_sound.half_cycle =
+		 pitchToHalfSampleCount(c_sound.current_pitch +
+					c_sound.random +
+					c_sound.fuzz);
+	}
+	else {
+		c_sound.fuzz = 0;
+	}
+}
+
+/*
+ * Random adjust is called whenever a pich change is evaluated
+ */
+static void randomAdjust()
 {
-  struct sound_data *priv;
-  int channels,res;
-  int fd,flags,fmt;
+	if (sound.beep[sound.in_use].random > 7) {
+		int val = (sound.beep[sound.in_use].random - 7);
+		c_sound.random = rand() % (0x1 << val);
 
-  //printf("do_open\n");
-  // disallow combinations like SOUNDs3_13451
-  if (SP_N != -1 && (SP_MS !=-1 || SP_FREQ !=20001))
-    return QERR_BP;
+	}
+	else {
+		c_sound.random = 0;
+	}
+}
 
-  // Allow SOUND1 to SOUND9 to match Simon Goodwin's 68K SOUND device
-  if (SP_N != -1)
-    {
-      if ((SP_N >= '3') && (SP_N <= '4'))
-	{
-	  SP_FREQ=10000;
-	  //printf("10KHz override\n");
+static void setPitchDuration()
+{
+	c_sound.pitch_left = (sound.beep[sound.in_use].grd_x * have.freq) / TICK_8049;
+
+	// Bound pitch_left, if it is bigger than left
+	if (c_sound.left) {
+		if (c_sound.pitch_left) {
+			c_sound.pitch_left = (c_sound.pitch_left > c_sound.left)
+						? c_sound.left : c_sound.pitch_left;
+		}
+		else {
+			c_sound.pitch_left = c_sound.left;
+		}
 	}
-                               
-      if (SP_N > '4')
-	{
-	  SP_FREQ=40000;
-	  //printf("40 KHz override\n");
+}
+
+/*
+ * The number of samples in one *half cycle* for a given QL pich value
+ */
+static int pitchToHalfSampleCount(int pitch)
+{
+	// Correct for off by 1 in ROM
+	pitch = (pitch + 255) % 256;
+
+	float b = pitch + 10.6;
+
+	return (int)((have.freq * b / TICK_8049) + 0.5f);
+}
+
+static void populateBuffer(int start, int samples, Sint8* buffer, int len)
+{
+	if (!c_sound.wave_state){
+		c_sound.wave_state = -1;
+		fuzzAdjust();
+		c_sound.cycle_point = 0;
 	}
-      
-      channels = 2 - (SP_N & 1); // Odd numbers mono, even stereo
-    }
-  else channels = SP_MS==2 ? 2 : 1;
-  //printf("%d channels\n",channels);
-  flags = (SP_R>0 ? O_RDWR: O_WRONLY);
-  
-  // reopen ? ..need to really reopen it because flags might have changed
-  if (!p)
-    close(sdata->fd);
-#ifndef TESTNS
-  fd=open("/dev/dsp",flags);
+	int buffer_pos = start;
+
+	while (buffer_pos < (samples + start)) {
+		buffer[buffer_pos++] = audio_volume * c_sound.wave_state;
+		++c_sound.cycle_point;
+
+		if (c_sound.cycle_point >= (c_sound.half_cycle)) {
+			c_sound.wave_state *= -1;
+			fuzzAdjust();
+			c_sound.cycle_point = 0;
+		}
+	}
+}
+
+static void silenceBuffer(int start, Sint8* buffer, int len)
+{
+	int buffer_pos = start;
+	while (buffer_pos < len) {
+		buffer[buffer_pos++] = 0;
+	}
+	c_sound.wave_state = 0;
+	c_sound.cycle_point = 0;
+}
 #else
-  fd=open("/dev/null",flags);
-#endif
-  if (fd==-1)
-    {
-      perror("opening /dev/dsp");
-      return qmaperr();
-    }
-
-  if (p)
-    {
-      priv=(struct sound_data *)malloc(sizeof(struct sound_data)+SNDBUFFSIZE);
-      if (!priv) 
-	{
-	  close(fd);
-	  return QERR_OM;
-	}
-      priv->tail=priv->buf=(char*)priv+sizeof(struct sound_data);
-      sdata=priv;
-      sound_iu++;
-    }
-  else 
-    priv=sdata;
-  
-  *p=priv;
-
-  priv->reopen=0;
-  priv->fd=fd;
-  priv->pid=0;
-  priv->close=0;
-  priv->autoflush=!SP_X;
-  priv->dticks=0;
-
-  res=setpars(fd, channels, SP_FREQ);
-  if (res!=0)
-    {
-      sound_close(ix,priv);
-      return res;
-    }
-  return 0;
-}
-
-int sound_test(int id,char *name)
-{
-  //printf ("sound: %s\n",name+2);
-  return decode_name(name,Drivers[id].namep,(open_arg *)&sound_par);
-}
-
-int sound_pend(struct sound_data *p)
-{
-  if (check_pend(p->fd,SLC_READ)) return 0;
-  else return QERR_NC;
-}
-
-int sound_read(struct sound_data  *p, void *buf, int pno)
-{
-  int res;
-
-  res=read(p->fd,buf,pno);
-
-  if (res<0) res=qmaperr();
-  return res;
-}
-
-
-// write to SOUND:  allways write to malloced buffer
-// (auto)flush clears this buffer in parent
-//             writes to dsp and flushes in child
-
-// flush works immediately, autoflush only if at least
-// 1000 bytes available or after 5 frames (.1s) delay
-static int sound_write(struct sound_data  *p, void *buf, int pno)
-{
-  int res;
-
-  res=sndwritebuf(p,buf,pno,p->autoflush);
-
-  return res;
-}
-
-static void fsxinf(struct sound_data *p)
-{
-  reg[0] = QERR_NI;
-}
-static void headr(struct sound_data *p)
-{
-  // test buflen
-  int val,rv;
-  int err;
-  struct dsp_ctrl *x=aReg[1]+(Ptr)theROM;
-  int fd=p->fd;
-
-  if (((uw16)reg[2])<sizeof(struct dsp_ctrl))
-    {
-      reg[0]= QERR_OR;
-      return;
-    }
-
-  err = ioctl(fd, SOUND_PCM_READ_RATE, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_RATE ioctl failed");
-  else x->freq=h2ql(val);  //x->freq=htonl(val);
-  rv=err;
-
-  err = ioctl(fd, SOUND_PCM_READ_CHANNELS, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_CHANNELS ioctl failed");
-  else x->channels=h2qw(val);  //x->channels=htons(val);
-  rv |= err;
-
-  err = ioctl(fd, SOUND_PCM_READ_BITS, &val);
-  if (err == -1)
-    perror("SOUND_PCM_READ_BITS ioctl failed");
-  else x->bits=h2qw(val);//x->bits=htons(val);
-  rv |= err;
-
-  val=AFMT_QUERY;
-  err = ioctl(fd, SOUND_PCM_SETFMT, &val); 
-  if (err ==  -1)
-    perror("SOUND_PCM_SETFMT ioctl failed");
-  else x->format=h2ql(val);//x->format=htonl(val);
-  rv |= err;
-
-  reg[1] = sizeof(struct dsp_ctrl);
-  aReg[1] += sizeof(struct dsp_ctrl);
-  if (rv) reg[0]=QERR_BP;
-}
-static int setpars(int fd, int channels, int freq)
-{
-  int err;
-  int val;
-
-  //printf("setpars %d, %d\n",channels, freq);
-
-  val = (freq == 20001) ? 20000 : freq;
-  err = ioctl(fd, SOUND_PCM_WRITE_RATE, &val);
-  if (err == -1)
-    perror("SOUND_PCM_WRITE_RATE ioctl failed");
-  err = ioctl(fd, SOUND_PCM_READ_RATE, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_RATE ioctl failed");
-  // currently ignore error on readback and hope it works..
-  //printf("READ_RATE returned %d\n",val);
-  if ( freq != 20001 && freq != val)
-    return QERR_OR;
-
-  val = AFMT_U8;
-  err = ioctl(fd, SOUND_PCM_SETFMT, &val); 
-  if (err ==  -1)
-    perror("SOUND_PCM_SETFMT ioctl failed");
-    // must be very obscure system.. forget error handling
-
-  val = channels;
-  err = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
-  err = ioctl(fd, SOUND_PCM_READ_CHANNELS, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_CHANNELS ioctl failed");
-  if ( val != channels )
-    return QERR_OR;
-  return 0;
-}
-static void heads(struct sound_data *p)
-{
-  int val,rv;
-  int err;
-  int fd=p->fd;
-  struct dsp_ctrl *x=aReg[1]+(Ptr)theROM;
-
-  val=q2hl(x->freq);
-  err = ioctl(fd, SOUND_PCM_WRITE_RATE, &val);
-  if (err == -1)
-    perror("SOUND_PCM_WRITE_RATE ioctl failed");
-  err = ioctl(fd, SOUND_PCM_READ_RATE, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_RATE ioctl failed");
-  else x->freq=h2ql(val);
-  rv=err;
-
-  val=q2hl(x->channels);
-  err = ioctl(fd, SOUND_PCM_WRITE_CHANNELS, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_WRITE_CHANNELS ioctl failed");
-  err = ioctl(fd, SOUND_PCM_READ_CHANNELS, &val);
-  if (err ==  -1)
-    perror("SOUND_PCM_READ_CHANNELS ioctl failed");
-  else x->channels=h2qw(val);
-  rv |= err;
-
-  val=q2hw(x->bits);
-  err = ioctl(fd, SOUND_PCM_WRITE_BITS, &val);
-  if (err == -1)
-    perror("SOUND_PCM_WRITE_BITS ioctl failed");
-  err = ioctl(fd, SOUND_PCM_READ_BITS, &val);
-  if (err == -1)
-    perror("SOUND_PCM_READ_BITS ioctl failed");
-  else x->bits=h2qw(val);
-  rv |= err;
-
-  val=q2hl(x->format);
-  err = ioctl(fd, SOUND_PCM_SETFMT, &val); 
-  if (err ==  -1)
-    perror("SOUND_PCM_SETFMT ioctl failed");
-  val=AFMT_QUERY;
-  err = ioctl(fd, SOUND_PCM_SETFMT, &val); 
-  if (err ==  -1)
-    perror("SOUND_PCM_SETFMT ioctl failed");
-  else x->format=h2ql(val);
-  rv |= err;
-
-  aReg[1] += sizeof(struct dsp_ctrl);
-  if (rv) reg[0]=QERR_BP;
-}
-
-static void sound_done(pid_t pid, int id)
-{
-  struct sound_data *p=(void*)(uintptr_t)id;
-  
-  //printf("sound done, id %x\n",id);
-  // p==NULL is invalid for closed channels
-  if (p)
-    {
-    p->pid=0;
-    if (p->autoflush && ((p->tail)-(p->buf)))
-      ensure_flush(p);
-    if (p->pid)
-      return;   // wait for complete
-    if (p->reopen)
-      do_open(0,NULL);
-    else if (p->close)
-      {
-	//printf("doing delayed close\n");
-	close(p->fd);
-	sound_iu--;
-	free(p);
-      }
-
-    }
-}
-static void delay_flush(struct sound_data *p)
-{
-  delay_list=p;
-  //printf("sound delayed\n");
-}
-void qm_sound(void)
-{
-  struct sound_data *p;
-  p=delay_list;
-
-  if ((p->dticks)>4)
-    {
-      //printf("..now flushed\n");
-      ensure_flush(p);
-    }
-  else 
-    {
-      p->dticks++;
-      //printf("..still delayed\n");
-    }
-}
-static void ensure_flush(struct sound_data *p)
-{
-  int res,pid,len;
-
-  //printf("ensure_flush\n",len);
-  len= (p->tail) - (p->buf);
-  // don´t test len>0 here, only close would call it with 0 and
-  // that is needed to get cleanup handler
-  if (!p->pid)
-    {
-      pid=qm_fork(sound_done,(long)p);
-      if (pid==0)
-	{
-	  //printf("ensure_flush: writing %d bytes to sound device\n",len);
-	  res = write(p->fd,p->buf,len);
-	  if (res < 0)
-	    perror("SOUND write failed");
-	  res = ioctl(p->fd, SOUND_PCM_SYNC, 0);  
-	  if (res == -1)
-	    perror("SOUND_PCM_SYNC ioctl failed");
-	  exit(0);
-	}
-      p->pid=pid;
-      p->tail=p->buf;
-      p->dticks=0;
-      delay_list=NULL;
-    }
-}
-static void sound_sync(struct sound_data *p)
-{   
-  int status,pid;
-
-  //printf("sound_sync called, D3=%x\n",reg[3]);
-  if (!p->pid)
-    {
-      ensure_flush(p);
-      if (((uw16)reg[3]) != 0)
-	reg[0]=QERR_NC;
-      else reg[0]=0;
-    }
-  else reg[0]=0;
-}
-static int sndwritebuf(struct sound_data  *p, void *buf, int pno, int flush)
-{
-  int len=SNDBUFFSIZE-(p->tail-p->buf);
-  
-  if (pno==0) return 0;
-  if (pno<len) len=pno;
-  if (len)
-    {
-      memcpy(p->tail,buf,len);
-      p->tail += len;
-      if (flush && !p->pid)
-	{
-	  if (p->tail-p->buf >= 1000)
-	    ensure_flush(p);
-	  else
-	    delay_flush(p);
-	}
-      return len;
-    }
-  else 
-    { // no place left in buffer
-      ensure_flush(p);
-      return QERR_NC;
-    }
-  
-}
-void sound_io(int ix, void *priv)
-{
-  struct sound_data *p=priv;
-  int op=(w8)reg[0];
-
-  switch(op)
-    {
-    case 65: return sound_sync(priv);
-    case 69: return fsxinf(priv);
-    case 70: return heads(priv);
-    case 71: return headr(priv);
-
-    default:
-      io_handle(sound_read, sound_write, sound_pend, priv);
-      return;
-    }
-}
-
-void sound_close(int ix, void *priv)
-{
-  struct sound_data *p=priv;
-  int pid;
-
-  //printf("sound_close\n");
-  if (p->close)
-    //printf("sound_close queueing error\n");
-  p->close=1;
-  ensure_flush(p);
-}
+void BeepSound(unsigned char *arg) {}
+void KillSound(){}
 #endif
