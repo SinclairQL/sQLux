@@ -411,50 +411,6 @@ void reopen_uxfile(struct mdvFile *f)
 	SET_HFILE(f, fd);
 	lseek(fd, cpos, SEEK_SET);
 }
-void deleteheader(char *mount, char *fname, int fstype)
-{
-	int fd, i, j, nlen;
-	ssize_t res;
-	char buf[64], dpath[4200], name[4200];
-	int (*cmp_fun)(const char *, const char *, size_t);
-
-	getpath(dpath, fname, 4000);
-	getname(name, fname, 4100);
-
-	if (*dpath)
-		strcat(dpath, "/.-UQLX-");
-	else
-		strcpy(dpath, ".-UQLX-");
-	fd = qopenfile(mount, dpath, O_RDWR | O_BINARY, 0, 256);
-	if (fd < 0)
-		return;
-
-	nlen = strlen(name);
-
-	cmp_fun = fstype ? strncasecmp : strncmp;
-	while (64 == read(fd, &buf, 64))
-		if (RL((Ptr)&buf) && nlen == RW(REF_FNAME((Ptr)&buf)) &&
-		    !cmp_fun(name, REF_FNAME((Ptr)&buf) + 2, nlen)) {
-			WL((Ptr)&buf, 0);
-			lseek(fd, -64, SEEK_CUR);
-			res = write(fd, &buf, 64);
-			break;
-		}
-	close(fd);
-}
-
-void QHDeleteHeader(char *mount, int open_flag, char *path, struct mdvFile *f,
-		    int fstype)
-{
-	char *name;
-
-	if (open_flag)
-		name = GET_FCB(f)->uxname;
-	else
-		name = path;
-
-	deleteheader(mount, name, fstype);
-}
 
 int FillXH(int fd, char *name, struct fileHeader *h, int fstype)
 {
@@ -536,60 +492,6 @@ void FillXHXtcc(int fd, qdos_file_hdr *h)
 	}
 
 	lseek(fd, curpos, SEEK_SET);
-}
-
-void setheader(char *fsmount, char *uxname, struct fileHeader *h, int fstype)
-{
-	int ff, found = 0, free = -1;
-	ssize_t res;
-	char dpath[4200], mount[4200];
-	struct fileHeader buf;
-	int (*cmp_fun)(const char *,const char *, size_t);
-
-	strncpy(mount, fsmount, 4200);
-
-	getpath(dpath, uxname, 4000);
-	if (*dpath)
-		strcat(dpath, "/.-UQLX-");
-	else
-		strcpy(dpath, ".-UQLX-");
-
-	ff = qopenfile(mount, dpath, O_RDWR | O_CREAT | O_BINARY, 0666, 4000);
-	getname(dpath, uxname, 4000);
-	/* printf("QHSetHeader %s\n",dpath);*/
-
-	cmp_fun = fstype ? strncasecmp : strncmp;
-	while (64 == read(ff, &buf, 64)) {
-		if (!cmp_fun(dpath, REF_FNAME(&buf) + 2,
-			     RW((Ptr)REF_FNAME(&buf))) &&
-		    RW((Ptr)REF_FNAME(&buf)) == strlen(dpath)) {
-			lseek(ff, -64, SEEK_CUR);
-			found = 1;
-			break;
-		} else if ((free < 0) && (!RL((Ptr)&buf)))
-			free = lseek(ff, 0, SEEK_CUR) - 64;
-	}
-	if (!found) {
-		memset(&buf, 0, 64);
-		if (free > 0) {
-			int x;
-			x = lseek(ff, free, SEEK_SET);
-		}
-	}
-	WL((Ptr)&buf, 1);
-	if (!found) {
-		WW((Ptr)REF_FNAME(&buf), min(strlen(dpath), 36));
-		strncpy(REF_FNAME(&buf) + 2, dpath, 36);
-	}
-	if (found || (RW(((Ptr)h) + 4) || RL(((Ptr)h) + 6)) ||
-	    (RL(((Ptr)h) + 10))) {
-		WW(((Ptr)&buf) + 4, RW(((Ptr)h) + 4));
-		WL(((Ptr)&buf) + 6, RL(((Ptr)h) + 6));
-		WL(((Ptr)&buf) + 10, RL(((Ptr)h) + 10));
-		WW(((Ptr)&buf) + _fdvers, RW(((Ptr)h) + _fdvers));
-		res = write(ff, &buf, 64);
-	}
-	close(ff);
 }
 
 const q_emulator_hdr q_em_template = {
@@ -728,104 +630,6 @@ void QGetHeaderFromPath(qdos_file_hdr *h, char *path, char *mount)
 
 	QGetHeaderFromFile(h, &f);
 
-	close(fd);
-}
-
-void QHFillHeader(struct fileHeader *h, int pof,
-		  /*union {char *pth;int fd;} */ pvf file, char *mount,
-		  struct mdvFile *f, int fstype)
-{
-	int err, i, j, fd, fd2, found = 0;
-	struct stat buf;
-	char dpath[4200], mp[4200];
-
-	if (pof == FILDES)
-		err = fstat(file.fd, &buf);
-	else
-		err = qstat(mount, file.pth, &buf, 4000);
-
-	if (err) {
-		perror("sorry no stat info:");
-		if (pof != FILDES)
-			printf("mount point: %s\t file %s\n", mount, file.pth);
-	}
-	if (!err) {
-		SET_FLEN(h, buf.st_size + 64);
-		SET_FDUPDT(h, ux2qltime(buf.st_mtime));
-
-		if (buf.st_mode & S_IFDIR || (f && GET_ISDIR(f)))
-			i = 255;
-		else
-			i = 0;
-		SET_FTYP(h, i);
-
-		if (i == 255 && ((j = RW((Ptr)REF_FNAME(h))) < 36)) {
-			*(REF_FNAME(h) + 2 + j) = DIR_SEPARATOR;
-			WW((Ptr)REF_FNAME(h), j);
-			/*printf("getting headers for file %s\n",(Ptr)REF_FNAME(h)+2);*/
-		}
-	} else
-		for (i = 0; i < 14; i++)
-			*(((char *)h) + i) = 0;
-
-	if (pof == PATH) {
-		getpath(dpath, file.pth, 4000);
-		if (*dpath)
-			strcat(dpath, "/.-UQLX-");
-		else
-			strcpy(dpath, ".-UQLX-");
-		fd = qopenfile(mount, dpath, O_RDWR | O_BINARY, 0, 4000);
-		if (fd >= 0) {
-			getname(dpath, file.pth, 4000);
-			found = FillXH(fd, dpath, h, fstype);
-		}
-
-		if (!found) {
-			fd2 = qopenfile(mount, file.pth, O_RDONLY | O_BINARY, 0, 4000);
-			if (fd2 >= 0) {
-				if (!FillQemulator(fd2, (qdos_file_hdr *)h, f))
-					FillXHXtcc(fd2, (qdos_file_hdr *)h);
-				close(fd2);
-			}
-		}
-	} else {
-		if (GET_FILESYS(f) > -1) {
-			strncpy(mp,
-				qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],
-				320);
-		}
-
-		else
-			mp[0] = 0;
-
-		getpath(dpath, GET_FCB(f)->uxname, 4000);
-		if (*dpath)
-			strcat(dpath, "/.-UQLX-");
-		else
-			strcpy(dpath, ".-UQLX-");
-		fd = qopenfile(mp, dpath, O_RDWR | O_BINARY, 0, 4000);
-		if (fd >= 0) {
-			getname(dpath, GET_FCB(f)->uxname, 4000);
-			found = FillXH(fd, dpath, h, fstype);
-		}
-		if (!found) {
-			fd2 = qopenfile(mp, GET_FCB(f)->uxname, O_RDONLY | O_BINARY, 0,
-					4000);
-			if (fd2 >= 0) {
-				if (!FillQemulator(fd2, (qdos_file_hdr *)h, f))
-					FillXHXtcc(fd2, (qdos_file_hdr *)h);
-				close(fd2);
-			}
-		}
-	}
-
-	/* correct file size for emulator header */
-	if (f) {
-		if(GET_SEEKBASE(f)) {
-			SET_FLEN(h, GET_FLEN(h) - GET_SEEKBASE(f));
-		}
-	}
-exit:
 	close(fd);
 }
 
@@ -1015,7 +819,6 @@ int HDelete(int drive, int dir, unsigned char *name, struct mdvFile *f,
 
 	/*printf("calling HDelete %s\n",name+2);*/
 	qunlinkfile(mount, mname, 400);
-	QHDeleteHeader(mount, 0, mname, NULL, fstype);
 
 	return 0;
 }
@@ -1130,9 +933,6 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 	struct fileHeader *h;
 	int dnlen, res = 0;
 
-	/* read header */
-	QHFillHeader(&hh, FILDES, (pvf)fd, NULL, f, fstype);
-
 	if (GET_FILESYS(f) < 0) {
 		char nname[4200];
 
@@ -1198,13 +998,10 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 					qdevs[GET_FILESYS(f)]
 						.mountPoints[GET_DRIVE(f)],
 					320);
-			QHDeleteHeader(mount, 1, NULL, f,
-				       fstype); /* delete old header */
 			/* now change internal def so QHSetHeader applies to the
 		 correct file */
 			strncpy(GET_FCB(f)->uxname, mname,
 				(GET_FILESYS(f) < 0 ? 4000 : 256));
-			QHSetHeader((qdos_file_hdr *)&hh, fd, f, fstype); /* set header */
 		}
 
 	rename_error:
@@ -1267,7 +1064,6 @@ int rename_single(struct mdvFile *f, char *fsmount, char *localdir, char *name,
 
 	strncpy(mount, fsmount, 4200);
 	/* printf("rs: find header: fsmount %s, name %s\n",fsmount,name); */
-	QHFillHeader(&hh, PATH, (pvf)name, mount, NULL, 2);
 
 	strncpy(mount, fsmount, 4200);
 
@@ -1283,7 +1079,6 @@ int rename_single(struct mdvFile *f, char *fsmount, char *localdir, char *name,
 		return 0;
 	}
 	temp[0] = 0;
-	deleteheader(temp, mount, 2); /* delete old header */
 	/* change internal def for open files */
 	strncpy(mount, name, 4200);
 	strncpy(temp, name, 4200);
@@ -1295,8 +1090,6 @@ int rename_single(struct mdvFile *f, char *fsmount, char *localdir, char *name,
 	}
 
 	strncpy(mount, fsmount, 4200);
-
-	setheader(mount, temp, &hh, 2); /* set header */
 
 	return 0;
 }
