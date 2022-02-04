@@ -821,17 +821,21 @@ void uqlxInit()
 	tbuff = malloc(65536 * sizeof(void *));
 
 	{
-		char roms[PATH_MAX];
+		char roms[PATH_MAX + 1];
 		char *p = NULL;
+		int romd_len;
 
 		if ((rf = getenv("QL_ROM")))
 			rl = load_rom(rf, 0);
 		if (!rl) {
-			p = (char *)stpcpy(roms, QMD.romdir);
+			strncpy(roms, QMD.romdir, PATH_MAX);
+			romd_len = strlen(roms);
+			p = (char *)roms + romd_len;
+
 			if (*(p - 1) != '/') {
 				*p++ = '/';
 			}
-			strcpy(p, QMD.sysrom);
+			strncpy(p, QMD.sysrom, PATH_MAX - romd_len);
 
 			rl = load_rom(roms, (w32)0);
 			if (!rl) {
@@ -841,11 +845,14 @@ void uqlxInit()
 			}
 		}
 		if (strlen(QMD.romim)) {
-			p = (char *)stpcpy(roms, QMD.romdir);
+			strncpy(roms, QMD.romdir, PATH_MAX);
+			romd_len = strlen(roms);
+			p = (char *)roms + romd_len;
+
 			if (*(p - 1) != '/') {
 				*p++ = '/';
 			}
-			strcpy(p, QMD.romim);
+			strncpy(p, QMD.romim, PATH_MAX - romd_len);
 
 			rl = load_rom(roms, 0xC000);
 			if (!rl) {
@@ -972,7 +979,7 @@ void uqlxInit()
 	InitialSetup();
 
 	if (isMinerva) {
-		reg[1] = (RTOP & ~16383) | 1 | 2 | 4 | 16;
+		reg[1] = (RTOP & ~16383) | 1;
 		SetPC(0x186);
 	}
 
