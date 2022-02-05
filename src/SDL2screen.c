@@ -806,14 +806,40 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
 
-	/* Special case backspace */
+	/* Handle extended cursor keys */
+	/* backspace maps to control left */
 	if ((keysym->sym == SDLK_BACKSPACE) && pressed) {
 		queueKey(1 << 1, 49, 0);
 		return;
 	}
-	/* Special case delete maps to control right */
+	/* Delete maps to control right */
 	if ((keysym->sym == SDLK_DELETE) && pressed) {
 		queueKey(1 << 1, 52, 0);
+		return;
+	}
+	/* Home maps to alt left */
+	if ((keysym->sym == SDLK_HOME) && pressed) {
+		queueKey(1 << 0, 49, 0);
+		return;
+	}
+	/* End maps to alt right */
+	if ((keysym->sym == SDLK_END) && pressed) {
+		queueKey(1 << 0, 52, 0);
+		return;
+	}
+	/* Insert maps to shift F4 */
+	if ((keysym->sym == SDLK_INSERT) && pressed) {
+		queueKey(1 << 2, 56, 0);
+		return;
+	}
+	/* Page Up maps to shift down */
+	if ((keysym->sym == SDLK_PAGEUP) && pressed) {
+		queueKey(1 << 2, 50, 0);
+		return;
+	}
+	/* Page Down maps to shift down */
+	if ((keysym->sym == SDLK_PAGEDOWN) && pressed) {
+		queueKey(1 << 2, 55, 0);
 		return;
 	}
 
