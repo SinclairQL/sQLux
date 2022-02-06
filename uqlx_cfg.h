@@ -47,6 +47,7 @@ typedef struct {
 	float speed;
 	short sound;
 	char kbd[3];	// Two characters + null terminator
+    int gray;
 } QMDATA;
 
 #define QMFILE "~/.uqlxrc"

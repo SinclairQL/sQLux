@@ -50,6 +50,7 @@ QMDATA QMD = {
 	.speed = 0, /* 0 for fastest speed, 1 to roughly match BBQL */
 	.sound = 0, /* 0 for no sound, otherwise volume 1 to 10 */
 	.kbd = "US", /* Default keyboard layout (American English) */
+    .gray = 0, /* grayscale enable */
 };
 
 static char *strim(char *s)
@@ -343,6 +344,7 @@ static PARSELIST pl[] = {
 	{ "SPEED", (PVFV)pFloat, offsetof(QMDATA, speed) },
 	{ "KBD", (PVFV)pString, offsetof(QMDATA, kbd), 2 },
 	{ "SOUND", (PVFV)pInt2, offsetof(QMDATA, sound) },
+    { "GRAY", (PVFV)pInt2, offsetof(QMDATA, gray) },
 	{ NULL, NULL },
 };
 
