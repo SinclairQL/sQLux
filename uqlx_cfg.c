@@ -344,7 +344,8 @@ static PARSELIST pl[] = {
 	{ "SPEED", (PVFV)pFloat, offsetof(QMDATA, speed) },
 	{ "KBD", (PVFV)pString, offsetof(QMDATA, kbd), 2 },
 	{ "SOUND", (PVFV)pInt2, offsetof(QMDATA, sound) },
-    { "GRAY", (PVFV)pInt2, offsetof(QMDATA, gray) },
+	{ "GRAY", (PVFV)pInt2, offsetof(QMDATA, gray) },
+	{ "GREY", (PVFV)pInt2, offsetof(QMDATA, gray) },
 	{ NULL, NULL },
 };
 
