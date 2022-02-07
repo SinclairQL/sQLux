@@ -314,6 +314,13 @@ Enables sound support. By default sound is disabled (0). Values from 1 to 10 ena
 SOUND = 4
 ```
 
+`GRAY` or `GREY`
+Enables a greyscale display. Disabled by default (so the display is in colour).
+
+```
+GRAY = 1
+```
+
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
 ```
