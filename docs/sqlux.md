@@ -308,12 +308,24 @@ SPEED = 1.5
 ```
 
 `SOUND`
-Enables sound support. By default sound is disabled (0). Values from 1 to 10 enables sound, and sets the output volume.
+Enables sound support. By default sound is enabled at minimum volume (1). A value of 0 disables sound. Values from 1 to 10 enables sound, and sets the output volume.
 
 ```
 SOUND = 4
 ```
 
+`JOY1`
+The index into SDL2 for a joystick to emulate connection to the QL through the CTL1 port. An integer in the range 1 to 8. 1 maps to the first joystick detected by SDL2.
+
+```
+JOY1 = 1
+```
+`JOY2`
+The index into SDL2 for a joystick to emulate connection to the QL through the CTL2 port. An integer in the range 1 to 8. 1 maps to the first joystick detected by SDL2.
+
+```
+JOY2 = 1
+```
 `GRAY` or `GREY`
 Enables a greyscale display. Disabled by default (so the display is in colour).
 
@@ -525,6 +537,15 @@ Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL
 1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
 2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
 3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be esily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
+
+5.7 Joystick
+------------
+SDL2 is used to provide Joystick support. Analogue or digital joysticks are supported. Axis 0 and axis 1 of the joystick are mapped. Moving the joystick generates key presses. All buttons on the joystick are mapped to the fire key.  
+As documented by [Sinclair](http://www.dilwyn.me.uk/docs/ebooks/olqlug/QL%20Manual%20-%20Concepts.htm#joystick), Joystick 1 (assumed connected through CTL1) maps to the cursor keys and spacebar. Joystick 2 (assumed connected through CTL2) maps to F1 through to F5.
+
+5.7.1 Known limitations 
+-----------------------
+Currently only devices that are detected by SDL2 as Joysticks are supported. Devices that are *only* identified as GameControllers are not supported.
 
 6 Filesystems
 =============

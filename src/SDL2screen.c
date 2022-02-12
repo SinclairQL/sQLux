@@ -259,6 +259,27 @@ static const struct {
   "\000\000\377\000\000\000\377\000\000\000\377",
 };
 
+#ifndef SDL_JOYSTICK_DISABLED
+typedef struct {
+	SDL_Joystick* sdl_id;	// Assigned SDL handle
+	int which;		// Index into SDL joysticks list
+	int left_axis;		// SDL axis id for left / right
+	int up_axis;		// SDL axis id for up / down
+} joy_data;
+
+int joy_char[2][5] = { {49, 52, 50, 55, 54}, 	// left, right, up, down, fire
+		        {57, 60, 56, 59, 61} };
+
+static joy_data joy[2] = { {NULL, -1, 0, 1},
+			   {NULL, -1, 0, 1} };
+#endif
+
+static void QLSDLInitJoystick(void);
+static void QLSDLOpenJoystick(int index, int which);
+static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value);
+static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed);
+static int QLConvertWhichToIndex(Sint32 which);
+
 
 void QLSDLScreen(void)
 {
@@ -282,7 +303,11 @@ void QLSDLScreen(void)
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP / 1024);
 
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
+	Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
+#ifndef SDL_JOYSTICK_DISABLED
+	flags |= SDL_INIT_JOYSTICK;
+#endif
+	if (SDL_Init(flags) < 0) {
 		printf("SDL_Init Error: %s\n", SDL_GetError());
 		exit(-1);
 	}
@@ -383,14 +408,16 @@ void QLSDLScreen(void)
 				       ql_screen->w, ql_screen->h);
 
 	for (i = 0; i < 16; i++) {
-        if (QMD.gray) {
-		    SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors_gray[i].r,
-					    QLcolors_gray[i].g, QLcolors_gray[i].b);
-        } else {
-		    SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors[i].r,
-					    QLcolors[i].g, QLcolors[i].b);
-        }
-    }
+		if (QMD.gray) {
+			SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors_gray[i].r,
+						  QLcolors_gray[i].g, QLcolors_gray[i].b);
+		} else {
+			SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors[i].r,
+						  QLcolors[i].g, QLcolors[i].b);
+		}
+	}
+
+	QLSDLInitJoystick();
 
 	SDL_AtomicSet(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
@@ -561,6 +588,60 @@ void SDLQLFullScreen(void)
 	//	SDL_MaximizeWindow(ql_window);
 
 	QLSDLProcessEvents();
+}
+
+static void QLSDLInitJoystick(void)
+{
+#ifndef SDL_JOYSTICK_DISABLED
+	// Open joystick 1 and 2, if defined
+	QLSDLOpenJoystick(0,QMD.joy1);
+	QLSDLOpenJoystick(1,QMD.joy2);
+#endif
+}
+
+static void QLSDLOpenJoystick(int index, int which)
+{
+#ifndef SDL_JOYSTICK_DISABLED
+	if ((which > 0) && (which < 9)) {
+		// Convert from 1-base to 0-base
+		int which0 = which - 1;
+		int joysticks = SDL_NumJoysticks();
+
+		if (joysticks) {
+			// Check for duplicate indexes
+			if (QLConvertWhichToIndex(which0) == -1) {
+				if (joysticks > which0) {
+					joy[index].sdl_id = SDL_JoystickOpen(which0);
+					if (joy[index].sdl_id == NULL) {
+						if (V1)	printf("Joystick %i initialisation failed\n",
+								index + 1);
+					}
+					else {
+						joy[index].which = which0;
+						if (V1)	printf("Joystick %i initialised\n",
+								index + 1);
+					}
+				}
+				else {
+					if (V1) printf("Joystick %i initialisation failed. Index %i too high\n",
+							index + 1, which);
+				}
+			}
+			else {
+				if (V1) printf("Joystick %i initialisation failed. Duplicate index %i\n",
+						index + 1, which);
+			}
+		}
+		else {
+			if (V1) printf("No joysticks detected by SDL2\n");
+		}
+	}
+	else {
+		if ((V1) && which)
+			printf("Joystick %i initialisation failed. Unknown index: %i\n",
+				index + 1, which);
+	}
+#endif
 }
 
 /* Store the keys pressed */
@@ -884,7 +965,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 			/* Does non control shift generate another key code? */
 			int code = ((!sdl_shiftstate) ||
 				    sdl_controlstate ||
-			            (!sdlqlmap[i].qchar))
+				    (!sdlqlmap[i].qchar))
 				   ? sdlqlmap[i].code : sdlqlmap[i].qchar;
 
 			/* Code requires a change in shift state? */
@@ -902,7 +983,8 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	}
 }
 
-static void setKeyboardLayout (void) {
+static void setKeyboardLayout (void)
+{
 	if (!strncmp("DE", QMD.kbd, 2)) {
 		sdlqlmap = sdlqlmap_DE;
 		if (V1) printf("Using DE keymap.\n");
@@ -954,6 +1036,57 @@ static void QLSDLProcessMouse(int x, int y)
 	QLMovePointer(qlx, qly);
 }
 
+static int QLConvertWhichToIndex(Sint32 which)
+{
+	for (int i=0; i<2; ++i) {
+		if (joy[i].which == which)
+			return i;
+	}
+	return -1;
+}
+
+static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value)
+{
+	int index = QLConvertWhichToIndex(which);
+
+	if (index > -1) {
+		int offset = -1;
+		if (axis == joy[index].left_axis)
+			offset = 0;
+		else if (axis == joy[index].up_axis)
+			offset = 2;
+
+		if (offset != -1) {
+			if (value < -10000) {
+				queueKey(0, joy_char[index][offset], 0);
+				SDLQLKeyrowChg(joy_char[index][offset], 1);
+				SDLQLKeyrowChg(joy_char[index][offset + 1], 0);
+			}
+			else if (value > 10000) {
+				queueKey(0, joy_char[index][offset + 1], 0);
+				SDLQLKeyrowChg(joy_char[index][offset + 1], 1);
+				SDLQLKeyrowChg(joy_char[index][offset], 0);
+			}
+			else {
+				SDLQLKeyrowChg(joy_char[index][offset], 0);
+				SDLQLKeyrowChg(joy_char[index][offset + 1], 0);
+			}
+		}
+	}
+}
+
+static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
+{
+	int index = QLConvertWhichToIndex(which);
+
+	if (index > -1) {
+		// Allow any button to represent fire
+		if (pressed)
+			queueKey(0, joy_char[index][4], 0);
+		SDLQLKeyrowChg(joy_char[index][4], pressed);
+	}
+}
+
 void QLSDLProcessEvents(void)
 {
 	SDL_Event event;
@@ -968,6 +1101,24 @@ void QLSDLProcessEvents(void)
 		case SDL_KEYUP:
 			QLSDProcessKey(&event.key.keysym, 0);
 			break;
+#ifndef SDL_JOYSTICK_DISABLED
+		case SDL_JOYAXISMOTION:
+			QLProcessJoystickAxis(event.jaxis.which,
+					      event.jaxis.axis,
+					      event.jaxis.value);
+
+			break;
+		case SDL_JOYBUTTONDOWN:
+			QLProcessJoystickButton(event.jbutton.which,
+						event.jbutton.button,
+						1);
+			break;
+		case SDL_JOYBUTTONUP:
+			QLProcessJoystickButton(event.jbutton.which,
+						event.jbutton.button,
+						0);
+			break;
+#endif
 		case SDL_QUIT:
 			cleanup(0);
 			break;
@@ -1013,6 +1164,13 @@ void QLSDLExit(void)
 {
 #ifdef SOUND
 	closeSound();
+#endif
+
+#ifndef SDL_JOYSTICK_DISABLED
+	for (int i=0; i<2; ++i) {
+		if (joy[i].sdl_id)
+			SDL_JoystickClose(joy[i].sdl_id);
+	}
 #endif
 	SDL_Quit();
 }
