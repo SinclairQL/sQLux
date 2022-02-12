@@ -35,6 +35,8 @@ QMDATA QMD = {
 	.ser2 = "", /* ser2 */
 	.ser3 = "", /* ser3 */
 	.ser4 = "", /* ser4 */
+	.joy1 = 0, /* joy1 */
+	.joy2 = 0, /* joy2 */
 	.prtcmd = "lpr", /* print cmd */
 	.resolution = "512x256", /* screen resolution */
 	.bootdev = "mdv1", /* boot device */
@@ -48,9 +50,9 @@ QMDATA QMD = {
 	.aspect = 0, /* fix aspect ration */
 	.filter = 0, /* enable bilinear filter */
 	.speed = 0, /* 0 for fastest speed, 1 to roughly match BBQL */
-	.sound = 0, /* 0 for no sound, otherwise volume 1 to 10 */
+	.sound = 1, /* 0 for no sound, otherwise volume 1 to 10 */
 	.kbd = "US", /* Default keyboard layout (American English) */
-    .gray = 0, /* grayscale enable */
+	.gray = 0, /* grayscale enable */
 };
 
 static char *strim(char *s)
@@ -325,8 +327,10 @@ static PARSELIST pl[] = {
 	{ "PRINT", (PVFV)pString, offsetof(QMDATA, prtcmd), 63 },
 	{ "SER1", (PVFV)pString, offsetof(QMDATA, ser1), 63 },
 	{ "SER2", (PVFV)pString, offsetof(QMDATA, ser2), 63 },
-	{ "SER3", (PVFV)pString, offsetof(QMDATA, ser2), 63 },
-	{ "SER4", (PVFV)pString, offsetof(QMDATA, ser2), 63 },
+	{ "SER3", (PVFV)pString, offsetof(QMDATA, ser3), 63 },
+	{ "SER4", (PVFV)pString, offsetof(QMDATA, ser4), 63 },
+	{ "JOY1", (PVFV)pInt2, offsetof(QMDATA, joy1), 63 },
+	{ "JOY2", (PVFV)pInt2, offsetof(QMDATA, joy2), 63 },
 	{ "ROMDIR", (PVFV)pString, offsetof(QMDATA, romdir), 127 },
 	{ "SYSROM", (PVFV)pString, offsetof(QMDATA, sysrom), 63 },
 	{ "RAMTOP", (PVFV)pInt4, offsetof(QMDATA, ramtop) },
