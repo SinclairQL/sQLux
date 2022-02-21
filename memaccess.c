@@ -145,7 +145,6 @@ rw8 ModifyAtEA_b(ashort mode,ashort r)
 		dest = (Ptr)(&reg[r]) + RBO;
 		return *((w8 *)dest);
 	case 2:
-		isreg = 1;
 		addr = aReg[r];
 		break;
 	case 3:
