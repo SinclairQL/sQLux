@@ -58,10 +58,12 @@ void SetDisplayMode()
 
 void SetDisplay(w8 d, Cond flag)
 {
-  /*printf("SetDisplay %d\n",d);*/
-  if (d==0) display_mode=4;
-  if (d==8) display_mode=8;
-  set_rtc_emu();
+	if ((d == 0) || (d == 8))
+	{
+		display_mode = d ? 8 : 4;
+		QLSDLUpdatePixelBuffer();
+	}
+	set_rtc_emu();
 }
 
 static uw8		IPC_len[16]={0,0,0,0,0,0,0,0,0,1,16,0,0,0,0,0};
