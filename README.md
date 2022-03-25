@@ -51,6 +51,7 @@ Run the mingw64 environment
 Install the toolchain and SDL2
 
     pacman -Sy mingw-w64-x86_64-toolchain
+    pacman -Sy mingw-w64-x86_64-cmake
     pacman -Sy mingw-w64-x86_64-SDL2
 
 Create the build directory and compile
