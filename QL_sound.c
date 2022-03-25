@@ -104,7 +104,6 @@ bool initSound(int volume) {
 		if (V1) {
 			printf("Failed to open audio device: %s\n", SDL_GetError());
 		}
-		SDL_Quit();
 		sound_enabled = false;
 		return sound_enabled;
 	}
