@@ -627,7 +627,7 @@ void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 		h->f_length = SDL_SwapBE32((buf.st_size -seekbase) + 64);
 		h->f_update = SDL_SwapBE32(ux2qltime(buf.st_mtime));
 
-		if (buf.st_mode & S_IFDIR || (f && GET_ISDIR(f)))
+		if (buf.st_mode & S_IFDIR)
 			i = 255;
 		else
 			i = 0;
@@ -652,9 +652,9 @@ void QGetHeaderFromPath(qdos_file_hdr *h, char *path, char *mount)
 
 	strcpy(mpath, mount);
 
-	fd = qopenfile(mpath, path, O_RDWR | O_BINARY, 0, 4000);
+	fd = qopenfile(mpath, path, O_RDONLY | O_BINARY, 0, 4000);
 	if (fd < 0) {
-		perror("QGetHeaderFromFile: open");
+		perror("QGetHeaderFromPath: open");
 
 		return;
 	}
