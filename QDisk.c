@@ -1884,7 +1884,9 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		}
 
 		/* Update Screen in case we loaded to it */
-		QLSDLUpdatePixelBuffer();
+		if (!sdl_threaded) {
+			QLSDLUpdatePixelBuffer();
+		}
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];

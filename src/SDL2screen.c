@@ -36,6 +36,9 @@ SDL_atomic_t doPoll;
 SDL_atomic_t screenUpdate;
 
 SDL_sem* sem50Hz = NULL;
+static SDL_sem *runscreen = NULL;
+static SDL_Thread *screenthread = NULL;
+int sdl_threaded = 0;
 
 struct QLcolor {
 	int r;
@@ -280,6 +283,17 @@ static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value);
 static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed);
 static int QLConvertWhichToIndex(Sint32 which);
 
+static int QLSDLScreenThread(void *data)
+{
+	while(1) {
+		if (SDL_SemWait(runscreen) < 0){
+			printf("ERROR: Screen Semaphore %s\n", SDL_GetError());
+		}
+		QLSDLUpdatePixelBuffer();
+		SDL_AtomicSet(&screenUpdate, 1);
+		QLSDLRenderScreen();
+	}
+}
 
 void QLSDLScreen(void)
 {
@@ -422,6 +436,15 @@ void QLSDLScreen(void)
 	SDL_AtomicSet(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
 	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
+
+	/* Check if we can put display in 2nd thread */
+	if (SDL_GetCPUCount() > 1) {
+		if (V1) printf("Acivating Threaded GFX update\n");
+		sdl_threaded = 1;
+		runscreen = SDL_CreateSemaphore(0);
+		screenthread = SDL_CreateThread(QLSDLScreenThread,
+				"sQLux Screen Update", NULL);
+	}
 }
 
 void QLSDLUpdateScreenByte(uint32_t offset, uint8_t data)
@@ -1143,11 +1166,9 @@ void QLSDLProcessEvents(void)
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
 					SDL_AtomicSet(&screenUpdate, 1);
-					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					SDL_AtomicSet(&screenUpdate, 1);
-					QLSDLRenderScreen();
 					break;
 				}
 			}
@@ -1157,7 +1178,9 @@ void QLSDLProcessEvents(void)
 		}
 	}
 
-	QLSDLRenderScreen();
+	if (!sdl_threaded) {
+		QLSDLRenderScreen();
+	}
 }
 
 void QLSDLExit(void)
@@ -1183,6 +1206,10 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 
 	if (sem50Hz && !SDL_SemValue(sem50Hz)) {
 		SDL_SemPost(sem50Hz);
+	}
+
+	if (sdl_threaded) {
+		SDL_SemPost(runscreen);
 	}
 
 	return interval;
