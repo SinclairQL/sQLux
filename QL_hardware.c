@@ -61,9 +61,7 @@ void SetDisplay(w8 d, Cond flag)
 	if ((d == 0) || (d == 8))
 	{
 		display_mode = d ? 8 : 4;
-		if (!sdl_threaded) {
-			QLSDLUpdatePixelBuffer();
-		}
+		QLSDLUpdatePixelBuffer();
 	}
 	set_rtc_emu();
 }

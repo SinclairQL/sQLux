@@ -25,7 +25,6 @@ extern int sdl_shiftstate,sdl_controlstate, sdl_altstate;
 
 extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
-extern int sdl_threaded;
 
 #endif
 

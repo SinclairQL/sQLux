@@ -331,9 +331,7 @@ void ChangedMemory(int from, int to)
 	/* QL screen memory involved? */
 	if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
 	    (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi)) {
-		if (!sdl_threaded) {
-			QLSDLUpdatePixelBuffer();
-		}
+		    QLSDLUpdatePixelBuffer();
 	}
 }
 
