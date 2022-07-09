@@ -96,90 +96,6 @@ void FilenameFromQL(unsigned char *fName)
 	}
 }
 
-static void NameToQL(Str255 name)
-{
-	unsigned char *p;
-	short l, j;
-
-	return;
-
-	l = name[0];
-	if (l < 10)
-		return;
-	p = (unsigned char *)name + 1;
-	if (*p++ != '-')
-		return;
-	if (((*p++) & 223) != 'N')
-		return;
-	if (((*p++) & 223) != 'O')
-		return;
-	if (((*p++) & 223) != 'A')
-		return;
-	if (((*p++) & 223) != 'S')
-		return;
-	if (((*p++) & 223) != 'C')
-		return;
-	if (((*p++) & 223) != 'I')
-		return;
-	if (((*p++) & 223) != 'I')
-		return;
-	if (*p++ != '-')
-		return;
-	l -= 9;
-	j = 0;
-	while (l > 0) {
-		if (*p == 33) {
-			p++;
-			l--;
-			while (l > 0 && *p != 32) {
-				name[++j] = *p++;
-				l--;
-			}
-			p++;
-			l--;
-		} else {
-			name[++j] = (*p++) - '0';
-			if (name[j] > 9)
-				name[j] -= 7;
-			l--;
-			if (l > 0 && *p != 32) {
-				name[j] = (name[j] << 4) +
-					  (*p > '9' ? *p + 10 - 'A' : *p - '0');
-				l--;
-			}
-			p++;
-			l--;
-		}
-	}
-	name[0] = j;
-}
-
-static Cond HasName(Str255 name)
-{
-	unsigned char *p;
-	p = (unsigned char *)name;
-
-	if (*p++ != 8)
-		return true;
-	if (*p++ != '-')
-		return true;
-	if (((*p++) & 223) != 'N')
-		return true;
-	if (((*p++) & 223) != 'O')
-		return true;
-	if (((*p++) & 223) != 'N')
-		return true;
-	if (((*p++) & 223) != 'A')
-		return true;
-	if (((*p++) & 223) != 'M')
-		return true;
-	if (((*p++) & 223) != 'E')
-		return true;
-	if (*p != '-')
-		return true;
-	return false;
-}
-
 static void DrawMdvLeds(void)
 {
 	/* draw microdrive leds:
@@ -386,11 +302,6 @@ w32 PhysicalDefBlock(void)
 	driveID = ReadByte(*aReg + 0x1d);
 	pdb = ReadLong(0x28100 + ((w32)driveID << 2));
 	return pdb;
-}
-
-static void VolBytes(short vol, long *total, long *empty)
-{ /* returns #total and #empty sectors on the selected file device (deleted) */
-	printf("calling VolBytes\n");
 }
 
 static struct mdvFile *MacFile(Cond check)

@@ -84,16 +84,7 @@ static int qunlinkfile(char *mount, char *name, int maxnlen)
 	mount[q] = 0;
 	return res;
 }
-static int qstat(char *mount, char *name, struct stat *buf, int maxnlen)
-{
-	int res, q = strlen(mount);
-	qaddpath(mount, name, maxnlen);
 
-	res = stat(mount, buf);
-
-	mount[q] = 0;
-	return res;
-}
 int qopenfile(char *mount, char *name, int flags, int mode, int maxnlen)
 {
 	int res, q = strlen(mount);

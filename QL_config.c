@@ -124,37 +124,6 @@ static Cond InstallQemlRom(void)
 	return qemlPatch;
 }
 
-static Cond ReasonableROM(w32 *r)
-{
-	short i;
-	w16 ut;
-
-	if ((RL(&r[1]) < 0) || (RL(&r[1]) >= 49151) ||
-	    ((short)RL(&r[1]) & 1) != 0)
-		return false;
-	for (i = 3; i < 10; i++)
-		if (RL(&r[i]) < 0 || RL(&r[i]) >= 49151 ||
-		    ((short)RL(&r[i]) & 1) != 0)
-			return false;
-	if (RL(&r[26]) < 0 || RL(&r[26]) >= 49151 ||
-	    ((short)RL(&r[26]) & 1) != 0)
-		return false;
-	for (i = 32; i < 48; i++)
-		if (RL(&r[i]) < 0 || RL(&r[i]) >= 49151 ||
-		    ((short)RL(&r[i]) & 1) != 0)
-			return false;
-	for (i = 0xc0; i < 0xd6; i += 2) {
-		ut = RW((w16 *)((Ptr)r + i));
-		if (ut < 0 || (ut & 1) != 0)
-			return false;
-	}
-	for (i = 0xd8; i <= 0x12a; i += 2) {
-		ut = RW((w16 *)((Ptr)r + i));
-		if (ut < 0 || (ut & 1) != 0)
-			return false;
-	}
-	return true;
-}
 /* presently simply search for "QView" */
 int testMinerva(void)
 {
@@ -449,48 +418,3 @@ void InitROM(void)
 	qlux_table[code = 0x0c93](); /* run the original routine */
 #endif
 }
-
-#if 0
-static short LoadRoms(void)
-{	short e;
-
-	e=LoadMainRom();
-	if(e==0) e=InstallBackRom();
-	if(e==fnfErr) e=ERR_ROM;
-	return e;
-}
-#endif /*0*/
-
-static void RestartQL(void)
-{
-	short i;
-	CloseAllFiles();
-	for (i = 0; i < 15; i++)
-		reg[i] = 0;
-	memset((Ptr)theROM + 131072l, 0, RTOP - 131072l);
-	InitialSetup();
-}
-
-#if 0
-static short StartQL(void)
-{	short e;
-
-	e=QL_memory();
-	if(e==0)
-	{	e=LoadRoms();
-		if(e==0)
-		{	InitSerial();
-			RestartQL();
-			e=AllocateDisk();
-			if(e==0) e=AllocateSound();
-			if(e==0)
-			{	qlRunning=true;
-				StartTimer();
-			}
-			else DisposePtr((Ptr)theROM);
-		}
-		else DisposePtr((Ptr)theROM);
-	}
-	return e;
-}
-#endif

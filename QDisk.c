@@ -662,40 +662,6 @@ static void PutSector(Ptr p)
 	}
 }
 
-static void EmptySectors(void)
-{
-	int i;
-
-	if (curr_flpfcb->buffer != nil)
-		for (i = 0; i < curr_flpfcb->bufcount; i++)
-			if (!curr_flpfcb->si[i].free) {
-				if (curr_flpfcb->si[i].changed) {
-					WriteLogSector(
-						curr_flpfcb->si[i].logSector,
-						curr_flpfcb->buffer +
-							((long)i << 9));
-					curr_flpfcb->si[i].changed = false;
-				}
-				if (!curr_flpfcb->si[i].locked)
-					curr_flpfcb->si[i].free = true;
-			}
-}
-
-#if 0 /* replaced by safer FLushSectors() */
-static void FlushFile(FileNum fileNum)
-{
-  int i;
-
-  if(curr_flpfcb->buffer!=nil)
-    for(i=0;i<curr_flpfcb->bufcount;i++)
-      if(!curr_flpfcb->si[i].free && curr_flpfcb->si[i].changed && curr_flpfcb->si[i].fileNum.file==fileNum.file)
-	{
-	  WriteLogSector(curr_flpfcb->si[i].logSector,curr_flpfcb->buffer+((long)i<<9));
-	  curr_flpfcb->si[i].changed=false;
-	}
-}
-#endif
-
 static OSErr WriteBlock0(void)
 {
 	int i;

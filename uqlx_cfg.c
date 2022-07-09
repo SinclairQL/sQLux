@@ -230,69 +230,6 @@ static void ParseDevs(EMUDEV_t **qd, char *s)
 	}
 }
 
-static void *ParseROM(QMLIST *pn, char *s)
-{
-	char *p1, *p2;
-	short n;
-	ROMITEM *cp;
-
-	if ((cp = (ROMITEM *)calloc(sizeof(ROMITEM), 1))) {
-		pn->next = NULL;
-		pn->udata = cp;
-
-		for (p1 = s, n = 0;; n++) {
-			short k;
-			char c, *p3;
-
-			p2 = strchr(p1, ',');
-			if (p2) {
-				k = (p2 - p1);
-			} else {
-				k = strlen(p1);
-			}
-			p3 = (p1 + k);
-			c = *p3;
-			*p3 = 0;
-
-			switch (n) {
-			case 0:
-				cp->romname = (char *)strdup(p1);
-				break;
-			case 1:
-				cp->romaddr = strtol(p1, NULL, 0);
-				break;
-			}
-			if (!(*p3 = c)) {
-				break;
-			}
-			p1 = p2 + 1;
-		}
-	}
-	return cp;
-}
-
-static void ParseList(void *p, char *s, void *(*func)(void *, char *))
-{
-	QMLIST *pn, **ph;
-
-	ph = (QMLIST **)p;
-	if ((pn = (QMLIST *)calloc(sizeof(QMLIST), 1))) {
-		if ((func)(pn, s) != NULL) {
-			if (*ph == NULL) {
-				*ph = pn;
-			} else {
-				QMLIST *pz, *pl;
-				for (pl = *ph; pl; pl = pl->next) {
-					pz = pl;
-				}
-				pz->next = pn;
-			}
-		} else {
-			free(pn);
-		}
-	}
-}
-
 static void pString(char *p, char *s, ...)
 {
 	va_list va;

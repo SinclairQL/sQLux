@@ -258,11 +258,6 @@ struct cleanup_entry {
 static struct cleanup_entry *cleanup_list = NULL;
 static int run_reaper;
 
-static void sigchld_handler(int sig)
-{
-	run_reaper = 1;
-}
-
 static int qm_wait(fc) int *fc;
 {
 	int pid;
