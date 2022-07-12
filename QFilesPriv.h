@@ -93,7 +93,7 @@ static inline void SET_NEXT(struct mdvFile *_mdvf_, struct mdvFile *_nxt_) {
 	if (!_nxt_) {
 		WL((Ptr)((Ptr)(_mdvf_)+_QLF_next),0);
 	} else {
-		WL((Ptr)((Ptr)(_mdvf_)+_QLF_next),(w32)((uintptr_t)_nxt_-(uintptr_t)theROM));
+		WL((Ptr)((Ptr)(_mdvf_)+_QLF_next),(w32)((uintptr_t)_nxt_-(uintptr_t)memBase));
 	}
 }
 static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
@@ -101,7 +101,7 @@ static inline struct mdvFile *GET_NEXT(struct mdvFile *_mdvf_) {
 
 	val = RL((Ptr)((Ptr)(_mdvf_)+_QLF_next));
 	if(val)
-		val += (uintptr_t)theROM;
+		val += (uintptr_t)memBase;
 
 	return (struct mdvFile *)val;
 }

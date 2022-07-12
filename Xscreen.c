@@ -103,7 +103,7 @@ void devpefio_cmd()
 	int op;
 
 	if ((uw8)reg[0] == 0xd) {
-		pbl = (Ptr)theROM + aReg[1];
+		pbl = (Ptr)memBase + aReg[1];
 		xw = RW(pbl++);
 		yw = RW(pbl++);
 		xo = RW(pbl++);
@@ -138,7 +138,7 @@ void devpefio_cmd()
 open_arg scr_par[6];
 extern struct NAME_PARS con_name, scr_name;
 
-#define GXS ((Ptr)theROM + UQLX_STR_SCRATCH)
+#define GXS ((Ptr)memBase + UQLX_STR_SCRATCH)
 void mangle_args(char *dev)
 {
 	int xw, yw;
@@ -168,21 +168,21 @@ void devpefo_cmd()
 
 	sA0 = aReg[0];
 
-	res = decode_name((Ptr)theROM + ((aReg[0]) & ADDR_MASK_E), &scr_name,
+	res = decode_name((Ptr)memBase + ((aReg[0]) & ADDR_MASK_E), &scr_name,
 			  (open_arg *)&scr_par);
 	if (res == 1)
 		mangle_args("SCR_");
 	else {
-		res = decode_name((Ptr)theROM + ((aReg[0]) & ADDR_MASK_E),
+		res = decode_name((Ptr)memBase + ((aReg[0]) & ADDR_MASK_E),
 				  &con_name, (open_arg *)&scr_par);
 		if (res == 1)
 			mangle_args("CON_");
 	}
 
 	/* we must patch ROM, but that is mprotect'ed !*/
-	WW((Ptr)theROM + orig_open, DEVPEFO_OCODE);
-	QLsubr(orig_open /*XS_GETOPEN((Ptr)theROM+(aReg[3]+0x18))*/, 200000000);
-	WW((Ptr)theROM + orig_open, DEVPEFO_CMD_CODE);
+	WW((Ptr)memBase + orig_open, DEVPEFO_OCODE);
+	QLsubr(orig_open /*XS_GETOPEN((Ptr)memBase+(aReg[3]+0x18))*/, 200000000);
+	WW((Ptr)memBase + orig_open, DEVPEFO_CMD_CODE);
 
 	if ((w16)reg[0] < 0) {
 		aReg[0] = sA0;
@@ -225,14 +225,14 @@ void init_xscreen()
 	orig_cdrv = cdrv;
 
 	DEVPEFIO_OCODE = ReadWord(orig_io);
-	WW((Ptr)theROM + orig_io, DEVPEF_CMD_CODE);
+	WW((Ptr)memBase + orig_io, DEVPEF_CMD_CODE);
 
 	qlux_table[DEVPEF_CMD_CODE] = devpefio_cmd;
 
 	scan_patch_chans(orig_cdrv);
 
 	DEVPEFO_OCODE = ReadWord(orig_open);
-	WW((Ptr)theROM + orig_open, DEVPEFO_CMD_CODE);
+	WW((Ptr)memBase + orig_open, DEVPEFO_CMD_CODE);
 	qlux_table[DEVPEFO_CMD_CODE] = devpefo_cmd;
 }
 

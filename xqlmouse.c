@@ -35,9 +35,6 @@ extern int extInt;
 extern int sct_size;
 //extern char *scrModTable;
 
-extern int rx1, rx2, ry1, ry2, finishflag, doscreenflush, scrcnt;
-extern int script;
-
 extern struct paste_buf *paste_bl;
 int mouse_emu_reg;
 int ochd = 0;
@@ -124,11 +121,11 @@ void SchedInit()
 	QLtrap(1, 0x18, 2000000l);
 
 	if (*reg == 0) {
-		Ptr p = (Ptr)theROM + aReg[0];
+		Ptr p = (Ptr)memBase + aReg[0];
 		p = p + 4;
 
 		WL(p, SCHEDULER_CMD_ADDR);
-		WW((Ptr)theROM + SCHEDULER_CMD_ADDR, SCHEDULER_CMD_CODE);
+		WW((Ptr)memBase + SCHEDULER_CMD_ADDR, SCHEDULER_CMD_CODE);
 
 		QLtrap(1, 0x1e, 200000l);
 	}
@@ -358,7 +355,7 @@ void SchedulerCmd()
 {
 	w32 saved_regs[16];
 
-	if ((long)((Ptr)gPC - (Ptr)theROM) - 2 != SCHEDULER_CMD_ADDR) {
+	if ((long)((Ptr)gPC - (Ptr)memBase) - 2 != SCHEDULER_CMD_ADDR) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -367,17 +364,6 @@ void SchedulerCmd()
 	}
 
 	save_regs(saved_regs);
-
-	if (!script)
-
-		if ((schedCount > min_idle ||
-		     (quickMouseUpdate && ptractive() &&
-		      (llastx != getMouseX() || llasty != getMouseY()))) &&
-		    /*screen_drawable &&*/
-		    ((DISPLAY_CHANGED()) || (rx1 <= rx2 && ry1 <= ry2))) {
-			scrcnt = 5;
-			doscreenflush = 0;
-		}
 
 #ifdef MOUSE
 	MouseTask();

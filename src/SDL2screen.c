@@ -501,7 +501,7 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 
 void QLSDLUpdatePixelBuffer()
 {
-	uint8_t *scr_ptr = (void *)theROM + qlscreen.qm_lo;
+	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
 	uint32_t *pixel_ptr32;
 	int t1, t2, i, color;
 
@@ -512,7 +512,7 @@ void QLSDLUpdatePixelBuffer()
 	pixel_ptr32 = ql_screen->pixels;
 
 	while (scr_ptr <
-	       (uint8_t *)((void *)theROM + qlscreen.qm_lo + qlscreen.qm_len)) {
+	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
 		t1 = *scr_ptr++;
 		t2 = *scr_ptr++;
 

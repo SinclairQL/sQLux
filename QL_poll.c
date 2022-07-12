@@ -35,11 +35,11 @@ void init_poll()
 
   if (*reg==0)
     {
-      Ptr p=(Ptr)theROM+aReg[0];
+      Ptr p=(Ptr)memBase+aReg[0];
       p = p + 4;
 
       WL( p, POLL_CMD_ADDR);
-      WW((Ptr)theROM+POLL_CMD_ADDR, POLL_CMD_CODE);
+      WW((Ptr)memBase+POLL_CMD_ADDR, POLL_CMD_CODE);
 
       QLtrap(1,0x1c,200000l);
     }
@@ -48,7 +48,7 @@ void init_poll()
 
 void PollCmd()
 {
-  if((Ptr)gPC-(Ptr)theROM-2!=POLL_CMD_ADDR)
+  if((Ptr)gPC-(Ptr)memBase-2!=POLL_CMD_ADDR)
     {
       exception=4;
       extraFlag=true;

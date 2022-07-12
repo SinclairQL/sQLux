@@ -84,7 +84,6 @@ int do_update = 0; /* initial delay for screen drawing */
 #define max(_a_, _b_) (_a_ > _b_ ? _a_ : _b_)
 #endif
 
-int rx1, rx2, ry1, ry2, finishflag, doscreenflush;
 int QLdone = 0;
 
 extern void FlushDisplay(void);
@@ -135,13 +134,13 @@ void set_rtc_emu()
 /* NOTE(TF): Apparently not used anywhere in the code!   */
 uw16 sysvar_w(uw32 a)
 {
-	return RW((Ptr)theROM + 0x28000 + a);
+	return RW((Ptr)memBase + 0x28000 + a);
 }
 
 /* Read a system variable (long) from QDOS memory        */
 uw32 sysvar_l(uw32 a)
 {
-	return RL((Ptr)theROM + 0x28000 + a);
+	return RL((Ptr)memBase + 0x28000 + a);
 }
 
 #ifdef SHOWINTS
@@ -173,7 +172,6 @@ void dosignal()
 #endif
 
 	if (--scrcnt < 0) {
-		doscreenflush = 1;
 		set_rtc_emu();
 	}
 
@@ -340,7 +338,7 @@ void DbgInfo(void)
 	/* USP is saved value of a7 or meaningless if not in sv-mode */
 	printf("DebugInfo: PC=%" PRIXPTR
 	       ", code=%x, SupervisorMode: %s USP=%x SSp=%x A7=%x\n",
-	       (Ptr)pc - (Ptr)theROM, code, (supervisor ? "yes" : "no"), usp,
+	       (Ptr)pc - (Ptr)memBase, code, (supervisor ? "yes" : "no"), usp,
 	       ssp, *m68k_sp);
 	printf("Register Dump:\t Dn\t\tAn\n");
 	for (i = 0; i < 8; i++)
@@ -459,11 +457,11 @@ int load_rom(char *name, w32 addr)
 		printf("Warning: addr %x for ROM %s not multiple of 16K\n",
 		       addr, name);
 
-	r = read(fd, (Ptr)theROM + addr, b.st_size);
+	r = read(fd, (Ptr)memBase + addr, b.st_size);
 	if (r < 0) {
 		perror("Warning, could not load ROM \n");
 		printf("name %s, addr %x, QDOS origin %p\n", name, addr,
-		       theROM);
+		       memBase);
 		return 0;
 	}
 	if (V3)
@@ -496,7 +494,7 @@ void CoreDump()
 	if (fd < 0)
 		perror("coredump failed: read: :");
 	if (fd > -1) {
-		r = write(fd, theROM, 1024 * 1024);
+		r = write(fd, memBase, 1024 * 1024);
 		if (!r)
 			perror("coredump failed: write: ");
 		close(fd);
@@ -797,18 +795,12 @@ void uqlxInit()
 	int rl = 0;
 	void *tbuff;
 
-	rx1 = 0;
-	rx2 = qlscreen.xres - 1;
-	ry1 = 0;
-	ry2 = qlscreen.yres - 1;
-	finishflag = 0;
-
 	if (V1)
 		printf("*** sQLux release %s\n\n", release);
 	tzset();
 
-	theROM = malloc(RTOP);
-	if (theROM == NULL) {
+	memBase = malloc(RTOP);
+	if (memBase == NULL) {
 		printf("sorry, not enough memory for a %dK QL\n", RTOP / 1024);
 		exit(1);
 	}
@@ -1014,21 +1006,6 @@ exec:
 		qm_reaper();
 #endif
 
-		/*if (do_update && screen_drawable && doscreenflush && !script && !QLdone)
-   {
-      scrchange=0;
-      for(i=0;i<sct_size;i++)
-         scrchange=scrchange || scrModTable[i];
-
-      if(scrchange)
-      {
-         FlushDisplay();
-         displayFrom=0;
-         displayTo=0;
-         doscreenflush=0;
-         scrcnt=5;
-      }
-   } */
 #ifdef VTIME
 	if ((qlttc--) <= 0) {
 		qlttc = 3750;

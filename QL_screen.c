@@ -32,10 +32,10 @@ void QLPatchPTRENV(void)
     //struct SCREENDEF *scrdef;
     int flag;
 
-    scrdef_search=((Ptr)pc-8000) - (void *)theROM;
+    scrdef_search=((Ptr)pc-8000) - (void *)memBase;
 
     while ( LookFor(&scrdef_search,0x20000,24000)) {
-        struct SCREENDEF *scrdef = (void *)theROM + scrdef_search;
+        struct SCREENDEF *scrdef = (void *)memBase + scrdef_search;
 
         if (RL(&(scrdef->scrlen))==0x8000 &&
 	        RW(&(scrdef->linel)) ==0x80 &&

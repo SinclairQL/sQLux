@@ -200,7 +200,7 @@ void trap1(void)
 /* and the function returns the error BUFFER FULL. */
 
 		case 2:
-		  strncpy(reg[1]+(Ptr)theROM,release,reg[2]);
+		  strncpy(reg[1]+(Ptr)memBase,release,reg[2]);
 		  if (strlen(release)>reg[2])
 		      reg[0]=QERR_BF;
 		  break;
@@ -226,7 +226,7 @@ void trap2(void)
 	DECR_SC(); /*schedCount--;*/
 
 	//  if (reg[0] == 1 )
-	//    printf("trap2: %s\n",aReg[0]+(char*)theROM+2);
+	//    printf("trap2: %s\n",aReg[0]+(char*)memBase+2);
 	exception = 34;
 	extraFlag = true;
 	nInst2 = nInst;
@@ -271,7 +271,7 @@ void trap4(void)
 #if 1
 void FastStartup(void)
 {
-	if ((Ptr)gPC - (Ptr)theROM - 2 != RL(&theROM[1])) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != RL(&memBase[1])) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -279,7 +279,7 @@ void FastStartup(void)
 		return;
 	}
 
-	memset((Ptr)theROM + 131072l, 0, RTOP - 131072l);
+	memset((Ptr)memBase + 131072l, 0, RTOP - 131072l);
 
 	while (RL((w32 *)gPC) != 0x28000l)
 		gPC++;

@@ -290,9 +290,9 @@ static void InitDevDriver(struct DRV *driver, int indx)
 	       200000l); /* allocate memory for the driver linkage block */
 	if ((*reg) == 0) {
 		driver->ref = aReg[0];
-		p = (w32 *)(aReg[0] + (Ptr)theROM + 4);
+		p = (w32 *)(aReg[0] + (Ptr)memBase + 4);
 		WL(p, DEV_IO_ADDR); /* io    */
-		WL(p + 1, (w32)((Ptr)(p + 3) - (Ptr)theROM)); /* open  */
+		WL(p + 1, (w32)((Ptr)(p + 3) - (Ptr)memBase)); /* open  */
 		WL(p + 2, DEV_CLOSE_ADDR); /* close */
 
 		WW(p + 3, DEVO_CMD_CODE);
@@ -322,9 +322,9 @@ void InitDrivers()
 	DEV_CLOSE_ADDR = 0x14022;
 	/*  DEV_OPEN_ADDR=0x14024;*/
 
-	WW(((uw16 *)((Ptr)theROM + DEV_IO_ADDR)), DEVIO_CMD_CODE);
-	WW(((uw16 *)((Ptr)theROM + DEV_CLOSE_ADDR)), DEVC_CMD_CODE);
-	/*WW(((uw16*)((Ptr)theROM+DEV_OPEN_ADDR)),DEV_OPEN_INSTR);*/
+	WW(((uw16 *)((Ptr)memBase + DEV_IO_ADDR)), DEVIO_CMD_CODE);
+	WW(((uw16 *)((Ptr)memBase + DEV_CLOSE_ADDR)), DEVC_CMD_CODE);
+	/*WW(((uw16*)((Ptr)memBase+DEV_OPEN_ADDR)),DEV_OPEN_INSTR);*/
 
 	qlux_table[DEVO_CMD_CODE] = DrvOpen;
 	qlux_table[DEVIO_CMD_CODE] = DrvIO;
@@ -343,7 +343,7 @@ char *a0addr(Cond check)
 	if (*aReg < 131072 || *aReg > RTOP - 130) {
 		return nil;
 	}
-	f = (char *)((Ptr)theROM + ((*aReg) & ADDR_MASK_E));
+	f = (char *)((Ptr)memBase + ((*aReg) & ADDR_MASK_E));
 	if (!check)
 		return f;
 	if (DGET_ID(f) == DRV_ID)
@@ -357,7 +357,7 @@ void DrvIO(void)
 	struct DRV *driver;
 	int ix;
 
-	if ((long)((Ptr)gPC - (Ptr)theROM) - 2 != DEV_IO_ADDR) {
+	if ((long)((Ptr)gPC - (Ptr)memBase) - 2 != DEV_IO_ADDR) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -403,7 +403,7 @@ void DrvOpen(void)
 	int err, found = 0;
 
 #if 0 /* need a different test here */
-  if((long)((Ptr)gPC-(Ptr)theROM)-2 != 0x14002l)
+  if((long)((Ptr)gPC-(Ptr)memBase)-2 != 0x14002l)
     {
       exception=4;
       extraFlag=true;
@@ -413,7 +413,7 @@ void DrvOpen(void)
     }
 #endif
 
-	name = (char *)((Ptr)theROM + ((*aReg) & ADDR_MASK_E));
+	name = (char *)((Ptr)memBase + ((*aReg) & ADDR_MASK_E));
 	//printf("DrvOpen: %s\n",name+2);
 #if 0
   if(*aReg>=RTOP || ((*aReg+RW(name))>=RTOP))
@@ -472,7 +472,7 @@ void DrvClose(void)
 	int ix;
 	w32 saved_regs[16];
 
-	if ((long)((Ptr)gPC - (Ptr)theROM) - 2 != DEV_CLOSE_ADDR) {
+	if ((long)((Ptr)gPC - (Ptr)memBase) - 2 != DEV_CLOSE_ADDR) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -801,17 +801,17 @@ void ioread(int (*io_read)(), void *priv, uw32 addr, int *count, int lf)
 
 	if (cnt > 0) {
 		if (lf) {
-			for (i = 0, fn = cnt, p = (Ptr)theROM + from; fn > 0;) {
+			for (i = 0, fn = cnt, p = (Ptr)memBase + from; fn > 0;) {
 				e = err = (*io_read)(priv, p, 1);
 
 				if (err < 0) {
-					cnt = (long)((Ptr)p - (Ptr)theROM) -
+					cnt = (long)((Ptr)p - (Ptr)memBase) -
 					      from;
 					goto errexit;
 				}
 
 				if (err == 0 && *(p - 1) != 10) {
-					cnt = (long)((Ptr)p - (Ptr)theROM) -
+					cnt = (long)((Ptr)p - (Ptr)memBase) -
 					      from;
 					e = QERR_EF; /* QERR_NC ???*/
 					goto errexit;
@@ -825,7 +825,7 @@ void ioread(int (*io_read)(), void *priv, uw32 addr, int *count, int lf)
 				}
 			}
 			if (i) {
-				cnt = (long)((Ptr)i - (Ptr)theROM) - from;
+				cnt = (long)((Ptr)i - (Ptr)memBase) - from;
 				e = 0;
 			} else {
 				cnt = ocnt;
@@ -833,7 +833,7 @@ void ioread(int (*io_read)(), void *priv, uw32 addr, int *count, int lf)
 			}
 		} else /* non LF part here */
 		{
-			e = err = (*io_read)(priv, (Ptr)theROM + from, cnt);
+			e = err = (*io_read)(priv, (Ptr)memBase + from, cnt);
 			/*printf("ser_read resutl: %d\n",e);*/
 			if (e <= 0) {
 				if (e == 0 && cnt > 0)
@@ -915,7 +915,7 @@ void io_handle(int (*io_read)(), int (*io_write)(), int (*io_pend)(),
 
 	case 7: /* send string */
 		count = (uw16)reg[2];
-		res = (*io_write)(priv, (Ptr)theROM + aReg[1], count);
+		res = (*io_write)(priv, (Ptr)memBase + aReg[1], count);
 		if (res < 0) {
 			count = 0;
 			*reg = res;
@@ -936,7 +936,7 @@ void io_handle(int (*io_read)(), int (*io_write)(), int (*io_pend)(),
 
 	case 0x49:
 		count = reg[2];
-		res = (*io_write)(priv, (Ptr)theROM + aReg[1], count);
+		res = (*io_write)(priv, (Ptr)memBase + aReg[1], count);
 		if (res < 0) {
 			count = 0;
 			*reg = res;

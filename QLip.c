@@ -188,8 +188,8 @@ int ip_open(int id, void **priv)
 			w32 scht;
 
 			/*QLtrap(1, 0, 20000l); */ /*sysvars are (a6) ..*/
-			scht = RL((Ptr)theROM + aReg[6] + 0x78);
-			aReg[0] = RL((Ptr)theROM + scht +
+			scht = RL((Ptr)memBase + aReg[6] + 0x78);
+			aReg[0] = RL((Ptr)memBase + scht +
 				     ((reg[3] & 0xffff) << 2));
 
 			/* !!! ADD USUAL ERROR CHECKING !!! */
@@ -343,7 +343,7 @@ void net_convert(struct netent *h1, struct netent *h2)
 	w32 hql;
 
 	h = (char *)h2 + sizeof(struct netent);
-	hql = (uintptr_t)h - (uintptr_t)theROM;
+	hql = (uintptr_t)h - (uintptr_t)memBase;
 #if 1 /*def O3BUG    */
 	WL((w32 *)&h2->n_name, hql);
 #else
@@ -401,7 +401,7 @@ void proto_convert(struct protoent *h1, struct protoent *h2)
 	w32 hql;
 
 	h = (char *)h2 + sizeof(struct protoent);
-	hql = (uintptr_t)h - (uintptr_t)theROM;
+	hql = (uintptr_t)h - (uintptr_t)memBase;
 #if 1 /*def O3BUG */
 	WL((w32 *)&h2->p_name, hql);
 #else
@@ -456,7 +456,7 @@ void serv_convert(struct servent *h1, struct servent *h2)
 	w32 hql;
 
 	h = (char *)h2 + sizeof(struct servent);
-	hql = (uintptr_t)h - (uintptr_t)theROM;
+	hql = (uintptr_t)h - (uintptr_t)memBase;
 #if 1 /*def O3BUG */
 	WL((w32 *)&h2->s_name, (w32)hql);
 #else
@@ -525,7 +525,7 @@ void host_convert(struct hostent *h1, struct ql_hostent *h2)
 	assert (sizeof(struct ql_hostent) == 20);
 
 	h = (char *)h2 + sizeof(struct ql_hostent); /* start of free space */
-	hql = (uintptr_t)h - (uintptr_t)theROM; /* address in QDOS */
+	hql = (uintptr_t)h - (uintptr_t)memBase; /* address in QDOS */
 
 	WL((w32 *)&h2->h_name, hql); /* set address for name */
 
@@ -1127,7 +1127,7 @@ struct sockaddr *setsockaddr(ipdev_t *priv, long qladdr, struct sockaddr_in *sin
 	int ql_sa_family;
 
 	if (qladdr) {
-		qlsa = (struct ql_sockaddr *)((Ptr)theROM + qladdr);
+		qlsa = (struct ql_sockaddr *)((Ptr)memBase + qladdr);
 	} else {
 		return (struct sockaddr *)&priv->name;
 	}
@@ -1183,27 +1183,27 @@ void ip_io(int id, void *p)
 	switch (op) {
 #ifndef __WIN32__
 	case IP_GETDOMAIN:
-		*reg = ip_getdomainname((Ptr)theROM + aReg[1], count);
+		*reg = ip_getdomainname((Ptr)memBase + aReg[1], count);
 		break;
 #endif
 	case IP_GETHOSTNAME:
-		*reg = ip_gethostname((Ptr)theROM + aReg[1], count);
+		*reg = ip_gethostname((Ptr)memBase + aReg[1], count);
 		break;
 	case IP_GETSOCKNAME:
-		*reg = ip_getsockname(priv, (Ptr)theROM + aReg[1], &count);
+		*reg = ip_getsockname(priv, (Ptr)memBase + aReg[1], &count);
 		reg[1] = count;
 		break;
 	case IP_GETPEERNAME:
-		*reg = ip_getpeername(priv, (Ptr)theROM + aReg[1], &count);
+		*reg = ip_getpeername(priv, (Ptr)memBase + aReg[1], &count);
 		reg[1] = count;
 		break;
 	case IP_GETHOSTBYNAME:
-		*reg = ip_gethostbyname((Ptr)theROM + aReg[1],
-					(Ptr)theROM + aReg[2]);
+		*reg = ip_gethostbyname((Ptr)memBase + aReg[1],
+					(Ptr)memBase + aReg[2]);
 		break;
 	case IP_GETHOSTBYADDR:
-		*reg = ip_gethostbyaddr((Ptr)theROM + aReg[1], reg[1], reg[2],
-					(Ptr)theROM + aReg[2]);
+		*reg = ip_gethostbyaddr((Ptr)memBase + aReg[1], reg[1], reg[2],
+					(Ptr)memBase + aReg[2]);
 		break;
 #ifndef __WIN32__
 	case IP_SETHOSTENT:
@@ -1218,21 +1218,21 @@ void ip_io(int id, void *p)
 		reg[1] = res;
 		break;
 	case IP_H_STRERROR:
-		*reg = ip_h_strerror((Ptr)theROM + aReg[1]);
+		*reg = ip_h_strerror((Ptr)memBase + aReg[1]);
 		break;
 #ifndef __WIN32__
 	case IP_GETSERVENT:
-		*reg = ip_getservent((Ptr)theROM + aReg[2]);
+		*reg = ip_getservent((Ptr)memBase + aReg[2]);
 		break;
 #endif
 	case IP_GETSERVBYNAME:
-		*reg = ip_getservbyname((Ptr)theROM + aReg[1],
-					(Ptr)theROM + reg[1],
-					(Ptr)theROM + aReg[2]);
+		*reg = ip_getservbyname((Ptr)memBase + aReg[1],
+					(Ptr)memBase + reg[1],
+					(Ptr)memBase + aReg[2]);
 		break;
 	case IP_GETSERVBYPORT:
-		*reg = ip_getservbyport(reg[1], (Ptr)theROM + aReg[3],
-					(Ptr)theROM + aReg[2]);
+		*reg = ip_getservbyport(reg[1], (Ptr)memBase + aReg[3],
+					(Ptr)memBase + aReg[2]);
 		break;
 #ifndef __WIN32__
 	case IP_SETSERVENT:
@@ -1242,14 +1242,14 @@ void ip_io(int id, void *p)
 		*reg = ip_endservent();
 		break;
 	case IP_GETNETENT:
-		*reg = ip_getnetent((Ptr)theROM + aReg[2]);
+		*reg = ip_getnetent((Ptr)memBase + aReg[2]);
 		break;
 	case IP_GETNETBYNAME:
-		*reg = ip_getnetbyname((Ptr)theROM + aReg[1],
-				       (Ptr)theROM + aReg[2]);
+		*reg = ip_getnetbyname((Ptr)memBase + aReg[1],
+				       (Ptr)memBase + aReg[2]);
 		break;
 	case IP_GETNETBYADDR:
-		*reg = ip_getnetbyaddr(reg[1], reg[2], (Ptr)theROM + aReg[2]);
+		*reg = ip_getnetbyaddr(reg[1], reg[2], (Ptr)memBase + aReg[2]);
 		break;
 	case IP_SETNETENT:
 		*reg = ip_setnetent(reg[1]);
@@ -1258,15 +1258,15 @@ void ip_io(int id, void *p)
 		*reg = ip_endnetent();
 		break;
 	case IP_GETPROTOENT:
-		*reg = ip_getprotoent((Ptr)theROM + aReg[2]);
+		*reg = ip_getprotoent((Ptr)memBase + aReg[2]);
 		break;
 #endif
 	case IP_GETPROTOBYNAME:
-		*reg = ip_getprotobyname((Ptr)theROM + aReg[1],
-					 (Ptr)theROM + aReg[2]);
+		*reg = ip_getprotobyname((Ptr)memBase + aReg[1],
+					 (Ptr)memBase + aReg[2]);
 		break;
 	case IP_GETPROTOBYNUMBER:
-		*reg = ip_getprotobynumber(reg[1], (Ptr)theROM + aReg[2]);
+		*reg = ip_getprotobynumber(reg[1], (Ptr)memBase + aReg[2]);
 		break;
 #ifndef __WIN32__
 	case IP_SETPROTOENT:
@@ -1279,41 +1279,41 @@ void ip_io(int id, void *p)
 		break;
 #endif
 	case IP_INET_ATON:
-		*reg = ip_inet_aton((Ptr)theROM + aReg[1],
-				    (Ptr)theROM + aReg[2], &res);
+		*reg = ip_inet_aton((Ptr)memBase + aReg[1],
+				    (Ptr)memBase + aReg[2], &res);
 		reg[1] = res;
 		break;
 	case IP_INET_NETWORK:
 #ifdef QM_BIG_ENDIAN
-		*reg = ip_inet_network((Ptr)theROM + aReg[1],
+		*reg = ip_inet_network((Ptr)memBase + aReg[1],
 				       (unsigned long *)&res);
 		reg[1] = res;
 		break;
 #endif
 	case IP_INET_ADDR:
-		*reg = ip_inet_addr((Ptr)theROM + aReg[1],
+		*reg = ip_inet_addr((Ptr)memBase + aReg[1],
 				    (unsigned long *)&res);
 		reg[1] = res;
 		break;
 	case IP_INET_NTOA:
-		*reg = ip_inet_ntoa((Ptr)theROM + aReg[1],
-				    (Ptr)theROM + aReg[2]);
+		*reg = ip_inet_ntoa((Ptr)memBase + aReg[1],
+				    (Ptr)memBase + aReg[2]);
 		break;
 #ifndef __WIN32__
 	case IP_INET_MAKEADDR:
-		*reg = ip_inet_makeaddr(reg[1], reg[2], (Ptr)theROM + aReg[2]);
+		*reg = ip_inet_makeaddr(reg[1], reg[2], (Ptr)memBase + aReg[2]);
 		break;
 #endif
 #ifndef __WIN32__
 	case IP_INET_LNAOF:
-		*reg = ip_inet_lnaof((Ptr)theROM + aReg[1],
+		*reg = ip_inet_lnaof((Ptr)memBase + aReg[1],
 				     (unsigned long *)&res);
 		reg[1] = res;
 		break;
 #endif
 #ifndef __WIN32__
 	case IP_INET_NETOF:
-		*reg = ip_inet_netof((Ptr)theROM + aReg[1],
+		*reg = ip_inet_netof((Ptr)memBase + aReg[1],
 				     (unsigned long *)&res);
 		reg[1] = res;
 		break;
@@ -1325,7 +1325,7 @@ void ip_io(int id, void *p)
 #endif
 #ifndef __WIN32__
 	case IP_IOCTL:
-		*reg = ip_ioctl(priv, reg[1], ((Ptr)theROM + aReg[1]));
+		*reg = ip_ioctl(priv, reg[1], ((Ptr)memBase + aReg[1]));
 		break;
 #endif
 	case IP_BIND:
@@ -1347,7 +1347,7 @@ void ip_io(int id, void *p)
 #endif
 	case IP_SEND:
 		qaddr = aReg[1];
-		res = ip_send(priv, (Ptr)theROM + aReg[1], count, reg[1], NULL,
+		res = ip_send(priv, (Ptr)memBase + aReg[1], count, reg[1], NULL,
 			      0);
 		if (res >= 0) {
 			reg[1] = res;
@@ -1360,7 +1360,7 @@ void ip_io(int id, void *p)
 		params = aReg[2];
 		len = ReadLong(params + 4);
 		sa = setsockaddr(priv, ReadLong(params), &ip_sockaddr);
-		*reg = ip_send(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
+		*reg = ip_send(priv, (Ptr)memBase + aReg[1], count, reg[1], sa,
 			       len);
 		resetsockaddr(priv, sa);
 		break;
@@ -1371,7 +1371,7 @@ void ip_io(int id, void *p)
 #endif
 	case IP_RECV:
 		qaddr = aReg[1];
-		res = ip_recv(priv, (Ptr)theROM + aReg[1], count, reg[1], NULL,
+		res = ip_recv(priv, (Ptr)memBase + aReg[1], count, reg[1], NULL,
 			      NULL);
 		/*printf("ip_recv res: %d\n",res);*/
 
@@ -1385,7 +1385,7 @@ void ip_io(int id, void *p)
     case 2: /* io.fline */
             count &= 0xffff;
             qaddr = aReg[1];
-            res = ip_recvlf(priv, (Ptr)theROM+aReg[1], count);
+            res = ip_recvlf(priv, (Ptr)memBase+aReg[1], count);
             if(res >= 0)
             {
                 reg[1] = res;
@@ -1399,7 +1399,7 @@ void ip_io(int id, void *p)
 		params = aReg[2];
 		len = ReadLong(params + 4);
 		sa = setsockaddr(priv, ReadLong(params), &ip_sockaddr);
-		*reg = ip_recv(priv, (Ptr)theROM + aReg[1], count, reg[1], sa,
+		*reg = ip_recv(priv, (Ptr)memBase + aReg[1], count, reg[1], sa,
 			       &len);
 		resetsockaddr(priv, sa);
 		reg[1] = len;
@@ -1407,12 +1407,12 @@ void ip_io(int id, void *p)
 	case IP_GETOPT:
 		len = reg[1];
 		*reg = ip_getsockopt(priv, reg[2], (int)aReg[2],
-				     (Ptr)theROM + aReg[1], &len);
+				     (Ptr)memBase + aReg[1], &len);
 		reg[1] = (uint32_t)len;
 		break;
 	case IP_SETOPT:
 		*reg = ip_setsockopt(priv, reg[2], (int)aReg[2],
-				     (Ptr)theROM + aReg[1], reg[1]);
+				     (Ptr)memBase + aReg[1], reg[1]);
 		break;
 	case IP_SHUTDWN:
 		ip_shutdown(priv, reg[1]);

@@ -890,12 +890,12 @@ int QHread(int fd, w32 *addr, long *count, Cond lf)
 
 	if (cnt > 0) {
 		if (lf) {
-			for (i = 0, fn = cnt, p = (Ptr)theROM + from; fn > 0;
+			for (i = 0, fn = cnt, p = (Ptr)memBase + from; fn > 0;
 			     fn = fn - 1024, p = p + 1024) {
 				sz = min(1024, fn);
 				err = read(fd, p, sz);
 				if (err <= 0) {
-					cnt = (Ptr)p - (Ptr)theROM - from;
+					cnt = (Ptr)p - (Ptr)memBase - from;
 					if (cnt > 0) {
 						e = QERR_NC;
 						goto ret;
@@ -909,10 +909,10 @@ int QHread(int fd, w32 *addr, long *count, Cond lf)
 					break;
 			}
 			if (i)
-				cnt = (Ptr)i - (Ptr)theROM - from + 1;
+				cnt = (Ptr)i - (Ptr)memBase - from + 1;
 
 		} else {
-			cnt = read(fd, (Ptr)theROM + from, cnt);
+			cnt = read(fd, (Ptr)memBase + from, cnt);
 			if (cnt < 0 && eretry()) {
 				cnt = 0;
 				e = QERR_NC;
@@ -1181,7 +1181,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		break;
 	case 7: /* send string */
 		count = (uw16)reg[2];
-		reg[0] = QWrite(fd, (Ptr)theROM + aReg[1], &count);
+		reg[0] = QWrite(fd, (Ptr)memBase + aReg[1], &count);
 		reg[1] = count;
 		aReg[1] += count;
 		break;
@@ -1204,16 +1204,16 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		break;
 	case 0x45: /* medium information */
 		reg[1] = 0x7fff7fff; /* fake number for now */
-		memset((char *)theROM + aReg[1], ' ', 10);
+		memset((char *)memBase + aReg[1], ' ', 10);
 		if (GET_FILESYS(f) >= 0)
-			strncpy((char *)theROM + aReg[1],
+			strncpy((char *)memBase + aReg[1],
 				qdevs[GET_FILESYS(f)].mountPoints[GET_DRIVE(f)],
 				10);
 		else
-			strncpy((char *)theROM + aReg[1], "uQVFSx     ", 10);
+			strncpy((char *)memBase + aReg[1], "uQVFSx     ", 10);
 		break;
 	case 0x46: /* set file header */
-		h = aReg[1] + (Ptr)theROM;
+		h = aReg[1] + (Ptr)memBase;
 		/*count=(uw16)reg[1];*/
 		reg[1] = 14 | (reg[1] & (~0xffff));
 		memcpy(&hh, h, 64);
@@ -1265,7 +1265,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];
-		reg[0] = QWrite(fd, (Ptr)theROM + aReg[1], &count);
+		reg[0] = QWrite(fd, (Ptr)memBase + aReg[1], &count);
 		aReg[1] += count;
 		break;
 	case 36: /* clear righthand end of cursor line (viene mandato dal Basic durante un save) */
@@ -1283,8 +1283,8 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 			int res;
 			char *qln;
 
-			qln = (Ptr)theROM + aReg[1] + 2;
-			qlen = RW((Ptr)theROM + aReg[1]);
+			qln = (Ptr)memBase + aReg[1] + 2;
+			qlen = RW((Ptr)memBase + aReg[1]);
 
 			res = rename_file(f, fd, qln, qlen, fstype);
 
@@ -1413,27 +1413,27 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		char *p;
 		long mxs;
 
-		memset((char *)theROM + aReg[1] + 0, -1, 64);
+		memset((char *)memBase + aReg[1] + 0, -1, 64);
 		if (GET_FILESYS(f) >= 0) {
-			strncpy((char *)theROM + aReg[1] + 2,
+			strncpy((char *)memBase + aReg[1] + 2,
 				(p = qdevs[GET_FILESYS(f)]
 					     .mountPoints[GET_DRIVE(f)]),
 				20);
 		} else {
-			strcpy((char *)theROM + aReg[1] + 2,
+			strcpy((char *)memBase + aReg[1] + 2,
 			       (p = "uQVFSx root"));
 		}
 		nl = strlen(p);
 		WriteWord(aReg[1], min(20, nl));
 		nl = strlen(qdevs[GET_FILESYS(f)].qname);
 		WriteWord(aReg[1] + 0x16, nl);
-		strncpy((char *)theROM + aReg[1] + 0x18,
+		strncpy((char *)memBase + aReg[1] + 0x18,
 			qdevs[GET_FILESYS(f)].qname, nl);
 		mxs = strncasecmp(qdevs[GET_FILESYS(f)].qname, "RAM", 3) ?
 				    999999 :
 				    32767;
-		*((char *)theROM + aReg[1] + 0x1c) = 1 + GET_DRIVE(f);
-		*((char *)theROM + aReg[1] + 0x1d) = 0;
+		*((char *)memBase + aReg[1] + 0x1c) = 1 + GET_DRIVE(f);
+		*((char *)memBase + aReg[1] + 0x1d) = 0;
 		WriteWord(aReg[1] + 0x1e, 1024);
 		WriteLong(aReg[1] + 0x20, mxs);
 		WriteLong(aReg[1] + 0x24, mxs);

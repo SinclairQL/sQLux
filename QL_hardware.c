@@ -118,7 +118,7 @@ Cond IPC_Command(void)	/* returns false for commands to handle low-level, true o
 		return true; /*break;*/
 	case 10: /* initiate sound generation */
 		if (sound_enabled) {
-			BeepSound((unsigned char*)theROM+(aReg[3]&0x3ffffe));
+			BeepSound((unsigned char*)memBase+(aReg[3]&0x3ffffe));
 		}
 		return true; /*break;*/
 	case 11: /* kill sound */
@@ -138,7 +138,7 @@ Cond IPC_Command(void)	/* returns false for commands to handle low-level, true o
 
 void UseIPC(void)		/* ROM patch: executing IPC command */
 {
-	if((Ptr)gPC-(Ptr)theROM-2==IPC_CMD_ADDR)
+	if((Ptr)gPC-(Ptr)memBase-2==IPC_CMD_ADDR)
 	{	if(IPC_Command()) rts();
 		else qlux_table[code=0x40e7]();
 	}
@@ -152,7 +152,7 @@ void UseIPC(void)		/* ROM patch: executing IPC command */
 
 void ReadIPC(void)		/* ROM patch: reading from IPC */
 {
-	if((Ptr)gPC-(Ptr)theROM-2==IPCR_CMD_ADDR)
+	if((Ptr)gPC-(Ptr)memBase-2==IPCR_CMD_ADDR)
 	{
 	  /*printf("ReadIPC\n");*/
 
@@ -228,7 +228,7 @@ void WriteIPC(void)		/* ROM patch: writing to IPC */
 {
   /*printf("write IPC\n");*/
 
-  if((Ptr)gPC-(Ptr)theROM-2==IPCW_CMD_ADDR)
+  if((Ptr)gPC-(Ptr)memBase-2==IPCW_CMD_ADDR)
     {
       rts();
       if(IPCW_n--) IPCW_buff[IPCW_p++]=(uw8)(*reg);
@@ -274,7 +274,7 @@ void CheckCapsLock(short m)
 }
 
 void QL_KeyTrans(void)
-{	if((Ptr)gPC-(Ptr)theROM-2!=KEYTRANS_CMD_ADDR)
+{	if((Ptr)gPC-(Ptr)memBase-2!=KEYTRANS_CMD_ADDR)
 	{	exception=4;
 		extraFlag=true;
 		nInst2=nInst;
@@ -362,7 +362,7 @@ void KBencCmd()
     }
   else   /* fall through into original routine */
     {
-      pc = (Ptr)theROM+orig_kbenc;
+      pc = (Ptr)memBase+orig_kbenc;
     }
 }
 

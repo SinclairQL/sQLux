@@ -142,10 +142,10 @@ void rtr(void)
 void rts(void)
 {
 #ifdef BACKTRACE
-	SetPCB((uw16 *)((Ptr)theROM + (ReadLong(*m68k_sp) & ADDR_MASK)), RTS);
+	SetPCB((uw16 *)((Ptr)memBase + (ReadLong(*m68k_sp) & ADDR_MASK)), RTS);
 #else
 	/* uggly cast to avoid warning */
-	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)theROM + (ReadLong(*m68k_sp) &
+	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)memBase + (ReadLong(*m68k_sp) &
 							     ADDR_MASK)))) &
 	     1) != 0) {
 		exception = 3;

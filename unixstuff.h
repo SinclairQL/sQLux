@@ -1,5 +1,5 @@
-#ifndef UNIXSTUFF_H
-#define UNIXSTUFF_H
+#pragma once
+#include <stdint.h>
 
 extern int QLdone;
 extern char *homedir;
@@ -14,10 +14,8 @@ long ux2qltime(long t);
 void ChangedMemory(int from, int to);
 int qm_fork(void (*cleanup)(), unsigned long id);
 void prep_rtc_emu(void);
-void GetDateTime(w32 *t);
+void GetDateTime(int32_t *t);
 void DbgInfo(void);
 void dosignal(void);
-w32 ReadQlClock(void);
-uw32 sysvar_l(uw32 a);
-
-#endif
+int32_t ReadQlClock(void);
+uint32_t sysvar_l(uint32_t a);

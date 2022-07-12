@@ -65,7 +65,7 @@ void TraceInit()
 
 void AddBackTrace(Ptr p, int type)
 { 
-  uw16 *lpc=(uw16*)((Ptr)pc-(Ptr)theROM);
+  uw16 *lpc=(uw16*)((Ptr)pc-(Ptr)memBase);
   if (btcurr>backtrace+BACKTRSIZE) btcurr=backtrace;
   
   btcurr->where=p;
@@ -80,7 +80,7 @@ void AddBackTrace(Ptr p, int type)
 void CheckTrace()
 {
   struct TRT *p;
-  uw16 *lpc=(uw16*)((Ptr)pc-(Ptr)theROM);
+  uw16 *lpc=(uw16*)((Ptr)pc-(Ptr)memBase);
 
 
   p=tracetable;
@@ -95,10 +95,10 @@ void CheckTrace()
     }
   if (curr)
     {
-      tracelo=(uw16*)((Ptr)(curr->low)+(long)theROM);
-      tracehi=(uw16*)((Ptr)(curr->high)+(long)theROM);
+      tracelo=(uw16*)((Ptr)(curr->low)+(long)memBase);
+      tracehi=(uw16*)((Ptr)(curr->high)+(long)memBase);
     }
-  else tracelo=(uw16*)((Ptr)RTOP+(long)theROM); 
+  else tracelo=(uw16*)((Ptr)RTOP+(long)memBase); 
 }
 
 void DoTrace()
@@ -111,7 +111,7 @@ void DoTrace()
       return;
     }
   
-  printf("Trace : %s+%x\n",curr->comment,(Ptr)pc-(Ptr)(curr->low)-(long)theROM);
+  printf("Trace : %s+%x\n",curr->comment,(Ptr)pc-(Ptr)(curr->low)-(long)memBase);
   DbgInfo();
 }
  
@@ -187,7 +187,7 @@ void BackTrace(int depth)
       }
       else BTShowException(-what);
       
-      printf("at PC=%x, new pc=%x\n",(Ptr)(p->where)-(Ptr)theROM,p->to);
+      printf("at PC=%x, new pc=%x\n",(Ptr)(p->where)-(Ptr)memBase,p->to);
     }
 }
 

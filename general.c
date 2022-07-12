@@ -147,7 +147,7 @@ void FrameInt(void)
 		theInt = 8;
 		intReg ^= 8;
 		pendingInterrupt = 2;
-		*((uw8 *)theROM + 0x280a0l) = 16;
+		*((uw8 *)memBase + 0x280a0l) = 16;
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
@@ -184,13 +184,13 @@ void WriteHWByte(aw32 addr, aw8 d)
 	case 0x018002:
 		if (d != 16) {
 			debug2("Write to transmit control >", d);
-			debug2("at pc-2 ", (Ptr)pc - (Ptr)theROM - 2);
+			debug2("at pc-2 ", (Ptr)pc - (Ptr)memBase - 2);
 			/*TRR;*/
 		}
 		break;
 	case 0x018003:
 		debugIPC("Write to IPC link > ", d);
-		debugIPC("at (PC-2) ", (Ptr)pc - (Ptr)theROM - 2);
+		debugIPC("at (PC-2) ", (Ptr)pc - (Ptr)memBase - 2);
 		/*TRR;*/
 		break;
 	case 0x018020:
@@ -213,7 +213,7 @@ void WriteHWByte(aw32 addr, aw8 d)
 		break;
 	default:
 		debug2("Write to HW register ", addr);
-		debug2("at (PC-2) ", (Ptr)pc - (Ptr)theROM - 2);
+		debug2("at (PC-2) ", (Ptr)pc - (Ptr)memBase - 2);
 		/*TRR;*/
 		break;
 	}
@@ -236,10 +236,10 @@ rw8 ReadHWByte(aw32 addr)
 		return res = ReadRTClock(addr);
 	case 0x018020:
 		debug("Read from MDV/RS232 status");
-		debug2("PC-2=", (Ptr)pc - (Ptr)theROM - 2);
+		debug2("PC-2=", (Ptr)pc - (Ptr)memBase - 2);
 		break;
 	case 0x018021:
-		/*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)theROM-2);*/
+		/*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)memBase-2);*/
 		res = IntRead();
 	case 0x018022: /*debug("Read from MDV track 1");*/
 		break;
@@ -272,7 +272,7 @@ rw8 ReadHWByte(aw32 addr)
 #endif
 	default:
 		debug2("Read from HW register ", addr);
-		debug2("at (PC-2) ", (Ptr)pc - (Ptr)theROM - 2);
+		debug2("at (PC-2) ", (Ptr)pc - (Ptr)memBase - 2);
 		break;
 	}
 	/*printf("result %x \n",res);*/

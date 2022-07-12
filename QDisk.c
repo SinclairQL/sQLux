@@ -1708,7 +1708,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 			to = RTOP;
 		count = to - from;
 		if (count > 0) {
-			reg[0] = QRead(f, (Ptr)theROM + from, &count, false,
+			reg[0] = QRead(f, (Ptr)memBase + from, &count, false,
 				       nil);
 			/*	printf("io.fstrg res: %d\n",e);*/
 
@@ -1725,7 +1725,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		break;
 	case 7: /* send string */
 		count = (uw16)reg[2];
-		reg[0] = QWrite(f, (Ptr)theROM + aReg[1], &count);
+		reg[0] = QWrite(f, (Ptr)memBase + aReg[1], &count);
 		reg[1] = count;
 		aReg[1] += count;
 		break;
@@ -1798,7 +1798,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		if (count < 4)
 			count = 4;
 		if (GET_FNUMBER(f).file == root_fn().file) {
-			char *p = (char *)theROM + aReg[1];
+			char *p = (char *)memBase + aReg[1];
 
 			reg[1] = count;
 			count = (count - 4) >> 1;
@@ -1843,7 +1843,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		count = to - from;
 
 		if (count > 0) {
-			*reg = QRead(f, (Ptr)theROM + from, &count, false, nil);
+			*reg = QRead(f, (Ptr)memBase + from, &count, false, nil);
 			to = from + count;
 			aReg[1] = to;
 			ChangedMemory(from, to);
@@ -1854,7 +1854,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];
-		*reg = QWrite(f, (Ptr)theROM + aReg[1], &count);
+		*reg = QWrite(f, (Ptr)memBase + aReg[1], &count);
 		aReg[1] += count;
 		break;
 	case 36: /* clear righthand end of cursor line (viene mandato dal Basic durante un save) */
@@ -1932,28 +1932,28 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		char *p;
 		long free, mxs;
 
-		memset((char *)theROM + aReg[1] + 0, -1, 64);
+		memset((char *)memBase + aReg[1] + 0, -1, 64);
 		if (GET_FILESYS(f) >= 0) {
-			strncpy((char *)theROM + aReg[1] + 2,
+			strncpy((char *)memBase + aReg[1] + 2,
 				(p = qdevs[GET_FILESYS(f)]
 					     .mountPoints[GET_DRIVE(f)]),
 				20);
 		} else {
-			strcpy((char *)theROM + aReg[1] + 2,
+			strcpy((char *)memBase + aReg[1] + 2,
 			       (p = "uQVFSx root"));
 		}
 		nl = strlen(p);
 		WriteWord(aReg[1], min(20, nl));
 		nl = strlen(qdevs[GET_FILESYS(f)].qname);
 		WriteWord(aReg[1] + 0x16, nl);
-		strncpy((char *)theROM + aReg[1] + 0x18,
+		strncpy((char *)memBase + aReg[1] + 0x18,
 			qdevs[GET_FILESYS(f)].qname, nl);
 		free = is_qlwa() ? QWA_FC(curr_flpfcb->qdh) :
 					 QDH_FREE(curr_flpfcb->qdh);
 		mxs = is_qlwa() ? QWA_CC(curr_flpfcb->qdh) :
 					QDH_TOTAL(curr_flpfcb->qdh);
-		*((char *)theROM + aReg[1] + 0x1c) = 1 + GET_DRIVE(f);
-		*((char *)theROM + aReg[1] + 0x1d) = 0;
+		*((char *)memBase + aReg[1] + 0x1c) = 1 + GET_DRIVE(f);
+		*((char *)memBase + aReg[1] + 0x1d) = 0;
 		WriteWord(aReg[1] + 0x1e, 1024);
 		WriteLong(aReg[1] + 0x24, free * sect_per_cluster() / 2);
 		WriteLong(aReg[1] + 0x20, mxs * sect_per_cluster() / 2);

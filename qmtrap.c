@@ -22,7 +22,7 @@ void QMExecuteLoop(uw16 *oldPC)  /* fetch and dispatch loop */
 rep:
         while(likely(--nInst>=0 && oldPC!=pc) /* && oldPC!=pc+1 && oldPC!=pc+2 */)
 	  {
-	    /*printf("PC=%x\n",(Ptr)pc-(Ptr)theROM); */
+	    /*printf("PC=%x\n",(Ptr)pc-(Ptr)memBase); */
 	    tab[code=RW(pc++)&0xffff]();
 	  }
 
@@ -95,7 +95,7 @@ void QLvector(int which, int nMax)
 
   ea=ReadWord(which);
 
-  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
+  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)memBase));
   SetPC(ea);
 
   extraFlag=false;
@@ -109,7 +109,7 @@ void QLsubr(uw32 ea, int nMax)
 {
   uw16 *savedPC=pc;
 
-  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)theROM));
+  WriteLong((*m68k_sp)-=4,(w32)((Ptr)pc-(Ptr)memBase));
   SetPC(ea);
 
   extraFlag=false;

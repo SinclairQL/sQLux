@@ -127,7 +127,7 @@ static void InitDirDevDriver(Str255 name, w32 addr, w32 *fsid)
 	if ((*reg) == 0) {
 #if 1
 		*fsid = aReg[0];
-		p = (w32 *)(aReg[0] + (Ptr)theROM + 4);
+		p = (w32 *)(aReg[0] + (Ptr)memBase + 4);
 		WL(p++, addr);
 		WL(p++, addr + 2);
 		WL(p++, addr + 4);
@@ -139,7 +139,7 @@ static void InitDirDevDriver(Str255 name, w32 addr, w32 *fsid)
 #endif
 #if 0
       *fsid=aReg[0];
-      p=(w32*)(aReg[0]+(Ptr)theROM+4);
+      p=(w32*)(aReg[0]+(Ptr)memBase+4);
       *p++=addr;
       *p++=addr+2;
       *p++=addr+4;
@@ -311,7 +311,7 @@ static struct mdvFile *MacFile(Cond check)
 		CustomErrorAlert("bad channel block address");
 		return nil;
 	}
-	f = (struct mdvFile *)((Ptr)theROM + ((*aReg) & ADDR_MASK_E) + 0x1e);
+	f = (struct mdvFile *)((Ptr)memBase + ((*aReg) & ADDR_MASK_E) + 0x1e);
 	if (!check)
 		return f;
 	if (GET_ID(f) == MDV_ID)
@@ -372,7 +372,7 @@ void MdvIO(void)
 	w16 *w;
 	w8 b;
 
-	if ((Ptr)gPC - (Ptr)theROM - 2 != 0x14000l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14000l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -622,7 +622,7 @@ void MdvOpen(void)
 
 	int key;
 
-	if ((Ptr)gPC - (Ptr)theROM - 2 != 0x14002l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14002l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -786,7 +786,7 @@ void MdvClose(void)
 	struct mdvFile *f;
 	int filesys;
 
-	if ((Ptr)gPC - (Ptr)theROM - 2 != 0x14004l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14004l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -837,7 +837,7 @@ void MdvClose(void)
 
 void MdvSlaving(void)
 {
-	if ((Ptr)gPC - (Ptr)theROM - 2 != 0x14006l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14006l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -854,7 +854,7 @@ void MdvFormat(void)
 	long total, empty;
 	int filesys;
 
-	if ((Ptr)gPC - (Ptr)theROM - 2 != 0x14008l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14008l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -888,13 +888,13 @@ void MdvFormat(void)
 					nameLen = 0;
 				flpName[drive][0] = nameLen;
 				if (nameLen > 0)
-					BlockMoveData((Ptr)theROM + aReg[1] + 7,
+					BlockMoveData((Ptr)memBase + aReg[1] + 7,
 						      &(flpName[drive][1]),
 						      nameLen);
 				if (nameLen > 10)
 					nameLen = 10;
 				if (nameLen > 0)
-					BlockMoveData((Ptr)theROM + aReg[1] + 7,
+					BlockMoveData((Ptr)memBase + aReg[1] + 7,
 						      mdvHeaders + 14 * drive +
 							      2,
 						      nameLen);
@@ -907,9 +907,9 @@ void MdvFormat(void)
 				mdvHeaders[drive * 14 + 1] = 0;
 				a6 = 0x28000;
 				mdvHeaders[drive * 14 + 12] =
-					*((uw8 *)theROM + a6 + 0x2e);
+					*((uw8 *)memBase + a6 + 0x2e);
 				mdvHeaders[drive * 14 + 13] =
-					*((uw8 *)theROM + a6 + 0x2f);
+					*((uw8 *)memBase + a6 + 0x2f);
 				/* set number of total/good sectors */
 				*reg = 0;
 				if (qdevs[filesys].Where[drive])
@@ -969,8 +969,8 @@ static void AddReturn(short d)
 
 void ReadMdvSector(void)
 {
-	if ((uw16 *)((Ptr)theROM + 0x4002 +
-		     RW((uw16 *)((Ptr)theROM + 0x124))) == gPC) {
+	if ((uw16 *)((Ptr)memBase + 0x4002 +
+		     RW((uw16 *)((Ptr)memBase + 0x124))) == gPC) {
 		if (mdvOn == 1 || mdvOn == 2) {
 			AddReturn(2);
 			reg[1] = reg[2] = 0;
@@ -987,8 +987,8 @@ void ReadMdvSector(void)
 
 void WriteMdvSector(void)
 {
-	if ((uw16 *)((Ptr)theROM + 0x4002 +
-		     RW((uw16 *)((Ptr)theROM + 0x126))) == gPC) {
+	if ((uw16 *)((Ptr)memBase + 0x4002 +
+		     RW((uw16 *)((Ptr)memBase + 0x126))) == gPC) {
 		if (mdvOn == 1 || mdvOn == 2)
 			aReg[1] += 512;
 		rts();
@@ -1002,8 +1002,8 @@ void WriteMdvSector(void)
 
 void VerifyMdvSector(void)
 {
-	if ((uw16 *)((Ptr)theROM + 0x4002 +
-		     RW((uw16 *)((Ptr)theROM + 0x128))) == gPC) {
+	if ((uw16 *)((Ptr)memBase + 0x4002 +
+		     RW((uw16 *)((Ptr)memBase + 0x128))) == gPC) {
 		if (mdvOn == 1 || mdvOn == 2) {
 			AddReturn(2);
 			reg[1] = reg[2] = 0;
@@ -1022,8 +1022,8 @@ void ReadMdvHeader(void)
 {
 	short i;
 	w8 *p;
-	if ((uw16 *)((Ptr)theROM + 0x4002 +
-		     RW((uw16 *)((Ptr)theROM + 0x12a))) == gPC) {
+	if ((uw16 *)((Ptr)memBase + 0x4002 +
+		     RW((uw16 *)((Ptr)memBase + 0x12a))) == gPC) {
 		if (mdvOn == 1 || mdvOn == 2) {
 			AddReturn(4);
 			p = (w8 *)mdvHeaders;

@@ -91,7 +91,7 @@ volatile char   pendingInterrupt;       /* interrupt requesting service */
 w32      *g_reg;
 
 #ifndef ZEROMAP
-w32             *theROM;                        /* Ptr to ROM in Mac memory */
+w32             *memBase;                        /* Ptr to ROM in Mac memory */
 #endif
 
 w32             *ramTop;                        /* Ptr to RAM top in Mac
@@ -143,7 +143,7 @@ void ProcessInterrupts(void)
 	  (*m68k_sp)=ssp;
 	}
       ExceptionIn(24+pendingInterrupt);
-      WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)theROM);
+      WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)memBase);
       (*m68k_sp)-=6;
       WriteWord(*m68k_sp,GetSR());
       SetPCX(24+pendingInterrupt);
@@ -217,7 +217,7 @@ void REGP1 SetPCX(int i)
   Ptr p=pc;
 #endif
 
-  pc=(uw16*)((Ptr)theROM+(RL(&theROM[i])&ADDR_MASK));
+  pc=(uw16*)((Ptr)memBase+(RL(&memBase[i])&ADDR_MASK));
 
 #ifdef TRACE
   CheckTrace();
@@ -233,7 +233,7 @@ void REGP1 SetPCX(int i)
       nInst2=nInst;
       nInst=0;
       readOrWrite=16;
-      badAddress=(Ptr)pc-(Ptr)theROM;
+      badAddress=(Ptr)pc-(Ptr)memBase;
       badCodeAddress=true;
     }
 }
@@ -259,7 +259,7 @@ void SetPCB(w32 addr, int type)
       return;
     }
 
-  pc=(uw16*)((Ptr)theROM+(addr&ADDR_MASK));
+  pc=(uw16*)((Ptr)memBase+(addr&ADDR_MASK));
 
   CheckTrace();
   AddBackTrace(p,type);
@@ -284,7 +284,7 @@ void REGP1 SetPC(w32 addr)
       return;
     }
 
-  pc=(uw16*)((Ptr)theROM+(addr&ADDR_MASK));
+  pc=(uw16*)((Ptr)memBase+(addr&ADDR_MASK));
 #ifdef TRACE
   CheckTrace();
 #endif
@@ -305,7 +305,7 @@ void ShowException(void)
 
 
   p1=(xc);
-  p2=((Ptr)pc-(Ptr)theROM-(xc==4? 0:2));
+  p2=((Ptr)pc-(Ptr)memBase-(xc==4? 0:2));
   if(xc==4)
     {
       p3="Illegal code=";
@@ -379,7 +379,7 @@ void ExceptionProcessing()
 	}
       ExceptionIn(exception);
       (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)theROM);
+      WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)memBase);
       WriteWord((*m68k_sp),GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
@@ -404,7 +404,7 @@ void ExceptionProcessing()
 	}
       ExceptionIn(9);
       (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,(Ptr)pc-(Ptr)theROM);
+      WriteLong((*m68k_sp)+2,(Ptr)pc-(Ptr)memBase);
       WriteWord((*m68k_sp),GetSR());
       SetPCX(9);
       if(nInst==0) exception=9;       /* no interrupt allowed here */
@@ -483,9 +483,9 @@ void ExecuteChunk(long n)       /* execute n emulated 68K istructions */
 
 void InitialSetup(void) /* 68K state when powered on */
 {
-  ssp=*m68k_sp=RL(&theROM[0]);
-  SetPC(RL(&theROM[1]));
-  if(V3)printf("initial PC=%x SP=%x\n",(w32)((void*)pc-(void*)theROM),ssp);
+  ssp=*m68k_sp=RL(&memBase[0]);
+  SetPC(RL(&memBase[1]));
+  if(V3)printf("initial PC=%x SP=%x\n",(w32)((void*)pc-(void*)memBase),ssp);
 	
   iMask=7;
   supervisor=true;

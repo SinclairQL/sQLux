@@ -85,13 +85,13 @@ add_executable(sqlux
     vm.c
     xc68.c
     xcodes.c
-    xlmain.c
     xqlmouse.c
     sqlux_bdi.c
     mmodes.c
     ${CMAKE_CURRENT_BINARY_DIR}/version.c
     src/sqlux_windows.c
     src/sqlux_hexdump.c
+    src/SDL2main.cpp
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)

@@ -635,7 +635,7 @@ void asr_m(void)
 void bcc_l(void)
 {
 	if (ConditionTrue[(code >> 8) & 15]())
-		SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+		SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 	else
 		pc++;
 }
@@ -643,7 +643,7 @@ void bcc_l(void)
 void beq_l(void)
 {
 	if (zero)
-		SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+		SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 	else
 		pc++;
 }
@@ -651,7 +651,7 @@ void beq_l(void)
 void bne_l(void)
 {
 	if (!zero)
-		SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+		SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 	else
 		pc++;
 }
@@ -659,7 +659,7 @@ void bne_l(void)
 void bcc_bad(void)
 {
 	if (ConditionTrue[(code >> 8) & 15]()) {
-		SetPC((Ptr)pc - (Ptr)theROM +
+		SetPC((Ptr)pc - (Ptr)memBase +
 		      (w8)code); /* cause address error */
 	}
 }
@@ -668,7 +668,7 @@ void bcc_s(void)
 {
 	if (ConditionTrue[(code >> 8) & 15]())
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -681,7 +681,7 @@ void beq_s(void)
 {
 	if (zero)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -694,7 +694,7 @@ void bne_s(void)
 {
 	if (!zero)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -707,7 +707,7 @@ void bcs_s(void)
 {
 	if (carry)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -720,7 +720,7 @@ void bccc_s(void)
 {
 	if (!carry)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -733,7 +733,7 @@ void bpl_s(void)
 {
 	if (!negative)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -746,7 +746,7 @@ void bmi_s(void)
 {
 	if (negative)
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -759,7 +759,7 @@ void bge_s(void)
 {
 	if ((negative && overflow) || (!(negative || overflow)))
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -772,7 +772,7 @@ void blt_s(void)
 {
 	if ((negative && (!overflow)) || ((!negative) && overflow))
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -785,7 +785,7 @@ void bgt_s(void)
 {
 	if ((!zero) && ((negative && overflow) || (!(negative || overflow))))
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -798,7 +798,7 @@ void ble_s(void)
 {
 	if (zero || (negative && (!overflow)) || ((!negative) && overflow))
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+		SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 		pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -809,13 +809,13 @@ void ble_s(void)
 
 void bra_l(void)
 {
-	SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+	SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 }
 
 void bra_s(void)
 {
 #ifdef DEBUG
-	SetPC((Ptr)pc - (Ptr)theROM + (w8)code);
+	SetPC((Ptr)pc - (Ptr)memBase + (w8)code);
 #else
 	pc = (uw16 *)((Ptr)pc + (w8)code);
 #ifdef TRACE
@@ -915,16 +915,16 @@ void bsr(void)
 	w16 displ;
 	w32 oldPC;
 
-	oldPC = (uintptr_t)pc - (uintptr_t)theROM;
+	oldPC = (uintptr_t)pc - (uintptr_t)memBase;
 	if ((displ = (w16)(((w8)(code & 255)))) == 0) {
 		displ = (w16)RW(pc);
 		oldPC += 2;
 	}
 	WriteLong((*m68k_sp) -= 4, oldPC);
 #ifdef BACKTRACE
-	SetPCB((Ptr)pc - (Ptr)theROM + displ, BSR);
+	SetPCB((Ptr)pc - (Ptr)memBase + displ, BSR);
 #else
-	SetPC((Ptr)pc - (Ptr)theROM + displ);
+	SetPC((Ptr)pc - (Ptr)memBase + displ);
 #endif
 }
 
@@ -1316,7 +1316,7 @@ void dbcc(void)
 			pc++;
 		else {
 #ifdef DEBUG
-			SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+			SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 #else
 			pc = (uw16 *)((Ptr)pc + (w16)RW(pc));
 #ifdef TRACE
@@ -1330,7 +1330,7 @@ void dbcc(void)
 				nInst2 = nInst;
 				nInst = 0;
 				readOrWrite = 16;
-				badAddress = (Ptr)pc - (Ptr)theROM;
+				badAddress = (Ptr)pc - (Ptr)memBase;
 				badCodeAddress = true;
 			}
 		}
@@ -1343,7 +1343,7 @@ void dbf(void)
 		pc++;
 	else {
 #ifdef DEBUG
-		SetPC((Ptr)pc - (Ptr)theROM + (w16)RW(pc));
+		SetPC((Ptr)pc - (Ptr)memBase + (w16)RW(pc));
 #else
 		pc = (uw16 *)((Ptr)pc + (w16)RW(pc));
 #ifdef TRACE
@@ -1356,7 +1356,7 @@ void dbf(void)
 			nInst2 = nInst;
 			nInst = 0;
 			readOrWrite = 16;
-			badAddress = (Ptr)pc - (Ptr)theROM;
+			badAddress = (Ptr)pc - (Ptr)memBase;
 			badCodeAddress = true;
 		}
 	}
@@ -1591,7 +1591,7 @@ void jsr(void)
 
 	ea = ARCALL(GetEA, (code >> 3) & 7, (code & 7));
 	/* ea=GET_EA((code>>3)&7,(code&7));*/
-	WriteLong((*m68k_sp) -= 4, (w32)((Ptr)pc - (Ptr)theROM));
+	WriteLong((*m68k_sp) -= 4, (w32)((Ptr)pc - (Ptr)memBase));
 #ifdef BACKTRACE
 	SetPCB(ea, JSR);
 #else
@@ -1602,7 +1602,7 @@ void jsr(void)
 void jsr_displ(void)
 {
 	register w32 ea;
-	ea = (uintptr_t)pc - (uintptr_t)theROM;
+	ea = (uintptr_t)pc - (uintptr_t)memBase;
 	WriteLong((*m68k_sp) -= 4, ea + 2);
 	SetPC(ea + (w16)RW(pc));
 }

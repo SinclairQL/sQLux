@@ -43,7 +43,7 @@ rw8 ReadByte(aw32 addr)
 		return ReadHWByte(addr);
 	}
 
-	return *((w8 *)theROM + addr);
+	return *((w8 *)memBase + addr);
 }
 
 rw16 ReadWord(aw32 addr)
@@ -57,7 +57,7 @@ rw16 ReadWord(aw32 addr)
 		return ((w16)ReadHWWord(addr));
 	}
 
-	return (w16)RW((w16 *)((Ptr)theROM + addr)); /* make sure it is signed */
+	return (w16)RW((w16 *)((Ptr)memBase + addr)); /* make sure it is signed */
 }
 
 rw32 ReadLong(aw32 addr)
@@ -71,7 +71,7 @@ rw32 ReadLong(aw32 addr)
 		return ((w32)ReadHWLong(addr));
 	}
 
-	return (w32)RL((Ptr)theROM + addr); /* make sure is is signed */
+	return (w32)RL((Ptr)memBase + addr); /* make sure is is signed */
 }
 
 void WriteByte(aw32 addr,aw8 d)
@@ -82,12 +82,12 @@ void WriteByte(aw32 addr,aw8 d)
 		return;
 
 	if (is_screen(addr)) {
-		*((w8 *)theROM + addr) = d;
+		*((w8 *)memBase + addr) = d;
 		QLSDLUpdateScreenByte(addr - qlscreen.qm_lo, d);
 	} else if (is_hw(addr)) {
 		WriteHWByte(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
-		*((w8 *)theROM + addr) = d;
+		*((w8 *)memBase + addr) = d;
 	}
 }
 
@@ -99,12 +99,12 @@ void WriteWord(aw32 addr,aw16 d)
 		return;
 
 	if (is_screen(addr)) {
-		WW((Ptr)theROM + addr, d);
+		WW((Ptr)memBase + addr, d);
 		QLSDLUpdateScreenWord(addr - qlscreen.qm_lo, d);
 	} else if (is_hw(addr)) {
 		WriteHWWord(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
-		WW((Ptr)theROM + addr, d);
+		WW((Ptr)memBase + addr, d);
 	}
 }
 
@@ -116,13 +116,13 @@ void WriteLong(aw32 addr,aw32 d)
 		return;
 
 	if (is_screen(addr)) {
-		WL((Ptr)theROM + addr, d);
+		WL((Ptr)memBase + addr, d);
 		QLSDLUpdateScreenLong(addr - qlscreen.qm_lo, d);
 	} else if (is_hw(addr)) {
 		WriteHWWord(addr, d >> 16);
 		WriteHWWord(addr + 2, d);
 	} else if (addr >= QL_ROM_SIZE) {
-		WL((Ptr)theROM + addr, d);
+		WL((Ptr)memBase + addr, d);
 	}
 }
 
@@ -206,7 +206,7 @@ rw8 ModifyAtEA_b(ashort mode,ashort r)
 	addr &= ADDR_MASK;
 
 	lastAddr = addr;
-	dest = (Ptr)theROM + addr;
+	dest = (Ptr)memBase + addr;
 	return ReadByte(addr);
 }
 
@@ -274,7 +274,7 @@ rw16 ModifyAtEA_w(ashort mode,ashort r)
 	addr &= ADDR_MASK;
 
 	lastAddr = addr;
-	dest = (Ptr)theROM + addr;
+	dest = (Ptr)memBase + addr;
 	return ReadWord(addr);
 }
 
@@ -344,7 +344,7 @@ rw32 ModifyAtEA_l(ashort mode, ashort r)
 	addr &= ADDR_MASK;
 
 	lastAddr = addr;
-	dest = (Ptr)theROM + addr;
+	dest = (Ptr)memBase + addr;
 	return ReadLong(addr);
 }
 

@@ -119,9 +119,9 @@ extern w32      *g_reg;
 #define SETREG16(_ra_,_val_) ({w16 *dn; dn=(w16*)(RWO+(char*)&_ra_); *dn=_val_;})
 
 #ifdef ZEROMAP
-#define theROM          ((w32*)0)
+#define memBase          ((w32*)0)
 #else
-extern w32              *theROM;
+extern w32              *memBase;
 #endif
 
 //extern w32              *ramTop;

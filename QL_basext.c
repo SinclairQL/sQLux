@@ -67,10 +67,10 @@ void build_entry(w16 **tptr, struct BAS_PFENTRY *p, w16 **iptr)
 	w16 *t;
 	int l;
 
-	/*printf("build_entry %s, code at %d\n",p->name,(long)(*iptr)-(long)theROM);*/
+	/*printf("build_entry %s, code at %d\n",p->name,(long)(*iptr)-(long)memBase);*/
 	WW(*iptr, BASEXT_CMD_CODE); /* make the subr and */
 	p->code_addr = (w32)((char *)*iptr -
-			     (char *)theROM); /* store the entry addr */
+			     (char *)memBase); /* store the entry addr */
 
 	t = *tptr;
 	if ((uintptr_t)t & 1) {
@@ -169,7 +169,7 @@ void create_link_table(struct BAS_PFENTRY *list)
 #endif
 #if 1
 	bext_table = aReg[0];
-	etab = (w16 *)((char *)theROM + aReg[0]);
+	etab = (w16 *)((char *)memBase + aReg[0]);
 	instr = (w16 *)((char *)etab + (((tsize + 6 + 10) >> 1) << 1));
 
 	WW(etab++, mangle_count(pccnt, p_cnt));
@@ -268,7 +268,7 @@ void BASEXTCmd()
 	w32 where;
 	struct BAS_PFENTRY *p = ext_list;
 
-	where = (w32)((char *)pc - (char *)theROM - 2);
+	where = (w32)((char *)pc - (char *)memBase - 2);
 
 	/*printf("BASIC EXTENSION\n");*/
 
@@ -421,7 +421,7 @@ qstr *bas_getstr()
 	l = ReadWord(aReg[1] + aReg[6]);
 	p = (qstr *)malloc(l + 1);
 	p->len = l;
-	memcpy(p->str, (char *)theROM + 2 + aReg[1] + aReg[6], l);
+	memcpy(p->str, (char *)memBase + 2 + aReg[1] + aReg[6], l);
 	p->str[l] = 0;
 
 	return p;
@@ -433,7 +433,7 @@ int bas_retstr(int len, char *str)
 
 	p = bas_resstack(len + 2);
 	WriteWord(p, len);
-	memcpy((char *)theROM + p + 2, str, len);
+	memcpy((char *)memBase + p + 2, str, len);
 
 	reg[4] = 1;
 	return 0;
@@ -573,7 +573,7 @@ bas_err UQLX_getenv()
 	if (c)
 		return bas_retstr(strlen(c), c);
 	else
-		return bas_retstr(0, (char *)theROM);
+		return bas_retstr(0, (char *)memBase);
 }
 
 int do_fork()
