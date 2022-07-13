@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "QL68000.h"
+#include "debug.h"
 #include "SDL2screen.h"
 #include "memaccess.h"
 #include "mmodes.h"
@@ -16,7 +17,6 @@ void    (**qlux_table)(void);
 int trace_rts=0;
 #endif
 
-uw32 rtop_hard;
 int extInt=0;
 
 #ifdef DEBUG
@@ -88,7 +88,6 @@ char    iMask;                          /* SR interrupt mask */
 Cond    stopped;                        /* processor status */
 volatile char   pendingInterrupt;       /* interrupt requesting service */
 
-w32      *g_reg;
 
 #ifndef ZEROMAP
 w32             *memBase;                        /* Ptr to ROM in Mac memory */

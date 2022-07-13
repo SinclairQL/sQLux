@@ -1,11 +1,9 @@
-#ifndef _QL_HARDWARE_H
-#define _QL_HARDWARE_H
+#pragma once
 
-#include "QL68000.h"
+#include <stddef.h>
 
 extern int display_mode;
-void queueKey(short m,short code,uw16 asciiChar);
+void queueKey(short m,short code, uint16_t asciiChar);
 void MReadKbd(void);
-
-#endif /* _QL_HARDWARE_H */
+void KbdCmd(void);
 

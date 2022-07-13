@@ -2,9 +2,13 @@
  * (c) UQLX - see COPYRIGHT
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "QL68000.h"
 #include "QL.h"
 #include <stdio.h>
+#include "debug.h"
 #include "iexl_general.h"
 #include "xcodes.h"
 #include "QDOS.h"
@@ -39,7 +43,7 @@ uw32 orig_kbenc;
 
 int testMinervaVersion(char *ver);
 
-Cond LookFor(uw32 *a, uw32 w, long nMax)
+bool LookFor(uint32_t *a, uint32_t w, int nMax)
 {
 	while (nMax-- > 0 && RL((Ptr)memBase + (*a)) != w)
 		(*a) += 2;
@@ -188,7 +192,7 @@ static void PatchBootDev()
 	}
 }
 
-short LoadMainRom(void) /* load and modify QL ROM */
+int LoadMainRom(void) /* load and modify QL ROM */
 {
 	short e;
 	long l;

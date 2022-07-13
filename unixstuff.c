@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "debug.h"
 #include "xcodes.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
@@ -48,6 +49,7 @@
 #include "uqlx_cfg.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
+#include "version.h"
 #include "Xscreen.h"
 
 #define TIME_DIFF 283996800
@@ -309,10 +311,6 @@ static void qm_reaper()
 	}
 }
 #endif
-
-void init_signals()
-{
-}
 
 int load_rom(char *, w32);
 
@@ -789,6 +787,7 @@ void init_xhw()
 {
 }
 
+#if 0
 void uqlxInit()
 {
 	char *rf;
@@ -805,7 +804,11 @@ void uqlxInit()
 		exit(1);
 	}
 
-	tbuff = malloc(65536 * sizeof(void *));
+	if (EmulatorTable()) {
+		printf("Failed to allocate instruction table\n");
+		free(memBase);
+		exit(1);
+	}
 
 	{
 		char roms[PATH_MAX + 1];
@@ -923,7 +926,6 @@ void uqlxInit()
 #ifdef TRACE
 	TraceInit();
 #endif
-	EmulatorTable(tbuff);
 #ifdef G_reg
 	reg = _reg;
 #endif
@@ -972,6 +974,8 @@ void uqlxInit()
 
 	QLdone = 0;
 }
+
+#endif
 
 #ifndef XAW
 void QLRun(void)

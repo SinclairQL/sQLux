@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <SDL_timer.h>
 
+#include "debug.h"
 #include "instructions.h"
 #include "xcodes.h"
 #include "QL.h"

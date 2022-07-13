@@ -19,3 +19,4 @@ void DbgInfo(void);
 void dosignal(void);
 int32_t ReadQlClock(void);
 uint32_t sysvar_l(uint32_t a);
+void init_uqlx_tz(void);

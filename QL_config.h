@@ -2,14 +2,14 @@
  * (c) UQLX - see COPYRIGHT
  */
 
-#ifndef _QL_CONFIG_H
-#define _QL_CONFIG_H
+#pragma once
+
+#include <stdbool.h>
+#include <stdint.h>
 
 void InitROM(void);
-void EmulatorTable(Ptr);
+int EmulatorTable(void);
 void save_regs(void *p);
 void restore_regs(void *p);
-Cond LookFor(uw32 *a, uw32 w, long nMax);
-short LoadMainRom(void);
-
-#endif /*_QL_CONFIG_H*/
+bool LookFor(uint32_t *a, uint32_t w, int nMax);
+int LoadMainRom(void);

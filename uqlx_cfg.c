@@ -17,6 +17,7 @@
 #include <limits.h>
 #include <errno.h>
 
+#include "debug.h"
 #include "unix.h"
 #include "uxfile.h"
 #include "emudisk.h"

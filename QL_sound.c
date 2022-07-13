@@ -1,6 +1,7 @@
 /* Sound updated for SDL2 */
 #include <SDL.h>
 #include <stdio.h>
+#include "debug.h"
 #include "QL68000.h"
 #include "QL_sound.h"
 

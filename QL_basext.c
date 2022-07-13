@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "debug.h"
 #include "QL.h"
 #include "QL_files.h"
 #include "QFilesPriv.h"
@@ -27,6 +28,7 @@
 #include "unixstuff.h"
 #include "xcodes.h"
 #include "SDL2screen.h"
+#include "version.h"
 
 /* UQLX basic extensions */
 

@@ -1,8 +1,5 @@
-
-
-#ifndef XQLMOUSE_H
-#define XQLMOUSE_H
+#pragma once
 
 void SchedInit(void);
+void SchedulerCmd(void);
 
-#endif /* XQLMOUSE_H */

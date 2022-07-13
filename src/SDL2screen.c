@@ -9,6 +9,7 @@
 #include <SDL.h>
 #include <string.h>
 
+#include "debug.h"
 #include "QL_hardware.h"
 #include "uqlx_cfg.h"
 #include "QL68000.h"

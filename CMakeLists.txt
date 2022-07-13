@@ -8,6 +8,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++17")
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DSOUND -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
 endif()
@@ -89,6 +91,7 @@ add_executable(sqlux
     sqlux_bdi.c
     mmodes.c
     ${CMAKE_CURRENT_BINARY_DIR}/version.c
+    src/EmulatorInit.cpp
     src/sqlux_windows.c
     src/sqlux_hexdump.c
     src/SDL2main.cpp

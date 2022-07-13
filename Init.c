@@ -4,6 +4,7 @@
 
 
 #ifndef IE_XL
+#include <errno.h>
 
 #include "QL68000.h"
 
@@ -303,7 +304,7 @@ void InvalidCode(void);
 
 #ifdef IE_XL
 #define LR  &&
-#else 
+#else
 #define LR
 #endif
 
@@ -371,7 +372,7 @@ void SetTable(void (**itable)(void),
 void SetInvalEntries(void (**itable)(void),void *code)
 {
   long i;
-  
+
   for(i=8;i<61440;i++) itable[i]= code;
 }
 #endif
@@ -382,7 +383,7 @@ static void SetTabEntries(void (**itable)(void))
 #endif
 
 #if defined(IE_XL_II) || (!defined(IE_XL))
-{   
+{
 
 	SetInvalEntries(itable, LR InvalidCode);
 
@@ -484,8 +485,8 @@ static void SetTabEntries(void (**itable)(void))
 	SetTable(itable, "0100111001000010", LR trap2);
 	SetTable(itable, "0100111001000011", LR trap3);
 #if 0
-	SetTable(itable, "0100111001000100", LR trap4); 
-#endif 
+	SetTable(itable, "0100111001000100", LR trap4);
+#endif
 #endif
         SetTable(itable, "0100111001010xxx", LR link);
         SetTable(itable, "0100111001011xxx", LR unlk);
@@ -670,7 +671,7 @@ static void SetTabEntries(void (**itable)(void))
         SetTable(itable, "1110xxx101111xxx", LR rol_w_r);
         SetTable(itable, "1110xxx010111xxx", LR ror_l_r);
         SetTable(itable, "1110xxx110111xxx", LR rol_l_r);
-        SetTable(itable, "1110000011xxxxxx", LR asr_m); 
+        SetTable(itable, "1110000011xxxxxx", LR asr_m);
         SetTable(itable, "1110000111xxxxxx", LR asl_m);
         SetTable(itable, "1110001011xxxxxx", LR lsr_m);
         SetTable(itable, "1110001111xxxxxx", LR lsl_m);
@@ -683,13 +684,17 @@ static void SetTabEntries(void (**itable)(void))
 }
 #endif
 
-#ifndef IE_XL
-void EmulatorTable(Ptr ibuffer)
-{  
-  qlux_table=ibuffer;
-  SetTabEntries(ibuffer);
+int EmulatorTable()
+{
+	qlux_table=malloc(65536 * sizeof(void *));
+	if (!qlux_table) {
+		return -ENOMEM;
+	}
+
+	SetTabEntries(qlux_table);
+
+	return 0;
 }
-#endif
 
 
 

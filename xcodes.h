@@ -5,17 +5,17 @@
 
 
 /* variable addresses */
-extern uw32 MIPC_CMD_ADDR;        /* Minerva sx_ipcom */
-extern uw32 IPC_CMD_ADDR;         /* JS IPC patch*/
-extern uw32 IPCR_CMD_ADDR;
-extern uw32 IPCW_CMD_ADDR;
-extern uw32 FSTART_CMD_ADDR;      /* JS Fast start patch */
-extern uw32 KEYTRANS_CMD_ADDR;    /* JS Keytranslation patch */
-extern uw16 KEYTRANS_OCODE;
-extern uw32 ROMINIT_CMD_ADDR;     /* patch to link in drivers */
-extern uw16 ROMINIT_OCODE;
-extern uw16 DEVPEFIO_OCODE;
-extern uw16 DEVPEFO_OCODE;
+extern uint32_t MIPC_CMD_ADDR;        /* Minerva sx_ipcom */
+extern uint32_t IPC_CMD_ADDR;         /* JS IPC patch*/
+extern uint32_t IPCR_CMD_ADDR;
+extern uint32_t IPCW_CMD_ADDR;
+extern uint32_t FSTART_CMD_ADDR;      /* JS Fast start patch */
+extern uint32_t KEYTRANS_CMD_ADDR;    /* JS Keytranslation patch */
+extern uint16_t KEYTRANS_OCODE;
+extern uint32_t ROMINIT_CMD_ADDR;     /* patch to link in drivers */
+extern uint16_t ROMINIT_OCODE;
+extern uint16_t DEVPEFIO_OCODE;
+extern uint16_t DEVPEFO_OCODE;
 
 
  /* hardwired addresses in "QEML ROM" */

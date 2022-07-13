@@ -14,7 +14,6 @@
 
 extern int main();
 extern int strcasecmp();
-extern uw32 rtop_hard;
 extern int is_patching;
 extern int rtc_emu_on;
 
