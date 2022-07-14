@@ -418,6 +418,9 @@ void QLSDLScreen(void)
 		}
 	}
 
+	SDL_RenderClear(ql_renderer);
+	SDL_RenderPresent(ql_renderer);
+
 	QLSDLInitJoystick();
 
 	SDL_AtomicSet(&doPoll, 0);
