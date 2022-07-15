@@ -118,7 +118,7 @@ Cond IPC_Command(void)	/* returns false for commands to handle low-level, true o
 		return true; /*break;*/
 	case 10: /* initiate sound generation */
 		if (sound_enabled) {
-			BeepSound((unsigned char*)memBase+(aReg[3]&0x3ffffe));
+			BeepSound((unsigned char*)memBase+(aReg[3]&0xfffffe));
 		}
 		return true; /*break;*/
 	case 11: /* kill sound */
