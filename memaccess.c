@@ -81,10 +81,7 @@ void WriteByte(aw32 addr,aw8 d)
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
-	if (is_screen(addr)) {
-		*((w8 *)memBase + addr) = d;
-		QLSDLUpdateScreenByte(addr - qlscreen.qm_lo, d);
-	} else if (is_hw(addr)) {
+	if (is_hw(addr)) {
 		WriteHWByte(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
 		*((w8 *)memBase + addr) = d;
@@ -98,10 +95,7 @@ void WriteWord(aw32 addr,aw16 d)
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
-	if (is_screen(addr)) {
-		WW((Ptr)memBase + addr, d);
-		QLSDLUpdateScreenWord(addr - qlscreen.qm_lo, d);
-	} else if (is_hw(addr)) {
+	if (is_hw(addr)) {
 		WriteHWWord(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
 		WW((Ptr)memBase + addr, d);
@@ -115,10 +109,7 @@ void WriteLong(aw32 addr,aw32 d)
 	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
 		return;
 
-	if (is_screen(addr)) {
-		WL((Ptr)memBase + addr, d);
-		QLSDLUpdateScreenLong(addr - qlscreen.qm_lo, d);
-	} else if (is_hw(addr)) {
+	if (is_hw(addr)) {
 		WriteHWWord(addr, d >> 16);
 		WriteHWWord(addr + 2, d);
 	} else if (addr >= QL_ROM_SIZE) {

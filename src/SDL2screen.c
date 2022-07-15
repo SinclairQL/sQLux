@@ -34,7 +34,6 @@ static char sdl_win_name[128];
 static char ql_fullscreen = false;
 
 SDL_atomic_t doPoll;
-SDL_atomic_t screenUpdate;
 
 SDL_sem* sem50Hz = NULL;
 
@@ -493,8 +492,6 @@ void QLSDLUpdateScreenWord(uint32_t offset, uint16_t data)
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
 	}
-
-	SDL_AtomicSet(&screenUpdate, 1);
 }
 
 void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
@@ -565,17 +562,12 @@ void QLSDLRenderScreen(void)
 	int w, h;
 	SDL_PixelFormat pixelformat;
 
-	if (!SDL_AtomicGet(&screenUpdate))
-		return;
-
 	SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels,
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
 	SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL,
 			 SDL_FLIP_NONE);
 	SDL_RenderPresent(ql_renderer);
-
-	SDL_AtomicSet(&screenUpdate, 0);
 }
 
 void SDLQLFullScreen(void)
@@ -1146,26 +1138,22 @@ void QLSDLProcessEvents(void)
 					SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
-					SDL_AtomicSet(&screenUpdate, 1);
 					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					SDL_AtomicSet(&screenUpdate, 1);
 					QLSDLRenderScreen();
 					break;
 				}
 			}
 			break;
+		case SDL_USEREVENT:
+			QLSDLUpdatePixelBuffer();
+			QLSDLRenderScreen();
+			break;
 		default:
 			break;
 		}
-
-		QLSDLRenderScreen();
-
 	}
-
-	printf("Process Events: %s\n", SDL_GetError());
-
 }
 
 void QLSDLExit(void)
