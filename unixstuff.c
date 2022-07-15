@@ -157,22 +157,6 @@ void dosignal()
 {
 	SDL_AtomicSet(&doPoll, 0);
 
-#ifndef XAW
-	if (!script && !QLdone)
-		//process_events ();
-		QLSDLProcessEvents();
-#endif
-
-#ifdef SHOWINTS
-	aa_cnt += alrm_count;
-	alrm_count = 0;
-	if (++a_ticks > 49) {
-		printf("received %d alarm signals, processed %d\n", aa_cnt,
-		       a_ticks);
-		a_ticks = aa_cnt = 0;
-	}
-#endif
-
 	if (--scrcnt < 0) {
 		set_rtc_emu();
 	}
@@ -978,7 +962,7 @@ void uqlxInit()
 #endif
 
 #ifndef XAW
-void QLRun(void)
+int QLRun(void *data)
 #else
 Cond CPUWork(void)
 #endif
@@ -1032,4 +1016,6 @@ exec:
 #else
 	return 0;
 #endif
+
+	return 0;
 }

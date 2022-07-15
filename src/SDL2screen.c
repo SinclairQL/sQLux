@@ -1097,7 +1097,7 @@ void QLSDLProcessEvents(void)
 	int keypressed;
 	int w, h;
 
-	while (SDL_PollEvent(&event)) {
+	while (SDL_WaitEvent(&event)) {
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			QLSDProcessKey(&event.key.keysym, 1);
@@ -1159,9 +1159,13 @@ void QLSDLProcessEvents(void)
 		default:
 			break;
 		}
+
+		QLSDLRenderScreen();
+
 	}
 
-	QLSDLRenderScreen();
+	printf("Process Events: %s\n", SDL_GetError());
+
 }
 
 void QLSDLExit(void)
@@ -1181,6 +1185,7 @@ void QLSDLExit(void)
 
 Uint32 QLSDL50Hz(Uint32 interval, void *param)
 {
+	SDL_Event event;
 	SDL_AtomicSet(&doPoll, 1);
 
 	schedCount = 0;
@@ -1188,6 +1193,15 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 	if (sem50Hz && !SDL_SemValue(sem50Hz)) {
 		SDL_SemPost(sem50Hz);
 	}
+
+	event.user.type = SDL_USEREVENT;
+	event.user.code = 0;
+	event.user.data1 = NULL;
+	event.user.data2 = NULL;
+
+	event.type = SDL_USEREVENT;
+
+	SDL_PushEvent(&event);
 
 	return interval;
 }

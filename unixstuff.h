@@ -8,7 +8,7 @@ void cleanup(int err);
 void set_rtc_emu(void);
 void SetParams(int ac, char **av);
 void uqlxInit(void);
-void QLRun(void);
+int QLRun(void *data);
 long ql2uxtime(long t);
 long ux2qltime(long t);
 void ChangedMemory(int from, int to);
