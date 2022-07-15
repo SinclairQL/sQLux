@@ -1168,7 +1168,8 @@ void QLSDLExit(void)
 			SDL_JoystickClose(joy[i].sdl_id);
 	}
 #endif
-	SDL_Quit();
+
+	SDL_RemoveTimer(fiftyhz_timer);
 }
 
 Uint32 QLSDL50Hz(Uint32 interval, void *param)

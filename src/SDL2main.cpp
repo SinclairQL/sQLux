@@ -20,9 +20,18 @@ int main(int argc, char *argv[])
 
     sound_enabled = initSound(QMD.sound);
 
-    SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
+    emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 
     QLSDLProcessEvents();
 
     return 0;
+}
+
+extern "C" void shutdown()
+{
+    QLdone = 1;
+
+    SDL_WaitThread(emuThread, NULL);
+
+    QLSDLExit();
 }

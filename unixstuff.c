@@ -51,6 +51,7 @@
 #include "SDL2screen.h"
 #include "version.h"
 #include "Xscreen.h"
+#include "SDL2main.hpp"
 
 #define TIME_DIFF 283996800
 void GetDateTime(w32 *);
@@ -175,7 +176,7 @@ extern int xbreak;
 void cleanup(int err)
 {
 	CleanRAMDev("RAM");
-	QLSDLExit();
+	shutdown();
 	exit(err);
 }
 
