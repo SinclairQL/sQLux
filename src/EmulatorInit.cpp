@@ -144,14 +144,6 @@ void init()
 	if (V1 && (QMD.sound > 0))
 		printf("sound enabled, volume %i.\n", QMD.sound);
 
-#ifdef SOUND
-	if ((!script) && sound_enabled)
-		sound_enabled = initSound(QMD.sound);
-#endif
-
-#ifdef TRACE
-	TraceInit();
-#endif
 	if (!isMinerva) {
 		qlux_table[IPC_CMD_CODE] = UseIPC; /* install pseudoops */
 		qlux_table[IPCR_CMD_CODE] = ReadIPC;

@@ -2,8 +2,10 @@
 
 extern "C" {
     #include <SDL.h>
+    #include "QL_sound.h"
     #include "SDL2screen.h"
-    #include <unixstuff.h>
+    #include "unixstuff.h"
+    #include "uqlx_cfg.h"
 }
 
 static SDL_Thread *emuThread = NULL;
@@ -15,6 +17,8 @@ int main(int argc, char *argv[])
     emulator::init();
 
     QLSDLScreen();
+
+    sound_enabled = initSound(QMD.sound);
 
     SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 
