@@ -35,33 +35,11 @@ int alphaLock, optionKey, gKeyDown, controlKey, shiftKey, altKey;
 volatile bool soundOn;
 int display_mode=4;
 
-#if 0
-void SetDisplayMode()
-{
-  if (((reg[1])&&0xff)==0xff)
-    {
-      reg[1]&=0xFFFFFF00;
-      reg[1]|=display_mode==8?8:0;
-   }
-  else
-    if (((reg[1])&&0xFf)==0)
-      {
-	display_mode=4;
-      }
-    else
-      {
-    display_mode=8;
-      }
-  reg[2]&=0xFFFFFF00; /* always monitor */
-}
-#endif
-
 void SetDisplay(w8 d, Cond flag)
 {
 	if ((d == 0) || (d == 8))
 	{
 		display_mode = d ? 8 : 4;
-		QLSDLUpdatePixelBuffer();
 	}
 	set_rtc_emu();
 }

@@ -18,6 +18,8 @@
 #include <signal.h>
 #include <time.h>
 
+#include "sqlux_debug.h"
+
 void debug(char *);
 void debug2(char *, long);
 
@@ -168,6 +170,79 @@ w8 IntRead(void)
 	return t;
 }
 
+static int ipc_wait = 1;
+static int ipc_rcvd = 1;
+static int ipc_previous = 0x10;
+static int ipc_return;
+static int ipc_count = 0;
+static int ipc_return;
+static uint32_t ipc_read;
+
+void ipc_exec(int command)
+{
+	DEBUG_PRINT("IPC previous %x cmd: %x\n", ipc_previous, command);
+
+	switch(command) {
+	case 0x01:
+		ipc_return = 0;
+		ipc_count = 8;
+		break;
+	case 0x08:
+		ipc_return = 0x1039;
+		ipc_count = 16;
+	case 0x0d:
+		ipc_wait = 1;
+		break;
+	case 0x10: // Dummy
+		break;
+	default:
+		ipc_return = 0;
+		ipc_count = 4;
+		break;
+	}
+
+	ipc_previous = command;
+
+}
+
+void ipc_write(uint8_t d)
+{
+	int command;
+
+	DEBUG_PRINT("ipc_write %x\n", d);
+	if (ipc_wait) {
+		if ((d & 0x0c) == 0x0c) {
+			ipc_rcvd <<= 1;
+			if (d == 0x0c) {
+				ipc_rcvd |= 0;
+			} else {
+				ipc_rcvd |= 1;
+			}
+			DEBUG_PRINT("ipc_rcvd %x\n", ipc_rcvd);
+			if (ipc_rcvd & 0x10) {
+				command = ipc_rcvd & 0x0f;
+				ipc_rcvd = 1;
+				ipc_wait = 0;
+				ipc_exec(command);
+			}
+		}
+	} else {
+		DEBUG_PRINT("result read %x\n", d);
+		ipc_read = 0;
+		ipc_count--;
+
+		if (ipc_return & (1 << ipc_count)) {
+			ipc_read |= 0x80;
+		}
+		ipc_read <<= 8;
+		ipc_read |= 0xa50000;
+
+		if (ipc_count == 0) {
+			ipc_wait = 1;
+		}
+	}
+}
+
 void WriteHWByte(aw32 addr, aw8 d)
 {
 	/*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
@@ -189,9 +264,9 @@ void WriteHWByte(aw32 addr, aw8 d)
 		}
 		break;
 	case 0x018003:
-		debugIPC("Write to IPC link > ", d);
-		debugIPC("at (PC-2) ", (Ptr)pc - (Ptr)memBase - 2);
-		/*TRR;*/
+		DEBUG_PRINT("Write to IPC link > %d\n", d);
+		DEBUG_PRINT("at (PC-2) %8.8x\n", (Ptr)pc - (Ptr)memBase - 2);
+		ipc_write(d);
 		break;
 	case 0x018020:
 		WriteMdvControl(d); /*TRR;*/
@@ -225,6 +300,7 @@ rw8 ReadHWByte(aw32 addr)
 {
 	int res = 0;
 	struct timespec timer;
+	uint8_t ret_byte;
 
 	/*printf("read HWreg %x, ",addr-0x18000);*/
 
@@ -237,6 +313,17 @@ rw8 ReadHWByte(aw32 addr)
 	case 0x018020:
 		debug("Read from MDV/RS232 status");
 		debug2("PC-2=", (Ptr)pc - (Ptr)memBase - 2);
+		//DEBUG_PRINT("020 read %x\n", m68k_get_reg(NULL, M68K_REG_PC));
+		if (ipc_read) {
+			ret_byte = ipc_read & 0xff;
+			ipc_read >>= 8;
+			if (ipc_read == 0xa5) {
+				ipc_read = 0;
+			}
+			DEBUG_PRINT("020 ret_byte %x\n", ret_byte);
+			return ret_byte;
+		}
+		return 2;
 		break;
 	case 0x018021:
 		/*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)memBase-2);*/
