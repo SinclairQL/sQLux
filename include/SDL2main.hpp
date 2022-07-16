@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void shutdown(void);
+    void emu_shutdown(void);
 #ifdef __cplusplus
 };
 #endif

@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-extern "C" void shutdown()
+extern "C" void emu_shutdown()
 {
     QLdone = 1;
 
