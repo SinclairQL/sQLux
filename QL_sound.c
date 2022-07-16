@@ -196,8 +196,7 @@ void BeepSound(unsigned char *arg) {
 	*/
 
 	// Always unpause the sound here, in case the callback has paused itself
-	if (sound.beep[write_num].length > 0)
-		SDL_PauseAudioDevice(QLSDLAudio, 0);
+	SDL_PauseAudioDevice(QLSDLAudio, 0);
 }
 
 void KillSound(){
