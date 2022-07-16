@@ -197,7 +197,6 @@ void QLButton(int bnr, int press)
 #endif
 
 #ifdef MOUSE
-//extern int QLdone;
 
 void MouseTask()
 {

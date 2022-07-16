@@ -190,57 +190,6 @@ void cleanup(int err)
 
 }
 
-void oncc(int sig)
-{
-	printf("exiting\n");
-	QLdone = 1;
-}
-
-void signalTimer()
-{
-	//doPoll = 1;
-#ifdef VTIME
-	poll_req++;
-#endif
-	schedCount = 0;
-#ifdef SHOWINTS
-	alrm_count++;
-#endif
-}
-
-void ontsignal(int sig)
-{
-	/*set_rtc_emu();*/ /* .. not yet working */
-	//signalTimer ();
-}
-
-/* rather crude but reliable */
-static int fat_int_called = 0;
-
-void on_fat_int(int x)
-{
-	if (fat_int_called == 1)
-		exit(45);
-	if (fat_int_called > 1)
-		raise(9);
-	fat_int_called++;
-
-	alarm(0);
-	printf("Terminate on signal %d\n", x);
-	printf("This may be due to an internal error,\n"
-	       "a feature not emulated or an 68000 exception\n"
-	       "that typically occurs only when QDOS is unrecoverably\n"
-	       "out of control\n");
-	dbginfo("FATAL error, PC may not be displayed correctly\n");
-	cleanup(44);
-}
-
-void InitDialogErr(int x)
-{
-	HasDialog = -1;
-	/* init_timers (); */
-}
-
 #ifdef UX_WAIT
 #include <sys/wait.h>
 struct cleanup_entry {
@@ -306,22 +255,6 @@ static void qm_reaper()
 	}
 }
 #endif
-
-int load_rom(char *, w32);
-
-void ChangedMemory(int from, int to)
-{
-	int i;
-	uw32 dto, dfrom;
-
-	/* QL screen memory involved? */
-	if ((from >= qlscreen.qm_lo && from <= qlscreen.qm_hi) ||
-	    (to >= qlscreen.qm_lo && to <= qlscreen.qm_hi)) {
-		    QLSDLUpdatePixelBuffer();
-	}
-}
-
-char **argv;
 
 void DbgInfo(void)
 {

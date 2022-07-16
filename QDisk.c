@@ -1715,7 +1715,6 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 			to = from + count;
 			reg[1] = count;
 			aReg[1] = to;
-			ChangedMemory(from, to);
 		} else
 			reg[1] = 0;
 		break;
@@ -1846,7 +1845,6 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 			*reg = QRead(f, (Ptr)memBase + from, &count, false, nil);
 			to = from + count;
 			aReg[1] = to;
-			ChangedMemory(from, to);
 		}
 
 		/* Update Screen in case we loaded to it */

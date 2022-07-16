@@ -930,7 +930,6 @@ int QHread(int fd, w32 *addr, long *count, Cond lf)
 
 ret:
 	*count = cnt;
-	ChangedMemory(from, from + cnt);
 
 	return e;
 }
