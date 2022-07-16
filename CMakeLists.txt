@@ -8,7 +8,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOUND --std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOUND")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DSOUND -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
@@ -98,6 +98,8 @@ add_executable(sqlux
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)
+
+target_compile_features(sqlux PUBLIC cxx_std_17)
 
 add_dependencies(sqlux SubmarineGitVersion)
 
