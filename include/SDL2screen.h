@@ -26,5 +26,8 @@ extern int sdl_shiftstate,sdl_controlstate, sdl_altstate;
 extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
 
+#define USER_CODE_SCREENREFRESH     0
+#define USER_CODE_EMUEXIT           1
+
 #endif
 

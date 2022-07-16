@@ -175,9 +175,19 @@ void dosignal()
 extern int xbreak;
 void cleanup(int err)
 {
+	SDL_Event event;
+
 	CleanRAMDev("RAM");
-	emu_shutdown();
-	exit(err);
+
+	event.user.type = SDL_USEREVENT;
+	event.user.code = USER_CODE_EMUEXIT;
+	event.user.data1 = NULL;
+	event.user.data2 = NULL;
+
+	event.type = SDL_USEREVENT;
+
+	SDL_PushEvent(&event);
+
 }
 
 void oncc(int sig)

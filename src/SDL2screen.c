@@ -1147,8 +1147,14 @@ void QLSDLProcessEvents(void)
 			}
 			break;
 		case SDL_USEREVENT:
-			QLSDLUpdatePixelBuffer();
-			QLSDLRenderScreen();
+			switch (event.user.code) {
+			case USER_CODE_SCREENREFRESH:
+				QLSDLUpdatePixelBuffer();
+				QLSDLRenderScreen();
+				break;
+			case USER_CODE_EMUEXIT:
+				return;
+			}
 			break;
 		default:
 			break;

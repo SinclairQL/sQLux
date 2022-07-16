@@ -10,7 +10,16 @@ extern "C" {
 
 static SDL_Thread *emuThread = NULL;
 
-int main(int argc, char *argv[])
+extern "C" void emu_shutdown()
+{
+    QLdone = 1;
+
+    SDL_WaitThread(emuThread, NULL);
+
+    QLSDLExit();
+}
+
+extern "C" int main(int argc, char *argv[])
 {
     SetParams(argc, argv);
     
@@ -24,14 +33,7 @@ int main(int argc, char *argv[])
 
     QLSDLProcessEvents();
 
+    emu_shutdown();
+
     return 0;
-}
-
-extern "C" void emu_shutdown()
-{
-    QLdone = 1;
-
-    SDL_WaitThread(emuThread, NULL);
-
-    QLSDLExit();
 }
