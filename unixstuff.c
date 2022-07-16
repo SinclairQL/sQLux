@@ -176,7 +176,7 @@ extern int xbreak;
 void cleanup(int err)
 {
 	CleanRAMDev("RAM");
-	shutdown();
+	emu_shutdown();
 	exit(err);
 }
 

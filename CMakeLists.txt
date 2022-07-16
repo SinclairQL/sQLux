@@ -107,7 +107,7 @@ endif ()
 
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/${TOOLCHAIN_PREFIX}/lib -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
+        target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/${TOOLCHAIN_PREFIX}/lib -lmingw32 -lSDL2main -lSDL2 -Wl,-Bdynamic -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc)
     else()
         target_link_libraries(sqlux ${SDL2_LIBRARIES})
     endif()
