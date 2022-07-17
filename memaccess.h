@@ -33,5 +33,6 @@ void rwl_acc(w32 d);
 #define QL_INTERNAL_IO_SIZE     0x4000
 #define QL_EXTERNAL_IO_BASE     0x1C000
 #define QL_EXTERNAL_IO_SIZE     0x4000
+#define QL_SCREEN_BASE          0x20000
 
 #endif /* _MEMACCESS_H */

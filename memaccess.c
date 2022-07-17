@@ -82,7 +82,7 @@ void WriteByte(aw32 addr,aw8 d)
 
 	if (is_hw(addr)) {
 		WriteHWByte(addr, d);
-	} else if (addr >= QL_ROM_SIZE) {
+	} else if (addr >= QL_SCREEN_BASE) {
 		*((w8 *)memBase + addr) = d;
 		check_screen(addr);
 	}
@@ -97,7 +97,7 @@ void WriteWord(aw32 addr,aw16 d)
 
 	if (is_hw(addr)) {
 		WriteHWWord(addr, d);
-	} else if (addr >= QL_ROM_SIZE) {
+	} else if (addr >= QL_SCREEN_BASE) {
 		WW((Ptr)memBase + addr, d);
 		check_screen(addr);
 	}
@@ -113,7 +113,7 @@ void WriteLong(aw32 addr,aw32 d)
 	if (is_hw(addr)) {
 		WriteHWWord(addr, d >> 16);
 		WriteHWWord(addr + 2, d);
-	} else if (addr >= QL_ROM_SIZE) {
+	} else if (addr >= QL_SCREEN_BASE) {
 		WL((Ptr)memBase + addr, d);
 		check_screen(addr);
 	}
