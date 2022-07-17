@@ -10,12 +10,11 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 
-static int is_screen(uint32_t addr)
+static void check_screen(uint32_t addr)
 {
 	if ((addr >= qlscreen.qm_lo) && (addr < qlscreen.qm_hi)) {
-		return 1;
+		screenWritten = true;
 	}
-	return 0;
 }
 
 static int is_hw(uint32_t addr)
@@ -85,6 +84,7 @@ void WriteByte(aw32 addr,aw8 d)
 		WriteHWByte(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
 		*((w8 *)memBase + addr) = d;
+		check_screen(addr);
 	}
 }
 
@@ -99,6 +99,7 @@ void WriteWord(aw32 addr,aw16 d)
 		WriteHWWord(addr, d);
 	} else if (addr >= QL_ROM_SIZE) {
 		WW((Ptr)memBase + addr, d);
+		check_screen(addr);
 	}
 }
 
@@ -114,6 +115,7 @@ void WriteLong(aw32 addr,aw32 d)
 		WriteHWWord(addr + 2, d);
 	} else if (addr >= QL_ROM_SIZE) {
 		WL((Ptr)memBase + addr, d);
+		check_screen(addr);
 	}
 }
 

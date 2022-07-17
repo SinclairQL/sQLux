@@ -8,6 +8,7 @@
 #define _SDL2SCREEN_H
 
 #include <SDL.h>
+#include <stdbool.h>
 
 void QLSDLScreen(void);
 void QLSDLRenderScreen(void);
@@ -25,6 +26,7 @@ extern int sdl_shiftstate,sdl_controlstate, sdl_altstate;
 
 extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
+extern bool screenWritten;
 
 #define USER_CODE_SCREENREFRESH     0
 #define USER_CODE_EMUEXIT           1

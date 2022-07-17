@@ -34,6 +34,7 @@ static char sdl_win_name[128];
 static char ql_fullscreen = false;
 
 SDL_atomic_t doPoll;
+bool screenWritten = false;	// True if screen memory has been written
 
 SDL_sem* sem50Hz = NULL;
 
@@ -1189,14 +1190,17 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 		SDL_SemPost(sem50Hz);
 	}
 
-	event.user.type = SDL_USEREVENT;
-	event.user.code = 0;
-	event.user.data1 = NULL;
-	event.user.data2 = NULL;
+	if (screenWritten) {
+		screenWritten = false;
+		event.user.type = SDL_USEREVENT;
+		event.user.code = USER_CODE_SCREENREFRESH;
+		event.user.data1 = NULL;
+		event.user.data2 = NULL;
 
-	event.type = SDL_USEREVENT;
+		event.type = SDL_USEREVENT;
 
-	SDL_PushEvent(&event);
+		SDL_PushEvent(&event);
+	}
 
 	return interval;
 }
