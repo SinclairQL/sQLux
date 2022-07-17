@@ -850,6 +850,7 @@ void ioread(int (*io_read)(), void *priv, uw32 addr, int *count, int lf)
 
 errexit:
 	*count = cnt;
+	ChangedMemory(from, from + cnt);
 
 	reg[0] = e;
 	return;
