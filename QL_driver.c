@@ -318,9 +318,9 @@ void InitDrivers()
 {
 	struct DRV *p = Drivers;
 
-	DEV_IO_ADDR = 0x14020;
-	DEV_CLOSE_ADDR = 0x14022;
-	/*  DEV_OPEN_ADDR=0x14024;*/
+	DEV_IO_ADDR = 0x1C020;
+	DEV_CLOSE_ADDR = 0x1C022;
+	/*  DEV_OPEN_ADDR=0x1C024;*/
 
 	WW(((uw16 *)((Ptr)memBase + DEV_IO_ADDR)), DEVIO_CMD_CODE);
 	WW(((uw16 *)((Ptr)memBase + DEV_CLOSE_ADDR)), DEVC_CMD_CODE);
@@ -402,26 +402,7 @@ void DrvOpen(void)
 	void *priv;
 	int err, found = 0;
 
-#if 0 /* need a different test here */
-  if((long)((Ptr)gPC-(Ptr)memBase)-2 != 0x14002l)
-    {
-      exception=4;
-      extraFlag=true;
-      nInst2=nInst;
-      nInst=0;
-      return;
-    }
-#endif
-
 	name = (char *)((Ptr)memBase + ((*aReg) & ADDR_MASK_E));
-	//printf("DrvOpen: %s\n",name+2);
-#if 0
-  if(*aReg>=RTOP || ((*aReg+RW(name))>=RTOP))
-    {
-      *reg=-18;	/* overflow */
-      goto end;
-    }
-#endif
 
 	/* get device */
 

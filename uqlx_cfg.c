@@ -28,7 +28,9 @@ QMDATA QMD = {
 	.config_file = "sqlux.ini",
 	.config_file_opt = 0,
 	.qdev = qdevs, /* ddvlist */
-	.romim = "", /* romlist */
+	.romport = "", /* romlist */
+	.rom2 = "",
+	.rom3 = "",
 	.ramtop = 4096, /* RAM top */
 	.romdir = "roms/", /* rom dir */
 	.sysrom = "MIN198.rom", /* system ROM */
@@ -261,7 +263,10 @@ static void pFloat(float *p, char *s, ...)
 
 static PARSELIST pl[] = {
 	{ "DEVICE", (PVFV)ParseDevs, offsetof(QMDATA, qdev) },
-	{ "ROMIM", (PVFV)pString, offsetof(QMDATA, romim), 63 },
+	{ "ROMIM", (PVFV)pString, offsetof(QMDATA, romport), 63 },
+	{ "ROMPORT", (PVFV)pString, offsetof(QMDATA, romport), 63 },
+	{ "ROM2", (PVFV)pString, offsetof(QMDATA, rom2), 63 },
+	{ "ROM3", (PVFV)pString, offsetof(QMDATA, rom3), 63 },
 	{ "PRINT", (PVFV)pString, offsetof(QMDATA, prtcmd), 63 },
 	{ "SER1", (PVFV)pString, offsetof(QMDATA, ser1), 63 },
 	{ "SER2", (PVFV)pString, offsetof(QMDATA, ser2), 63 },

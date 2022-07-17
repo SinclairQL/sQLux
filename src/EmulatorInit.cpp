@@ -8,6 +8,7 @@
 
 extern "C" {
     #include "debug.h"
+    #include "memaccess.h"
     #include "QInstAddr.h"
     #include "QLtraps.h"
     #include "QL_cconv.h"
@@ -81,20 +82,43 @@ void init()
 	}
 
     try {
-        loadRom(std::string(QMD.romdir) + "/" + QMD.sysrom, 0, 49152);
+        loadRom(std::string(QMD.romdir) + "/" + QMD.sysrom, QL_ROM_BASE, QL_ROM_SIZE);
     }
     catch (const exception &e)
     {
         cout << "Error Loading ROM " << QMD.sysrom << " reason: " << e.what() << "\n";
         exit(1);
     }
-	if (strlen(QMD.romim)) {
+
+	if (strlen(QMD.romport)) {
         try {
-            loadRom(std::string(QMD.romdir) + "/" + QMD.romim, 49152, 16384);
+            loadRom(std::string(QMD.romdir) + "/" + QMD.romport, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << QMD.romim << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << QMD.romport << "reason: " << e.what() << "\n";
+            exit(1);
+        }
+	}
+
+	if (strlen(QMD.rom2)) {
+        try {
+            loadRom(std::string(QMD.romdir) + "/" + QMD.rom2, QL_ROM2_BASE, QL_ROM2_SIZE);
+        }
+        catch(const exception &e)
+        {
+            cout << "Error Loading ROM " << QMD.rom2 << "reason: " << e.what() << "\n";
+            exit(1);
+        }
+	}
+
+	if (strlen(QMD.rom3)) {
+        try {
+            loadRom(std::string(QMD.romdir) + "/" + QMD.rom3, QL_ROM3_BASE, QL_ROM3_SIZE);
+        }
+        catch(const exception &e)
+        {
+            cout << "Error Loading ROM " << QMD.rom3 << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}

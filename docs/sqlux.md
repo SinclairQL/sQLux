@@ -202,15 +202,36 @@ Skip the F1/F2 screen on boot. 1 to skip, 0 to show screen.
 SKIP_BOOT = 0
 ```
 
+`ROMPORT`
 `ROMIM`
-The ROMIM specifies the rom to be loaded at 0xC000.
+The ROMPORT/ROMIM specifies the rom to be loaded at 0xC000.
 
 ```
-ROMIM = tk2_rom
+ROMPORT = tk2_rom
 ```
 
 It is assumed that the ROM image can be found in the ROMDIR
-directory. The address should be specified in ’C’ numeric format.
+directory.
+
+`ROM2`
+The ROMPORT/ROMIM specifies the rom to be loaded at 0x10000.
+
+```
+ROM2 = tk2_rom
+```
+
+It is assumed that the ROM image can be found in the ROMDIR
+directory.
+
+`ROM3`
+The ROMPORT/ROMIM specifies the rom to be loaded at 0x14000.
+
+```
+ROM3 = tk2_rom
+```
+
+It is assumed that the ROM image can be found in the ROMDIR
+directory.
 
 `NO_PATCH`
 disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.

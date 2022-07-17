@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 
 #include "dummies.h"
+#include "memaccess.h"
 #include "QDisk.h"
 #include "QL.h"
 #include "QLfiles.h"
@@ -157,29 +158,6 @@ static void InitDirDevDriver(Str255 name, w32 addr, w32 *fsid)
 	}
 	BlockMoveData(savedRegs, aReg, 4 * sizeof(w32));
 }
-#if 0
-void InitFileDrivers(Str255 floppyName,Str255 hDiskName)
-{
-  short i;
-  mdvHeaders[0]=mdvHeaders[14]=255;
-  mdvHeaders[1]=mdvHeaders[15]=0;
-  if(floppyName!=nil)
-    {
-      i=strlen(floppyName)-1;
-      /*while(i>-1) floppyName[i--]&=223; */
-      InitDirDevDriver(floppyName,0x14000,&floppy_ref);
-    }
-  if(hDiskName!=nil)
-    {
-      i=strlen(hDiskName)-1;
-      /*while(i>-1) hDiskName[i--]&=223;*/
-      InitDirDevDriver(hDiskName,0x14000,&win_ref);
-    }
-  InitDirDevDriver("MDV",0x14000,&mdv_ref);
-
-  InstallSerial();
-}
-#endif
 
 void *Cleandir(char *nam)
 {
@@ -285,7 +263,7 @@ void InitFileDrivers()
 				if (qdevs[i].Present[j])
 					break;
 			if (j < 8)
-				InitDirDevDriver(qdevs[i].qname, 0x14000,
+				InitDirDevDriver(qdevs[i].qname, QL_EXTERNAL_IO_BASE,
 						 (w32 *)&qdevs[i].ref);
 		}
 	}
@@ -372,7 +350,7 @@ void MdvIO(void)
 	w16 *w;
 	w8 b;
 
-	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14000l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != QL_EXTERNAL_IO_BASE) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -622,7 +600,7 @@ void MdvOpen(void)
 
 	int key;
 
-	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14002l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x1C002l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -786,7 +764,7 @@ void MdvClose(void)
 	struct mdvFile *f;
 	int filesys;
 
-	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14004l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x1C004l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -837,7 +815,7 @@ void MdvClose(void)
 
 void MdvSlaving(void)
 {
-	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14006l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x1C006l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -854,7 +832,7 @@ void MdvFormat(void)
 	long total, empty;
 	int filesys;
 
-	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x14008l) {
+	if ((Ptr)gPC - (Ptr)memBase - 2 != 0x1C008l) {
 		exception = 4;
 		extraFlag = true;
 		nInst2 = nInst;

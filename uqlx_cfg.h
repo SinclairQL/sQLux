@@ -27,7 +27,9 @@ typedef struct {
 	long ramtop;
 	char romdir[128];
 	char sysrom[64];
-	char romim[64];
+	char romport[64];
+	char rom2[64];
+	char rom3[64];
 	char ser1[64];
 	char ser2[64];
 	char ser3[64];

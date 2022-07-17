@@ -19,27 +19,27 @@ extern uint16_t DEVPEFO_OCODE;
 
 
  /* hardwired addresses in "QEML ROM" */
-#define MDVIO_CMD_ADDR      0x14000  
-#define MDVO_CMD_ADDR       0x14002
-#define MDVC_CMD_ADDR       0x14004
-#define MDVSL_CMD_ADDR      0x14006
-#define MDVFO_CMD_ADDR      0x14008
+#define MDVIO_CMD_ADDR      0x1C000  
+#define MDVO_CMD_ADDR       0x1C002
+#define MDVC_CMD_ADDR       0x1C004
+#define MDVSL_CMD_ADDR      0x1C006
+#define MDVFO_CMD_ADDR      0x1C008
 
-#define DEVIO_CMD_ADDR      0x14020
-#define DEVC_CMD_ADDR       0x14022   /* DEVO_CMD_ADDR not hardwired */
+#define DEVIO_CMD_ADDR      0x1C020
+#define DEVC_CMD_ADDR       0x1C022   /* DEVO_CMD_ADDR not hardwired */
 
-#define SCHEDULER_CMD_ADDR  0x14030   /* scheduler loop routine */
-#define MIPC_CMD_ADDR       0x14032
-#define POLL_CMD_ADDR       0x14034   /* gap needed before next address !!!! */
-#define KBENC_CMD_ADDR      0x14044   /* ... cause they call each other */
+#define SCHEDULER_CMD_ADDR  0x1C030   /* scheduler loop routine */
+#define MIPC_CMD_ADDR       0x1C032
+#define POLL_CMD_ADDR       0x1C034   /* gap needed before next address !!!! */
+#define KBENC_CMD_ADDR      0x1C044   /* ... cause they call each other */
 
 #if 1
-#define DEVPEF_IO_ADDR      0x14050   /* extended screen fool driver */
-#define DEVPEF_OPEN_ADDR    0x14054   /* for ptr_gen */
-#define DEVPEF_CLOSE_ADDR   0x14058
+#define DEVPEF_IO_ADDR      0x1C050   /* extended screen fool driver */
+#define DEVPEF_OPEN_ADDR    0x1C054   /* for ptr_gen */
+#define DEVPEF_CLOSE_ADDR   0x1C058
 #endif
 
-#define UQLX_STR_SCRATCH    0x14400
+#define UQLX_STR_SCRATCH    0x1C400
 
 
 /* instruction opcodes */
