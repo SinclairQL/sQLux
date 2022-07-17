@@ -1090,7 +1090,9 @@ void QLSDLProcessEvents(void)
 	int keypressed;
 	int w, h;
 
-	while (SDL_WaitEvent(&event)) {
+	while (1) {
+		SDL_WaitEvent(&event);
+
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			QLSDProcessKey(&event.key.keysym, 1);
@@ -1117,7 +1119,7 @@ void QLSDLProcessEvents(void)
 			break;
 #endif
 		case SDL_QUIT:
-			cleanup(0);
+			return;
 			break;
 		case SDL_MOUSEMOTION:
 			QLSDLProcessMouse(event.motion.x, event.motion.y);
