@@ -1141,9 +1141,11 @@ void QLSDLProcessEvents(void)
 					SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
+					QLSDLUpdatePixelBuffer();
 					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
+					QLSDLUpdatePixelBuffer();
 					QLSDLRenderScreen();
 					break;
 				}
