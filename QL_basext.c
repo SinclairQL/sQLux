@@ -53,7 +53,6 @@ struct BAS_PFENTRY {
 bas_err Kill_UQLX();
 bas_err UQLX_Relse();
 bas_err UQLX_getenv();
-bas_err Fork_UQLX();
 bas_err UQLX_getXargc();
 bas_err UQLX_getXarg();
 bas_err UQLX_getXres();
@@ -232,7 +231,6 @@ void add_bas_proc(char *name, bas_err (*command)())
 
 #define BN_KILL_UQLX "Kill_UQLX"
 #define BN_GETXENV "getXenv$"
-#define BN_FORK_UQLX "Fork_UQLX"
 #define BN_GETXARGC "getXargC"
 #define BN_GETXARGs "getXarg$"
 #define BN_GETXRES "getXres"
@@ -253,7 +251,6 @@ void init_bas_exts()
 #endif
 	add_bas_fun("UQLX_RELEASE$", UQLX_Relse);
 	add_bas_fun(BN_GETXENV, UQLX_getenv);
-	add_bas_fun(BN_FORK_UQLX, Fork_UQLX);
 	add_bas_fun(BN_GETXARGC, UQLX_getXargc);
 	add_bas_fun(BN_GETXARGs, UQLX_getXarg);
 	add_bas_fun(BN_GETXRES, UQLX_getXres);
@@ -576,58 +573,6 @@ bas_err UQLX_getenv()
 		return bas_retstr(strlen(c), c);
 	else
 		return bas_retstr(0, (char *)memBase);
-}
-
-int do_fork()
-{
-	int pid, i;
-
-	/* We must close the screen while forking
-     * and re-open it when we are finished
-     * otherwise we die horrible death
-     */
-	QLSDLExit();
-
-#ifndef NO_FORK
-	pid = fork();
-	if (pid < 0) {
-		perror("sorry, could not fork");
-		QLSDLScreen();
-	}
-
-	/* We are in the child */
-	if (pid == 0) {
-		QLSDLScreen();
-		QLSDLUpdatePixelBuffer();
-		fork_files();
-	} else { /* We are in the parent */
-		QLSDLScreen();
-		QLSDLUpdatePixelBuffer();
-	}
-
-	/* resetting the state of the keyboard seems the best */
-	gKeyDown = 0;
-	for (i = 0; i < 8; i++)
-		sdl_keyrow[i] = 0;
-#else
-	pid = -EINVAL;
-#endif
-
-	return pid;
-}
-
-bas_err Fork_UQLX()
-{
-	int pid;
-
-#ifndef HPR_STYLE
-	if (bas_argcount() != 0)
-		return QERR_BP;
-#endif
-
-	pid = do_fork();
-
-	return bas_retint(pid);
 }
 
 bas_err UQLX_getXres()

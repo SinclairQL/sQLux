@@ -869,20 +869,6 @@ Returns release identification as string
 
 Returns value of the (UNIX) environment variable name as string
 
-**Fork_UQLX**
-
-Create an exact copy of this UQLX process. A new Xwindow is created, files on directory device drivers recreated. However beware that a file that remained opened during a fork may now be writable by two or more UQLX instances. Also using same stream i/o channel from both instances of the process will result in chaos, especially `pty` channels have to loose EOF.
-
-Returns `pid` for the parent process, `0` for its child.
-
-An utterly useful example program is:
-
-```
-10 for i=1 to 4
-20 print Fork_UQLX
-30 end for i
-```
-
 **getXargc**
 
 Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
