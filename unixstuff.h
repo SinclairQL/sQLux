@@ -11,7 +11,6 @@ void uqlxInit(void);
 int QLRun(void *data);
 long ql2uxtime(long t);
 long ux2qltime(long t);
-void ChangedMemory(int from, int to);
 int qm_fork(void (*cleanup)(), unsigned long id);
 void prep_rtc_emu(void);
 void GetDateTime(int32_t *t);

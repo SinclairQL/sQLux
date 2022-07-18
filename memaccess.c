@@ -10,6 +10,13 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 
+void ChangedMemory(uint32_t from, uint32_t to)
+{
+	/* Assumes to >= from */
+	if ((to >= qlscreen.qm_lo) && (from < qlscreen.qm_hi))
+		screenWritten = true;
+}
+
 static void check_screen(uint32_t addr)
 {
 	if ((addr >= qlscreen.qm_lo) && (addr < qlscreen.qm_hi)) {
@@ -31,6 +38,7 @@ static int is_hw(uint32_t addr)
 
 	return 0;
 }
+
 rw8 ReadByte(aw32 addr)
 {
 	addr &= ADDR_MASK;

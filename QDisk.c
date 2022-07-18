@@ -25,6 +25,7 @@
 #include "emudisk.h"
 #include "QDOS.h"
 #include "dummies.h"
+#include "memaccess.h"
 
 #include "SDL2screen.h"
 
@@ -1848,9 +1849,6 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 			aReg[1] = to;
 			ChangedMemory(from, to);
 		}
-
-		/* Update Screen in case we loaded to it */
-		QLSDLUpdatePixelBuffer();
 		break;
 	case 0x49: /* save file from memory */
 		count = reg[2];

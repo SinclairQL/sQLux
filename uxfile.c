@@ -34,6 +34,7 @@
 #include "unixstuff.h"
 #include "QL_driver.h"
 
+#include "memaccess.h"
 #include "SDL2screen.h"
 
 #include "q-emulator.h"
