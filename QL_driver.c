@@ -26,6 +26,7 @@
 #include "unix.h"
 #include "unixstuff.h"
 #include "uqlx_cfg.h"
+#include "memaccess.h"
 #include "QVFS.h"
 
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)

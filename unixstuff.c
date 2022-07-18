@@ -331,11 +331,6 @@ int toggle_hog(int val)
 	return QMD.cpu_hog;
 }
 
-void ChangedMemory(int from, int to)
-{
-	screenWritten = true;
-}
-
 void usage(char **argv)
 {
 	printf("UQLX release %s:\n\tusage: %s [options] arguments\n", release,

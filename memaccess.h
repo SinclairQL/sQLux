@@ -26,6 +26,8 @@ void rww_acc(int16_t d);
 void RewriteEA_l(int32_t d);
 void rwl_acc(int32_t d);
 
+void ChangedMemory(uint32_t from, uint32_t to);
+
 #define QL_ROM_BASE             0x0000
 #define QL_ROM_SIZE             0xC000
 #define QL_ROM_PORT_BASE        0xC000
