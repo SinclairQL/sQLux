@@ -101,24 +101,24 @@ void init()
         }
 	}
 
-	if (strlen(QMD.rom2)) {
+	if (strlen(QMD.iorom1)) {
         try {
-            loadRom(std::string(QMD.romdir) + "/" + QMD.rom2, QL_ROM2_BASE, QL_ROM2_SIZE);
+            loadRom(std::string(QMD.romdir) + "/" + QMD.iorom1, QL_ROM2_BASE, QL_ROM2_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << QMD.rom2 << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << QMD.iorom1 << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}
 
-	if (strlen(QMD.rom3)) {
+	if (strlen(QMD.iorom2)) {
         try {
-            loadRom(std::string(QMD.romdir) + "/" + QMD.rom3, QL_ROM3_BASE, QL_ROM3_SIZE);
+            loadRom(std::string(QMD.romdir) + "/" + QMD.iorom2, QL_ROM3_BASE, QL_ROM3_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << QMD.rom3 << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << QMD.iorom2 << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}

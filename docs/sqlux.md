@@ -213,21 +213,21 @@ ROMPORT = tk2_rom
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
-`ROM2`
-The ROMPORT/ROMIM specifies the rom to be loaded at 0x10000.
+`IOROM1`
+The IOROM1 specifies the rom to be loaded at 0x10000.
 
 ```
-ROM2 = tk2_rom
+IOROM1 = tk2_rom
 ```
 
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
-`ROM3`
-The ROMPORT/ROMIM specifies the rom to be loaded at 0x14000.
+`IOROM2`
+The IOROM2 specifies the rom to be loaded at 0x14000.
 
 ```
-ROM3 = tk2_rom
+IOROM2 = tk2_rom
 ```
 
 It is assumed that the ROM image can be found in the ROMDIR
