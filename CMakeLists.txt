@@ -38,6 +38,8 @@ endif()
 
 find_package(Git)
 
+find_package(Boost 1.36.0 REQUIRED COMPONENTS program_options)
+
 add_custom_target( SubmarineGitVersion
     COMMAND ${CMAKE_COMMAND}
         -D GIT_EXECUTABLE=${GIT_EXECUTABLE}
