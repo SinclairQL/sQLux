@@ -188,11 +188,11 @@ Define it 0 to make UQLX try to behave multitasking friendly, it will go sleepin
 CPU_HOG = 1
 ```
 
-`FAST_START`
+`FAST_STARTUP`
 Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern. Has no effect with the Minerva ROM
 
 ```
-FAST_START = 1
+FAST_STARTUP = 1
 ```
 
 `SKIP_BOOT`
@@ -545,9 +545,9 @@ Alternatively get a USA keyboard or use stickers to give that genuine QL feel.
 
 5.6 Sound
 ---------
-sQLux can optionally generate sound. It supports the SuperBASIC BEEP command. Note that the QL manual states that the length parameter in a BEEP command is in units of 72 microseconds. This is incorrect. The original QL uses a unit length of 43.64 microseconds. sQLux also uses this unit of length.  
+sQLux can optionally generate sound. It supports the SuperBASIC BEEP command. Note that the QL manual states that the length parameter in a BEEP command is in units of 72 microseconds. This is incorrect. The original QL uses a unit length of 43.64 microseconds. sQLux also uses this unit of length.
 
-sQLux attempts to faithfully reproduce the behaviour of the original QL. This includes support for negative values of grd_y, including the correct behaviour for -8. Behaviour when either pitch or pitch_2 equals 255 is also correctly emulated.  
+sQLux attempts to faithfully reproduce the behaviour of the original QL. This includes support for negative values of grd_y, including the correct behaviour for -8. Behaviour when either pitch or pitch_2 equals 255 is also correctly emulated.
 
 All optional parameters, including Fuzzy and Random, are fully supported. The slight click that occurs in the original QL when a pitch change occurs (even for a pitch change of 0) is emulated.
 
@@ -561,10 +561,10 @@ Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL
 
 5.7 Joystick
 ------------
-SDL2 is used to provide Joystick support. Analogue or digital joysticks are supported. Axis 0 and axis 1 of the joystick are mapped. Moving the joystick generates key presses. All buttons on the joystick are mapped to the fire key.  
+SDL2 is used to provide Joystick support. Analogue or digital joysticks are supported. Axis 0 and axis 1 of the joystick are mapped. Moving the joystick generates key presses. All buttons on the joystick are mapped to the fire key.
 As documented by [Sinclair](http://www.dilwyn.me.uk/docs/ebooks/olqlug/QL%20Manual%20-%20Concepts.htm#joystick), Joystick 1 (assumed connected through CTL1) maps to the cursor keys and spacebar. Joystick 2 (assumed connected through CTL2) maps to F1 through to F5.
 
-5.7.1 Known limitations 
+5.7.1 Known limitations
 -----------------------
 Currently only devices that are detected by SDL2 as Joysticks are supported. Devices that are *only* identified as GameControllers are not supported.
 
