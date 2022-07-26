@@ -1,4 +1,5 @@
 #include "EmulatorInit.hpp"
+#include "SqluxOptions.hpp"
 
 extern "C" {
     #include <SDL.h>
@@ -21,8 +22,10 @@ extern "C" void emu_shutdown()
 
 extern "C" int main(int argc, char *argv[])
 {
+    emulator::options(argc, argv);
+
     SetParams(argc, argv);
-    
+
     emulator::init();
 
     QLSDLScreen();

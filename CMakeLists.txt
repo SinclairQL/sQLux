@@ -51,7 +51,7 @@ add_custom_target( SubmarineGitVersion
 
 find_package(SDL2 REQUIRED)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR} include/ ${SDL2_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_LIST_DIR} include/ ${SDL2_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
@@ -97,6 +97,7 @@ add_executable(sqlux
     src/sqlux_windows.c
     src/sqlux_hexdump.c
     src/SDL2main.cpp
+    src/SqluxOptions.cpp
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)
@@ -111,16 +112,16 @@ endif ()
 
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/${TOOLCHAIN_PREFIX}/lib -lmingw32 -lSDL2main -lSDL2 -lwsock32 -lwinmm -lsetupapi -limm32 -lversion -static-libgcc -static-libstdc++)
+        target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/${TOOLCHAIN_PREFIX}/lib -lmingw32 -lSDL2main -lSDL2 -lwsock32 -lwinmm -lsetupapi -limm32 -lversion ${Boost_LIBRARIES} -static-libgcc -static-libstdc++)
     else()
-        target_link_libraries(sqlux ${SDL2_LIBRARIES})
+        target_link_libraries(sqlux ${SDL2_LIBRARIES} ${Boost_LIBRARIES})
     endif()
 else()
-    target_link_libraries(sqlux SDL2::SDL2)
+    target_link_libraries(sqlux SDL2::SDL2 ${Boost_LIBRARIES})
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -Wl,-Bdynamic)
+	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -Wl,-Bdynamic ${Boost_LIBRARIES})
 endif()
 
 set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
