@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
 static int bdi_files[8];
@@ -33,12 +34,12 @@ void SQLUXBDISelect(uint8_t d)
 
 	/* Currently only supporting 1 unit */
 	if ((d == 1) && (!bdi_files[d - 1])) {
-		bdi_debug("BDI: Opening %s\n", QMD.bdi1);
-		if (strlen(QMD.bdi1)) {
-			bdi_file = open(QMD.bdi1, O_RDWR);
+		bdi_debug("BDI: Opening %s\n", optionString("bdi1"));
+		if (strlen(optionString("bdi1"))) {
+			bdi_file = open(optionString("bdi1"), O_RDWR);
 			if (bdi_file < 0) {
 				perror("BDI: Select Open File");
-				printf("BDI: ERROR Opening %s\n", QMD.bdi1);
+				printf("BDI: ERROR Opening %s\n", optionString("bdi1"));
 			} else {
 				bdi_files[d - 1] = bdi_file;
 			}

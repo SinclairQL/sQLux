@@ -28,7 +28,7 @@
 #include <string.h>
 /*#include "ConfigDialog.h"*/
 #include "QFilesPriv.h"
-
+#include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 #include "xqlmouse.h"
 #include "Xscreen.h"
@@ -183,9 +183,9 @@ static void PatchBootDev()
 				 4)) {
 			if (V2)
 				printf("Patching Boot Device %s at 0x%x\n",
-					QMD.bootdev, bootpatchaddr[i]);
+					optionString("boot_dev"), bootpatchaddr[i]);
 
-			strncpy((void *)memBase + bootpatchaddr[i], QMD.bootdev,
+			strncpy((void *)memBase + bootpatchaddr[i], optionString("boot_dev"),
 				4);
 		}
 		i++;
@@ -209,7 +209,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 	//if(V1)printf("no_patch: %d\n",QMD.no_patch);
 
-	if (p && !QMD.no_patch) {
+	if (p && !optionInt("no_patch")) {
 		if (!isMinerva) {
 			if (p)
 				p = PatchFind();
@@ -234,7 +234,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			     RW((uw16 *)((Ptr)memBase + 0x12a)))),
 		   MDVH_CMD_CODE); /* read mdv sector header */
 
-		if (!isMinerva && QMD.fastStartup)
+		if (!isMinerva && optionInt("fast_startup"))
 			WW(((uw16 *)((Ptr)memBase + RL(&memBase[1]))),
 			   FSTART_CMD_CODE); /* fast startup patch */
 		/* FastStartup() -- 0xadc7 */
@@ -264,7 +264,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 		PatchBootDev();
 	}
-	if (!p && !QMD.no_patch)
+	if (!p && !optionInt("no_patch"))
 		printf("warning : could not complete ROM patch\n");
 
 	/* last not least intrument the ROM code HW register access */

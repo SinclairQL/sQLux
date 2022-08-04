@@ -83,7 +83,6 @@ add_executable(sqlux
     qmtrap.c
     trace.c
     unixstuff.c
-    uqlx_cfg.c
     util.c
     uxfile.c
     vm.c

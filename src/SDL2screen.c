@@ -16,6 +16,7 @@
 #include "SDL2screen.h"
 #include "qlmouse.h"
 #include "QL_screen.h"
+#include "SqluxOptions.hpp"
 #include "unixstuff.h"
 #include "QL_sound.h"
 
@@ -302,7 +303,7 @@ void QLSDLScreen(void)
 	amask = (sqluxlogo.bytes_per_pixel == 3) ? 0 : 0xff000000;
 #endif
 
-	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", QMD.sysrom, RTOP / 1024);
+	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", optionString("sysrom"), RTOP / 1024);
 
 	Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
 #ifndef SDL_JOYSTICK_DISABLED
@@ -321,7 +322,7 @@ void QLSDLScreen(void)
 			sdl_mode.w, sdl_mode.h);
 
 	/* Fix the aspect ratio to more like real hardware */
-	if (QMD.aspect) {
+	if (optionInt("fixaspect")) {
 		ay = (qlscreen.yres * 3) / 2;
 	} else {
 		ay = qlscreen.yres;
@@ -343,15 +344,15 @@ void QLSDLScreen(void)
 	    sdl_mode.h >= 600) {
 		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
-		if (!strcmp("2x", QMD.winsize)) {
+		if (!strcmp("2x", optionString("win_size"))) {
 			w = qlscreen.xres * 2;
 			h = ay * 2;
-		} else if (!strcmp("3x", QMD.winsize)) {
+		} else if (!strcmp("3x", optionString("win_size"))) {
 			w = qlscreen.xres * 3;
 			h = ay * 3;
-		} else if (!strcmp("max", QMD.winsize)) {
+		} else if (!strcmp("max", optionString("win_size"))) {
 			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
-		} else if (!strcmp("full", QMD.winsize)) {
+		} else if (!strcmp("full", optionString("win_size"))) {
 			sdl_window_mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 			ql_fullscreen = true;
 		}
@@ -393,7 +394,7 @@ void QLSDLScreen(void)
 	SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 
-	if (QMD.filter)
+	if (optionInt("filter"))
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
 	ql_screen = SDL_CreateRGBSurfaceWithFormat(
@@ -409,7 +410,7 @@ void QLSDLScreen(void)
 				       ql_screen->w, ql_screen->h);
 
 	for (i = 0; i < 16; i++) {
-		if (QMD.gray) {
+		if (optionInt("grey") || optionInt("gray")) {
 			SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors_gray[i].r,
 						  QLcolors_gray[i].g, QLcolors_gray[i].b);
 		} else {
@@ -591,8 +592,8 @@ static void QLSDLInitJoystick(void)
 {
 #ifndef SDL_JOYSTICK_DISABLED
 	// Open joystick 1 and 2, if defined
-	QLSDLOpenJoystick(0,QMD.joy1);
-	QLSDLOpenJoystick(1,QMD.joy2);
+	QLSDLOpenJoystick(0, optionInt("joy1"));
+	QLSDLOpenJoystick(1, optionInt("joy2"));
 #endif
 }
 
@@ -982,11 +983,11 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 static void setKeyboardLayout (void)
 {
-	if (!strncmp("DE", QMD.kbd, 2)) {
+	if (!strncmp("DE", optionString("kbd"), 2)) {
 		sdlqlmap = sdlqlmap_DE;
 		if (V1) printf("Using DE keymap.\n");
 		return;
-	} else if (!strncmp("GB", QMD.kbd, 2)) {
+	} else if (!strncmp("GB", optionString("kbd"), 2)) {
 		sdlqlmap = sdlqlmap_GB;
 		if (V1) printf("Using GB keymap.\n");
 		return;

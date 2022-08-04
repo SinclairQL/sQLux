@@ -14,7 +14,7 @@ namespace po_style = boost::program_options::command_line_style;
 
 static po::variables_map vm;
 
-int options(int argc, char *argv[])
+int optionParse(int argc, char *argv[])
 {
     try {
         po::options_description generic("Generic options");
@@ -87,6 +87,8 @@ int options(int argc, char *argv[])
                 "volume in range 1-8, 0 to disable")
             ("speed", po::value<float>()->default_value(0.0),
                 "speed in factor of BBQL speed, 0.0 for full speed")
+            ("strict_lock", po::value<int>()->default_value(0),
+                "enable strict file locking")
             ("sysrom", po::value<string>()->default_value("MIN198.rom"),
                 "system rom")
             ("win_size,w", po::value<string>(),
@@ -160,4 +162,35 @@ int options(int argc, char *argv[])
     }
     return 0;
 }
+}
+
+extern "C" {
+
+int optionInt(char *optionName)
+{
+    if (emulator::vm.count(optionName)) {
+        return emulator::vm[optionName].as<int>();
+    }
+
+    return 0;
+}
+
+const char *optionString(char *optionName)
+{
+    if (emulator::vm.count(optionName)) {
+        return emulator::vm[optionName].as<std::string>().c_str();
+    }
+
+    return "";
+}
+
+float optionFloat(char *optionName)
+{
+    if (emulator::vm.count(optionName)) {
+        return emulator::vm[optionName].as<float>();
+    }
+
+    return 0.0;
+}
+
 }

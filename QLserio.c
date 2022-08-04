@@ -32,6 +32,7 @@
 #include "QDOS.h"
 #include "QL_cconv.h"
 #include "driver.h"
+#include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
 #ifdef __linux__
@@ -169,7 +170,7 @@ int ser_test(int id, char *name)
 int ser_open(int id, void **priv)
 {
 	serdev_t *p;
-	char *portnam;
+	const char *portnam;
 	int unit = ser_par[0].i;
 
 	if (unit < 1 || unit >= MAXSERIAL)
@@ -190,16 +191,16 @@ int ser_open(int id, void **priv)
 
 	switch (unit) {
 	case 1:
-		portnam = QMD.ser1;
+		portnam = optionString("ser1");
 		break;
 	case 2:
-		portnam = QMD.ser2;
+		portnam = optionString("ser2");
 		break;
 	case 3:
-		portnam = QMD.ser3;
+		portnam = optionString("ser3");
 		break;
 	case 4:
-		portnam = QMD.ser4;
+		portnam = optionString("ser4");
 		break;
 	}
 	sparams[unit] = p;
@@ -331,7 +332,7 @@ void tty_baud(serdev_t *sd)
 #endif
 }
 
-int tty_open(char *dev, serdev_t *sd)
+int tty_open(const char *dev, serdev_t *sd)
 {
 	if ((sd->fd = open(dev, O_RDWR | O_NONBLOCK)) > 0) {
 #ifndef NO_FIONREAD

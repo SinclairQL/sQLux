@@ -322,42 +322,9 @@ w32 ReadQlClock(void)
 int verbose = 2;
 static char obuf[BUFSIZ];
 
-int toggle_hog(int val)
+void SetHome()
 {
-	if (val < 0)
-		return QMD.cpu_hog;
-	QMD.cpu_hog = val;
-
-	return QMD.cpu_hog;
-}
-
-void usage(char **argv)
-{
-	printf("UQLX release %s:\n\tusage: %s [options] arguments\n", release,
-	       argv[0]);
-	printf("\t options:\n"
-	       "\t\t -?                  : list options \n"
-	       "\t\t -f config_file      : read alternative config file\n"
-	       "\t\t -r MEM              : set RAMTOP to this many Kb \n"
-	       "\t\t -o romname          : use this ROM \n"
-	       "\t\t -b 'boot_cmd'       : define BOOT device with boot_cmd \n"
-	       "\t\t -d 'boot_dev'       : device where BOOT should be read eg. 'mdv1'\n"
-	       "\t\t -g NxM              : define screen size to NxM \n"
-	       "\t\t -v num              : set verbosity\n"
-	       "\t\t -w 1x,2x,3x,max,full: window size 1x, 2x, 3x, maximize, fullscreen \n"
-	       "\t\t -n                  : dont patch anything (xuse only)\n\n"
-	       "\t arguments: available through Superbasic commands\n\n");
-	exit(0);
-}
-
-void SetParams(int ac, char **av)
-{
-	char sysrom[200];
-	int c;
-	int mem = -1, hog = -1, no_patch = -1;
-	int gg = 0;
 	char *home;
-	int res;
 
 #ifdef __WIN32__
 	struct stat stat_res;
@@ -384,135 +351,6 @@ void SetParams(int ac, char **av)
 	if (home)
 		homedir = strdup(home);
 #endif
-
-	setvbuf(stdout, obuf, _IOLBF, BUFSIZ);
-
-	*sysrom = 0;
-
-	while((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
-		switch (c) {
-		case 'f':
-			strncpy(QMD.config_file, optarg, PATH_MAX);
-			QMD.config_file_opt = 1;
-			break;
-		}
-	}
-
-	QMParams();
-
-	if (strcmp(QMD.resolution, "512x256")) {
-		parse_screen(QMD.resolution);
-	}
-
-	/* reset the option parsing for second pass */
-#ifdef __APPLE__
-	optreset = 1;
-#endif
-	optind = 1;
-
-#ifndef NO_GETOPT
-	while ((c = getopt(ac, av, "c:f:r:o:b:d:g:v:w:n?")) != EOF) {
-		switch (c) {
-		case 'g':
-			gg = 0;
-			parse_screen(optarg);
-			break;
-		case 'f':
-			break;
-		case 'o':
-			strcpy(sysrom, optarg);
-			break;
-		case 'r':
-			mem = atoi(optarg);
-			break;
-		case 'h':
-			hog = 1;
-			break;
-		case 'n':
-			no_patch = 1;
-			break;
-		case 'v':
-			verbose = atoi(optarg);
-			break;
-		case 'b': {
-			int len;
-
-			if (optarg && strcmp("", optarg)) {
-				ux_boot = 2;
-				len = strlen(optarg);
-				ux_bname = malloc(len + 2);
-				strncpy(ux_bname, optarg, len);
-				ux_bname[len] = 10;
-				ux_bname[len + 1] = 0;
-			}
-		} break;
-		case 'w':
-			if (optarg && (strlen(optarg) < 5)) {
-				int valid = 1;
-				valid &= strcmp("1x", optarg) ? 1 : 0;
-				valid &= strcmp("2x", optarg) ? 1 : 0;
-				valid &= strcmp("3x", optarg) ? 1 : 0;
-				valid &= strcmp("max", optarg) ? 1 : 0;
-				valid &= strcmp("full", optarg) ? 1 : 0;
-
-				if (!valid) {
-					strcpy(QMD.winsize, optarg);
-				} else {
-					usage(av);
-				}
-			} else {
-				usage(av);
-			}
-			break;
-		case '?':
-			usage(av);
-			break;
-		case 'd':
-			if (optarg && strcmp("", optarg)) {
-				if (strlen(optarg) != 4) {
-					printf("-d BOOT_DEV must be 4 chars\n");
-				} else {
-					strncpy(QMD.bootdev, optarg, 4);
-				}
-			}
-			break;
-		case 'c':
-			res = QMParseParam(optarg);
-			if (res < 0)
-				printf("Invalid arg %s\n", optarg);
-			break;
-		default:
-			usage(av);
-		}
-	}
-
-	UQLX_argc = ac;
-	UQLX_argv = av;
-	UQLX_optind = optind;
-
-#else
-	UQLX_argc = ac;
-	UQLX_argv = av;
-	UQLX_optind = 1;
-#endif
-
-	if (mem > 0 && mem < 17)
-		mem = mem * 1024;
-
-	if (mem != -1)
-		QMD.ramtop = mem;
-	if (hog != -1)
-		QMD.cpu_hog = 1;
-	if (no_patch != -1)
-		QMD.no_patch = 1;
-
-	if (QMD.no_patch)
-		do_update = 1;
-	//printf("do_update: %d\n",do_update);
-
-	toggle_hog(QMD.cpu_hog);
-
-	RTOP = QMD.ramtop * 1024;
 }
 
 int QLRun(void *data)
@@ -520,7 +358,7 @@ int QLRun(void *data)
 	int scrchange, i;
 	int loop = 0;
 
-	int speed = (int)(QMD.speed * 20);
+	int speed = (int)(optionFloat("speed") * 20);
 	speed = (speed >= 0) && (sem50Hz != NULL) ? speed : 0;
 
 exec:

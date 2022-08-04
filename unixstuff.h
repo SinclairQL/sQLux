@@ -6,7 +6,7 @@ extern char *homedir;
 
 void cleanup(int err);
 void set_rtc_emu(void);
-void SetParams(int ac, char **av);
+void SetHome(void);
 void uqlxInit(void);
 int QLRun(void *data);
 long ql2uxtime(long t);

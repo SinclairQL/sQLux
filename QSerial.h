@@ -52,7 +52,7 @@ typedef struct SERDEV
 
 
 void tty_baud(serdev_t *);
-int tty_open(char *, serdev_t *);
+int tty_open(const char *, serdev_t *);
 void tty_close(int );
 
 int pty_open(int, void **);

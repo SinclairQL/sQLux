@@ -7,6 +7,7 @@ extern "C" {
     #include "SDL2screen.h"
     #include "unixstuff.h"
     #include "uqlx_cfg.h"
+    #include "Xscreen.h"
 }
 
 static SDL_Thread *emuThread = NULL;
@@ -22,15 +23,17 @@ extern "C" void emu_shutdown()
 
 extern "C" int main(int argc, char *argv[])
 {
-    emulator::options(argc, argv);
+    emulator::optionParse(argc, argv);
 
-    SetParams(argc, argv);
+    parse_screen(optionString("resolution"));
+
+    SetHome();
 
     emulator::init();
 
     QLSDLScreen();
 
-    sound_enabled = initSound(QMD.sound);
+    sound_enabled = initSound(optionInt("sound"));
 
     emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 

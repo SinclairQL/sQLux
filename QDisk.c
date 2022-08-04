@@ -28,6 +28,7 @@
 #include "memaccess.h"
 
 #include "SDL2screen.h"
+#include "SqluxOptions.hpp"
 
 #include "unixstuff.h"
 #include "uqlx_cfg.h"
@@ -379,7 +380,7 @@ OSErr QFOpenDisk(struct mdvFile *f)
 			perror("could not stat file/device");
 
 #ifndef NO_LOCK
-		if (QMD.strict_lock) {
+		if (optionInt("strict_lock")) {
 			xmode = (sbuf.st_mode | S_ISGID) & (~S_IXGRP);
 			if (chmod(qdevs[fs].mountPoints[drnum], xmode))
 				if (errno != EROFS)

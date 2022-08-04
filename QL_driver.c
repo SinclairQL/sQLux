@@ -29,6 +29,8 @@
 #include "memaccess.h"
 #include "QVFS.h"
 
+#include "SqluxOptions.hpp"
+
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)
 #define max(_a_, _b_) (_a_ > _b_ ? _a_ : _b_)
 
@@ -1070,9 +1072,9 @@ int prt_open(int id, void **priv)
 				strlen(prt_par[3].s) + 2);
 			strcpy(p, prt_par[3].s);
 		} else {
-			p = (void *)malloc(strlen(QMD.prtcmd) +
+			p = (void *)malloc(strlen(optionString("print")) +
 					   strlen(prt_par[2].s) + 2);
-			strcpy(p, QMD.prtcmd);
+			strcpy(p, optionString("print"));
 		}
 		strcat(p, " ");
 		if (prt_par[2].s)
@@ -1085,7 +1087,7 @@ int prt_open(int id, void **priv)
 		free(p);
 	} else /* simple case */
 	{
-		f = popen(QMD.prtcmd, "w");
+		f = popen(optionString("print"), "w");
 		if (!f)
 			return qmaperr();
 	}
