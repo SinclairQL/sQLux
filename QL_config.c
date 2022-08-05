@@ -181,12 +181,15 @@ static void PatchBootDev()
 	while (bootpatchaddr[i]) {
 		if (!strncasecmp((void *)memBase + bootpatchaddr[i], "mdv1",
 				 4)) {
-			if (V2)
-				printf("Patching Boot Device %s at 0x%x\n",
-					optionString("boot_dev"), bootpatchaddr[i]);
 
-			strncpy((void *)memBase + bootpatchaddr[i], optionString("boot_dev"),
-				4);
+			if (strlen(optionString("boot_device"))) {
+				if (V2)
+					printf("Patching Boot Device %s at 0x%x\n",
+						optionString("boot_device"), bootpatchaddr[i]);
+
+				strncpy((void *)memBase + bootpatchaddr[i],
+					optionString("boot_dev"), 4);
+			}
 		}
 		i++;
 	}

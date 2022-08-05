@@ -3,6 +3,7 @@
 
 extern "C" {
     #include <SDL.h>
+    #include "debug.h"
     #include "QL_sound.h"
     #include "SDL2screen.h"
     #include "unixstuff.h"
@@ -27,7 +28,9 @@ extern "C" int main(int argc, char *argv[])
 
     parse_screen(optionString("resolution"));
 
+    // Set some things that used to be set as side effects
     SetHome();
+    verbose = optionInt("verbose");
 
     emulator::init();
 

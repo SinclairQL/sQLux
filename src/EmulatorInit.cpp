@@ -67,12 +67,20 @@ void init()
 	void *tbuff;
 
 	if (V1)
-		cout << "*** sQLux release" << release << "\n\n";
+		cout << "*** sQLux release " << release << "\n\n";
 
 	tzset();
 
-	RTOP = optionInt("ramtop") * 1024;
-	cout << RTOP << "\n";
+	if (optionInt("ramsize")) {
+		RTOP = (128 + optionInt("ramsize")) * 1024;
+	} else {
+		RTOP = optionInt("ramtop") * 1024;
+	}
+
+	if (RTOP < (256 * 1024)) {
+		cout << "Sorry not enough ram defined for QDOS " << (RTOP / 1024) - 128 <<"K\n";
+		exit(1);
+	}
 
 	memBase = (uint32_t *)malloc(RTOP);
 	if (memBase == NULL) {
@@ -182,7 +190,9 @@ void init()
 	}
 
 	if (V1 && (optionFloat("speed") > 0.0))
-		printf("Speed %.1f\n", optionFloat("speed"));
+		printf("Emulation Speed: %.1f\n", optionFloat("speed"));
+	else if (V1)
+		printf("Emulation Speed: FULL\n");
 
 	sound_enabled = (optionInt("sound") > 0);
 	if (V1 && (optionInt("sound") > 0))

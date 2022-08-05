@@ -62,9 +62,9 @@ int optionParse(int argc, char *argv[])
             ("print", po::value<string>()->default_value("lpr"),
                 "command to use for print jobs")
             ("ramtop,r", po::value<int>(),
-                "The memory space top (128K + RAMSIZE)")
-            ("ramsize", po::value<string>(),
-                "The size of ram (not valid if ramtop set)")
+                "The memory space top (128K + QL ram, not valid if ramsize set)")
+            ("ramsize", po::value<int>(),
+                "The size of ram")
             ("resolution,g", po::value<string>()->default_value("512x256"),
                 "resolution of screen in mode 4")
             ("romdir", po::value<string>()->default_value("roms/"),

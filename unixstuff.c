@@ -358,7 +358,7 @@ int QLRun(void *data)
 	int scrchange, i;
 	int loop = 0;
 
-	int speed = (int)(optionFloat("speed") * 20);
+	int speed = (int)(optionFloat("speed") * 20.0);
 	speed = (speed >= 0) && (sem50Hz != NULL) ? speed : 0;
 
 exec:
