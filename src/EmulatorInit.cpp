@@ -71,10 +71,10 @@ void init()
 
 	tzset();
 
-	if (optionInt("ramsize")) {
-		RTOP = (128 + optionInt("ramsize")) * 1024;
+	if (optionInt("RAMSIZE")) {
+		RTOP = (128 + optionInt("RAMSIZE")) * 1024;
 	} else {
-		RTOP = optionInt("ramtop") * 1024;
+		RTOP = optionInt("RAMTOP") * 1024;
 	}
 
 	if (RTOP < (256 * 1024)) {
@@ -95,52 +95,52 @@ void init()
 	}
 
     try {
-        loadRom(std::string(optionString("romdir")) + "/" + optionString("sysrom"), QL_ROM_BASE, QL_ROM_SIZE);
+        loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("SYSROM"), QL_ROM_BASE, QL_ROM_SIZE);
     }
     catch (const exception &e)
     {
-        cout << "Error Loading ROM " << optionString("sysrom") << " reason: " << e.what() << "\n";
+        cout << "Error Loading ROM " << optionString("SYSROM") << " reason: " << e.what() << "\n";
         exit(1);
     }
 
-	if (strlen(optionString("romport"))) {
+	if (strlen(optionString("ROMPORT"))) {
         try {
-            loadRom(std::string(optionString("romdir")) + "/" + optionString("romport"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("ROMPORT"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("romport") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << optionString("ROMPORT") << "reason: " << e.what() << "\n";
             exit(1);
         }
-	} else if (strlen(optionString("romim"))) {
+	} else if (strlen(optionString("ROMIM"))) {
         try {
-            loadRom(std::string(optionString("romdir")) + "/" + optionString("romim"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("ROMIM"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("romim") << "reason: " << e.what() << "\n";
-            exit(1);
-        }
-	}
-
-	if (strlen(optionString("iorom1"))) {
-        try {
-            loadRom(std::string(optionString("romdir")) + "/" + optionString("iorom1"), QL_ROM2_BASE, QL_ROM2_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << optionString("iorom1") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << optionString("ROMIM") << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}
 
-	if (strlen(optionString("iorom2"))) {
+	if (strlen(optionString("IOROM1"))) {
         try {
-            loadRom(std::string(optionString("romdir")) + "/" + optionString("iorom2"), QL_ROM3_BASE, QL_ROM3_SIZE);
+            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("IOROM1"), QL_ROM2_BASE, QL_ROM2_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("iorom2") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << optionString("IOROM1") << "reason: " << e.what() << "\n";
+            exit(1);
+        }
+	}
+
+	if (strlen(optionString("IOROM2"))) {
+        try {
+            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("IOROM2"), QL_ROM3_BASE, QL_ROM3_SIZE);
+        }
+        catch(const exception &e)
+        {
+            cout << "Error Loading ROM " << optionString("IOROM2") << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}
@@ -189,14 +189,14 @@ void init()
 		qlscreen.qm_len = 0x8000;
 	}
 
-	if (V1 && (optionFloat("speed") > 0.0))
-		printf("Emulation Speed: %.1f\n", optionFloat("speed"));
+	if (V1 && (optionFloat("SPEED") > 0.0))
+		printf("Emulation Speed: %.1f\n", optionFloat("SPEED"));
 	else if (V1)
 		printf("Emulation Speed: FULL\n");
 
-	sound_enabled = (optionInt("sound") > 0);
-	if (V1 && (optionInt("sound") > 0))
-		printf("sound enabled, volume %i.\n", optionInt("sound"));
+	sound_enabled = (optionInt("SOUND") > 0);
+	if (V1 && (optionInt("SOUND") > 0))
+		printf("sound enabled, volume %i.\n", optionInt("SOUND"));
 
 	if (!isMinerva) {
 		qlux_table[IPC_CMD_CODE] = UseIPC; /* install pseudoops */
@@ -229,7 +229,7 @@ void init()
 	}
 	qlux_table[BASEXT_CMD_CODE] = BASEXTCmd;
 
-	if (optionInt("skip_boot"))
+	if (optionInt("SKIP_BOOT"))
 		qlux_table[0x4e43] = btrap3;
 
 	InitialSetup();

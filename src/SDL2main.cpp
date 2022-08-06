@@ -24,13 +24,18 @@ extern "C" void emu_shutdown()
 
 extern "C" int main(int argc, char *argv[])
 {
-    emulator::optionParse(argc, argv);
+    // set the homedir for the OS first
+    SetHome();
 
-    parse_screen(optionString("resolution"));
+    if (emulator::optionParse(argc, argv)) {
+        return 0;
+    }
 
     // Set some things that used to be set as side effects
-    SetHome();
-    verbose = optionInt("verbose");
+    parse_screen(optionString("RESOLUTION"));
+    verbose = optionInt("VERBOSE");
+
+    emulator::deviceParse();
 
     emulator::init();
 

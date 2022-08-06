@@ -369,7 +369,7 @@ void SchedulerCmd()
 	MouseTask();
 #endif
 
-	if (optionInt("cpu_hog") == 0 && schedCount++ > min_idle) /* QDOS running idle */
+	if (optionInt("CPU_HOG") == 0 && schedCount++ > min_idle) /* QDOS running idle */
 	{
 		/*printf(".");fflush(stdout);*/
 		/*printf("schedCount %d\n",schedCount);*/

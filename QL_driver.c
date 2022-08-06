@@ -1072,9 +1072,9 @@ int prt_open(int id, void **priv)
 				strlen(prt_par[3].s) + 2);
 			strcpy(p, prt_par[3].s);
 		} else {
-			p = (void *)malloc(strlen(optionString("print")) +
+			p = (void *)malloc(strlen(optionString("PRINT")) +
 					   strlen(prt_par[2].s) + 2);
-			strcpy(p, optionString("print"));
+			strcpy(p, optionString("PRINT"));
 		}
 		strcat(p, " ");
 		if (prt_par[2].s)
@@ -1087,7 +1087,7 @@ int prt_open(int id, void **priv)
 		free(p);
 	} else /* simple case */
 	{
-		f = popen(optionString("print"), "w");
+		f = popen(optionString("PRINT"), "w");
 		if (!f)
 			return qmaperr();
 	}

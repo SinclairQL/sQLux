@@ -1,10 +1,18 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
+
+extern "C" {
+    #include <sys/stat.h>
+
+    #include "emudisk.h"
+    #include "unixstuff.h"
+}
 
 namespace emulator
 {
@@ -14,89 +22,221 @@ namespace po_style = boost::program_options::command_line_style;
 
 static po::variables_map vm;
 
+static string argv0;
+
+std::vector<std::string> stringSplit(const std::string str, const std::string regex_str)
+{
+    std::regex regexz(regex_str);
+    std::vector<std::string> list(std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
+                                  std::sregex_token_iterator());
+    return list;}
+
+void deviceInstall(std::vector<string> device)
+{
+	/*DIR *dirp;*/
+	short ndev = 0;
+	short len = 0;
+	short idev = -1;
+	short lfree = -1;
+	short i;
+	char tmp[401];
+	int err;
+
+	struct stat sbuf;
+
+	if (isdigit(device[0].back())) {
+		ndev = device[0].back() - '0';
+        device[0].pop_back();
+	} else {
+		ndev = -1;
+	}
+
+	for (i = 0; i < MAXDEV; i++) {
+		if (qdevs[i].qname &&
+            (boost::iequals(qdevs[i].qname, device[0]))) {
+			idev = i;
+			break;
+		} else if (qdevs[i].qname == NULL && lfree == -1) {
+			lfree = i;
+		}
+	}
+
+	if (idev == -1 && lfree == -1) {
+		printf("sorry, no more free entries in Directory Device Driver table\n");
+		printf("check your sqlux.ini if you really need all this devices\n");
+
+		return;
+	}
+
+	if (idev != -1 && ndev == 0) {
+		memset((qdevs + idev), 0, sizeof(EMUDEV_t));
+	} else {
+		if (lfree != -1) {
+			idev = lfree;
+            string upper = device[0].substr(0, 3);
+            boost::to_upper(upper);
+			qdevs[idev].qname = strdup(upper.c_str());
+		}
+		if (ndev && ndev < 9) {
+			if (device.size() > 1) {
+                string fileString = device[1];
+
+				if (fileString.front() == '~') {
+                    fileString.erase(0, 1);
+                    fileString.insert(0, "/");
+                    fileString.insert(0, homedir);
+				}
+
+                auto hex = fileString.find("%x");
+                if (hex != string::npos) {
+                    char tbuf[17];
+                    snprintf(tbuf, 17, "%x", getpid());
+                    fileString.erase(hex, 2);
+                    fileString.insert(hex, tbuf);
+                }
+
+                std::filesystem::path p{fileString};
+
+                // check file/dir exists unless its a ramdisk
+                if (!boost::iequals("ram", qdevs[idev].qname)) {
+                    if (!std::filesystem::exists(p)) {
+                        cerr << "Mountpoint " << fileString << " for device " << device[0] << ndev << "_ may not be accessible\n";
+                    }
+                }
+
+                // if its a directory make sure it ends in a slash
+                if (std::filesystem::is_directory(p) && (fileString.back() != '/')) {
+                    fileString.append("/");
+                }
+
+				qdevs[idev].mountPoints[ndev - 1] = strdup(fileString.c_str());
+			    qdevs[idev].Present[ndev - 1] = 1;
+			} else {
+				qdevs[idev].Present[ndev - 1] = 0;
+            }
+
+			if (device.size() > 2) {
+				int flag_set = 0;
+
+                for (int i = 2; i < device.size(); i++) {
+                    if ((device[i].find("native") != string::npos) ||
+                            (device[i].find("qdods-fs") != string::npos)) {
+					    flag_set |= qdevs[idev].Where[ndev - 1] = 1;
+                    } else if (device[i].find("qdos-like") != string::npos) {
+					    flag_set |= qdevs[idev].Where[ndev - 1] = 2;
+                    }
+
+				    flag_set |= qdevs[idev].clean[ndev - 1] =
+					    (device[i].find("clean") != string::npos);
+                }
+
+				if (!flag_set) {
+					cout << "WARNING: flag " << device[2] << "in definition of " << device[0]
+                        << ndev << "_ not recognised\n";
+                }
+			}
+		}
+	}
+}
+
+void deviceParse()
+{
+    for (auto &devString : vm["DEVICE"].as< vector<string> >()) {
+        auto device = stringSplit(devString, ",");
+        deviceInstall(device);
+    }
+}
+
 int optionParse(int argc, char *argv[])
 {
+    argv0 = string(argv[0]);
+
     try {
         po::options_description generic("Generic options");
         generic.add_options()
-        ("config,f", po::value<string>(),
+        ("CONFIG,f", po::value<string>(),
                 "sqlux.ini configuration file.")
-        ("help,h",
+        ("HELP,h",
             "produce help message")
-        ("verbose,v", po::value<int>()->default_value(1),
+        ("VERBOSE,v", po::value<int>()->default_value(1),
             "verbosity level 0-3")
             ;
 
         po::options_description config("Configuration");
         config.add_options()
-            ("bdi1", po::value<string>(),
+            ("BDI1", po::value<string>(),
                 "file exposed by the BDI interface")
-            ("boot_device,d", po::value<string>()->default_value("MDV1"),
+            ("BOOT_DEVICE,d", po::value<string>()->default_value("MDV1"),
                 "device to load BOOT file from")
-            ("cpu_hog", po::value<int>()->default_value(1),
+            ("CPU_HOG", po::value<int>()->default_value(1),
                 "1 = use all cpu, 0 = sleep when idle")
-            ("device", po::value< vector<string> >(),
+            ("DEVICE", po::value< vector<string> >(),
                 "QDOS_name,path,flags (may be used multiple times")
-            ("fast_startup", po::value<int>()->default_value(0),
+            ("FAST_STARTUP", po::value<int>()->default_value(0),
                 "1 = skip ram test (does not affect Minerva)")
-            ("filter", po::value<int>()->default_value(0),
+            ("FILTER", po::value<int>()->default_value(0),
                 "enable bilinear filter when zooming")
-            ("fixaspect", po::value<int>()->default_value(0),
+            ("FIXASPECT", po::value<int>()->default_value(0),
                 "0 = 1:1 pixel mapping, 1 = BBQL aspect non square pixels")
-            ("grey", po::value<int>()->default_value(0),
+            ("GREY", po::value<int>()->default_value(0),
                 "1 enable greyscale display")
-            ("gray", po::value<int>()->default_value(0),
+            ("GRAY", po::value<int>()->default_value(0),
                 "1 enable grayscale display")
-            ("iorom1", po::value<string>(),
+            ("IOROM1", po::value<string>(),
                 "rom in 1st IO area (Minerva only 0x10000 address)")
-            ("iorom2", po::value<string>(),
+            ("IOROM2", po::value<string>(),
                 "rom in 2nd IO area (Minerva only 0x14000 address)")
-            ("joy1", po::value<int>(),
+            ("JOY1", po::value<int>(),
                 "1-8 SDL2 joystick index")
-            ("joy2", po::value<int>(),
+            ("JOY2", po::value<int>(),
                 "1-8 SDL2 joystick index")
-            ("kbd", po::value<string>()->default_value("US"),
+            ("KBD", po::value<string>()->default_value("US"),
                 "keyboard language DE, GB, US")
-            ("no_patch,n", po::value<int>()->default_value(0),
+            ("NO_PATCH,n", po::value<int>()->default_value(0),
                 "disable patching the rom")
-            ("print", po::value<string>()->default_value("lpr"),
+            ("PRINT", po::value<string>()->default_value("lpr"),
                 "command to use for print jobs")
-            ("ramtop,r", po::value<int>(),
+            ("RAMTOP,r", po::value<int>(),
                 "The memory space top (128K + QL ram, not valid if ramsize set)")
-            ("ramsize", po::value<int>(),
+            ("RAMSIZE", po::value<int>(),
                 "The size of ram")
-            ("resolution,g", po::value<string>()->default_value("512x256"),
+            ("RESOLUTION,g", po::value<string>()->default_value("512x256"),
                 "resolution of screen in mode 4")
-            ("romdir", po::value<string>()->default_value("roms/"),
+            ("ROMDIR", po::value<string>()->default_value("roms/"),
                 "path to the roms")
-            ("romport", po::value<string>(),
+            ("ROMPORT", po::value<string>(),
                 "rom in QL rom port (0xC000 address)")
-            ("romim", po::value<string>(),
+            ("ROMIM", po::value<string>(),
                 "rom in QL rom port (0xC000 address, legacy alias for romport)")
-            ("ser1", po::value<string>(),
+            ("SER1", po::value<string>(),
                 "device for ser1")
-            ("ser2", po::value<string>(),
+            ("SER2", po::value<string>(),
                 "device for ser2")
-            ("ser3", po::value<string>(),
+            ("SER3", po::value<string>(),
                 "device for ser3")
-            ("ser4", po::value<string>(),
+            ("SER4", po::value<string>(),
                 "device for ser4")
-            ("skip_boot", po::value<int>()->default_value(1),
+            ("SKIP_BOOT", po::value<int>()->default_value(1),
                 "1 = skip f1/f2 screen, 0 = show f1/f2 screen")
-            ("sound", po::value<int>()->default_value(0),
+            ("SOUND", po::value<int>()->default_value(0),
                 "volume in range 1-8, 0 to disable")
-            ("speed", po::value<float>()->default_value(0.0),
+            ("SPEED", po::value<float>()->default_value(0.0),
                 "speed in factor of BBQL speed, 0.0 for full speed")
-            ("strict_lock", po::value<int>()->default_value(0),
+            ("STRICT_LOCK", po::value<int>()->default_value(0),
                 "enable strict file locking")
-            ("sysrom", po::value<string>()->default_value("MIN198.rom"),
+            ("SYSROM", po::value<string>()->default_value("MIN198.rom"),
                 "system rom")
-            ("win_size,w", po::value<string>(),
+            ("WIN_SIZE,w", po::value<string>()->default_value("1x"),
                 "window size 1x, 2x, 3x, max, full")
             ;
 
+        po::options_description hidden("Hidden options");
+        hidden.add_options()
+            ("SQLUX-ARGS", po::value< vector<string> >(), "Arguments for QDOS")
+            ;
+
         po::options_description cmdline_options;
-        cmdline_options.add(generic).add(config); //.add(hidden);
+        cmdline_options.add(generic).add(config).add(hidden);
 
         po::options_description config_file_options;
         config_file_options.add(config); //.add(hidden);
@@ -104,33 +244,29 @@ int optionParse(int argc, char *argv[])
         po::options_description visible("Allowed options");
         visible.add(generic).add(config);
 
+        po::positional_options_description p;
+        p.add("SQLUX-ARGS", -1);
+
         store(po::command_line_parser(argc, argv).
-              options(cmdline_options).style(po_style::unix_style|po_style::case_insensitive).run(), vm);
+              options(cmdline_options).positional(p).style(po_style::unix_style|po_style::case_insensitive).run(), vm);
         notify(vm);
 
-        if (vm.count("help")) {
+        if (vm.count("HELP")) {
             cout << visible << "\n";
-            return 0;
+            return 1;
         }
 
-        if (vm.count("config")) {
-            ifstream ifs(vm["config"].as<string>().c_str());
+        if (vm.count("CONFIG")) {
+            ifstream ifs(vm["CONFIG"].as<string>().c_str());
             if (!ifs) {
                 cout << "Cannot open config file " << vm["config"].as<string>() << "\n";
                 return 1;
             } else {
-                stringstream config;
-                string line;
-
-                while (getline(ifs, line)) {
-                    boost::algorithm::to_lower(line);
-                    config << line << "\n";
-                }
-                store(parse_config_file(config, config_file_options), vm);
+                store(parse_config_file(ifs, config_file_options), vm);
                 notify(vm);
             };
         } else {
-            string home = getenv("HOME");
+            string home(homedir);
             vector<string> config_files= {"sqlux.ini", home + "/.sqluxrc", home + "/.uqlxrc"};
 
             for (auto &file: config_files) {
@@ -140,14 +276,7 @@ int optionParse(int argc, char *argv[])
                     if (!ifs) {
                         cout << "Cannot open config file " << file << "\n";
                     } else {
-                        stringstream config;
-                        string line;
-
-                        while (getline(ifs, line)) {
-                            boost::algorithm::to_lower(line);
-                            config << line << "\n";
-                        }
-                        store(parse_config_file(config, config_file_options), vm);
+                        store(parse_config_file(ifs, config_file_options), vm);
                         notify(vm);
                     }
                     break;
@@ -191,6 +320,30 @@ float optionFloat(char *optionName)
     }
 
     return 0.0;
+}
+
+int optionArgc()
+{
+    if (emulator::vm.count("SQLUX-ARGS")) {
+        return emulator::vm["SQLUX-ARGS"].as< std::vector<std::string> >().size();
+    }
+
+    return 0;
+}
+
+const char *optionArgv(int index)
+{
+    if (index == 0) {
+        return emulator::argv0.c_str();
+    }
+
+    index--;
+
+    if (emulator::vm.count("SQLUX-ARGS")) {
+        return emulator::vm["SQLUX-ARGS"].as< std::vector<std::string> >()[index].c_str();
+    }
+
+    return "";
 }
 
 }

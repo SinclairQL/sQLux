@@ -28,6 +28,7 @@
 #include "unixstuff.h"
 #include "xcodes.h"
 #include "SDL2screen.h"
+#include "SqluxOptions.hpp"
 #include "version.h"
 
 /* UQLX basic extensions */
@@ -426,7 +427,7 @@ qstr *bas_getstr()
 	return p;
 }
 
-int bas_retstr(int len, char *str)
+int bas_retstr(int len, const char *str)
 {
 	w32 p;
 
@@ -621,13 +622,13 @@ bas_err UQLX_getXargc()
 		return QERR_BP;
 #endif
 
-	return bas_retint(UQLX_argc - UQLX_optind + 1);
+	return bas_retint(optionArgc());
 }
 
 bas_err UQLX_getXarg()
 {
 	w32 n;
-	char *r;
+	const char *r;
 
 #ifdef HPR_STYLE
 	if (bas_argcount() < 1)
@@ -641,13 +642,10 @@ bas_err UQLX_getXarg()
 		return QERR_BP;
 
 	if (/*n>UQLX_argc-1 || */ n < 0 ||
-	    ((n > 0) && (n + UQLX_optind > UQLX_argc)))
+	    ((n > 0) && (n > optionArgc())))
 		return bas_retstr(0, NULL);
 
-	if (n == 0)
-		r = UQLX_argv[n];
-	else
-		r = UQLX_argv[n + UQLX_optind - 1];
+	r = optionArgv(n);
 
 	return bas_retstr(strlen(r), r);
 }

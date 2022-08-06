@@ -182,13 +182,13 @@ static void PatchBootDev()
 		if (!strncasecmp((void *)memBase + bootpatchaddr[i], "mdv1",
 				 4)) {
 
-			if (strlen(optionString("boot_device"))) {
+			if (strlen(optionString("BOOT_DEVICE"))) {
 				if (V2)
 					printf("Patching Boot Device %s at 0x%x\n",
-						optionString("boot_device"), bootpatchaddr[i]);
+						optionString("BOOT_DEVICE"), bootpatchaddr[i]);
 
 				strncpy((void *)memBase + bootpatchaddr[i],
-					optionString("boot_dev"), 4);
+					optionString("BOOT_DEVICE"), 4);
 			}
 		}
 		i++;
@@ -212,7 +212,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 	//if(V1)printf("no_patch: %d\n",QMD.no_patch);
 
-	if (p && !optionInt("no_patch")) {
+	if (p && !optionInt("NO_PATCH")) {
 		if (!isMinerva) {
 			if (p)
 				p = PatchFind();
@@ -237,7 +237,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			     RW((uw16 *)((Ptr)memBase + 0x12a)))),
 		   MDVH_CMD_CODE); /* read mdv sector header */
 
-		if (!isMinerva && optionInt("fast_startup"))
+		if (!isMinerva && optionInt("FAST_STARTUP"))
 			WW(((uw16 *)((Ptr)memBase + RL(&memBase[1]))),
 			   FSTART_CMD_CODE); /* fast startup patch */
 		/* FastStartup() -- 0xadc7 */
@@ -267,7 +267,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 		PatchBootDev();
 	}
-	if (!p && !optionInt("no_patch"))
+	if (!p && !optionInt("NO_PATCH"))
 		printf("warning : could not complete ROM patch\n");
 
 	/* last not least intrument the ROM code HW register access */

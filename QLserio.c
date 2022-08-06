@@ -191,16 +191,16 @@ int ser_open(int id, void **priv)
 
 	switch (unit) {
 	case 1:
-		portnam = optionString("ser1");
+		portnam = optionString("SER1");
 		break;
 	case 2:
-		portnam = optionString("ser2");
+		portnam = optionString("SER2");
 		break;
 	case 3:
-		portnam = optionString("ser3");
+		portnam = optionString("SER3");
 		break;
 	case 4:
-		portnam = optionString("ser4");
+		portnam = optionString("SER4");
 		break;
 	}
 	sparams[unit] = p;

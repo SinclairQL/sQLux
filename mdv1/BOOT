@@ -15,8 +15,7 @@
 222 PRINT#4
 225 PRINT#4, "Ram Size: ";(PEEK_L(163872)/1024 - 128);"k"
 230 PRINT#4
-240 PRINT#4, "Start as: '";getXarg$(0);" -?' to get a list of startup options"
-250 PRINT#4, "          '";getXarg$(0);" -??' to browse manuals"
+240 PRINT#4, "Start as: '";getXarg$(0);" -h' to get a list of startup options"
 260 PRINT#4
 460 CSIZE#4,0,0
 470 PRINT#4:PRINT#4,".... press any key"
