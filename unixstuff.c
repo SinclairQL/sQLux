@@ -52,6 +52,7 @@
 #include "version.h"
 #include "Xscreen.h"
 #include "SDL2main.hpp"
+#include "SqluxOptions.hpp"
 
 #define TIME_DIFF 283996800
 void GetDateTime(w32 *);

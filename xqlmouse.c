@@ -22,6 +22,7 @@
 
 #include "QInstAddr.h"
 #include "QL_config.h"
+#include "SqluxOptions.hpp"
 #include "unix.h"
 #include "uqlx_cfg.h"
 
