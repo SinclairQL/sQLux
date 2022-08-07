@@ -120,7 +120,7 @@ void deviceInstall(std::vector<string> device)
 
                 for (int i = 2; i < device.size(); i++) {
                     if ((device[i].find("native") != string::npos) ||
-                            (device[i].find("qdods-fs") != string::npos)) {
+                            (device[i].find("qdos-fs") != string::npos)) {
 					    flag_set |= qdevs[idev].Where[ndev - 1] = 1;
                     } else if (device[i].find("qdos-like") != string::npos) {
 					    flag_set |= qdevs[idev].Where[ndev - 1] = 2;
@@ -131,7 +131,7 @@ void deviceInstall(std::vector<string> device)
                 }
 
 				if (!flag_set) {
-					cout << "WARNING: flag " << device[2] << "in definition of " << device[0]
+					cout << "WARNING: flag " << device[2] << " in definition of " << device[0]
                         << ndev << "_ not recognised\n";
                 }
 			}
