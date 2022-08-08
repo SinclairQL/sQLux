@@ -80,7 +80,7 @@ static void silenceBuffer(int start, Sint8* buffer, int len);
 
 #define FREQUENCY 24000		// Requested sampling frequency
 #define SAMPLES 256		// Number of samples in a callback
-
+#define MAX_IPC_PARAMS 16 	// For the case where all 16 slots yield 8 bits
 
 bool initSound(int volume) {
 	// Create the sound driver
@@ -141,13 +141,18 @@ static void setVolume(int volume) {
 	audio_volume = 12 * volume;
 }
 
-void BeepSound(unsigned char *arg) {
+void PackIPCCommand(unsigned char *arg, unsigned char *pack) {
+
 	int mask = (arg[5] + (int)(arg[4] << 8) +
 		   (int)(arg[3] << 16) + (int)(arg[2] << 24));
+	int num_bytes = (arg[1] < MAX_IPC_PARAMS) ? arg[1] : MAX_IPC_PARAMS;
+	int count = 0;
+	bool half = false;
+	int i_mask;
 
-	/*
+#ifdef DEBUG_SOUND
 	int bit;
-
+	printf("num_bytes: %i\n",num_bytes);
 	for (int j=0; j<16; ++j) {
 		bit = 2 * j + 1;
 		(mask & (0x1 << bit)) ? printf("1") : printf("0");
@@ -157,7 +162,40 @@ void BeepSound(unsigned char *arg) {
 		printf(" %i %x\n", j+6, arg[j+6]);
 	}
 	printf("Mask: %0x\n",mask);
-	*/
+#endif
+
+	for (int i=0; i<num_bytes; ++i) {
+		i_mask = (mask >> (2*i)) & 0x03;
+
+		if (!i_mask) {			// take lower 4 bits
+			if (!half) {
+				pack[count] = ((arg[6+i] & 0x0f) << 4);
+			}
+			else {
+				pack[count] += (arg[6+i] & 0x0f);
+				count++;
+			}
+			half = !half;
+		}
+		else if (i_mask == 0x2 ){	// take whole bytes
+			if (!half) {
+				pack[count++] = arg[6+i];
+			}
+			else {			// Assume how to handle this case
+				pack[count] += (arg[6+i] & 0xf0) >> 4;
+				count++;
+				pack[count] = (arg[6+i] & 0x0f) << 4;
+			}
+		}
+		// otherwise ignore
+	}
+}
+
+void BeepSound(unsigned char *arg) {
+
+	// pack the parameters
+	unsigned char params[MAX_IPC_PARAMS] = {0}; // Init to all 0
+	PackIPCCommand(arg, params);
 
 	// Find correct param structure
 	int write_num;
@@ -170,36 +208,39 @@ void BeepSound(unsigned char *arg) {
 			break;
 	}
 
-	sound.beep[write_num].pitch = (((mask & 0x1) ? arg[7] : arg[6]));
-	sound.beep[write_num].pitch_2 = (((mask & 0x10) ? arg[9] : arg[8]));
+	sound.beep[write_num].pitch = params[0];
+	sound.beep[write_num].pitch_2 = params[1];
 
-	sound.beep[write_num].grd_x = arg[10] | ((arg[11] & 0x7f) << 8);
-	sound.beep[write_num].length = arg[12] | ((arg[13] & 0x7f) << 8);
+	sound.beep[write_num].grd_x = params[2] | ((params[3] & 0x7f) << 8);
+	sound.beep[write_num].length = params[4] | ((params[5] & 0x7f) << 8);
 
-	sound.beep[write_num].grd_y = ((mask & 0x00010000) ? arg[15] : arg[14]) & 0xf;
+	sound.beep[write_num].grd_y = ((params[6] & 0xf0) >> 4);
 	if (sound.beep[write_num].grd_y > 7)
 		sound.beep[write_num].grd_y -= 0x10;
 
-	sound.beep[write_num].wrap = ((mask & 0x00100000) ? arg[17] : arg[16]) & 0xf;
-	sound.beep[write_num].random = ((mask & 0x01000000) ? arg[19] : arg[18]) & 0xf;
-	sound.beep[write_num].fuzz = ((mask & 0x10000000) ? arg[21] : arg[20]) & 0xf;
+	sound.beep[write_num].wrap = (params[6] & 0x0f);
+	sound.beep[write_num].random = ((params[7] & 0xf0) >> 4);
+	sound.beep[write_num].fuzz = (params[7] & 0x0f);
 
 	// Calculate data and write
 	sound.last_written = write_num;
 	SDL_UnlockMutex(sound.mutex);
 
-	/*
-	printf("length %u pitch %u pitch2 %u grd_x %u grd_y %u wrap %u fuzz %u random %u\n",
+#ifdef DEBUG_SOUND
+	printf("length %u pitch %u pitch2 %u grd_x %u grd_y %i wrap %u fuzz %u random %u\n",
 	sound.beep[write_num].length, sound.beep[write_num].pitch, sound.beep[write_num].pitch_2,
 	sound.beep[write_num].grd_x, sound.beep[write_num].grd_y, sound.beep[write_num].wrap,
 	sound.beep[write_num].fuzz, sound.beep[write_num].random);
-	*/
+#endif
 
 	// Always unpause the sound here, in case the callback has paused itself
 	SDL_PauseAudioDevice(QLSDLAudio, 0);
 }
 
 void KillSound(){
+#ifdef DEBUG_SOUND
+	printf("Kill sound\n");
+#endif
 	SDL_LockMutex(sound.mutex);
 	sound.in_use = -1;
 	sound.last_written = -1;
