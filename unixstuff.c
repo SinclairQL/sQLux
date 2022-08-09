@@ -336,7 +336,7 @@ void SetHome()
 	if (result == S_OK) {
 		strncat(my_documents, "\\sQLux", MAX_PATH);
 		if (stat(my_documents, &stat_res) < 0) {
-			res = mkdir(my_documents);
+			int res = mkdir(my_documents);
 			if (res < 0) {
 				perror("Error");
 				printf("Creating Home %s", my_documents);
