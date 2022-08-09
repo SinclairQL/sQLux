@@ -20,6 +20,7 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
+    set(Boost_USE_STATIC_LIBS ON)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
