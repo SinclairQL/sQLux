@@ -131,7 +131,7 @@ void deviceInstall(std::vector<string> device)
                 }
 
 				if (!flag_set) {
-					cout << "WARNING: flag " << device[2] << " in definition of " << device[0]
+					cout << "WARNING: flag " << device[i] << " in definition of " << device[0]
                         << ndev << "_ not recognised\n";
                 }
 			}
