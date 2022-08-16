@@ -21,6 +21,20 @@ static void check_screen(uint32_t addr)
 {
 	if ((addr >= qlscreen.qm_lo) && (addr < qlscreen.qm_hi)) {
 		screenWritten = true;
+
+		if (min_scr == -1) {
+			min_scr = addr;
+			max_scr = addr;
+		} else {
+			if (addr < min_scr) {
+				// round address to dword
+				min_scr = (addr / 4) * 4;
+			}
+			if (addr > max_scr) {
+				// round address to dword
+				max_scr = (addr / 4) * 4;
+			}
+		}
 	}
 }
 

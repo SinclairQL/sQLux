@@ -28,6 +28,9 @@ extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
 extern bool screenWritten;
 
+extern int max_scr;
+extern int min_scr;
+
 #define USER_CODE_SCREENREFRESH     0
 #define USER_CODE_EMUEXIT           1
 

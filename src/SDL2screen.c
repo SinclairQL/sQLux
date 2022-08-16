@@ -282,6 +282,7 @@ static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value);
 static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed);
 static int QLConvertWhichToIndex(Sint32 which);
 
+int min_scr, max_scr;
 
 void QLSDLScreen(void)
 {
@@ -427,6 +428,8 @@ void QLSDLScreen(void)
 	SDL_AtomicSet(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
 	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
+
+	min_scr = -1;
 }
 
 void QLSDLUpdateScreenByte(uint32_t offset, uint8_t data)
@@ -504,7 +507,7 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 
 void QLSDLUpdatePixelBuffer()
 {
-	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
+	uint8_t *scr_ptr, *min_ptr, *max_ptr;
 	uint32_t *pixel_ptr32;
 	int t1, t2, i, color;
 
@@ -512,10 +515,20 @@ void QLSDLUpdatePixelBuffer()
 		SDL_LockSurface(ql_screen);
 	}
 
-	pixel_ptr32 = ql_screen->pixels;
+	if (min_scr == -1) {
+		pixel_ptr32 = ql_screen->pixels;
+		min_ptr = (void *)memBase + qlscreen.qm_lo;
+		max_ptr = (void *)memBase + qlscreen.qm_hi;
+	} else {
+		pixel_ptr32 = ql_screen->pixels;
+		pixel_ptr32 += (min_scr - qlscreen.qm_lo) * 4;
+		min_ptr = (void *)memBase + min_scr;
+		max_ptr = (void *)memBase + (max_scr + 4);
+	}
 
-	while (scr_ptr <
-	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
+	scr_ptr = min_ptr;
+
+	while (scr_ptr <= max_ptr) {
 		t1 = *scr_ptr++;
 		t2 = *scr_ptr++;
 
@@ -551,6 +564,8 @@ void QLSDLUpdatePixelBuffer()
 		}
 		pixel_ptr32 += 8;
 	}
+
+	min_scr = -1;
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
