@@ -13,8 +13,11 @@
 void ChangedMemory(uint32_t from, uint32_t to)
 {
 	/* Assumes to >= from */
-	if ((to >= qlscreen.qm_lo) && (from < qlscreen.qm_hi))
+	if ((to >= qlscreen.qm_lo) && (from < qlscreen.qm_hi)) {
 		screenWritten = true;
+		min_scr = qlscreen.qm_lo;
+		max_scr = qlscreen.qm_hi;
+	}
 }
 
 static void check_screen(uint32_t addr)
