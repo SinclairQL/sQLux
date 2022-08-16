@@ -1085,6 +1085,8 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
 	}
 }
 
+static int renderer_idle = 1;
+
 void QLSDLProcessEvents(void)
 {
 	SDL_Event event;
@@ -1155,8 +1157,10 @@ void QLSDLProcessEvents(void)
 		case SDL_USEREVENT:
 			switch (event.user.code) {
 			case USER_CODE_SCREENREFRESH:
+				renderer_idle = 0;
 				QLSDLUpdatePixelBuffer();
 				QLSDLRenderScreen();
+				renderer_idle = 1;
 				break;
 			case USER_CODE_EMUEXIT:
 				return;
@@ -1195,7 +1199,7 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 		SDL_SemPost(sem50Hz);
 	}
 
-	if (screenWritten) {
+	if (screenWritten && renderer_idle) {
 		screenWritten = false;
 		event.user.type = SDL_USEREVENT;
 		event.user.code = USER_CODE_SCREENREFRESH;
