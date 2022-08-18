@@ -141,6 +141,10 @@ void deviceInstall(std::vector<string> device)
 
 void deviceParse()
 {
+    if (!emulator::vm.count("DEVICE")) {
+        return;
+    }
+
     for (auto &devString : vm["DEVICE"].as< vector<string> >()) {
         auto device = stringSplit(devString, ",");
         deviceInstall(device);
