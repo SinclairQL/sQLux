@@ -126,8 +126,9 @@ void deviceInstall(std::vector<string> device)
 					    flag_set |= qdevs[idev].Where[ndev - 1] = 2;
                     }
 
-				    flag_set |= qdevs[idev].clean[ndev - 1] =
-					    (device[i].find("clean") != string::npos)?0:1;
+                    if (device[i].find("clean") != string::npos) {
+				        flag_set |= qdevs[idev].clean[ndev - 1] = 1;
+                    }
                 }
 
 				if (!flag_set) {
