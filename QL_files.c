@@ -226,28 +226,6 @@ void InitRAMDev(char *dev)
 	}
 }
 
-void CleanRAMDev(char *dev)
-{
-	short i, j;
-	for (i = 0; i < MAXDEV; i++) {
-		if (qdevs[i].qname && strcmp(qdevs[i].qname, dev) == 0) {
-			for (j = 0; j < 8; j++) {
-				char *ptr;
-				if ((ptr = qdevs[i].mountPoints[j]) != NULL &&
-				    qdevs[i].clean[j]) {
-					ptr += (strlen(ptr) - 1);
-					if (*ptr == '/') {
-						*ptr = '\0';
-					}
-					/*printf("Removing dir %s\n",qdevs[i].mountPoints[j]);*/
-					Cleandir(qdevs[i].mountPoints[j]);
-				}
-			}
-			break;
-		}
-	}
-}
-
 void InitFileDrivers()
 {
 	short i, p, j;

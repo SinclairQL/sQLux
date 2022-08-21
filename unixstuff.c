@@ -178,8 +178,6 @@ void cleanup(int err)
 {
 	SDL_Event event;
 
-	CleanRAMDev("RAM");
-
 	event.user.type = SDL_USEREVENT;
 	event.user.code = USER_CODE_EMUEXIT;
 	event.user.data1 = NULL;

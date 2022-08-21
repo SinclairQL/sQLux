@@ -23,7 +23,7 @@ typedef struct
     struct mdvFile *FileList[8];
     struct HF_FCB *fcbList[8];
     char *mountPoints[8];
-    char clean[8];
+    int clean[8];
     struct FLP_FCB *flpp[8];
     int ref;
 } EMUDEV_t;
