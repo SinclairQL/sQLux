@@ -528,7 +528,7 @@ void QLSDLUpdatePixelBuffer()
 
 	scr_ptr = min_ptr;
 
-	while (scr_ptr <= max_ptr) {
+	while (scr_ptr < max_ptr) {
 		t1 = *scr_ptr++;
 		t2 = *scr_ptr++;
 
