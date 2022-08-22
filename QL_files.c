@@ -205,19 +205,13 @@ void InitRAMDev(char *dev)
 	for (i = 0; i < MAXDEV; i++) {
 		if (qdevs[i].qname && strcmp(qdevs[i].qname, dev) == 0) {
 			for (j = 0; j < 8; j++) {
-				char *ptr;
-				if ((ptr = qdevs[i].mountPoints[j]) != NULL) {
-					ptr += strlen(ptr);
-					if (*(ptr - 1) == '/') {
-						*--ptr = '\0';
-					}
+				if (qdevs[i].mountPoints[j] != NULL) {
 					/*printf("Making dir %s\n",qdevs[i].mountPoints[j]);*/
 #ifdef __WIN32__
 					mkdir(qdevs[i].mountPoints[j]);
 #else
 					mkdir(qdevs[i].mountPoints[j], 0755);
 #endif
-					*ptr = '/';
 					/*printf("Making dir %s\n",qdevs[i].mountPoints[j]);*/
 				}
 			}

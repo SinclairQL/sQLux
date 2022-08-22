@@ -1928,7 +1928,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 #if 1
 	{
 		short nl;
-		char *p;
+		const char *p;
 		long free, mxs;
 
 		memset((char *)memBase + aReg[1] + 0, -1, 64);

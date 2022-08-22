@@ -109,8 +109,13 @@ void deviceInstall(std::vector<string> device)
                     fileString.append("/");
                 }
 
-				qdevs[idev].mountPoints[ndev - 1] = strdup(fileString.c_str());
-			    qdevs[idev].Present[ndev - 1] = 1;
+                // ram devices need to end in /
+                if (boost::iequals("ram", qdevs[idev].qname) && (fileString.back() != '/')) {
+                    fileString.append("/");
+                }
+
+                qdevs[idev].mountPoints[ndev - 1] = strdup(fileString.c_str());
+                qdevs[idev].Present[ndev - 1] = 1;
 			} else {
 				qdevs[idev].Present[ndev - 1] = 0;
             }

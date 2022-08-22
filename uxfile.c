@@ -1036,9 +1036,9 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 	return res;
 }
 
-extern int rename_single(struct mdvFile *, char *, char *, char *, int);
+extern int rename_single(struct mdvFile *, const char *, char *, char *, int);
 /* rename all files affected by a directory creation */
-int rename_all_files(struct mdvFile *f, char *fsmount, char *uxname)
+int rename_all_files(struct mdvFile *f,const char *fsmount, char *uxname)
 {
 	char *lastseg, *p, mount[4200];
 	char temp[256];
@@ -1079,7 +1079,7 @@ int rename_all_files(struct mdvFile *f, char *fsmount, char *uxname)
 	return 0;
 }
 
-int rename_single(struct mdvFile *f, char *fsmount, char *localdir, char *name,
+int rename_single(struct mdvFile *f, const char *fsmount, char *localdir, char *name,
 		  int nsdirlen)
 {
 	char mount[4200];
@@ -1411,7 +1411,7 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 #if 1
 	{
 		short nl;
-		char *p;
+		const char *p;
 		long mxs;
 
 		memset((char *)memBase + aReg[1] + 0, -1, 64);
