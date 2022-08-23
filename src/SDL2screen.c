@@ -30,7 +30,6 @@ static SDL_Texture *ql_texture = NULL;
 static SDL_Rect dest_rect;
 static SDL_DisplayMode sdl_mode;
 static SDL_TimerID fiftyhz_timer;
-SDL_SpinLock scr_lock;
 const char *sdl_video_driver;
 static char sdl_win_name[128];
 static char ql_fullscreen = false;
@@ -283,7 +282,6 @@ static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value);
 static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed);
 static int QLConvertWhichToIndex(Sint32 which);
 
-int min_scr, max_scr;
 
 void QLSDLScreen(void)
 {
@@ -429,8 +427,6 @@ void QLSDLScreen(void)
 	SDL_AtomicSet(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
 	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
-
-	min_scr = -1;
 }
 
 void QLSDLUpdateScreenByte(uint32_t offset, uint8_t data)
@@ -506,9 +502,9 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
-void QLSDLUpdatePixelBuffer(int loc_min_scr, int loc_max_scr)
+void QLSDLUpdatePixelBuffer()
 {
-	uint8_t *scr_ptr, *min_ptr, *max_ptr;
+	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
 	uint32_t *pixel_ptr32;
 	int t1, t2, i, color;
 
@@ -516,20 +512,10 @@ void QLSDLUpdatePixelBuffer(int loc_min_scr, int loc_max_scr)
 		SDL_LockSurface(ql_screen);
 	}
 
-	if (loc_min_scr == -1) {
-		pixel_ptr32 = ql_screen->pixels;
-		min_ptr = (void *)memBase + qlscreen.qm_lo;
-		max_ptr = (void *)memBase + qlscreen.qm_hi;
-	} else {
-		pixel_ptr32 = ql_screen->pixels;
-		pixel_ptr32 += (loc_min_scr - qlscreen.qm_lo) * 4;
-		min_ptr = (void *)memBase + loc_min_scr;
-		max_ptr = (void *)memBase + (loc_max_scr + 4);
-	}
+	pixel_ptr32 = ql_screen->pixels;
 
-	scr_ptr = min_ptr;
-
-	while (scr_ptr < max_ptr) {
+	while (scr_ptr <
+	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
 		t1 = *scr_ptr++;
 		t2 = *scr_ptr++;
 
@@ -1099,7 +1085,7 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
 	}
 }
 
-static int renderer_idle = 1;
+static bool renderer_idle = true;
 
 void QLSDLProcessEvents(void)
 {
@@ -1158,11 +1144,11 @@ void QLSDLProcessEvents(void)
 					SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
-					QLSDLUpdatePixelBuffer(-1, 0);
+					QLSDLUpdatePixelBuffer();
 					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					QLSDLUpdatePixelBuffer(-1, 0);
+					QLSDLUpdatePixelBuffer();
 					QLSDLRenderScreen();
 					break;
 				}
@@ -1171,11 +1157,10 @@ void QLSDLProcessEvents(void)
 		case SDL_USEREVENT:
 			switch (event.user.code) {
 			case USER_CODE_SCREENREFRESH:
-				renderer_idle = 0;
-				QLSDLUpdatePixelBuffer((int)(uintptr_t)event.user.data1,
-							(int)(uintptr_t)event.user.data2);
+				renderer_idle = false;
+				QLSDLUpdatePixelBuffer();
 				QLSDLRenderScreen();
-				renderer_idle = 1;
+				renderer_idle = true;
 				break;
 			case USER_CODE_EMUEXIT:
 				return;
@@ -1215,15 +1200,13 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 	}
 
 	if (screenWritten && renderer_idle) {
-		SDL_AtomicLock(&scr_lock);
 		screenWritten = false;
 		event.user.type = SDL_USEREVENT;
 		event.user.code = USER_CODE_SCREENREFRESH;
-		event.user.data1 = (void *)(intptr_t)min_scr;
-		event.user.data2 = (void *)(intptr_t)max_scr;
+		event.user.data1 = NULL;
+		event.user.data2 = NULL;
+
 		event.type = SDL_USEREVENT;
-		min_scr = -1;
-		SDL_AtomicUnlock(&scr_lock);
 
 		SDL_PushEvent(&event);
 	}
