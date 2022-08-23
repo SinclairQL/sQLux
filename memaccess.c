@@ -14,15 +14,19 @@ void ChangedMemory(uint32_t from, uint32_t to)
 {
 	/* Assumes to >= from */
 	if ((to >= qlscreen.qm_lo) && (from < qlscreen.qm_hi)) {
+		SDL_AtomicLock(&scr_lock);
 		screenWritten = true;
 		min_scr = qlscreen.qm_lo;
 		max_scr = qlscreen.qm_hi;
+		SDL_AtomicUnlock(&scr_lock);
+
 	}
 }
 
 static void check_screen(uint32_t addr)
 {
 	if ((addr >= qlscreen.qm_lo) && (addr < qlscreen.qm_hi)) {
+		SDL_AtomicLock(&scr_lock);
 		screenWritten = true;
 
 		if (min_scr == -1) {
@@ -38,6 +42,7 @@ static void check_screen(uint32_t addr)
 				max_scr = (addr / 4) * 4;
 			}
 		}
+		SDL_AtomicUnlock(&scr_lock);
 	}
 }
 

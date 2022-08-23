@@ -30,6 +30,7 @@ static SDL_Texture *ql_texture = NULL;
 static SDL_Rect dest_rect;
 static SDL_DisplayMode sdl_mode;
 static SDL_TimerID fiftyhz_timer;
+SDL_SpinLock scr_lock;
 const char *sdl_video_driver;
 static char sdl_win_name[128];
 static char ql_fullscreen = false;
@@ -505,7 +506,7 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
-void QLSDLUpdatePixelBuffer()
+void QLSDLUpdatePixelBuffer(int loc_min_scr, int loc_max_scr)
 {
 	uint8_t *scr_ptr, *min_ptr, *max_ptr;
 	uint32_t *pixel_ptr32;
@@ -515,15 +516,15 @@ void QLSDLUpdatePixelBuffer()
 		SDL_LockSurface(ql_screen);
 	}
 
-	if (min_scr == -1) {
+	if (loc_min_scr == -1) {
 		pixel_ptr32 = ql_screen->pixels;
 		min_ptr = (void *)memBase + qlscreen.qm_lo;
 		max_ptr = (void *)memBase + qlscreen.qm_hi;
 	} else {
 		pixel_ptr32 = ql_screen->pixels;
-		pixel_ptr32 += (min_scr - qlscreen.qm_lo) * 4;
-		min_ptr = (void *)memBase + min_scr;
-		max_ptr = (void *)memBase + (max_scr + 4);
+		pixel_ptr32 += (loc_min_scr - qlscreen.qm_lo) * 4;
+		min_ptr = (void *)memBase + loc_min_scr;
+		max_ptr = (void *)memBase + (loc_max_scr + 4);
 	}
 
 	scr_ptr = min_ptr;
@@ -564,8 +565,6 @@ void QLSDLUpdatePixelBuffer()
 		}
 		pixel_ptr32 += 8;
 	}
-
-	min_scr = -1;
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
@@ -1159,11 +1158,11 @@ void QLSDLProcessEvents(void)
 					SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
-					QLSDLUpdatePixelBuffer();
+					QLSDLUpdatePixelBuffer(-1, 0);
 					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					QLSDLUpdatePixelBuffer();
+					QLSDLUpdatePixelBuffer(-1, 0);
 					QLSDLRenderScreen();
 					break;
 				}
@@ -1173,7 +1172,8 @@ void QLSDLProcessEvents(void)
 			switch (event.user.code) {
 			case USER_CODE_SCREENREFRESH:
 				renderer_idle = 0;
-				QLSDLUpdatePixelBuffer();
+				QLSDLUpdatePixelBuffer((int)(uintptr_t)event.user.data1,
+							(int)(uintptr_t)event.user.data2);
 				QLSDLRenderScreen();
 				renderer_idle = 1;
 				break;
@@ -1215,13 +1215,15 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 	}
 
 	if (screenWritten && renderer_idle) {
+		SDL_AtomicLock(&scr_lock);
 		screenWritten = false;
 		event.user.type = SDL_USEREVENT;
 		event.user.code = USER_CODE_SCREENREFRESH;
-		event.user.data1 = NULL;
-		event.user.data2 = NULL;
-
+		event.user.data1 = (void *)(intptr_t)min_scr;
+		event.user.data2 = (void *)(intptr_t)max_scr;
 		event.type = SDL_USEREVENT;
+		min_scr = -1;
+		SDL_AtomicUnlock(&scr_lock);
 
 		SDL_PushEvent(&event);
 	}
