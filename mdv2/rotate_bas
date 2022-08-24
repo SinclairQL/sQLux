@@ -1,0 +1,27 @@
+100 REMark Test time to flip pixels on screen
+110 MODE 4
+120 rotate_init = RESPR (256)
+130 rotate_screen = rotate_init + 4
+140 LBYTES mdv2_rotate_code, rotate_init
+150 CALL rotate_init
+160 iterations = 20000
+170 screen_lines = 256
+180 PRINT "Iterations: ";iterations
+190 PRINT "Screen lines: ";screen_lines
+200 PRINT "Rotate: ";
+210 r = DATE
+220 REPeat loop:IF r < DATE THEN EXIT loop
+230 r=DATE
+240 CALL rotate_screen,iterations,screen_lines,1
+250 r = DATE - r
+260 PRINT r;" seconds"
+270 PRINT "Dummy:  ";
+280 d = DATE
+290 REPeat loop:IF d < DATE THEN EXIT loop
+300 d = DATE
+310 CALL rotate_screen,iterations,screen_lines,0
+320 d = DATE - d
+330 PRINT d;" seconds"
+340 taken = r - d
+350 IF taken < 0 THEN taken = 0
+360 PRINT "Time for writes: ";taken; " second(s)"

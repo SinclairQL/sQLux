@@ -1,0 +1,138 @@
+sd_extop    EQU   $9
+mt_inf      EQU   $0
+
+start       bra   plot_init         ; Call start to initialise things
+
+*-------------------------------------------------------------------------------
+* Rotate pixels:
+*
+* Assumes Mode 4
+* On Each iteration Black -> Green -> Red -> White -> Black etc 
+* for a specififed number of display lines at top of screen
+* On entry:
+* D1 = the number of iterations. If < 1 return immediately
+* D2 = Number of display lines to swap. If > 4000 or < 1 return immediately 
+* D3 = Real writes to screen if != 0 , dummy writes otherwise
+*
+* Note: This code deliberately writes to screen memory 1 byte at a time to
+*       maximise the number of individual screen memory writes
+*-------------------------------------------------------------------------------
+entry       subq.w  #1,d1           ; Correct for dbra
+            blt.s   finished        ; positive number of iterations?
+            
+            cmpi.w  #4000,d2        ; too large?
+            bgt.s   finished
+            subq.w  #1,d2           ; correct for dbra 
+            blt.s   finished        ; positive number of lines?
+
+            bsr.s   calc            ; Get A1 = screen address
+            lsr.w   #1,d6           ; Reading Red and Green bytes each iteration
+            subq.w  #1,d6           ; dbra stops at -1
+            
+            tst.w   d3              ; real pixel rotate, or dummy?
+            beq.s   dummy_ent
+
+quick       movea.l a1,a2           ; Initialise working screen address
+            move.w  d2,d4           ; num of lines to swap
+
+row         move.w  d6,d5
+
+column      move.b  (a2),d0         ; Get the green  
+            move.b  1(a2),d3        ; Get the red
+            
+            eor.w   d0,d3           ; Rotate the colours
+            not.w   d0
+                         
+            move.b  d0,(a2)+        ; Write them back
+            move.b  d3,(a2)+
+
+            dbra    d5,column
+            dbra    d4,row
+            dbra    d1,quick
+            
+finished    moveq   #0,d0
+            rts
+
+*
+* Dummy writes. This copies part of the code above, to minimise the 
+* timing differences between the real screen writes and dummy writes
+* 
+
+dummy_ent   lea     dummy_scr,a0    ; Set the dummy memory for writes
+
+dummy       movea.l a1,a2           ; Initialise working screen address
+            move.w  d2,d4           ; num of lines to swap
+
+row1        move.w  d6,d5
+
+column1     move.b  (a2)+,d0        ; Get the green  
+            move.b  (a2)+,d3        ; Get the red
+            
+            eor.w   d0,d3           ; Rotate the colours
+            not.w   d0
+                         
+            move.b  d0,(a0)         ; Dummy Writes
+            move.b  d3,1(a0)        
+
+            dbra    d5,column1
+            dbra    d4,row1
+            dbra    d1,dummy
+            
+            bra.s   finished
+
+dummy_scr   ds.w    1               ; address for dummy writes
+            
+*-------------------------------------------------------------------------------
+* Returns the start of display memory in a1, and the screen width (in bytes)
+* in d6
+* The routine plot_init must have been called to initialise the screen addresses
+* and scan line widths BEFORE calling this routine.
+*-------------------------------------------------------------------------------
+calc        lea     scr_base,a1     ; Where we hold the screen base address
+            move.l  (a1)+,d0        ; Fetch the screen base address
+            move.w  (a1),d6         ; And the scan line size
+            movea.l d0,a1           ; Get the screen base where we want it
+            rts
+*-------------------------------------------------------------------------------
+* This routine must be called once before using the above plot routines. It
+* initialises the screen base address and scan line width from the channel
+* definition block for SuperBasic channel #0.
+*-------------------------------------------------------------------------------
+plot_init   suba.l  a0,a0           ; Channel id for #0 is always 0
+            lea     scr_base,a1     ; Parameter passed to extop routine
+            lea     extop,a2        ; Actual routine to call
+            moveq   #sd_extop,d0    ; Trap code
+            moveq   #-1,d3          ; Timout
+            trap    #3              ; Do it
+            tst.l   d0              ; OK ?
+            bne.s   done            ; No, bale out D1 = A1 = garbage
+
+got_them    move.w  d1,-(a7)        ; Need to check qdos, save scan_line
+            moveq   #mt_inf,d0      ; Trap to get qdos version (preseves A1)
+            trap    #1              ; Get it (no errors)
+            move.w  (a7)+,d1        ; Retrieve scan_line value
+            andi.l  #$ff00ffff,d2   ; D2 = qdos, mask out the dot in "1.03" etc
+            cmpi.l  #$31003034,d2   ; Test for "1?03" where ? = don't care
+            bcs.s   too_old         ; Less than 1.03 is too old
+
+save        move.w  d1,(a1)         ; Store the scan_line size
+
+done        rts                     ; Finished
+
+too_old     move.w  #128,d1         ; Must be 128 bytes 
+            bra.s   save            ; Save D1 and exit
+
+extop       move.l  $32(a0),(a1)+   ; Fetch the scan_line length & store it
+            move.w  $64(a0),d1      ; Fetch the screen base - don't store it
+            moveq   #0,d0           ; No errors
+            rts                     ; done
+
+*-------------------------------------------------------------------------------
+* Set aside some storage space to hold the screen base and scan_line width. This
+* saves having to calculate it every time we plot a single pixel.
+*-------------------------------------------------------------------------------
+scr_base    ds.l    1
+scan_line   ds.w    1
+
+            end
+
