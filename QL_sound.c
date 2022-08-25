@@ -5,7 +5,6 @@
 #include "QL68000.h"
 #include "QL_sound.h"
 
-#ifdef SOUND
 /*
  * Structures only used in this file
  */
@@ -486,12 +485,3 @@ static void silenceBuffer(int start, Sint8* buffer, int len)
 	c_sound.wave_state = 0;
 	c_sound.cycle_point = 0;
 }
-#else
-void initSound(int volume) {
-	if (V1) {
-		printf("Audio support not included in build\n");
-	}
-}
-void BeepSound(unsigned char *arg) {}
-void KillSound(){}
-#endif
