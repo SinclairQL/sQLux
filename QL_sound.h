@@ -6,11 +6,11 @@
 
 extern volatile bool soundOn;
 
+void initSound(int volume);
 void BeepSound(unsigned char*);
 void KillSound(void);
 
 #ifdef SOUND
-void initSound(int volume);
 void closeSound();
 #endif
 #endif

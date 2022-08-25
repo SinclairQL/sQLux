@@ -487,6 +487,11 @@ static void silenceBuffer(int start, Sint8* buffer, int len)
 	c_sound.cycle_point = 0;
 }
 #else
+void initSound(int volume) {
+	if (V1) {
+		printf("Audio support not included in build\n");
+	}
+}
 void BeepSound(unsigned char *arg) {}
 void KillSound(){}
 #endif
