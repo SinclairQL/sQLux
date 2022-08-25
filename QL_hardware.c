@@ -95,14 +95,10 @@ Cond IPC_Command(void)	/* returns false for commands to handle low-level, true o
 		reg[1]=KeyRow(ReadByte(aReg[3]+6));
 		return true; /*break;*/
 	case 10: /* initiate sound generation */
-		if (sound_enabled) {
-			BeepSound((unsigned char*)memBase+(aReg[3]&0xfffffe));
-		}
+		BeepSound((unsigned char*)memBase+(aReg[3]&0xfffffe));
 		return true; /*break;*/
 	case 11: /* kill sound */
-		if (sound_enabled) {
-			KillSound();
-		}
+		KillSound();
 		return true; /*break;*/
 	case 15:	/* IPC test *//**//* neu, .hpr 21.5.99 */
 		reg[1]=~ReadByte(aReg[3]+6);

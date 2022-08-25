@@ -5,13 +5,12 @@
 #include <stdbool.h>
 
 extern volatile bool soundOn;
-extern bool sound_enabled;
 
 void BeepSound(unsigned char*);
 void KillSound(void);
 
 #ifdef SOUND
-bool initSound(int volume);
+void initSound(int volume);
 void closeSound();
 #endif
 #endif
