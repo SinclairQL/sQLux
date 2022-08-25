@@ -12,10 +12,10 @@ cmake --build x86_64/
 cmake -B x86_32/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=x86_32.cmake
 cmake --build x86_32/
 
-cmake -B w64/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32
+cmake -B w64/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH="/usr/local/x86_64-w64-mingw32;/usr/x86_64-w64-mingw32/sys-root/mingw/"
 cmake --build w64
 
-cmake -B w32/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=mingw-w64-i686.cmake -DCMAKE_PREFIX_PATH=/usr/local/i686-w64-mingw32
+cmake -B w32/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=mingw-w64-i686.cmake -DCMAKE_PREFIX_PATH="/usr/local/i686-w64-mingw32;/usr/i686-w64-mingw32/sys-root/mingw/"
 cmake --build w32
 
 if [ "x$PI_HOST" != "x" ]; then

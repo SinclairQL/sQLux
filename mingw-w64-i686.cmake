@@ -26,3 +26,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 # set a flag so we know we are on i686 and trying for XP compat
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DWINXP_COMPAT")
 
+# set the boost architecture
+set(Boost_ARCHITECTURE "-x32")
+
+# fortify sources
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=2")
+set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=2")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fstack-protector-strong")
