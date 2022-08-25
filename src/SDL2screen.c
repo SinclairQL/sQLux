@@ -1174,9 +1174,7 @@ void QLSDLProcessEvents(void)
 
 void QLSDLExit(void)
 {
-#ifdef SOUND
 	closeSound();
-#endif
 
 #ifndef SDL_JOYSTICK_DISABLED
 	for (int i=0; i<2; ++i) {

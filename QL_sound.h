@@ -9,8 +9,5 @@ extern volatile bool soundOn;
 void initSound(int volume);
 void BeepSound(unsigned char*);
 void KillSound(void);
-
-#ifdef SOUND
 void closeSound();
-#endif
 #endif
