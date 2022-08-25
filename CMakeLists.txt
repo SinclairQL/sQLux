@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.7)
 
 project(sqlux)
 
@@ -8,18 +9,20 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
 
+#Break out ability to build with sound
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSOUND")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DSOUND -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSOUND -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
     set(Boost_USE_STATIC_LIBS ON) 
 endif()
 
