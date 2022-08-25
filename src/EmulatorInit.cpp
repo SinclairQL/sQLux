@@ -194,7 +194,6 @@ void init()
 	else if (V1)
 		printf("Emulation Speed: FULL\n");
 
-	sound_enabled = (optionInt("SOUND") > 0);
 	if (V1 && (optionInt("SOUND") > 0))
 		printf("sound enabled, volume %i.\n", optionInt("SOUND"));
 

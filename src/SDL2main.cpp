@@ -66,9 +66,7 @@ extern "C" int main(int argc, char *argv[])
 
     QLSDLScreen();
 
-    if (optionInt("SOUND")) {
-        sound_enabled = initSound(optionInt("SOUND"));
-    }
+    initSound(optionInt("SOUND"));
 
     emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 

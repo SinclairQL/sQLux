@@ -41,14 +41,10 @@ typedef struct {
 } current_sound;
 
 /*
- * Global variables
- */
-bool sound_enabled = false;	// True if sound enabled successfully
-
-/*
  * Local variables
  */
-static int audio_volume; 	// audio volume, 0 to 127
+static bool sound_enabled = false;	// True if sound enabled successfully
+static int audio_volume; 		// audio volume, 0 to 127
 
 static SDL_AudioDeviceID QLSDLAudio;
 static SDL_AudioSpec want;
@@ -82,43 +78,47 @@ static void silenceBuffer(int start, Sint8* buffer, int len);
 #define SAMPLES 256		// Number of samples in a callback
 #define MAX_IPC_PARAMS 16 	// For the case where all 16 slots yield 8 bits
 
-bool initSound(int volume) {
-	// Create the sound driver
-	if(SDL_Init(SDL_INIT_AUDIO)) {
-		if (V1) {
-			printf("Audio Failed to initialize: %s\n", SDL_GetError());
+void initSound(int volume) {
+	if ((volume != 0) && (!sound_enabled)) {
+		// Create the sound driver
+		if(SDL_Init(SDL_INIT_AUDIO)) {
+			if (V1) {
+				printf("Audio Failed to initialize: %s\n", SDL_GetError());
+			}
+			return;
 		}
-		sound_enabled = false;
-		return sound_enabled;
-	}
 
-	SDL_zero(want);
-	want.freq = FREQUENCY;
-	want.format = AUDIO_S8;
-	want.channels = 1;
-	want.samples = SAMPLES;
-	want.callback = audioCallback;
+		SDL_zero(want);
+		want.freq = FREQUENCY;
+		want.format = AUDIO_S8;
+		want.channels = 1;
+		want.samples = SAMPLES;
+		want.callback = audioCallback;
 
-	QLSDLAudio = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+		QLSDLAudio = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 
-	if(!QLSDLAudio) {
-		if (V1) {
-			printf("Failed to open audio device: %s\n", SDL_GetError());
+		if(!QLSDLAudio) {
+			if (V1) {
+				printf("Failed to open audio device: %s\n", SDL_GetError());
+			}
+			return;
 		}
-		sound_enabled = false;
-		return sound_enabled;
-	}
 
-	sound.mutex = SDL_CreateMutex();
+		sound.mutex = SDL_CreateMutex();
 
-	if (sound.mutex) {
-		sound_enabled = true;
+		if (!sound.mutex) {
+			if (V1) {
+				printf("Failed to create sound mutex\n");
+			}
+			return;
+		}
+
+		setVolume(volume);
 		sound.in_use = -1; 		// index in use by callback (-1 = none)
 		sound.last_written = -1;	// index last written by by BeepSound (-1 = None)
+		sound_enabled = true;
 	}
-	setVolume(volume);
-
-	return sound_enabled;
+	return;
 }
 
 void closeSound() {
@@ -192,59 +192,62 @@ void PackIPCCommand(unsigned char *arg, unsigned char *pack) {
 }
 
 void BeepSound(unsigned char *arg) {
+	if (sound_enabled) {
+		// pack the parameters
+		unsigned char params[MAX_IPC_PARAMS] = {0}; // Init to all 0
+		PackIPCCommand(arg, params);
 
-	// pack the parameters
-	unsigned char params[MAX_IPC_PARAMS] = {0}; // Init to all 0
-	PackIPCCommand(arg, params);
+		// Find correct param structure
+		int write_num;
 
-	// Find correct param structure
-	int write_num;
+		soundOn = true; // Sound will soon be on!
 
-	soundOn = true; // Sound will soon be on!
+		SDL_LockMutex(sound.mutex);
+		for (write_num=0; write_num<3; ++write_num) {
+			if ((write_num != sound.in_use) && (write_num != sound.last_written))
+				break;
+		}
 
-	SDL_LockMutex(sound.mutex);
-	for (write_num=0; write_num<3; ++write_num) {
-		if ((write_num != sound.in_use) && (write_num != sound.last_written))
-			break;
-	}
+		sound.beep[write_num].pitch = params[0];
+		sound.beep[write_num].pitch_2 = params[1];
 
-	sound.beep[write_num].pitch = params[0];
-	sound.beep[write_num].pitch_2 = params[1];
+		sound.beep[write_num].grd_x = params[2] | ((params[3] & 0x7f) << 8);
+		sound.beep[write_num].length = params[4] | ((params[5] & 0x7f) << 8);
 
-	sound.beep[write_num].grd_x = params[2] | ((params[3] & 0x7f) << 8);
-	sound.beep[write_num].length = params[4] | ((params[5] & 0x7f) << 8);
+		sound.beep[write_num].grd_y = ((params[6] & 0xf0) >> 4);
+		if (sound.beep[write_num].grd_y > 7)
+			sound.beep[write_num].grd_y -= 0x10;
 
-	sound.beep[write_num].grd_y = ((params[6] & 0xf0) >> 4);
-	if (sound.beep[write_num].grd_y > 7)
-		sound.beep[write_num].grd_y -= 0x10;
+		sound.beep[write_num].wrap = (params[6] & 0x0f);
+		sound.beep[write_num].random = ((params[7] & 0xf0) >> 4);
+		sound.beep[write_num].fuzz = (params[7] & 0x0f);
 
-	sound.beep[write_num].wrap = (params[6] & 0x0f);
-	sound.beep[write_num].random = ((params[7] & 0xf0) >> 4);
-	sound.beep[write_num].fuzz = (params[7] & 0x0f);
-
-	// Calculate data and write
-	sound.last_written = write_num;
-	SDL_UnlockMutex(sound.mutex);
+		// Calculate data and write
+		sound.last_written = write_num;
+		SDL_UnlockMutex(sound.mutex);
 
 #ifdef DEBUG_SOUND
-	printf("length %u pitch %u pitch2 %u grd_x %u grd_y %i wrap %u fuzz %u random %u\n",
-	sound.beep[write_num].length, sound.beep[write_num].pitch, sound.beep[write_num].pitch_2,
-	sound.beep[write_num].grd_x, sound.beep[write_num].grd_y, sound.beep[write_num].wrap,
-	sound.beep[write_num].fuzz, sound.beep[write_num].random);
+		printf("length %u pitch %u pitch2 %u grd_x %u grd_y %i wrap %u fuzz %u random %u\n",
+		sound.beep[write_num].length, sound.beep[write_num].pitch, sound.beep[write_num].pitch_2,
+		sound.beep[write_num].grd_x, sound.beep[write_num].grd_y, sound.beep[write_num].wrap,
+		sound.beep[write_num].fuzz, sound.beep[write_num].random);
 #endif
 
-	// Always unpause the sound here, in case the callback has paused itself
-	SDL_PauseAudioDevice(QLSDLAudio, 0);
+		// Always unpause the sound here, in case the callback has paused itself
+		SDL_PauseAudioDevice(QLSDLAudio, 0);
+	}
 }
 
-void KillSound(){
+void KillSound() {
 #ifdef DEBUG_SOUND
 	printf("Kill sound\n");
 #endif
-	SDL_LockMutex(sound.mutex);
-	sound.in_use = -1;
-	sound.last_written = -1;
-	SDL_UnlockMutex(sound.mutex);
+	if (sound_enabled) {
+		SDL_LockMutex(sound.mutex);
+		sound.in_use = -1;
+		sound.last_written = -1;
+		SDL_UnlockMutex(sound.mutex);
+	}
 }
 
 void audioCallback(void* userdata, Uint8* stream, int len) {
