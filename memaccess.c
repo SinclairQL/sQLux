@@ -31,11 +31,6 @@ static int is_hw(uint32_t addr)
 		return 1;
 	}
 
-	if ((addr >= QL_EXTERNAL_IO_BASE) &&
-		( addr < (QL_EXTERNAL_IO_BASE + QL_EXTERNAL_IO_SIZE))) {
-		return 1;
-	}
-
 	return 0;
 }
 
