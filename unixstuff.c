@@ -176,6 +176,8 @@ void dosignal()
 extern int xbreak;
 void cleanup(int err)
 {
+	int ret;
+
 	SDL_Event event;
 
 	event.user.type = SDL_USEREVENT;
@@ -185,8 +187,10 @@ void cleanup(int err)
 
 	event.type = SDL_USEREVENT;
 
-	SDL_PushEvent(&event);
-
+	ret = SDL_PushEvent(&event);
+	if (ret <= 0) {
+		printf("PushEvent error %d\n", ret);
+	}
 }
 
 #ifdef UX_WAIT
@@ -395,8 +399,6 @@ exec:
 
 	if (!QLdone)
 		goto exec;
-
-	cleanup(0);
 
 	return 0;
 }
