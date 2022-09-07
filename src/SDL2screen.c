@@ -584,14 +584,8 @@ void SDLQLFullScreen(void)
 
 	ql_fullscreen ^= 1;
 
-	//if (ql_fullscreen)
-	//	SDL_RestoreWindow(ql_window);
 	SDL_SetWindowFullscreen(
 		ql_window, ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-	//if (!ql_fullscreen)
-	//	SDL_MaximizeWindow(ql_window);
-
-	QLSDLProcessEvents();
 }
 
 static void QLSDLInitJoystick(void)

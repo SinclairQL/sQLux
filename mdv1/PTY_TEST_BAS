@@ -1,8 +1,0 @@
-10 open#6,pty_csh
-20 print#6,"ls -al"
-30 print#6,"exit"
-40 repeat xx
-50  if eof(#6) :exit xx
-60  input#6,a$:print a$
-70 end repeat xx
-80 close#6
