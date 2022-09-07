@@ -187,7 +187,7 @@ int optionParse(int argc, char *argv[])
             ("FILTER", po::value<int>()->default_value(0),
                 "enable bilinear filter when zooming")
             ("FIXASPECT", po::value<int>()->default_value(0),
-                "0 = 1:1 pixel mapping, 1 = BBQL aspect non square pixels")
+                "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels")
             ("GREY", po::value<int>()->default_value(0),
                 "1 enable greyscale display")
             ("GRAY", po::value<int>()->default_value(0),

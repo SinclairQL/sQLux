@@ -286,7 +286,8 @@ static int QLConvertWhichToIndex(Sint32 which);
 void QLSDLScreen(void)
 {
 	uint32_t sdl_window_mode;
-	int i, w, h, ay;
+	int i, w, h;
+	double ay;
 	SDL_Surface *icon;
 	uint32_t rmask, gmask, bmask, amask;
 
@@ -321,16 +322,21 @@ void QLSDLScreen(void)
 		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
 			sdl_mode.w, sdl_mode.h);
 
-	/* Fix the aspect ratio to more like real hardware */
-	if (optionInt("FIXASPECT")) {
-		ay = (qlscreen.yres * 3) / 2;
-	} else {
-		ay = qlscreen.yres;
+	/* Fix the aspect ratio to more like real hardware
+	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
+	int aspect = optionInt("FIXASPECT");
+	if (aspect == 1) {
+		ay = (double)(qlscreen.yres * 3) / 2;
+	} else if (aspect == 2) {
+		ay = (double)(qlscreen.yres * 1.355 + 0.5);
+	}
+	else {
+		ay = (double)qlscreen.yres;
 	}
 
 	/* Ensure width and height are always initialised to sane values */
 	w = qlscreen.xres;
-	h = ay;
+	h = (int)lrint(ay);
 
 	/* Initialize keyboard table (doesn't belong here, but was convenient...) */
 	setKeyboardLayout ();
@@ -346,10 +352,10 @@ void QLSDLScreen(void)
 
 		if (!strcmp("2x", optionString("WIN_SIZE"))) {
 			w = qlscreen.xres * 2;
-			h = ay * 2;
+			h = lrint(ay * 2.0);
 		} else if (!strcmp("3x", optionString("WIN_SIZE"))) {
 			w = qlscreen.xres * 3;
-			h = ay * 3;
+			h = lrint(ay * 3.0);
 		} else if (!strcmp("max", optionString("WIN_SIZE"))) {
 			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
 		} else if (!strcmp("full", optionString("WIN_SIZE"))) {
@@ -1142,6 +1148,10 @@ void QLSDLProcessEvents(void)
 					QLSDLRenderScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
+					QLSDLUpdatePixelBuffer();
+					QLSDLRenderScreen();
+					break;
+				case SDL_WINDOWEVENT_EXPOSED:
 					QLSDLUpdatePixelBuffer();
 					QLSDLRenderScreen();
 					break;
