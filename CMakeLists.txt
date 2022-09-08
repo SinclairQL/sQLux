@@ -19,7 +19,6 @@ endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
-    set(Boost_USE_STATIC_LIBS ON) 
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -43,6 +42,7 @@ endif()
 
 find_package(Git)
 
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.36.0 REQUIRED COMPONENTS program_options)
 
 add_custom_target( SubmarineGitVersion
@@ -125,7 +125,7 @@ else()
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -Wl,-Bdynamic ${Boost_LIBRARIES})
+	target_link_libraries(sqlux -Wl,-Bstatic -lpthread -lssp -Wl,-Bdynamic ${Boost_LIBRARIES})
 endif()
 
 set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
