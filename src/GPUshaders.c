@@ -1,0 +1,351 @@
+#include "GPUshaders.h"
+
+#ifdef ENABLE_SHADERS
+#include <SDL_gpu.h>
+#include "SDL2screen.h"
+#include "QL_screen.h"
+
+static uint32_t* screen_buffer = NULL;
+static GPU_Image* image = 0;
+static GPU_Target* screen = 0;
+
+static SDL_Rect screen_rect;
+
+static Uint32 shader;
+static GPU_ShaderBlock shader_block;
+static int res_texture_size;
+static int res_screen_size;
+
+static void UpdateDisplay(GPU_Target* screen);
+static void setViewPort(void);
+static void CreateImage(void);
+static void CreatePalette(void);
+static void convertScreenPosition(int* lx, int* ly, int x, int y);
+
+static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const char* prepend);
+static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* vertex_shader_file,
+                                const char* fragment_shader_file, const char* prepend);
+static void UpdateShader(float x, float y, float a, float b);
+static void FreeShader(Uint32 p);
+
+bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
+			const char* name, uint32_t sdl_window_mode)
+
+{
+	bool ret = false;
+	screen = GPU_Init(w, h, GPU_DEFAULT_INIT_FLAGS | sdl_window_mode);
+
+	if (screen != NULL) {
+		// Obtain the window id
+		*id = screen->context->windowID;
+		SDL_Window* window = SDL_GetWindowFromID(*id);
+
+		// Set the windows title
+		SDL_SetWindowTitle(window, name);
+
+		// Set the icon
+		QLSDLCreateIcon(window);
+		CreateImage();
+		CreatePalette();
+
+		//ret = LoadShaderProgram(&shader_block, &shader, "crt-pi.glsl", "crt-pi.glsl", "#define CURVATURE");
+		ret = LoadShaderProgram(&shader_block, &shader, "crt-pi.glsl", "crt-pi.glsl", NULL);
+		res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
+		res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
+	}
+	return ret;
+}
+
+void QLGPUClean(void) {
+
+	if (image)
+	        GPU_FreeImage(image);
+
+	free(screen_buffer);
+	GPU_Quit();
+}
+
+void QLGPUUpdateDisplay(void)
+{
+	// Update the display memory
+    	QLSDLWritePixels(screen_buffer);
+    	setViewPort();
+
+    	GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
+
+    	// Render to screen
+	GPU_ClearRGBA(screen, 0, 0, 0, 0);
+	GPU_ActivateShaderProgram(shader, &shader_block);
+	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres, (float)screen->base_w, (float)screen->base_h);
+	GPU_BlitRect(image, NULL, screen, NULL);
+	GPU_ActivateShaderProgram(0, NULL);
+	GPU_Flip(screen);
+}
+
+void QLGPUSetSize(int w, int h)
+{
+	GPU_SetWindowResolution(w, h);
+}
+
+/* Static functions */
+void QLGPUSetFullscreen(void)
+{
+	GPU_SetFullscreen(ql_fullscreen, true);
+
+	if (!ql_fullscreen) {
+		GPU_SetWindowResolution(screen->w, screen->h);
+	}
+}
+
+static void CreateImage(void)
+{
+    	// Create an image and surface
+    	if (image)
+        	GPU_FreeImage(image);
+	if (!screen_buffer)
+        	screen_buffer = (uint32_t*)malloc(qlscreen.xres * qlscreen.yres * 4);
+
+	image = GPU_CreateImage(qlscreen.xres, qlscreen.yres, GPU_FORMAT_RGBA);
+}
+
+static void CreatePalette(void)
+{
+	SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32);
+	QLSDLCreatePalette(format);
+	SDL_FreeFormat(format);
+}
+
+static void setViewPort(void)
+{
+	static int width = -1;
+	static int height = -1;
+	int w,h;
+	GPU_Rect frect;
+
+	h = screen->base_h;
+	w = screen->base_w;
+
+	if ((w != width) || (height != h)) {
+		width = w;
+		height = h;
+
+		printf("Width: %i Height: %i Ratio: 6.3f %s\n", w, h,
+		        ql_screen_ratio, ql_fullscreen ? "fullscreen" : "not fullscreen");
+
+		// TO DO: Fix to even pixel width
+		if (ql_fullscreen) {
+			printf("setViewPort: Full screen\n");
+			// Largest integer pixel height
+			screen_rect.h = (h / 256) * 256;
+			screen_rect.w = (int)(ql_screen_ratio * (float)screen_rect.h);
+			screen_rect.x = (w - screen_rect.w) / 2;
+			screen_rect.y = (h - screen_rect.h) / 2;
+		}
+		else {
+			if (fabs((float)w - (2.0 * (float)h) / ql_screen_ratio) < 3.0) {
+				printf("setViewPort: fit\n");
+				screen_rect.h = h;
+				screen_rect.w = w;
+				screen_rect.x = 0;
+				screen_rect.y = 0;
+			}
+			else if ((2.0 * (float)h) / ql_screen_ratio < (float)w) {
+				printf("setViewPort: scale to h\n");
+				screen_rect.h = h;
+				screen_rect.w = (int)((2.0 * (float)h) / ql_screen_ratio);
+				screen_rect.x = (w - screen_rect.w) / 2;
+				screen_rect.y = 0;
+			}
+			else {
+				printf("setViewPort: scale to w\n");
+				screen_rect.w = w;
+				screen_rect.h = (int)((float)w * ql_screen_ratio / 2.0);
+				screen_rect.x = 0;
+				screen_rect.y = (h - screen_rect.h) / 2;
+			}
+		}
+		frect.x = (float)screen_rect.x;
+		frect.y = (float)screen_rect.y;
+		frect.w = (float)screen_rect.w;
+		frect.h = (float)screen_rect.h;
+
+		printf("x:%6.1f y:%6.1f w:%6.1f h:%6.1f\n",frect.x, frect.y, frect.w, frect.h);
+		GPU_SetViewport(screen, frect);
+	}
+}
+
+static void convertScreenPosition(int* lx, int* ly, int x, int y)
+{
+	printf(" A %i B %i\n", qlscreen.xres, screen_rect.w);
+	*lx = x - screen_rect.x;
+	*ly = y - screen_rect.y;
+	*lx = (*lx * qlscreen.xres + 0.5) / screen_rect.w;
+	*ly = (*ly * qlscreen.yres + 0.5) / screen_rect.h;
+
+	*lx = (*lx > 0) ? *lx : 0;
+	*lx = (*lx < qlscreen.xres) ? *lx : qlscreen.xres - 1;
+	*ly = (*ly > 0) ? *ly : 0;
+	*ly = (*ly < qlscreen.yres) ? *ly : qlscreen.yres - 1;
+}
+
+
+// Loads a shader and prepends version/compatibility info before compiling it.
+// Normally, GPU_LoadShader() can be used for shader source files and GPU_CompileShader() for strings.
+// However, some hardware (certain ATI/AMD cards) does not support  non-#version preprocessing at the top of the file.
+// This prepends the version info so that both GLSL and GLSLES can be supported with one shader file.
+static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const char* prepend)
+{
+	SDL_RWops* rwops;
+	Uint32 shader;
+	char* source;
+	int header_size, directive_size, file_size;
+	int prepend_size = 0;
+	const char* header = "";
+	const char* directive = "";
+	GPU_Renderer* renderer = GPU_GetCurrentRenderer();
+
+	// Open file
+	rwops = SDL_RWFromFile(filename, "rb");
+	if (rwops == NULL)
+	{
+		GPU_LogError("load_shader: Shader file \"%s\" not found", filename);
+		return 0;
+	}
+
+	// Get file size
+	file_size = (int)SDL_RWseek(rwops, 0, SEEK_END);
+	SDL_RWseek(rwops, 0, SEEK_SET);
+
+	// Get size from header
+	if (renderer->shader_language == GPU_LANGUAGE_GLSL)
+	{
+		printf("Shader Language: GPU_LANGUAGE_GLSL\n");
+		if (renderer->max_shader_version >= 120)
+			header = "#version 120\n";
+		else
+			header = "#version 110\n";
+	}
+	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES)
+	{
+		printf("Shader Language: GPU_LANGUAGE_GLSLES\n");
+		header = "#version 100\nprecision mediump int;\nprecision mediump float;\n";
+	}
+	else
+	{
+		printf("Shader Language Enum: %i\n", renderer->shader_language);
+	}
+
+	printf("Shader Version %i\n", renderer->max_shader_version);
+
+	header_size = (int)strlen(header);
+
+	// Add a preprocessor directive
+	if (shader_type == GPU_VERTEX_SHADER)
+	{
+		directive = "#define VERTEX\n";
+	} else if (shader_type == GPU_FRAGMENT_SHADER)
+	{
+		directive = "#define FRAGMENT\n";
+	}
+	directive_size = (int)strlen(directive);
+
+	if (prepend)
+	{
+		prepend_size = (int)strlen(prepend);
+	}
+
+	int pre_source_size = header_size + directive_size + prepend_size;
+
+	int source_size = (int)(sizeof(char)) * (pre_source_size + file_size + 1);
+
+	// Allocate source buffer
+	source = (char*)malloc(source_size);
+
+	if (source == NULL)
+	{
+		GPU_LogError("malloc failed\n");
+		return 0;
+	}
+
+	// Prepend header
+	strcpy(source, header);
+	strcpy(source + header_size, directive);
+
+	if (prepend_size) {
+		strcpy(source + header_size + directive_size, prepend);
+	}
+
+	// Read in source code
+	SDL_RWread(rwops, source + pre_source_size, 1, file_size);
+	source[pre_source_size + file_size] = '\0';
+
+	// Compile the shader
+	shader = GPU_CompileShader(shader_type, source);
+
+	// Clean up
+	free(source);
+	SDL_RWclose(rwops);
+
+	return shader;
+}
+
+static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* vertex_shader_file,
+                                const char* fragment_shader_file, const char* prepend)
+{
+	bool ret = false;
+	Uint32 v, f;
+	v = LoadShader(GPU_VERTEX_SHADER, vertex_shader_file, prepend);
+
+	if (!v) {
+		GPU_LogError("Failed to load vertex shader (%s): %s\n", vertex_shader_file, GPU_GetShaderMessage());
+		return false;
+	}
+
+	f = LoadShader(GPU_FRAGMENT_SHADER, fragment_shader_file, prepend);
+
+	if (!f) {
+		GPU_LogError("Failed to load fragment shader (%s): %s\n", fragment_shader_file, GPU_GetShaderMessage());
+		return false;
+	}
+
+	*p = GPU_LinkShaders(v, f);
+
+	if (!*p)
+	{
+		GPU_LogError("Failed to link shader program (%s + %s): %s\n", vertex_shader_file, fragment_shader_file, GPU_GetShaderMessage());
+		return false;
+	}
+
+	*shader = GPU_LoadShaderBlock(*p, "gpu_Vertex", "gpu_TexCoord", "gpu_Color", "gpu_ModelViewProjectionMatrix");
+	GPU_ActivateShaderProgram(*p, shader);
+	return true;
+}
+
+static void FreeShader(Uint32 p)
+{
+	GPU_FreeShaderProgram(p);
+}
+
+static void UpdateShader(float x, float y, float a, float b)
+{
+	float fres[2] = { x, y };
+	GPU_SetUniformfv(res_texture_size, 2, 1, fres);
+	fres[0] = a;
+	fres[1] = b;
+	GPU_SetUniformfv(res_screen_size, 2, 1, fres);
+}
+
+#else
+/* Empry functions, for when shaders not enabled */
+bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
+			const char* name, uint32_t sdl_window_mode) {
+	return true;
+}
+void QLGPUUpdateDisplay(void) {}
+void QLGPUSetFullscreen(void) {}
+void QLGPUSetSize(int w, int h) {}
+
+
+
+#endif
+

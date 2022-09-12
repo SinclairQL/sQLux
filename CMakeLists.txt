@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.7)
-cmake_minimum_required(VERSION 3.7)
 
 project(sqlux)
 
@@ -8,6 +7,11 @@ message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
+
+if (SUPPORT_SHADERS)
+    message("Enabling shader support")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SHADERS")
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
@@ -56,7 +60,15 @@ add_custom_target( SubmarineGitVersion
 
 find_package(SDL2 REQUIRED)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR} include/ ${SDL2_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+if (SUPPORT_SHADERS)
+    set(SDL2_GPU_LIBRARIES "-lSDL2_gpu")
+    set(SDL2_GPU_INCLUDE_DIRS "/usr/local/include/SDL2/")
+else ()
+    set(SDL2_GPU_LIBRARIES "")
+    set(SDL2_GPU_INCLUDE_DIRS "")
+endif ()
+
+include_directories(${CMAKE_CURRENT_LIST_DIR} include/ ${SDL2_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${SDL2_GPU_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
@@ -77,6 +89,7 @@ add_executable(sqlux
     QLtraps.c
     QVFS.c
     src/SDL2screen.c
+    src/GPUshaders.c
     Xscreen.c
     dummies.c
     general.c
@@ -118,10 +131,10 @@ if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         target_link_libraries(sqlux -Wl,-Bstatic -L/usr/local/${TOOLCHAIN_PREFIX}/lib -lmingw32 -lSDL2main -lSDL2 -lwsock32 -lwinmm -lsetupapi -limm32 -lversion ${Boost_LIBRARIES} -static-libgcc -static-libstdc++)
     else()
-        target_link_libraries(sqlux ${SDL2_LIBRARIES} ${Boost_LIBRARIES})
+        target_link_libraries(sqlux ${SDL2_LIBRARIES} ${Boost_LIBRARIES} ${SDL2_GPU_LIBRARIES})
     endif()
 else()
-    target_link_libraries(sqlux SDL2::SDL2 ${Boost_LIBRARIES})
+    target_link_libraries(sqlux SDL2::SDL2 ${Boost_LIBRARIES} ${SDL2_GPU_LIBRARIES})
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
