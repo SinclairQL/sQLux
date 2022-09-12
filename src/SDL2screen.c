@@ -4,6 +4,7 @@
  * SPDX: Zlib
  */
 
+#include "GPUshaders.h"		// Needs to be before math.h
 #include <inttypes.h>
 #include <math.h>
 #include <SDL.h>
@@ -28,14 +29,21 @@ static SDL_Surface *ql_screen = NULL;
 static SDL_Renderer *ql_renderer = NULL;
 static SDL_Texture *ql_texture = NULL;
 static SDL_Rect dest_rect;
-static SDL_DisplayMode sdl_mode;
 static SDL_TimerID fiftyhz_timer;
-const char *sdl_video_driver;
+static bool renderer_idle = true;
+static const char *sdl_video_driver;
 static char sdl_win_name[128];
-static char ql_fullscreen = false;
+bool ql_fullscreen = false;
+double ql_screen_ratio = 1.0;
 
 SDL_atomic_t doPoll;
 bool screenWritten = false;	// True if screen memory has been written
+bool shaders_selected =
+#ifdef ENABLE_SHADERS
+true;
+#else
+false;
+#endif
 
 SDL_sem* sem50Hz = NULL;
 
@@ -276,33 +284,23 @@ static joy_data joy[2] = { {NULL, -1, 0, 1},
 			   {NULL, -1, 0, 1} };
 #endif
 
+static bool QLSDLCreateDisplay(int w , int h, int ly, uint32_t* id,
+				const char* name, uint32_t sdl_window_mode);
+static void SDLQLUpdateScreen();
+static void QLSDLUpdatePixelBuffer();
+
 static void QLSDLInitJoystick(void);
 static void QLSDLOpenJoystick(int index, int which);
 static void QLProcessJoystickAxis(Sint32 which, Uint8 axis, Sint16 value);
 static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed);
 static int QLConvertWhichToIndex(Sint32 which);
 
-
 void QLSDLScreen(void)
 {
+	SDL_DisplayMode sdl_mode;
 	uint32_t sdl_window_mode;
 	int i, w, h;
 	double ay;
-	SDL_Surface *icon;
-	uint32_t rmask, gmask, bmask, amask;
-
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	int shift = (sqluxlogo.bytes_per_pixel == 3) ? 8 : 0;
-	rmask = 0xff000000 >> shift;
-	gmask = 0x00ff0000 >> shift;
-	bmask = 0x0000ff00 >> shift;
-	amask = 0x000000ff >> shift;
-#else // little endian, like x86
-	rmask = 0x000000ff;
-	gmask = 0x0000ff00;
-	bmask = 0x00ff0000;
-	amask = (sqluxlogo.bytes_per_pixel == 3) ? 0 : 0xff000000;
-#endif
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", optionString("SYSROM"), RTOP / 1024);
 
@@ -326,15 +324,16 @@ void QLSDLScreen(void)
 	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
 	int aspect = optionInt("FIXASPECT");
 	if (aspect == 1) {
-		ay = (double)(qlscreen.yres * 3) / 2;
+		ql_screen_ratio = (3.0 / 2.0);
 	} else if (aspect == 2) {
-		ay = (double)(qlscreen.yres * 1.355 + 0.5);
+		ql_screen_ratio = 1.355;
 	}
 	else {
-		ay = (double)qlscreen.yres;
+		ql_screen_ratio = 1.0;
 	}
 
 	/* Ensure width and height are always initialised to sane values */
+	ay = (double)(qlscreen.yres * ql_screen_ratio);
 	w = qlscreen.xres;
 	h = (int)lrint(ay);
 
@@ -366,39 +365,54 @@ void QLSDLScreen(void)
 		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
-	ql_window =
-		SDL_CreateWindow(sdl_win_name, SDL_WINDOWPOS_CENTERED,
-				 SDL_WINDOWPOS_CENTERED, w, h, sdl_window_mode);
+	bool created = false;
+	if (shaders_selected)
+		created = QLGPUCreateDisplay(w , h, (int)lrint(ay),
+				&ql_windowid, sdl_win_name, sdl_window_mode);
+	else
+		created = QLSDLCreateDisplay(w , h, (int)lrint(ay),
+				&ql_windowid, sdl_win_name, sdl_window_mode);
 
-	icon = SDL_CreateRGBSurfaceFrom((void*)sqluxlogo.pixel_data,
-				sqluxlogo.width,
-				sqluxlogo.height,
-				sqluxlogo.bytes_per_pixel * 8,
-				sqluxlogo.bytes_per_pixel * sqluxlogo.width,
-				rmask, gmask, bmask, amask);
-
-	SDL_SetWindowIcon(ql_window, icon);
-	SDL_FreeSurface(icon);
-
-	if (ql_window == NULL) {
-		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
+	if (!created)
+	{
+		printf("Window creation failed\n");
 		exit(-1);
 	}
 
+	SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
+	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+
+	QLSDLInitJoystick();
+
+	SDL_AtomicSet(&doPoll, 0);
+	sem50Hz = SDL_CreateSemaphore(0);
+	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
+}
+
+static bool QLSDLCreateDisplay(int w , int h, int ly, uint32_t* id,
+				const char* name, uint32_t sdl_window_mode)
+{
+	ql_window =
+		SDL_CreateWindow(name, SDL_WINDOWPOS_CENTERED,
+				 SDL_WINDOWPOS_CENTERED, w, h, sdl_window_mode);
+
+	if (ql_window == NULL) {
+		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
+		return false;
+	}
+
+	QLSDLCreateIcon(ql_window);
 	ql_windowid = SDL_GetWindowID(ql_window);
 
 	ql_renderer = SDL_CreateRenderer(ql_window, -1,
 					 SDL_RENDERER_ACCELERATED |
 						 SDL_RENDERER_PRESENTVSYNC);
 
-	SDL_RenderSetLogicalSize(ql_renderer, qlscreen.xres, ay);
+	SDL_RenderSetLogicalSize(ql_renderer, qlscreen.xres, ly);
 
 	dest_rect.x = dest_rect.y = 0;
 	dest_rect.w = qlscreen.xres;
-	dest_rect.h = ay;
-
-	SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
-	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
+	dest_rect.h = ly;
 
 	if (optionInt("FILTER"))
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -408,33 +422,61 @@ void QLSDLScreen(void)
 
 	if (ql_screen == NULL) {
 		printf("Error Creating Surface\n");
-		exit(-1);
+		return false;
 	}
 
 	ql_texture = SDL_CreateTexture(ql_renderer, SDL_PIXELFORMAT_RGBA32,
 				       SDL_TEXTUREACCESS_STREAMING,
 				       ql_screen->w, ql_screen->h);
 
-	for (i = 0; i < 16; i++) {
+	if (ql_texture == NULL) {
+		printf("Error Creating texture\n");
+		return false;
+	}
+	QLSDLCreatePalette(ql_screen->format);
+	return true;
+}
+
+void QLSDLCreateIcon(SDL_Window* window)
+{
+	SDL_Surface *icon;
+	uint32_t rmask, gmask, bmask, amask;
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	int shift = (sqluxlogo.bytes_per_pixel == 3) ? 8 : 0;
+	rmask = 0xff000000 >> shift;
+	gmask = 0x00ff0000 >> shift;
+	bmask = 0x0000ff00 >> shift;
+	amask = 0x000000ff >> shift;
+#else // little endian, like x86
+	rmask = 0x000000ff;
+	gmask = 0x0000ff00;
+	bmask = 0x00ff0000;
+	amask = (sqluxlogo.bytes_per_pixel == 3) ? 0 : 0xff000000;
+#endif
+	icon = SDL_CreateRGBSurfaceFrom((void*)sqluxlogo.pixel_data,
+			sqluxlogo.width,
+			sqluxlogo.height,
+			sqluxlogo.bytes_per_pixel * 8,
+			sqluxlogo.bytes_per_pixel * sqluxlogo.width,
+			rmask, gmask, bmask, amask);
+
+	SDL_SetWindowIcon(window, icon);
+	SDL_FreeSurface(icon);
+}
+
+void QLSDLCreatePalette(const SDL_PixelFormat* format)
+{
+	for (int i = 0; i < 16; i++) {
 		if (optionInt("GREY") || optionInt("GRAY")) {
-			SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors_gray[i].r,
+			SDLcolors[i] = SDL_MapRGB(format, QLcolors_gray[i].r,
 						  QLcolors_gray[i].g, QLcolors_gray[i].b);
 		} else {
-			SDLcolors[i] = SDL_MapRGB(ql_screen->format, QLcolors[i].r,
+			SDLcolors[i] = SDL_MapRGB(format, QLcolors[i].r,
 						  QLcolors[i].g, QLcolors[i].b);
 		}
 	}
-
-	SDL_RenderClear(ql_renderer);
-	SDL_RenderPresent(ql_renderer);
-
-	QLSDLInitJoystick();
-
-	SDL_AtomicSet(&doPoll, 0);
-	sem50Hz = SDL_CreateSemaphore(0);
-	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
 }
-
 void QLSDLUpdateScreenByte(uint32_t offset, uint8_t data)
 {
 	int t1, t2, i, color;
@@ -508,17 +550,10 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
-void QLSDLUpdatePixelBuffer()
+void QLSDLWritePixels(uint32_t *pixel_ptr32)
 {
 	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
-	uint32_t *pixel_ptr32;
 	int t1, t2, i, color;
-
-	if (SDL_MUSTLOCK(ql_screen)) {
-		SDL_LockSurface(ql_screen);
-	}
-
-	pixel_ptr32 = ql_screen->pixels;
 
 	while (scr_ptr <
 	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
@@ -557,6 +592,16 @@ void QLSDLUpdatePixelBuffer()
 		}
 		pixel_ptr32 += 8;
 	}
+}
+
+static void QLSDLUpdatePixelBuffer()
+{
+	if (SDL_MUSTLOCK(ql_screen)) {
+		SDL_LockSurface(ql_screen);
+	}
+
+	QLSDLWritePixels(ql_screen->pixels);
+
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
@@ -582,10 +627,28 @@ void SDLQLFullScreen(void)
 {
 	int w, h;
 
-	ql_fullscreen ^= 1;
+	ql_fullscreen = !ql_fullscreen;
 
-	SDL_SetWindowFullscreen(
-		ql_window, ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	if (shaders_selected) {
+		QLGPUSetFullscreen();
+	}
+	else {
+		SDL_SetWindowFullscreen(ql_window,
+					ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	}
+}
+
+static void SDLQLUpdateScreen()
+{
+	renderer_idle = false;
+	if (shaders_selected) {
+		QLGPUUpdateDisplay();
+	}
+	else {
+		QLSDLUpdatePixelBuffer();
+		QLSDLRenderScreen();
+	}
+	renderer_idle = true;
 }
 
 static void QLSDLInitJoystick(void)
@@ -1085,8 +1148,6 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
 	}
 }
 
-static bool renderer_idle = true;
-
 void QLSDLProcessEvents(void)
 {
 	SDL_Event event;
@@ -1138,22 +1199,26 @@ void QLSDLProcessEvents(void)
 			if (event.window.windowID == ql_windowid) {
 				switch (event.window.event) {
 				case SDL_WINDOWEVENT_ENTER:
-					SDL_ShowCursor(SDL_DISABLE);
+					// TO DO!!
+					//SDL_ShowCursor(SDL_DISABLE);
 					break;
 				case SDL_WINDOWEVENT_LEAVE:
-					SDL_ShowCursor(SDL_ENABLE);
+					//SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
-					QLSDLUpdatePixelBuffer();
-					QLSDLRenderScreen();
+					printf("SDL_WINDOWEVENT_RESIZED\n");
+					if (shaders_selected)
+						QLGPUSetSize(event.window.data1,
+							event.window.data2);
+					SDLQLUpdateScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					QLSDLUpdatePixelBuffer();
-					QLSDLRenderScreen();
+					printf("SDL_WINDOWEVENT_SIZE_CHANGED\n");
+					//SDLQLUpdateScreen();
 					break;
 				case SDL_WINDOWEVENT_EXPOSED:
-					QLSDLUpdatePixelBuffer();
-					QLSDLRenderScreen();
+					printf("SDL_WINDOWEVENT_EXPOSED\n");
+					SDLQLUpdateScreen();
 					break;
 				}
 			}
@@ -1161,10 +1226,7 @@ void QLSDLProcessEvents(void)
 		case SDL_USEREVENT:
 			switch (event.user.code) {
 			case USER_CODE_SCREENREFRESH:
-				renderer_idle = false;
-				QLSDLUpdatePixelBuffer();
-				QLSDLRenderScreen();
-				renderer_idle = true;
+				SDLQLUpdateScreen();
 				break;
 			case USER_CODE_EMUEXIT:
 				return;
