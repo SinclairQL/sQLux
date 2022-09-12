@@ -1,5 +1,6 @@
 ![Build x86-64](https://github.com/SinclairQL/sQLux/actions/workflows/build-native.yml/badge.svg)
 ![Build ARM](https://github.com/SinclairQL/sQLux/actions/workflows/build-arm.yml/badge.svg)
+![Build MSYS2](https://github.com/SinclairQL/sQLux/actions/workflows/build-msys2.yml/badge.svg)
 
 # sQLux (or QL Sux according to DaveP)
 
