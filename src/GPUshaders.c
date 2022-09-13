@@ -5,11 +5,13 @@
 #include "SDL2screen.h"
 #include "QL_screen.h"
 
+/* Structure used in mouse pointer calculation */
 typedef struct {
 	float x;
 	float y;
 } vec2;
 
+/* Curvature for screen */
 #define CURVATURE_X 0.05
 #define CURVATURE_Y 0.12
 
@@ -59,15 +61,24 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 		CreatePalette();
 
 		// Configure the shaders
-		const char* prepend = NULL;
+		char* prepend = NULL;
 
 		if (shader_type == 2) {
-			prepend = "#define CURVATURE\n";
-			curve = true;
+			prepend = malloc(100);
+			if (prepend) {
+				sprintf(prepend,
+				        "#define CURVATURE\n#define CURVATURE_X %4.2f\n#define CURVATURE_Y %4.2f\n",
+					CURVATURE_X, CURVATURE_Y);
+				printf("%s", prepend);
+				curve = true;
+			}
 		}
 
 		ret = LoadShaderProgram(&shader_block, &shader, shader_path,
 					shader_path, prepend);
+
+		if (prepend)
+			free(prepend);
 
 		if (ret) {
 			res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
@@ -100,7 +111,7 @@ void QLGPUUpdateDisplay(void)
     	setViewPort();
 
     	// Render to screen, using the active shader
-	GPU_ClearRGB(screen, 0, 0, 255);
+	GPU_Clear(screen);
 	GPU_ActivateShaderProgram(shader, &shader_block);
 	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres, (float)screen->base_w, (float)screen->base_h);
 	GPU_BlitRect(image, NULL, screen, NULL);
@@ -122,20 +133,24 @@ void QLGPUProcessMouse(int* qlx, int* qly, int x, int y)
 	*qlx = (*qlx * qlscreen.xres + 0.5) / screen_rect.w;
 	*qly = (*qly * qlscreen.yres + 0.5) / screen_rect.h;
 
+	if (curve) {
+		// Convert to range 0 to 1
+		float fx = (float)(*qlx) / (float)(qlscreen.xres);
+		float fy = (float)(*qly) / (float)(qlscreen.yres);
+
+		Distort(&fx, &fy);
+
+		*qlx = fx * qlscreen.xres;
+		*qly = fy * qlscreen.yres;
+	}
+
+	// Make sure in range
 	*qlx = (*qlx > 0) ? *qlx : 0;
 	*qlx = (*qlx < qlscreen.xres) ? *qlx : qlscreen.xres - 1;
 	*qly = (*qly > 0) ? *qly : 0;
 	*qly = (*qly < qlscreen.yres) ? *qly : qlscreen.yres - 1;
 
-	// Now in range 0 to qlscreen.xres, 0 to qlscreen.yres
-	float fx = (float)(*qlx - qlscreen.xres / 2) /(float)(qlscreen.xres);
-	float fy = (float)(*qly - qlscreen.yres / 2) /(float)(qlscreen.yres);
-	printf("x: %7.3f y: %7.3f\n", fx, fy);
-
-	if (curve)
-		Distort(&fx, &fy);
-
-	printf("x: %7.3f y: %7.3f\n", fx, fy);
+	//printf("x: %i y: %i qx: %i qy: %i\n", x, y, *qlx, *qly);
 }
 
 /* Move to and from fullscreen mode */
@@ -234,40 +249,34 @@ static void setViewPort(void)
 	}
 }
 
+/* Mimic the distortion in the shader, to calculate mouse position */
 static void Distort(float* x, float* y)
 {
 	vec2 coord;
 	coord.x = *x;
 	coord.y = *y;
 
-	vec2 CURVATURE_DISTORTION;
-	CURVATURE_DISTORTION.x = CURVATURE_X;
-	CURVATURE_DISTORTION.y = CURVATURE_Y;
+	vec2 curvature_distortion;
+	curvature_distortion.x = CURVATURE_X;
+	curvature_distortion.y = CURVATURE_Y;
 
-	// Barrel distortion shrinks the display area a bit, this will allow us to counteract that.
 	vec2 barrelScale;
-	barrelScale.x = 1.0 - 0.23 * CURVATURE_DISTORTION.x;
-	barrelScale.y = 1.0 - 0.23 * CURVATURE_DISTORTION.y;
+	barrelScale.x = 1.0 - 0.23 * curvature_distortion.x;
+	barrelScale.y = 1.0 - 0.23 * curvature_distortion.y;
 
 	coord.x -= 0.5;
 	coord.y -= 0.5;
 
 	float rsq = coord.x * coord.x + coord.y * coord.y;
 
-	coord.x += coord.x * CURVATURE_DISTORTION.x * rsq;
-	coord.y += coord.y * CURVATURE_DISTORTION.y * rsq;
+	coord.x += coord.x * curvature_distortion.x * rsq;
+	coord.y += coord.y * curvature_distortion.y * rsq;
 
 	coord.x *= barrelScale.x;
 	coord.y *= barrelScale.y;
 
-	if ((abs(coord.x) >= 0.5) || (abs(coord.y) >= 0.5)) {
-		coord.x = -1.0;		// If out of bounds, return an invalid value.
-		coord.y = -1.0;		// If out of bounds, return an invalid value.
-	}
-	else {
-		coord.x += 0.5;
-		coord.y += 0.5;
-	}
+	coord.x += 0.5;
+	coord.y += 0.5;
 
 	*x = coord.x;
 	*y = coord.y;
