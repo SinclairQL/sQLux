@@ -1110,7 +1110,6 @@ static void QLProcessMouse(int x, int y)
 	else
 		QLSDLProcessMouse(&qlx, &qly, x, y);
 
-	//printf("X: %i Y: %i qX: %i qY: %i\n",x, y, qlx, qly);
 	QLMovePointer(qlx, qly);
 }
 
@@ -1217,10 +1216,10 @@ void QLSDLProcessEvents(void)
 			if (event.window.windowID == ql_windowid) {
 				switch (event.window.event) {
 				case SDL_WINDOWEVENT_ENTER:
-					//SDL_ShowCursor(SDL_DISABLE);
+					SDL_ShowCursor(SDL_DISABLE);
 					break;
 				case SDL_WINDOWEVENT_LEAVE:
-					//SDL_ShowCursor(SDL_ENABLE);
+					SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
 					if (shaders_selected)
