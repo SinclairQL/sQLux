@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
+OPTION(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
 project(sqlux)
 
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
@@ -142,6 +143,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
+
+# Ensure that a bare cmake will always exclude shaders
+UNSET(SUPPORT_SHADERS CACHE)
 
 install(TARGETS sqlux
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/
