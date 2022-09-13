@@ -67,8 +67,8 @@ uniform COMPAT_PRECISION float OUTPUT_GAMMA;
 #define CURVATURE_X 0.05        //0.10
 #define CURVATURE_Y 0.12        // 0.25
 #define MASK_BRIGHTNESS 0.70    // 0.7
-#define SCANLINE_WEIGHT 6.0
-#define SCANLINE_GAP_BRIGHTNESS 0.55 // 0.12
+#define SCANLINE_WEIGHT 5.0
+#define SCANLINE_GAP_BRIGHTNESS 0.60 // 0.12
 #define BLOOM_FACTOR 1.5
 #define INPUT_GAMMA 2.4
 #define OUTPUT_GAMMA 2.2
@@ -186,7 +186,7 @@ void main()
 		dy = dy * dy;
 		dy = dy * dy;
 		dy *= 8.0;
-		dy /= u_tex0Resolution //TextureSize.y;
+		dy /= u_tex0Resolution.y; //TextureSize.y;
 		dy *= signY;
 		vec2 tc = vec2(texcoord.x, yCoord + dy);
 #endif

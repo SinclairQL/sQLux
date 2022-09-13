@@ -228,6 +228,10 @@ int optionParse(int argc, char *argv[])
                 "device for ser3")
             ("SER4", po::value<string>(),
                 "device for ser4")
+            ("SHADER", po::value<int>()->default_value(0),
+                "0 = Disabled, 1 = Use flat shader, 2 = Use curved shader")
+            ("SHADER_FILE", po::value<string>()->default_value("shader.glsl"),
+                "Path to shader file to use if SHADER is non 0")
             ("SKIP_BOOT", po::value<int>()->default_value(1),
                 "1 = skip f1/f2 screen, 0 = show f1/f2 screen")
             ("SOUND", po::value<int>()->default_value(0),

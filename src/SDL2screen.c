@@ -38,12 +38,7 @@ double ql_screen_ratio = 1.0;
 
 SDL_atomic_t doPoll;
 bool screenWritten = false;	// True if screen memory has been written
-bool shaders_selected =
-#ifdef ENABLE_SHADERS
-true;
-#else
-false;
-#endif
+bool shaders_selected = false;
 
 SDL_sem* sem50Hz = NULL;
 
@@ -365,10 +360,19 @@ void QLSDLScreen(void)
 		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
+	int shader = 0;
+#ifdef ENABLE_SHADERS
+	shader = optionInt("SHADER");
+	if ((shader == 1) || (shader == 2)) {
+		shaders_selected = true;
+	}
+#endif
+
 	bool created = false;
 	if (shaders_selected)
 		created = QLGPUCreateDisplay(w , h, (int)lrint(ay),
-				&ql_windowid, sdl_win_name, sdl_window_mode);
+				&ql_windowid, sdl_win_name, sdl_window_mode,
+				shader, optionString("SHADER_FILE"));
 	else
 		created = QLSDLCreateDisplay(w , h, (int)lrint(ay),
 				&ql_windowid, sdl_win_name, sdl_window_mode);
@@ -1060,9 +1064,11 @@ static void setKeyboardLayout (void)
 	if (V1) printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
 }
 
-static void QLSDLProcessMouse(int x, int y)
+
+static void QLSDLProcessMouse(int* qlx, int* qly, int x, int y)
 {
-	int qlx = 0, qly = 0;
+	*qlx = 0;
+	*qly = 0;
 	float x_ratio, y_ratio;
 
 	if (SDL_GetWindowFlags(ql_window) & SDL_WINDOW_ALLOW_HIGHDPI) {
@@ -1071,31 +1077,43 @@ static void QLSDLProcessMouse(int x, int y)
 	}
 
 	if (x < dest_rect.x) {
-		qlx = 0;
+		*qlx = 0;
 	} else if (x > (dest_rect.w + dest_rect.x)) {
-		qlx = qlscreen.xres - 1;
+		*qlx = qlscreen.xres - 1;
 	} else {
 		x_ratio = (float)dest_rect.w / (float)qlscreen.xres;
 
 		x -= dest_rect.x;
 
-		qlx = ((float)x / x_ratio);
+		*qlx = ((float)x / x_ratio);
 	}
 
 	if (y < dest_rect.y) {
-		qly = 0;
+		*qly = 0;
 	} else if (y > (dest_rect.h + dest_rect.y)) {
-		qly = qlscreen.yres - 1;
+		*qly = qlscreen.yres - 1;
 	} else {
 		y_ratio = (float)dest_rect.h / (float)qlscreen.yres;
 
 		y -= dest_rect.y;
 
-		qly = ((float)y / y_ratio);
+		*qly = ((float)y / y_ratio);
 	}
+}
 
+static void QLProcessMouse(int x, int y)
+{
+	int qlx = 0, qly = 0;
+
+	if (shaders_selected)
+		QLGPUProcessMouse(&qlx, &qly, x, y);
+	else
+		QLSDLProcessMouse(&qlx, &qly, x, y);
+
+	//printf("X: %i Y: %i qX: %i qY: %i\n",x, y, qlx, qly);
 	QLMovePointer(qlx, qly);
 }
+
 
 static int QLConvertWhichToIndex(Sint32 which)
 {
@@ -1186,7 +1204,7 @@ void QLSDLProcessEvents(void)
 			return;
 			break;
 		case SDL_MOUSEMOTION:
-			QLSDLProcessMouse(event.motion.x, event.motion.y);
+			QLProcessMouse(event.motion.x, event.motion.y);
 			//inside=1;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
@@ -1199,25 +1217,20 @@ void QLSDLProcessEvents(void)
 			if (event.window.windowID == ql_windowid) {
 				switch (event.window.event) {
 				case SDL_WINDOWEVENT_ENTER:
-					// TO DO!!
 					//SDL_ShowCursor(SDL_DISABLE);
 					break;
 				case SDL_WINDOWEVENT_LEAVE:
 					//SDL_ShowCursor(SDL_ENABLE);
 					break;
 				case SDL_WINDOWEVENT_RESIZED:
-					printf("SDL_WINDOWEVENT_RESIZED\n");
 					if (shaders_selected)
 						QLGPUSetSize(event.window.data1,
 							event.window.data2);
 					SDLQLUpdateScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
-					printf("SDL_WINDOWEVENT_SIZE_CHANGED\n");
-					//SDLQLUpdateScreen();
 					break;
 				case SDL_WINDOWEVENT_EXPOSED:
-					printf("SDL_WINDOWEVENT_EXPOSED\n");
 					SDLQLUpdateScreen();
 					break;
 				}
@@ -1250,6 +1263,9 @@ void QLSDLExit(void)
 #endif
 
 	SDL_RemoveTimer(fiftyhz_timer);
+	if (shaders_selected) {
+		QLGPUClean();
+	}
 }
 
 Uint32 QLSDL50Hz(Uint32 interval, void *param)

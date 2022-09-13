@@ -5,6 +5,14 @@
 #include "SDL2screen.h"
 #include "QL_screen.h"
 
+typedef struct {
+	float x;
+	float y;
+} vec2;
+
+#define CURVATURE_X 0.05
+#define CURVATURE_Y 0.12
+
 static uint32_t* screen_buffer = NULL;
 static GPU_Image* image = 0;
 static GPU_Target* screen = 0;
@@ -15,22 +23,24 @@ static Uint32 shader;
 static GPU_ShaderBlock shader_block;
 static int res_texture_size;
 static int res_screen_size;
+static bool curve = false;
 
 static void UpdateDisplay(GPU_Target* screen);
 static void setViewPort(void);
 static void CreateImage(void);
 static void CreatePalette(void);
-static void convertScreenPosition(int* lx, int* ly, int x, int y);
 
 static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const char* prepend);
 static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* vertex_shader_file,
                                 const char* fragment_shader_file, const char* prepend);
 static void UpdateShader(float x, float y, float a, float b);
 static void FreeShader(Uint32 p);
+static void Distort(float* x, float* y);
 
+/* Initialise the display and set up the shaders */
 bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
-			const char* name, uint32_t sdl_window_mode)
-
+			const char* name, uint32_t sdl_window_mode,
+			int shader_type, const char* shader_path)
 {
 	bool ret = false;
 	screen = GPU_Init(w, h, GPU_DEFAULT_INIT_FLAGS | sdl_window_mode);
@@ -48,14 +58,26 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 		CreateImage();
 		CreatePalette();
 
-		//ret = LoadShaderProgram(&shader_block, &shader, "crt-pi.glsl", "crt-pi.glsl", "#define CURVATURE");
-		ret = LoadShaderProgram(&shader_block, &shader, "crt-pi.glsl", "crt-pi.glsl", NULL);
-		res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
-		res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
+		// Configure the shaders
+		const char* prepend = NULL;
+
+		if (shader_type == 2) {
+			prepend = "#define CURVATURE\n";
+			curve = true;
+		}
+
+		ret = LoadShaderProgram(&shader_block, &shader, shader_path,
+					shader_path, prepend);
+
+		if (ret) {
+			res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
+			res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
+		}
 	}
 	return ret;
 }
 
+/* Tidy up the memory and resources at shut down */
 void QLGPUClean(void) {
 
 	if (image)
@@ -65,16 +87,20 @@ void QLGPUClean(void) {
 	GPU_Quit();
 }
 
+/* Update the display using sdl_gpu */
 void QLGPUUpdateDisplay(void)
 {
 	// Update the display memory
     	QLSDLWritePixels(screen_buffer);
-    	setViewPort();
 
+	// Update the image using the updated memory buffer
     	GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
 
-    	// Render to screen
-	GPU_ClearRGBA(screen, 0, 0, 0, 0);
+	// Ensure the aspect ratio of the display is maintained
+    	setViewPort();
+
+    	// Render to screen, using the active shader
+	GPU_ClearRGB(screen, 0, 0, 255);
 	GPU_ActivateShaderProgram(shader, &shader_block);
 	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres, (float)screen->base_w, (float)screen->base_h);
 	GPU_BlitRect(image, NULL, screen, NULL);
@@ -82,21 +108,53 @@ void QLGPUUpdateDisplay(void)
 	GPU_Flip(screen);
 }
 
+/* sdl_gpu requires the window resolution set after a change in window size */
 void QLGPUSetSize(int w, int h)
 {
 	GPU_SetWindowResolution(w, h);
 }
 
-/* Static functions */
+/* Convert the mouse coordinates into QL screen coordinates */
+void QLGPUProcessMouse(int* qlx, int* qly, int x, int y)
+{
+	*qlx = x - screen_rect.x;
+	*qly = y - screen_rect.y;
+	*qlx = (*qlx * qlscreen.xres + 0.5) / screen_rect.w;
+	*qly = (*qly * qlscreen.yres + 0.5) / screen_rect.h;
+
+	*qlx = (*qlx > 0) ? *qlx : 0;
+	*qlx = (*qlx < qlscreen.xres) ? *qlx : qlscreen.xres - 1;
+	*qly = (*qly > 0) ? *qly : 0;
+	*qly = (*qly < qlscreen.yres) ? *qly : qlscreen.yres - 1;
+
+	// Now in range 0 to qlscreen.xres, 0 to qlscreen.yres
+	float fx = (float)(*qlx - qlscreen.xres / 2) /(float)(qlscreen.xres);
+	float fy = (float)(*qly - qlscreen.yres / 2) /(float)(qlscreen.yres);
+	printf("x: %7.3f y: %7.3f\n", fx, fy);
+
+	if (curve)
+		Distort(&fx, &fy);
+
+	printf("x: %7.3f y: %7.3f\n", fx, fy);
+}
+
+/* Move to and from fullscreen mode */
 void QLGPUSetFullscreen(void)
 {
 	GPU_SetFullscreen(ql_fullscreen, true);
 
 	if (!ql_fullscreen) {
+		// Need to set the window resolution after
+		// return from fullscreen
 		GPU_SetWindowResolution(screen->w, screen->h);
 	}
 }
 
+/*
+ * Static functions
+ */
+
+/* create a surface and memory buffer for the display */
 static void CreateImage(void)
 {
     	// Create an image and surface
@@ -108,6 +166,7 @@ static void CreateImage(void)
 	image = GPU_CreateImage(qlscreen.xres, qlscreen.yres, GPU_FORMAT_RGBA);
 }
 
+/* Create the colour or grey palette of QL colours */
 static void CreatePalette(void)
 {
 	SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA32);
@@ -115,6 +174,7 @@ static void CreatePalette(void)
 	SDL_FreeFormat(format);
 }
 
+/* Ensure that the screen aspect ratio is preserved */
 static void setViewPort(void)
 {
 	static int width = -1;
@@ -132,10 +192,10 @@ static void setViewPort(void)
 		printf("Width: %i Height: %i Ratio: 6.3f %s\n", w, h,
 		        ql_screen_ratio, ql_fullscreen ? "fullscreen" : "not fullscreen");
 
-		// TO DO: Fix to even pixel width
 		if (ql_fullscreen) {
 			printf("setViewPort: Full screen\n");
 			// Largest integer pixel height
+			// note deliberately ignore larger screen heights
 			screen_rect.h = (h / 256) * 256;
 			screen_rect.w = (int)(ql_screen_ratio * (float)screen_rect.h);
 			screen_rect.x = (w - screen_rect.w) / 2;
@@ -174,20 +234,44 @@ static void setViewPort(void)
 	}
 }
 
-static void convertScreenPosition(int* lx, int* ly, int x, int y)
+static void Distort(float* x, float* y)
 {
-	printf(" A %i B %i\n", qlscreen.xres, screen_rect.w);
-	*lx = x - screen_rect.x;
-	*ly = y - screen_rect.y;
-	*lx = (*lx * qlscreen.xres + 0.5) / screen_rect.w;
-	*ly = (*ly * qlscreen.yres + 0.5) / screen_rect.h;
+	vec2 coord;
+	coord.x = *x;
+	coord.y = *y;
 
-	*lx = (*lx > 0) ? *lx : 0;
-	*lx = (*lx < qlscreen.xres) ? *lx : qlscreen.xres - 1;
-	*ly = (*ly > 0) ? *ly : 0;
-	*ly = (*ly < qlscreen.yres) ? *ly : qlscreen.yres - 1;
+	vec2 CURVATURE_DISTORTION;
+	CURVATURE_DISTORTION.x = CURVATURE_X;
+	CURVATURE_DISTORTION.y = CURVATURE_Y;
+
+	// Barrel distortion shrinks the display area a bit, this will allow us to counteract that.
+	vec2 barrelScale;
+	barrelScale.x = 1.0 - 0.23 * CURVATURE_DISTORTION.x;
+	barrelScale.y = 1.0 - 0.23 * CURVATURE_DISTORTION.y;
+
+	coord.x -= 0.5;
+	coord.y -= 0.5;
+
+	float rsq = coord.x * coord.x + coord.y * coord.y;
+
+	coord.x += coord.x * CURVATURE_DISTORTION.x * rsq;
+	coord.y += coord.y * CURVATURE_DISTORTION.y * rsq;
+
+	coord.x *= barrelScale.x;
+	coord.y *= barrelScale.y;
+
+	if ((abs(coord.x) >= 0.5) || (abs(coord.y) >= 0.5)) {
+		coord.x = -1.0;		// If out of bounds, return an invalid value.
+		coord.y = -1.0;		// If out of bounds, return an invalid value.
+	}
+	else {
+		coord.x += 0.5;
+		coord.y += 0.5;
+	}
+
+	*x = coord.x;
+	*y = coord.y;
 }
-
 
 // Loads a shader and prepends version/compatibility info before compiling it.
 // Normally, GPU_LoadShader() can be used for shader source files and GPU_CompileShader() for strings.
@@ -206,9 +290,7 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 
 	// Open file
 	rwops = SDL_RWFromFile(filename, "rb");
-	if (rwops == NULL)
-	{
-		GPU_LogError("load_shader: Shader file \"%s\" not found", filename);
+	if (rwops == NULL) {
 		return 0;
 	}
 
@@ -217,21 +299,18 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 	SDL_RWseek(rwops, 0, SEEK_SET);
 
 	// Get size from header
-	if (renderer->shader_language == GPU_LANGUAGE_GLSL)
-	{
+	if (renderer->shader_language == GPU_LANGUAGE_GLSL) {
 		printf("Shader Language: GPU_LANGUAGE_GLSL\n");
 		if (renderer->max_shader_version >= 120)
 			header = "#version 120\n";
 		else
 			header = "#version 110\n";
 	}
-	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES)
-	{
+	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES) {
 		printf("Shader Language: GPU_LANGUAGE_GLSLES\n");
 		header = "#version 100\nprecision mediump int;\nprecision mediump float;\n";
 	}
-	else
-	{
+	else {
 		printf("Shader Language Enum: %i\n", renderer->shader_language);
 	}
 
@@ -240,17 +319,14 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 	header_size = (int)strlen(header);
 
 	// Add a preprocessor directive
-	if (shader_type == GPU_VERTEX_SHADER)
-	{
+	if (shader_type == GPU_VERTEX_SHADER) {
 		directive = "#define VERTEX\n";
-	} else if (shader_type == GPU_FRAGMENT_SHADER)
-	{
+	} else if (shader_type == GPU_FRAGMENT_SHADER) {
 		directive = "#define FRAGMENT\n";
 	}
 	directive_size = (int)strlen(directive);
 
-	if (prepend)
-	{
+	if (prepend) {
 		prepend_size = (int)strlen(prepend);
 	}
 
@@ -261,8 +337,7 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 	// Allocate source buffer
 	source = (char*)malloc(source_size);
 
-	if (source == NULL)
-	{
+	if (source == NULL) {
 		GPU_LogError("malloc failed\n");
 		return 0;
 	}
@@ -310,8 +385,7 @@ static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* ve
 
 	*p = GPU_LinkShaders(v, f);
 
-	if (!*p)
-	{
+	if (!*p) {
 		GPU_LogError("Failed to link shader program (%s + %s): %s\n", vertex_shader_file, fragment_shader_file, GPU_GetShaderMessage());
 		return false;
 	}
@@ -338,14 +412,13 @@ static void UpdateShader(float x, float y, float a, float b)
 #else
 /* Empry functions, for when shaders not enabled */
 bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
-			const char* name, uint32_t sdl_window_mode) {
+			const char* name, uint32_t sdl_window_mode,
+			int shader_type, const char* shader_path) {
 	return true;
 }
 void QLGPUUpdateDisplay(void) {}
 void QLGPUSetFullscreen(void) {}
 void QLGPUSetSize(int w, int h) {}
-
-
-
+void QLGPUProcessMouse(int* qlx, int* qly, int x, int y) {}
+void QLGPUClean(void) {}
 #endif
-
