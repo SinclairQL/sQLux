@@ -26,18 +26,22 @@ static GPU_ShaderBlock shader_block;
 static int res_texture_size;
 static int res_screen_size;
 static bool curve = false;
+static float curve_x;
+static float curve_y;
 
 static void UpdateDisplay(GPU_Target* screen);
 static void setViewPort(void);
 static void CreateImage(void);
 static void CreatePalette(void);
 
-static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const char* prepend);
-static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* vertex_shader_file,
-                                const char* fragment_shader_file, const char* prepend);
+static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
+        		int data_size, const char* prepend);
+static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* shader_file,
+                              	const char* prepend, bool curve, float* curve_x, float* curve_y);
 static void UpdateShader(float x, float y, float a, float b);
 static void FreeShader(Uint32 p);
 static void Distort(float* x, float* y);
+static void ReadCurve(char* data, float* x, float* y);
 
 /* Initialise the display and set up the shaders */
 bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
@@ -64,21 +68,13 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 		char* prepend = NULL;
 
 		if (shader_type == 2) {
-			prepend = malloc(100);
-			if (prepend) {
-				sprintf(prepend,
-				        "#define CURVATURE\n#define CURVATURE_X %4.2f\n#define CURVATURE_Y %4.2f\n",
-					CURVATURE_X, CURVATURE_Y);
-				printf("%s", prepend);
-				curve = true;
-			}
+			prepend = "#define CURVATURE\n";
+			curve = true;
 		}
 
-		ret = LoadShaderProgram(&shader_block, &shader, shader_path,
-					shader_path, prepend);
-
-		if (prepend)
-			free(prepend);
+		ret = LoadShaderProgram(&shader_block, &shader,
+					shader_path, prepend,
+					curve, &curve_x, &curve_y);
 
 		if (ret) {
 			res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
@@ -204,11 +200,7 @@ static void setViewPort(void)
 		width = w;
 		height = h;
 
-		printf("Width: %i Height: %i Ratio: 6.3f %s\n", w, h,
-		        ql_screen_ratio, ql_fullscreen ? "fullscreen" : "not fullscreen");
-
 		if (ql_fullscreen) {
-			printf("setViewPort: Full screen\n");
 			// Largest integer pixel height
 			// note deliberately ignore larger screen heights
 			screen_rect.h = (h / 256) * 256;
@@ -218,21 +210,18 @@ static void setViewPort(void)
 		}
 		else {
 			if (fabs((float)w - (2.0 * (float)h) / ql_screen_ratio) < 3.0) {
-				printf("setViewPort: fit\n");
 				screen_rect.h = h;
 				screen_rect.w = w;
 				screen_rect.x = 0;
 				screen_rect.y = 0;
 			}
 			else if ((2.0 * (float)h) / ql_screen_ratio < (float)w) {
-				printf("setViewPort: scale to h\n");
 				screen_rect.h = h;
 				screen_rect.w = (int)((2.0 * (float)h) / ql_screen_ratio);
 				screen_rect.x = (w - screen_rect.w) / 2;
 				screen_rect.y = 0;
 			}
 			else {
-				printf("setViewPort: scale to w\n");
 				screen_rect.w = w;
 				screen_rect.h = (int)((float)w * ql_screen_ratio / 2.0);
 				screen_rect.x = 0;
@@ -244,7 +233,6 @@ static void setViewPort(void)
 		frect.w = (float)screen_rect.w;
 		frect.h = (float)screen_rect.h;
 
-		printf("x:%6.1f y:%6.1f w:%6.1f h:%6.1f\n",frect.x, frect.y, frect.w, frect.h);
 		GPU_SetViewport(screen, frect);
 	}
 }
@@ -283,47 +271,27 @@ static void Distort(float* x, float* y)
 }
 
 // Loads a shader and prepends version/compatibility info before compiling it.
-// Normally, GPU_LoadShader() can be used for shader source files and GPU_CompileShader() for strings.
-// However, some hardware (certain ATI/AMD cards) does not support  non-#version preprocessing at the top of the file.
 // This prepends the version info so that both GLSL and GLSLES can be supported with one shader file.
-static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const char* prepend)
+static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
+			int data_size, const char* prepend)
 {
-	SDL_RWops* rwops;
 	Uint32 shader;
 	char* source;
-	int header_size, directive_size, file_size;
+	int header_size, directive_size;
 	int prepend_size = 0;
 	const char* header = "";
 	const char* directive = "";
 	GPU_Renderer* renderer = GPU_GetCurrentRenderer();
 
-	// Open file
-	rwops = SDL_RWFromFile(filename, "rb");
-	if (rwops == NULL) {
-		return 0;
-	}
-
-	// Get file size
-	file_size = (int)SDL_RWseek(rwops, 0, SEEK_END);
-	SDL_RWseek(rwops, 0, SEEK_SET);
-
-	// Get size from header
 	if (renderer->shader_language == GPU_LANGUAGE_GLSL) {
-		printf("Shader Language: GPU_LANGUAGE_GLSL\n");
 		if (renderer->max_shader_version >= 120)
 			header = "#version 120\n";
 		else
 			header = "#version 110\n";
 	}
 	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES) {
-		printf("Shader Language: GPU_LANGUAGE_GLSLES\n");
 		header = "#version 100\nprecision mediump int;\nprecision mediump float;\n";
 	}
-	else {
-		printf("Shader Language Enum: %i\n", renderer->shader_language);
-	}
-
-	printf("Shader Version %i\n", renderer->max_shader_version);
 
 	header_size = (int)strlen(header);
 
@@ -334,14 +302,12 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 		directive = "#define FRAGMENT\n";
 	}
 	directive_size = (int)strlen(directive);
-
-	if (prepend) {
+	if (prepend)
 		prepend_size = (int)strlen(prepend);
-	}
 
 	int pre_source_size = header_size + directive_size + prepend_size;
 
-	int source_size = (int)(sizeof(char)) * (pre_source_size + file_size + 1);
+	int source_size = (int)(sizeof(char)) * (pre_source_size + data_size + 1);
 
 	// Allocate source buffer
 	source = (char*)malloc(source_size);
@@ -355,52 +321,130 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* filename, const
 	strcpy(source, header);
 	strcpy(source + header_size, directive);
 
-	if (prepend_size) {
+	if (prepend_size)
 		strcpy(source + header_size + directive_size, prepend);
-	}
 
-	// Read in source code
-	SDL_RWread(rwops, source + pre_source_size, 1, file_size);
-	source[pre_source_size + file_size] = '\0';
+	// Copy the file contents
+	memcpy(source + pre_source_size, data, data_size);
+	source[pre_source_size + data_size] = '\0';
 
 	// Compile the shader
 	shader = GPU_CompileShader(shader_type, source);
 
 	// Clean up
 	free(source);
-	SDL_RWclose(rwops);
 
 	return shader;
 }
 
-static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* vertex_shader_file,
-                                const char* fragment_shader_file, const char* prepend)
+/* Reads curve data from shader program file */
+static void ReadCurve(char* data, float* x, float* y) {
+
+	*x = 1e8;
+	*y = 1e8;
+
+	// Walk through tokens
+	const char delimiters[] = " \t\n";
+   	char* token;
+	bool define = false;
+
+   	token = strtok(data, delimiters);
+
+   	while( token != NULL ) {
+		if (define) {
+			if (!strcmp(token, "CURVATURE_X")) {
+      			token = strtok(NULL, delimiters);
+
+				if (token)
+					*x = strtof(token, NULL);
+			}
+			else if (!strcmp(token, "CURVATURE_Y"))	{
+      			token = strtok(NULL, delimiters);
+
+				if (token)
+					*y = strtof(token, NULL);
+			}
+		}
+		define = !strcmp(token, "#define");
+		if (token)
+      			token = strtok(NULL, delimiters);
+   	}
+
+	if (*x == 1e8 || *y == 1e8) {
+		printf("Cannot read curve data\n");
+		*x = 1.0;
+		*y = 1.0;
+	}
+}
+
+/*
+   Loads shader, compiles once with vertex and once with fragment defines.
+   Links results and optionally extracts and returns curvature defines
+*/
+static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* shader_file,
+                              const char* prepend, bool curve, float* curve_x, float* curve_y)
 {
 	bool ret = false;
 	Uint32 v, f;
-	v = LoadShader(GPU_VERTEX_SHADER, vertex_shader_file, prepend);
+	SDL_RWops* rwops;
+	char* source;
+	int file_size;
 
-	if (!v) {
-		GPU_LogError("Failed to load vertex shader (%s): %s\n", vertex_shader_file, GPU_GetShaderMessage());
+	// Allocate memory and read in data
+	rwops = SDL_RWFromFile(shader_file, "rb");
+	if (rwops == NULL) {
+		GPU_LogError("Cannot open shader file %s\n");
 		return false;
 	}
 
-	f = LoadShader(GPU_FRAGMENT_SHADER, fragment_shader_file, prepend);
+	// Get file size
+	file_size = (int)SDL_RWseek(rwops, 0, SEEK_END);
+	SDL_RWseek(rwops, 0, SEEK_SET);
+
+	// Allocate source buffer
+	source = (char*)malloc(file_size + 1);
+
+	if (source == NULL) {
+		GPU_LogError("malloc failed\n");
+		return false;
+	}
+
+	// Read in source code
+	SDL_RWread(rwops, source, 1, file_size);
+	source[file_size] = '\0';
+
+	v = LoadShader(GPU_VERTEX_SHADER, source, file_size, prepend);
+
+	if (!v) {
+		GPU_LogError("Failed to load vertex shader (%s): %s\n", shader_file, GPU_GetShaderMessage());
+		free(source);
+		return false;
+	}
+
+	f = LoadShader(GPU_FRAGMENT_SHADER, source, file_size, prepend);
 
 	if (!f) {
-		GPU_LogError("Failed to load fragment shader (%s): %s\n", fragment_shader_file, GPU_GetShaderMessage());
+		GPU_LogError("Failed to load fragment shader (%s): %s\n", shader_file, GPU_GetShaderMessage());
+		free(source);
 		return false;
 	}
 
 	*p = GPU_LinkShaders(v, f);
 
 	if (!*p) {
-		GPU_LogError("Failed to link shader program (%s + %s): %s\n", vertex_shader_file, fragment_shader_file, GPU_GetShaderMessage());
+		GPU_LogError("Failed to link shader program (%s): %s\n", shader_file, GPU_GetShaderMessage());
+		free(source);
 		return false;
+	}
+
+	// Read the curvature variables
+	if (curve && curve_x && curve_y) {
+		ReadCurve(source, curve_x, curve_y);
 	}
 
 	*shader = GPU_LoadShaderBlock(*p, "gpu_Vertex", "gpu_TexCoord", "gpu_Color", "gpu_ModelViewProjectionMatrix");
 	GPU_ActivateShaderProgram(*p, shader);
+	free(source);
 	return true;
 }
 
@@ -419,7 +463,7 @@ static void UpdateShader(float x, float y, float a, float b)
 }
 
 #else
-/* Empry functions, for when shaders not enabled */
+/* Empty functions, for when shaders not enabled */
 bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 			const char* name, uint32_t sdl_window_mode,
 			int shader_type, const char* shader_path) {

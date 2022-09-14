@@ -2,6 +2,7 @@
     crt-pi - A Raspberry Pi friendly CRT shader.
 
     Copyright (C) 2015-2016 davej
+	Modified 2022 for sQLux
 
     This program is free software; you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -32,7 +33,6 @@ MASK_TYPE defines what, if any, shadow mask to use. MASK_BRIGHTNESS defines how 
 #define MULTISAMPLE
 #define GAMMA
 //#define FAKE_GAMMA
-//#define CURVATURE
 //#define SHARPER
 // MASK_TYPE: 0 = none, 1 = green/magenta, 2 = trinitron(ish)
 #define MASK_TYPE 1
@@ -45,11 +45,11 @@ precision mediump float;
 #define COMPAT_PRECISION
 #endif
 
-//#define CURVATURE_X 0.05        //0.10
-//#define CURVATURE_Y 0.12        // 0.25
-#define MASK_BRIGHTNESS 0.70    // 0.7
+#define CURVATURE_X 0.06
+#define CURVATURE_Y 0.12
+#define MASK_BRIGHTNESS 0.70
 #define SCANLINE_WEIGHT 5.0
-#define SCANLINE_GAP_BRIGHTNESS 0.60 // 0.12
+#define SCANLINE_GAP_BRIGHTNESS 0.60
 #define BLOOM_FACTOR 1.5
 #define INPUT_GAMMA 2.4
 #define OUTPUT_GAMMA 2.2
@@ -58,7 +58,7 @@ precision mediump float;
    - GLSL compilers
 */
 
-uniform vec2 u_tex0Resolution; //uniform vec2 TextureSize;
+uniform vec2 u_tex0Resolution;
 #if defined(CURVATURE)
 varying vec2 screenScale;
 #endif
@@ -66,22 +66,16 @@ varying vec2 TEX0;
 varying float filterWidth;
 
 #if defined(VERTEX)
-uniform mat4 gpu_ModelViewProjectionMatrix; // MVPMatrix;
-attribute vec3 gpu_Vertex;   //attribute vec4 VertexCoord;
-attribute vec2 gpu_TexCoord; // TexCoord;
-uniform vec2 u_resolution;   // u_resolution
-
-//uniform vec2 InputSize;
-//uniform vec2 OutputSize;
+uniform mat4 gpu_ModelViewProjectionMatrix;
+attribute vec3 gpu_Vertex;
+attribute vec2 gpu_TexCoord;
+uniform vec2 u_resolution;
 
 void main()
 {
 #if defined(CURVATURE)
-	screenScale = vec2(1.0,1.0); // screenScale = TextureSize / InputSize;
+	screenScale = vec2(1.0,1.0);
 #endif
-	//filterWidth = (InputSize.y / OutputSize.y) / 3.0;
-	//TEX0 = TexCoord*1.0001;
-	//gl_Position = MVPMatrix * VertexCoord;
     filterWidth = (u_tex0Resolution.y / u_resolution.y) / 3.0;
     TEX0 = gpu_TexCoord * 1.0001;
 	gl_Position = gpu_ModelViewProjectionMatrix * vec4(gpu_Vertex, 1.0);
@@ -89,7 +83,7 @@ void main()
 }
 #elif defined(FRAGMENT)
 
-uniform sampler2D tex; // uniform sampler2D Texture;
+uniform sampler2D tex;
 
 #if defined(CURVATURE)
 vec2 Distort(vec2 coord)
@@ -141,10 +135,10 @@ void main()
 	vec2 texcoord = TEX0;
 #endif
 	{
-		vec2 texcoordInPixels = texcoord * u_tex0Resolution; // TextureSize;
+		vec2 texcoordInPixels = texcoord * u_tex0Resolution;
 #if defined(SHARPER)
 		vec2 tempCoord = floor(texcoordInPixels) + 0.5;
-		vec2 coord = tempCoord / u_tex0Resolution; // TextureSize;
+		vec2 coord = tempCoord / u_tex0Resolution;
 		vec2 deltas = texcoordInPixels - tempCoord;
 		float scanLineWeight = CalcScanLine(deltas.y);
 		vec2 signs = sign(deltas);
@@ -153,12 +147,12 @@ void main()
 		deltas.y = deltas.y * deltas.y;
 		deltas.x *= 0.5;
 		deltas.y *= 8.0;
-		deltas /= u_tex0Resolution; // TextureSize;
+		deltas /= u_tex0Resolution;
 		deltas *= signs;
 		vec2 tc = coord + deltas;
 #else
 		float tempY = floor(texcoordInPixels.y) + 0.5;
-		float yCoord = tempY / u_tex0Resolution.y; // TextureSize.y;
+		float yCoord = tempY / u_tex0Resolution.y;
 
 		float dy = texcoordInPixels.y - tempY;
 		float scanLineWeight = CalcScanLine(dy);
@@ -166,12 +160,12 @@ void main()
 		dy = dy * dy;
 		dy = dy * dy;
 		dy *= 8.0;
-		dy /= u_tex0Resolution.y; //TextureSize.y;
+		dy /= u_tex0Resolution.y;
 		dy *= signY;
 		vec2 tc = vec2(texcoord.x, yCoord + dy);
 #endif
 
-		vec3 colour = texture2D(tex, tc).rgb; //Texture
+		vec3 colour = texture2D(tex, tc).rgb;
 
 #if defined(SCANLINES)
 #if defined(GAMMA)
