@@ -77,7 +77,8 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 					curve, &curve_x, &curve_y);
 
 		if (ret) {
-			res_texture_size = GPU_GetUniformLocation(shader, "u_tex0Resolution");
+			// TO DO rename
+			res_texture_size = GPU_GetUniformLocation(shader, "TextureSize");
 			res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
 		}
 	}
@@ -162,7 +163,7 @@ void QLGPUSetFullscreen(void)
 }
 
 /*
- * Static functions
+ * Internal functions
  */
 
 /* create a surface and memory buffer for the display */
@@ -200,13 +201,20 @@ static void setViewPort(void)
 		width = w;
 		height = h;
 
-		if (ql_fullscreen) {
+		if (0) {
 			// Largest integer pixel height
 			// note deliberately ignore larger screen heights
-			screen_rect.h = (h / 256) * 256;
-			screen_rect.w = (int)(ql_screen_ratio * (float)screen_rect.h);
+			// maximum height that will fit width
+			int max_height = (int)((float)w * ql_screen_ratio / 2.0);
+
+			screen_rect.h = (max_height < h) ? max_height :h;
+			screen_rect.h = (screen_rect.h / 256) * 256;
+			screen_rect.w = (int)((2.0 * (float)h) / ql_screen_ratio);
 			screen_rect.x = (w - screen_rect.w) / 2;
 			screen_rect.y = (h - screen_rect.h) / 2;
+
+			printf("x: %i y: %i w %i h:%i\n", screen_rect.x, screen_rect.y,
+			screen_rect.w, screen_rect.h);
 		}
 		else {
 			if (fabs((float)w - (2.0 * (float)h) / ql_screen_ratio) < 3.0) {
@@ -442,7 +450,7 @@ static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* sh
 		ReadCurve(source, curve_x, curve_y);
 	}
 
-	*shader = GPU_LoadShaderBlock(*p, "gpu_Vertex", "gpu_TexCoord", "gpu_Color", "gpu_ModelViewProjectionMatrix");
+	*shader = GPU_LoadShaderBlock(*p, "VertexCoord", "TexCoord", "gl_Color", "MVPMatrix");
 	GPU_ActivateShaderProgram(*p, shader);
 	free(source);
 	return true;
