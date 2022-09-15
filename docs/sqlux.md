@@ -357,6 +357,19 @@ Enables a greyscale display. Disabled by default (so the display is in colour).
 ```
 GRAY = 1
 ```
+`SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel disortion. Disabled by default.  
+Note that sQLux must have been compiled with shader support. See the [Shader documentation](docs/shaders.md) for more details.
+
+```
+SHADER = 2
+```
+
+`SHADER_FILE`
+The path to the GPU shader (written in OpenGL Shading Language) that is loaded when `SHADER` is set to 1 or 2.
+
+```
+SHADER_FILE = ../shaders/crt-pi.glsl
+```
 
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
