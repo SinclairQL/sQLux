@@ -54,31 +54,21 @@ precision mediump float;
 #define INPUT_GAMMA 2.4
 #define OUTPUT_GAMMA 2.2
 
-/* COMPATIBILITY
-   - GLSL compilers
-*/
-
-uniform vec2 u_tex0Resolution;
-#if defined(CURVATURE)
-varying vec2 screenScale;
-#endif
+uniform vec2 TextureSize;
 varying vec2 TEX0;
 varying float filterWidth;
 
 #if defined(VERTEX)
-uniform mat4 gpu_ModelViewProjectionMatrix;
-attribute vec3 gpu_Vertex;
-attribute vec2 gpu_TexCoord;
+uniform mat4 MVPMatrix;
+attribute vec3 VertexCoord;
+attribute vec2 TexCoord;
 uniform vec2 u_resolution;
 
 void main()
 {
-#if defined(CURVATURE)
-	screenScale = vec2(1.0,1.0);
-#endif
-    filterWidth = (u_tex0Resolution.y / u_resolution.y) / 3.0;
-    TEX0 = gpu_TexCoord * 1.0001;
-	gl_Position = gpu_ModelViewProjectionMatrix * vec4(gpu_Vertex, 1.0);
+    filterWidth = (TextureSize.y / u_resolution.y) / 3.0;
+    TEX0 = TexCoord * 1.0001;
+	gl_Position = MVPMatrix * vec4(VertexCoord, 1.0);
 
 }
 #elif defined(FRAGMENT)
@@ -91,7 +81,6 @@ vec2 Distort(vec2 coord)
 	vec2 CURVATURE_DISTORTION = vec2(CURVATURE_X, CURVATURE_Y);
 	// Barrel distortion shrinks the display area a bit, this will allow us to counteract that.
 	vec2 barrelScale = 1.0 - (0.23 * CURVATURE_DISTORTION);
-	coord *= screenScale;
 	coord -= vec2(0.5);
 	float rsq = coord.x * coord.x + coord.y * coord.y;
 	coord += coord * (CURVATURE_DISTORTION * rsq);
@@ -101,7 +90,6 @@ vec2 Distort(vec2 coord)
 	else
 	{
 		coord += vec2(0.5);
-		coord /= screenScale;
 	}
 
 	return coord;
@@ -135,10 +123,10 @@ void main()
 	vec2 texcoord = TEX0;
 #endif
 	{
-		vec2 texcoordInPixels = texcoord * u_tex0Resolution;
+		vec2 texcoordInPixels = texcoord * TextureSize;
 #if defined(SHARPER)
 		vec2 tempCoord = floor(texcoordInPixels) + 0.5;
-		vec2 coord = tempCoord / u_tex0Resolution;
+		vec2 coord = tempCoord / TextureSize;
 		vec2 deltas = texcoordInPixels - tempCoord;
 		float scanLineWeight = CalcScanLine(deltas.y);
 		vec2 signs = sign(deltas);
@@ -147,12 +135,12 @@ void main()
 		deltas.y = deltas.y * deltas.y;
 		deltas.x *= 0.5;
 		deltas.y *= 8.0;
-		deltas /= u_tex0Resolution;
+		deltas /= TextureSize;
 		deltas *= signs;
 		vec2 tc = coord + deltas;
 #else
 		float tempY = floor(texcoordInPixels.y) + 0.5;
-		float yCoord = tempY / u_tex0Resolution.y;
+		float yCoord = tempY / TextureSize.y;
 
 		float dy = texcoordInPixels.y - tempY;
 		float scanLineWeight = CalcScanLine(dy);
@@ -160,7 +148,7 @@ void main()
 		dy = dy * dy;
 		dy = dy * dy;
 		dy *= 8.0;
-		dy /= u_tex0Resolution.y;
+		dy /= TextureSize.y;
 		dy *= signY;
 		vec2 tc = vec2(texcoord.x, yCoord + dy);
 #endif
