@@ -11,6 +11,18 @@ sQLux adds several features over the uQlx base code. See the [Documentation](doc
 sQLux is in active development, with new functionality added regularly. However, the latest releases and packages are suitable for normal use.
 
 # Building
+## Dependencies
+### Debian/Ubuntu
+
+```
+apt install build-essential cmake git libboost-program-options-dev libboost-system-dev libsdl2-dev
+```
+### Fedora
+
+```
+dnf install boost-devel boost-static cmake gcc gcc-c++ git SDL2-devel
+```
+
 ## Building Linux
 
 sQLux has switched to using cmake as its build system
