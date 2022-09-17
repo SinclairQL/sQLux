@@ -43,7 +43,7 @@ endif()
 find_package(Git)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.36.0 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.36.0 REQUIRED COMPONENTS program_options system)
 
 add_custom_target( SubmarineGitVersion
     COMMAND ${CMAKE_COMMAND}

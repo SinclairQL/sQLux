@@ -4,6 +4,7 @@
 
 
 #ifndef IE_XL
+#include <stdlib.h>
 #include <errno.h>
 
 #include "QL68000.h"

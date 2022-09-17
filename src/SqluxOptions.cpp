@@ -6,6 +6,7 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
+#include <boost/process/environment.hpp>
 
 extern "C" {
     #include <sys/stat.h>
@@ -19,6 +20,7 @@ namespace emulator
 using namespace std;
 namespace po = boost::program_options;
 namespace po_style = boost::program_options::command_line_style;
+namespace pid = boost::this_process;
 
 static po::variables_map vm;
 
@@ -90,7 +92,7 @@ void deviceInstall(std::vector<string> device)
                 auto hex = fileString.find("%x");
                 if (hex != string::npos) {
                     char tbuf[17];
-                    snprintf(tbuf, 17, "%x", getpid());
+                    snprintf(tbuf, 17, "%x", pid::get_id());
                     fileString.erase(hex, 2);
                     fileString.insert(hex, tbuf);
                 }
