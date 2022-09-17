@@ -1,6 +1,7 @@
 #include "GPUshaders.h"
 
 #ifdef ENABLE_SHADERS
+#include <string.h>
 #include <SDL_gpu.h>
 #include "SDL2screen.h"
 #include "QL_screen.h"
