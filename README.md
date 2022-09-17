@@ -27,16 +27,19 @@ Basic instructions
 Instructions based on debian/ubuntu distro, for other distros you will have to modify as appropriate
 
 Download the SDL2 mingw SDK and adapt the following to your environment/version.
+The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases): 
 
-    tar xvf SDL2-devel-2.0.14-mingw.tar.gz
-    cd cd SDL2-2.0.14/
+    tar xvf SDL2-devel-2.0.18-mingw.tar.gz
+    cd SDL2-devel-2.0.18/
     sed -i "s|/opt/local/|/usr/local/|" x86_64-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
     sed -i "s|/opt/local/|/usr/local/|" i686-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
     sudo mkdir /usr/local/i686-w64-mingw32
     sudo mkdir /usr/local/x86_64-w64-mingw32
     sudo make cross
 
-Now the mingw version of SDL2 is available and we can build sQLux for Win64
+Download, build and install a mingw version of the boost libraries. Instructions are given [here](https://github.com/libmingw-w64/libboost-mingw-w64)  
+   
+Now the mingw versions of SDL2 and boost is available and we can build sQLux for Win64
 
     mkdir mingw
     cd mingw
