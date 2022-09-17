@@ -58,7 +58,7 @@ jobs:
             case "${{ matrix.distro }}" in
               ubuntu*|jessie|stretch|buster|bullseye)
                 apt-get update -q -y
-                apt-get install -q -y git libsdl2-dev cmake gcc g++ make libboost-dev libboost-program-options-dev
+                apt-get install -q -y git libsdl2-dev cmake gcc g++ make libboost-dev libboost-program-options-dev libboost-system-dev
                 ;;
               fedora*)
                 dnf -y update
