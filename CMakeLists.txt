@@ -11,6 +11,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 
 if (SUPPORT_SHADERS)
     message("Enabling shader support")
+    set(INSTALL_LIBRARY "FALSE")
+    set(BUILD_DEMOS "FALSE")
+    set(BUILD_SHARED "FALSE")
+    set(BUILD_STATIC "TRUE")
+    set(GPU_DISABLE_WARNINGS "TRUE")
+    add_subdirectory(sdl-gpu)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SHADERS")
 endif()
 
@@ -58,17 +64,16 @@ add_custom_target( SubmarineGitVersion
         -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake
 )
 
-
 find_package(SDL2 REQUIRED)
 
 if (SUPPORT_SHADERS)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        set(SDL2_GPU_INCLUDE_DIRS "./sdl-gpu/SDL_gpu-MINGW/include")
-        set(SDL2_GPU_LIB_DIRS "-L../sdl-gpu/SDL_gpu-MINGW/lib")
+        set(SDL2_GPU_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/include")
+        set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/lib")
         set(SDL2_GPU_LIBRARIES "-lSDL2_gpu_s -lopengl32")
     else ()
-        set(SDL2_GPU_INCLUDE_DIRS "./sdl-gpu/SDL_gpu/include")
-        set(SDL2_GPU_LIB_DIRS "-L../sdl-gpu/SDL_gpu/lib")
+        set(SDL2_GPU_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/include")
+        set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/lib")
         set(SDL2_GPU_LIBRARIES "-lSDL2_gpu -lGL")
     endif ()
 else ()
@@ -135,6 +140,10 @@ add_dependencies(sqlux SubmarineGitVersion)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_sources(sqlux PRIVATE sQLuxLogo.rc)
 endif ()
+
+if (SUPPORT_SHADERS)
+    add_dependencies(sqlux SDL_gpu)
+endif()
 
 if (SDL2_LIBRARIES)
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
