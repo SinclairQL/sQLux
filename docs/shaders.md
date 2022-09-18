@@ -7,41 +7,32 @@ sQLux optionally supports OPenGL Shader Language (GLSL) shaders. These shaders r
 + Bloom
 + Screen curvature
 
-Support for shaders has to be enabled at run time. OpenGL or OpenGL ES libraries must to be installed. Shader support is realised through the use of [sdl-gpu](https://github.com/grimfang4/sdl-gpu) which is statically linked into sQLux. As shaders run on the GPU, the speed of the emulator is not impacted.
+Support for shaders has to be enabled at run time. OpenGL or OpenGL ES libraries must to be installed. Shader support is realised through the use of [sdl-gpu](https://github.com/grimfang4/sdl-gpu) which is statically linked into sQLux. The code for sdl-gpu is included in the sQLux respository.  
+As shaders run on the GPU, the speed of the emulator is not impacted.
 
 ---
 # Building
-In all cases first follow the setps to build sQLux without shader support, as described in the [README](../README.md)
+In all cases, first follow the steps to build sQLux without shader support, as described in the [README](../README.md). Then update submodules
+
+```
+git submodule init
+git submodule update
+```
+
 ## Building linux
-### Download, build and install sdl-gpu 
-```
-git clone https://github.com/grimfang4/sdl-gpu.git sdl-gpu
-cmake -G "Unix Makefiles"  
-make 
-sudo make install 
-```
-### Configure and build sQLux with shader support
 ```
 cd linux  
 cmake .. -DSUPPORT_SHADERS=TRUE
 make
 ```  
 ## Building MinGW on Linux
-
-TBD
+```
+cd mingw
+cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 -DSUPPORT_SHADERS=TRUE ..
+```
 ## Building MinGW on Windows
-### Download, build and install sdl-gpu 
-sdl-gpu should be installed under the same parent directory as sQLux is installed. e.g:
 ```
-<starting in main sQLux directory>
-cd ..
-git clone https://github.com/grimfang4/sdl-gpu.git sdl-gpu
-cmake -G "MinGW Makefiles"  
-make 
-```
-### Configure and build sQLux with shader support
-```
-cd ..\sQLux\mingw
+cd mingw
 cmake.exe -G "MinGW Makefiles" -DSUPPORT_SHADERS=TRUE ..
 mingw32-make
 ```
@@ -87,4 +78,4 @@ The mouse position has to be adjusted to reflect simulated curvature. Within the
 #define CURVATURE_X a.aa  
 #define CURVATURE_Y b.bb  
 ```
-where a.aa and b.bb are floats defining teh curvature in the x and y direction. sQLux parses these values and uses them to adjust the reported mouse position.
+where a.aa and b.bb are floats defining the curvature in the x and y direction. sQLux parses these values and uses them to adjust the reported mouse position.
