@@ -1,0 +1,3 @@
+[submodule "sdl-gpu"]
+	path = sdl-gpu
+	url = https://github.com/ikjordan/sdl-gpu.git
