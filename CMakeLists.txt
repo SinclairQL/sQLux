@@ -9,17 +9,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
     -DEVM_SCR -D_GNU_SOURCE -D_XOPEN_SOURCE -DMOUSE -DQVFS")
 
-if (SUPPORT_SHADERS)
-    message("Enabling shader support")
-    set(INSTALL_LIBRARY "FALSE")
-    set(BUILD_DEMOS "FALSE")
-    set(BUILD_SHARED "FALSE")
-    set(BUILD_STATIC "TRUE")
-    set(GPU_DISABLE_WARNINGS "TRUE")
-    add_subdirectory(sdl-gpu)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_SHADERS")
-endif()
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
 endif()
@@ -142,6 +131,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif ()
 
 if (SUPPORT_SHADERS)
+    message("Enabling shader support")
+    target_compile_definitions(sqlux PUBLIC ENABLE_SHADERS)
+    set(INSTALL_LIBRARY "FALSE")
+    set(BUILD_DEMOS "FALSE")
+    set(BUILD_SHARED "FALSE")
+    set(BUILD_STATIC "TRUE")
+    add_subdirectory(sdl-gpu)
+    target_compile_options(SDL_gpu PRIVATE "-w")
     add_dependencies(sqlux SDL_gpu)
 endif()
 
