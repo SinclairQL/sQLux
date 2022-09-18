@@ -349,6 +349,7 @@ void QLMovePointer(int pos_x, int pos_y)
 			llasty = lasty;
 			lasty = pos_y;
 		}
+	// printf("In QLMovePointer: x:%i y:%i\n", pos_x, pos_y);
 }
 #endif
 
