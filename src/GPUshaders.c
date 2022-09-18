@@ -78,7 +78,6 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 					curve, &curve_x, &curve_y);
 
 		if (ret) {
-			// TO DO rename
 			res_texture_size = GPU_GetUniformLocation(shader, "TextureSize");
 			res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
 		}

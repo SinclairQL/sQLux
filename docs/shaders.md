@@ -15,14 +15,13 @@ As shaders run on the GPU, the speed of the emulator is not impacted.
 In all cases, first follow the steps to build sQLux without shader support, as described in the [README](../README.md). Then update submodules
 
 ```
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 
 ## Building linux
 ```
 cd linux  
-cmake .. -DSUPPORT_SHADERS=TRUE
+cmake -DSUPPORT_SHADERS=TRUE ..
 make
 ```  
 ## Building MinGW on Linux
