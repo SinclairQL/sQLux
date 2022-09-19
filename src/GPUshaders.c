@@ -22,6 +22,8 @@ static GPU_Image* image = 0;
 static GPU_Target* screen = 0;
 
 static SDL_Rect screen_rect;
+static double pixel_ratio = 1.0;	// Ratio of x to y pixels
+					// e.g. 512x256 = 2.0; 800x600 = 1.333
 
 static Uint32 shader;
 static GPU_ShaderBlock shader_block;
@@ -53,6 +55,7 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 	bool ret = false;
 	screen = GPU_Init(w, h, GPU_DEFAULT_INIT_FLAGS | sdl_window_mode);
 
+	pixel_ratio = (double)qlscreen.xres / (double)qlscreen.yres;
 	if (screen != NULL) {
 		// Obtain the window id
 		*id = screen->context->windowID;
@@ -193,56 +196,52 @@ static void setViewPort(void)
 {
 	static int width = -1;
 	static int height = -1;
-	int w,h;
-	GPU_Rect frect;
 
-	h = screen->base_h;
-	w = screen->base_w;
+	if ((width != screen->base_w) || (height != screen->base_h)) {
+		GPU_Rect frect;
 
-	if ((w != width) || (height != h)) {
-		width = w;
-		height = h;
+		width = screen->base_w;
+		height = screen->base_h;
 
 #ifdef INTEGER_SCALING
 		/*
-		   This option sets the height to a multiple of 256 lines
-		   to improve the definition of scan lines when using a
+		   This option is to improve the definition of scan lines when using a
 		   BBQL size display in full screen mode
 		*/
-		if (ql_fullscreen) {
+		if ((ql_fullscreen) && (qlscreen.yres == 256)) {
 			// Largest integer pixel height that is divisable by 256
-			int max_height = (int)((float)w * ql_screen_ratio / 2.0);
+			int max_height = (int)((float)width * ql_screen_ratio / pixel_ratio);
 
-			screen_rect.h = (max_height < h) ? max_height :h;
+			screen_rect.h = (max_height < height) ? max_height : height;
 			screen_rect.h = (screen_rect.h / 256) * 256;
-			screen_rect.w = (int)((2.0 * (float)h) / ql_screen_ratio);
-			screen_rect.x = (w - screen_rect.w) / 2;
-			screen_rect.y = (h - screen_rect.h) / 2;
-
-			// printf("x: %i y: %i w %i h:%i\n",
+			screen_rect.w = (int)((pixel_ratio * (float)screen_rect.h) / ql_screen_ratio);
+			screen_rect.x = (width - screen_rect.w) / 2;
+			screen_rect.y = (height - screen_rect.h) / 2;
+			//printf("x: %i y: %i w %i h:%i\n",
 			//	screen_rect.x, screen_rect.y,
 			//	screen_rect.w, screen_rect.h);
+
 		}
 		else
 #endif
 		{
-			if (fabs((float)w - (2.0 * (float)h) / ql_screen_ratio) < 3.0) {
-				screen_rect.h = h;
-				screen_rect.w = w;
+			if (fabs((float)width - (pixel_ratio * (float)height) / ql_screen_ratio) < 3.0) {
+				screen_rect.h = height;
+				screen_rect.w = width;
 				screen_rect.x = 0;
 				screen_rect.y = 0;
 			}
-			else if ((2.0 * (float)h) / ql_screen_ratio < (float)w) {
-				screen_rect.h = h;
-				screen_rect.w = (int)((2.0 * (float)h) / ql_screen_ratio);
-				screen_rect.x = (w - screen_rect.w) / 2;
+			else if ((float)width > (pixel_ratio * (float)height) / ql_screen_ratio) {
+				screen_rect.h = height;
+				screen_rect.w = (int)((pixel_ratio * (float)height) / ql_screen_ratio);
+				screen_rect.x = (width - screen_rect.w) / 2;
 				screen_rect.y = 0;
 			}
 			else {
-				screen_rect.w = w;
-				screen_rect.h = (int)((float)w * ql_screen_ratio / 2.0);
+				screen_rect.w = width;
+				screen_rect.h = (int)((float)width * ql_screen_ratio / pixel_ratio);
 				screen_rect.x = 0;
-				screen_rect.y = (h - screen_rect.h) / 2;
+				screen_rect.y = (height - screen_rect.h) / 2;
 			}
 		}
 		frect.x = (float)screen_rect.x;
