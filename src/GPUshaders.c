@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020-2022 Graeme Gregory
+ *
+ */
+
 #include "GPUshaders.h"
 
 #ifdef ENABLE_SHADERS
@@ -11,10 +16,6 @@ typedef struct {
 	float x;
 	float y;
 } vec2;
-
-/* Curvature for screen */
-#define CURVATURE_X 0.05
-#define CURVATURE_Y 0.12
 
 static uint32_t* screen_buffer = NULL;
 static GPU_Image* image = 0;
@@ -110,7 +111,8 @@ void QLGPUUpdateDisplay(void)
     	// Render to screen, using the active shader
 	GPU_Clear(screen);
 	GPU_ActivateShaderProgram(shader, &shader_block);
-	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres, (float)screen->base_w, (float)screen->base_h);
+	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres,
+		(float)screen->base_w, (float)screen->base_h);
 	GPU_BlitRect(image, NULL, screen, NULL);
 	GPU_ActivateShaderProgram(0, NULL);
 	GPU_Flip(screen);
@@ -201,10 +203,14 @@ static void setViewPort(void)
 		width = w;
 		height = h;
 
-		if (0) {
-			// Largest integer pixel height
-			// note deliberately ignore larger screen heights
-			// maximum height that will fit width
+#ifdef INTEGER_SCALING
+		/*
+		   This option sets the height to a multiple of 256 lines
+		   to improve the definition of scan lines when using a
+		   BBQL size display in full screen mode
+		*/
+		if (ql_fullscreen) {
+			// Largest integer pixel height that is divisable by 256
 			int max_height = (int)((float)w * ql_screen_ratio / 2.0);
 
 			screen_rect.h = (max_height < h) ? max_height :h;
@@ -213,10 +219,13 @@ static void setViewPort(void)
 			screen_rect.x = (w - screen_rect.w) / 2;
 			screen_rect.y = (h - screen_rect.h) / 2;
 
-			printf("x: %i y: %i w %i h:%i\n", screen_rect.x, screen_rect.y,
-			screen_rect.w, screen_rect.h);
+			// printf("x: %i y: %i w %i h:%i\n",
+			//	screen_rect.x, screen_rect.y,
+			//	screen_rect.w, screen_rect.h);
 		}
-		else {
+		else
+#endif
+		{
 			if (fabs((float)w - (2.0 * (float)h) / ql_screen_ratio) < 3.0) {
 				screen_rect.h = h;
 				screen_rect.w = w;
@@ -253,8 +262,8 @@ static void Distort(float* x, float* y)
 	coord.y = *y;
 
 	vec2 curvature_distortion;
-	curvature_distortion.x = CURVATURE_X;
-	curvature_distortion.y = CURVATURE_Y;
+	curvature_distortion.x = curve_x;
+	curvature_distortion.y = curve_y;
 
 	vec2 barrelScale;
 	barrelScale.x = 1.0 - 0.23 * curvature_distortion.x;
@@ -278,8 +287,11 @@ static void Distort(float* x, float* y)
 	*y = coord.y;
 }
 
-// Loads a shader and prepends version/compatibility info before compiling it.
-// This prepends the version info so that both GLSL and GLSLES can be supported with one shader file.
+/*
+   Loads a shader and prepends version/compatibility info before compiling it.
+   This prepends the version info so that both GLSL and GLSLES can be supported
+   with one shader file.
+*/
 static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
 			int data_size, const char* prepend)
 {
@@ -471,7 +483,12 @@ static void UpdateShader(float x, float y, float a, float b)
 }
 
 #else
-/* Empty functions, for when shaders not enabled */
+/*
+   Empty functions, to allow linkage when ENABLE_SHADERS is not selected.
+   In reality these functions will never be called, as a check is always made
+   against shaders_selected before calling these functions, and
+   shaders_selected will always be false if ENABLE_SHADERS is not defined
+*/
 bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 			const char* name, uint32_t sdl_window_mode,
 			int shader_type, const char* shader_path) {
