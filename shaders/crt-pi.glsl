@@ -55,14 +55,33 @@ precision mediump float;
 #define OUTPUT_GAMMA 2.2
 
 uniform vec2 TextureSize;
-varying vec2 TEX0;
-varying float filterWidth;
+
+// Compatibility
+#if __VERSION__ >= 130
+#define ATTRIBUTE in
+#define SHADER_IN in
+#define SHADER_OUT out
+#if defined (FRAGMENT)
+#define TEXTURE_2D texture
+out vec4 fragColor;
+#endif
+#else
+#define ATTRIBUTE attribute
+#define SHADER_IN varying
+#define SHADER_OUT varying
+#if defined (FRAGMENT)
+#define TEXTURE_2D texture2D
+#define fragColor gl_FragColor
+#endif
+#endif
 
 #if defined(VERTEX)
 uniform mat4 MVPMatrix;
-attribute vec3 VertexCoord;
-attribute vec2 TexCoord;
+ATTRIBUTE vec3 VertexCoord;
+ATTRIBUTE vec2 TexCoord;
 uniform vec2 u_resolution;
+SHADER_OUT vec2 TEX0;
+SHADER_OUT float filterWidth;
 
 void main()
 {
@@ -74,6 +93,8 @@ void main()
 #elif defined(FRAGMENT)
 
 uniform sampler2D tex;
+SHADER_IN vec2 TEX0;
+SHADER_IN float filterWidth;
 
 #if defined(CURVATURE)
 vec2 Distort(vec2 coord)
@@ -117,7 +138,7 @@ void main()
 #if defined(CURVATURE)
 	vec2 texcoord = Distort(TEX0);
 	if (texcoord.x < 0.0)
-		gl_FragColor = vec4(0.0);
+		fragColor = vec4(0.0);
 	else
 #else
 	vec2 texcoord = TEX0;
@@ -153,7 +174,7 @@ void main()
 		vec2 tc = vec2(texcoord.x, yCoord + dy);
 #endif
 
-		vec3 colour = texture2D(tex, tc).rgb;
+		vec3 colour = TEXTURE_2D(tex, tc).rgb;
 
 #if defined(SCANLINES)
 #if defined(GAMMA)
@@ -175,7 +196,7 @@ void main()
 #endif
 #endif
 #if MASK_TYPE == 0
-		gl_FragColor = vec4(colour, 1.0);
+		fragColor = vec4(colour, 1.0);
 #else
 #if MASK_TYPE == 1
 		float whichMask = fract((gl_FragCoord.x*1.0001) * 0.5);
@@ -194,8 +215,7 @@ void main()
 		else
 			mask.z = 1.0;
 #endif
-
-		gl_FragColor = vec4(colour * mask, 1.0);
+		fragColor = vec4(colour * mask, 1.0);
 #endif
 	}
 }
