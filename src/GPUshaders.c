@@ -10,6 +10,7 @@
 #include <SDL_gpu.h>
 #include "SDL2screen.h"
 #include "QL_screen.h"
+#include "debug.h"
 
 /* Structure used in mouse pointer calculation */
 typedef struct {
@@ -298,19 +299,29 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
 	char* source;
 	int header_size, directive_size;
 	int prepend_size = 0;
-	const char* header = "";
+	char header[] = "#version 100\nprecision mediump int;\nprecision mediump float;\n";
 	const char* directive = "";
 	GPU_Renderer* renderer = GPU_GetCurrentRenderer();
 
 	if (renderer->shader_language == GPU_LANGUAGE_GLSL) {
-		if (renderer->max_shader_version >= 120)
-			header = "#version 120\n";
+		if (renderer->min_shader_version >= 120)
+			sprintf(header, "#version %i\n", renderer->min_shader_version);
+		else if (renderer->max_shader_version >= 120)
+			strcpy(header, "#version 120\n");
 		else
-			header = "#version 110\n";
+			strcpy(header, "#version 110\n");
+		if (V2 && shader_type == GPU_VERTEX_SHADER)
+			printf("Max shader version: %i, Min shader version: %i\n",
+				renderer->max_shader_version,
+				renderer->min_shader_version);
 	}
 	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES) {
-		header = "#version 100\nprecision mediump int;\nprecision mediump float;\n";
+		if (V2 && shader_type == GPU_VERTEX_SHADER)
+			printf("GLS ES shader\n");
 	}
+
+	if (V2 && shader_type == GPU_VERTEX_SHADER)
+		printf("Shader header text: %s", header);
 
 	header_size = (int)strlen(header);
 
@@ -412,7 +423,7 @@ static bool LoadShaderProgram(GPU_ShaderBlock* shader, Uint32* p, const char* sh
 	// Allocate memory and read in data
 	rwops = SDL_RWFromFile(shader_file, "rb");
 	if (rwops == NULL) {
-		GPU_LogError("Cannot open shader file %s\n");
+		GPU_LogError("Cannot open shader file %s\n", shader_file);
 		return false;
 	}
 
