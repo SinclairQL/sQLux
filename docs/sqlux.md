@@ -294,7 +294,7 @@ WIN_SIZE = max
 ```
 
 `RESOLUTION`
-The screen resulution for sQLux. The same as the -g option, normally used for creating the extended screen.
+The screen resolution for sQLux. The same as the -g option, normally used for creating the extended screen.
 
 ```
 RESOLUTION = 512x512
@@ -326,7 +326,7 @@ KBD = DE
 ```
 
 `SPEED`
-Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 approximates to the speed of an orginal QL. Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
+Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 approximates to the speed of an original QL. Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
 
 ```
 SPEED = 1.5
@@ -357,7 +357,7 @@ Enables a greyscale display. Disabled by default (so the display is in colour).
 ```
 GRAY = 1
 ```
-`SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel disortion. Disabled by default.  
+`SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.  
 Note that sQLux must have been compiled with shader support. See the [Shader documentation](docs/shaders.md) for more details.
 
 ```
@@ -477,7 +477,7 @@ Define commands to be executed when sQLux runs. This is a standard basic line wi
 -b 'PRINT "HELLO WORLD"'
 ```
 
-`-d bood_dev`
+`-d boot_dev`
 
 Define the QDOS device the rom will automatically load the BOOT file from. This is limited to 4 characters in ROM. The default in rom is MDV1.
 
@@ -556,7 +556,7 @@ Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel
 
 By default sQLux uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
 
-This scheme does not take into account international keyboard on the host of internation versions of the rom in the emulator. See the `KBD` option to select a British or German keyboard
+This scheme does not take into account international keyboard on the host of international versions of the rom in the emulator. See the `KBD` option to select a British or German keyboard
 
 Alternatively get a USA keyboard or use stickers to give that genuine QL feel.
 
@@ -574,7 +574,7 @@ Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL
 ------------------
 1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
 2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
-3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be esily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
+3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be easily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
 
 5.7 Joystick
 ------------

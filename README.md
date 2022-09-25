@@ -49,7 +49,7 @@ The SDL2 development libraries can be found [here](https://github.com/libsdl-org
     sudo mkdir /usr/local/x86_64-w64-mingw32
     sudo make cross
 
-Download, build and install a mingw version of the boost libraries. Instructions are given [here](https://github.com/libmingw-w64/libboost-mingw-w64)  
+Download, build and install a mingw version of the boost libraries. Instructions are given [here](https://github.com/libmingw-w64/libboost-mingw-w64)
    
 Now the mingw versions of SDL2 and boost is available and we can build sQLux for Win64
 
@@ -82,10 +82,10 @@ This will generate `sqlux.exe`. Dependencies are statically linked, so `sqlux.ex
 
 ## MinGW pthreads/win32 threads
 
-The 64bit build using mingw requries the winpthread library for the high definition timer
+The 64bit build using mingw requires the winpthread library for the high definition timer
 support.
 
-The 32bit build can be built using win32 theads for XP compatability and therefore does
+The 32bit build can be built using win32 threads for XP compatibility and therefore does
 not include the high resolution timer support.
 
 # uqlxrc
@@ -100,6 +100,6 @@ need to set RAMTOP = 256
 
 sQLux supports additional parameters over those used for uqlxrc. See the [Documentation](docs/sqlux.md) for more details.
 
-# Experimental Shader support
-sQLux has limited support for GPU shaders, to emulate the effects seen when using a CRT display. See the [Shader documentation](docs/shaders.md) for more details on how to build and run sQLux with GPU shaders.
+# Shader support
+sQLux has support for GPU shaders, to emulate the effects seen when using a CRT display. See the [Shader documentation](docs/shaders.md) for more details on how to build and run sQLux with GPU shaders.
 
