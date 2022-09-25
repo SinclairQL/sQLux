@@ -281,7 +281,7 @@ static joy_data joy[2] = { {NULL, -1, 0, 1},
 
 static bool QLSDLCreateDisplay(int w , int h, int ly, uint32_t* id,
 				const char* name, uint32_t sdl_window_mode);
-static void SDLQLUpdateScreen();
+static void QLSDLUpdateScreen();
 static void QLSDLUpdatePixelBuffer();
 
 static void QLSDLInitJoystick(void);
@@ -642,7 +642,7 @@ void SDLQLFullScreen(void)
 	}
 }
 
-static void SDLQLUpdateScreen()
+static void QLSDLUpdateScreen()
 {
 	renderer_idle = false;
 	if (shaders_selected) {
@@ -1225,12 +1225,12 @@ void QLSDLProcessEvents(void)
 					if (shaders_selected)
 						QLGPUSetSize(event.window.data1,
 							event.window.data2);
-					SDLQLUpdateScreen();
+					QLSDLUpdateScreen();
 					break;
 				case SDL_WINDOWEVENT_SIZE_CHANGED:
 					break;
 				case SDL_WINDOWEVENT_EXPOSED:
-					SDLQLUpdateScreen();
+					QLSDLUpdateScreen();
 					break;
 				}
 			}
@@ -1238,7 +1238,7 @@ void QLSDLProcessEvents(void)
 		case SDL_USEREVENT:
 			switch (event.user.code) {
 			case USER_CODE_SCREENREFRESH:
-				SDLQLUpdateScreen();
+				QLSDLUpdateScreen();
 				break;
 			case USER_CODE_EMUEXIT:
 				return;
