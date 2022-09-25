@@ -221,7 +221,7 @@ struct sockproto {
 #define SO_BSDCOMPAT  14
 ```
 
-Next, some netdb definitions. This seems like a nigthmare for assembler
+Next, some netdb definitions. This seems like a nightmare for assembler
 programmers..
 
 ```
