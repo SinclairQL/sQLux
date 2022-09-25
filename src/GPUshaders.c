@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Graeme Gregory
+ * Copyright (c) 2020-2022 Graeme Gregory, Ian Jordan
  *
  */
 
@@ -22,7 +22,9 @@ static uint32_t* screen_buffer = NULL;
 static GPU_Image* image = 0;
 static GPU_Target* screen = 0;
 
-static SDL_Rect screen_rect;
+static SDL_Rect screen_rect;		// Used for mouse calculations
+static GPU_Rect frect;			// Used for blit calculations
+
 static double pixel_ratio = 1.0;	// Ratio of x to y pixels
 					// e.g. 512x256 = 2.0; 800x600 = 1.333
 
@@ -35,7 +37,7 @@ static float curve_x;
 static float curve_y;
 
 static void UpdateDisplay(GPU_Target* screen);
-static void setViewPort(void);
+static void setViewPort(int w, int h);
 static void CreateImage(void);
 static void CreatePalette(void);
 
@@ -86,6 +88,8 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 			res_texture_size = GPU_GetUniformLocation(shader, "TextureSize");
 			res_screen_size = GPU_GetUniformLocation(shader, "u_resolution");
 		}
+		// Set initial image size
+		setViewPort(w, h);
 	}
 	return ret;
 }
@@ -104,20 +108,17 @@ void QLGPUClean(void) {
 void QLGPUUpdateDisplay(void)
 {
 	// Update the display memory
-    	QLSDLWritePixels(screen_buffer);
+	QLSDLWritePixels(screen_buffer);
 
 	// Update the image using the updated memory buffer
-    	GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
+	GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
 
-	// Ensure the aspect ratio of the display is maintained
-    	setViewPort();
-
-    	// Render to screen, using the active shader
+	// Render to screen, using the active shader
 	GPU_Clear(screen);
 	GPU_ActivateShaderProgram(shader, &shader_block);
 	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres,
-		(float)screen->base_w, (float)screen->base_h);
-	GPU_BlitRect(image, NULL, screen, NULL);
+		(float)frect.w, (float)frect.h);
+	GPU_BlitRect(image, NULL, screen, &frect);
 	GPU_ActivateShaderProgram(0, NULL);
 	GPU_Flip(screen);
 }
@@ -126,6 +127,8 @@ void QLGPUUpdateDisplay(void)
 void QLGPUSetSize(int w, int h)
 {
 	GPU_SetWindowResolution(w, h);
+	// Ensure the aspect ratio of the display is maintained
+	setViewPort(w, h);
 }
 
 /* Convert the mouse coordinates into QL screen coordinates */
@@ -164,7 +167,7 @@ void QLGPUSetFullscreen(void)
 	if (!ql_fullscreen) {
 		// Need to set the window resolution after
 		// return from fullscreen
-		GPU_SetWindowResolution(screen->w, screen->h);
+		QLGPUSetSize(screen->w, screen->h);
 	}
 }
 
@@ -193,16 +196,14 @@ static void CreatePalette(void)
 }
 
 /* Ensure that the screen aspect ratio is preserved */
-static void setViewPort(void)
+static void setViewPort(int w, int h)
 {
 	static int width = -1;
 	static int height = -1;
 
-	if ((width != screen->base_w) || (height != screen->base_h)) {
-		GPU_Rect frect;
-
-		width = screen->base_w;
-		height = screen->base_h;
+	if ((width != w) || (height != h)) {
+		width = w;
+		height = h;
 
 #ifdef INTEGER_SCALING
 		/*
@@ -249,8 +250,6 @@ static void setViewPort(void)
 		frect.y = (float)screen_rect.y;
 		frect.w = (float)screen_rect.w;
 		frect.h = (float)screen_rect.h;
-
-		GPU_SetViewport(screen, frect);
 	}
 }
 
@@ -289,8 +288,8 @@ static void Distort(float* x, float* y)
 
 /*
    Loads a shader and prepends version/compatibility info before compiling it.
-   This prepends the version info so that both GLSL and GLSLES can be supported
-   with one shader file.
+   This function also prepends version specific information to the shader file.
+   This is needed as some shader compilers (older AMD) do not do this correctly
 */
 static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
 			int data_size, const char* prepend)
@@ -304,24 +303,30 @@ static Uint32 LoadShader(GPU_ShaderEnum shader_type, const char* data,
 	GPU_Renderer* renderer = GPU_GetCurrentRenderer();
 
 	if (renderer->shader_language == GPU_LANGUAGE_GLSL) {
+		if (V2 && shader_type == GPU_VERTEX_SHADER)
+			printf("GLS shader\n");
+		/* Aim to use GLSL version 120 (OpenGL 2.1), but ensure that a
+		   supported version is used */
 		if (renderer->min_shader_version >= 120)
 			sprintf(header, "#version %i\n", renderer->min_shader_version);
 		else if (renderer->max_shader_version >= 120)
 			strcpy(header, "#version 120\n");
 		else
 			strcpy(header, "#version 110\n");
-		if (V2 && shader_type == GPU_VERTEX_SHADER)
-			printf("Max shader version: %i, Min shader version: %i\n",
-				renderer->max_shader_version,
-				renderer->min_shader_version);
 	}
 	else if (renderer->shader_language == GPU_LANGUAGE_GLSLES) {
+		/* Always use GLSL ES version 100 (OpenGL ES 2.0), which is
+		   based on GLS version 120 (OpenGL 2.1) */
 		if (V2 && shader_type == GPU_VERTEX_SHADER)
 			printf("GLS ES shader\n");
 	}
 
-	if (V2 && shader_type == GPU_VERTEX_SHADER)
+	if (V2 && shader_type == GPU_VERTEX_SHADER) {
+		printf("Min shader version: %i, Max shader version: %i\n",
+			renderer->min_shader_version,
+			renderer->max_shader_version);
 		printf("Shader header text: %s", header);
+	}
 
 	header_size = (int)strlen(header);
 
