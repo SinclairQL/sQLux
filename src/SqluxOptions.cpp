@@ -242,6 +242,8 @@ int optionParse(int argc, char *argv[])
                 "enable strict file locking")
             ("SYSROM", po::value<string>()->default_value("MIN198.rom"),
                 "system rom")
+            ("UNSAT", po::value<int>()->default_value(0),
+                "0 = Saturated Colours, 1 = Unsaturated Colours (slightly more CRT like)")
             ("WIN_SIZE,w", po::value<string>()->default_value("1x"),
                 "window size 1x, 2x, 3x, max, full")
             ;

@@ -373,6 +373,13 @@ SHADER_FILE = ../shaders/crt-pi.glsl
 
 and here is the example of an actual sqlux.ini file. You will find more recent versions of it with every sQLux distribution.
 
+`UNSAT`
+0 to use saturated (BRIGHT) colours, 1 to use unsaturated (MUTED) colours.
+
+```
+UNSAT = 1
+```
+
 ```
 SYSROM = MIN198.rom
 ROMIM = TK232.rom
