@@ -22,14 +22,12 @@ git submodule update --init --recursive
 ```
 cd linux
 cmake -DSUPPORT_SHADERS=TRUE ..
-make clean
 make
 ```
 ## Building MinGW on Linux
 ```
 cd mingw
 cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 -DSUPPORT_SHADERS=TRUE ..
-make clean
 make
 ```
 ## Building MinGW on Windows
@@ -37,7 +35,6 @@ make
 cd mingw
 cmake.exe -G "MinGW Makefiles" -DSUPPORT_SHADERS=TRUE ..
 mingw32-make
-make clean
 make
 ```
 # Shader parameters in sqlux.ini
