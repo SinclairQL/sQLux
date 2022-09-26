@@ -351,18 +351,11 @@ The index into SDL2 for a joystick to emulate connection to the QL through the C
 ```
 JOY2 = 1
 ```
-`GRAY` or `GREY`
-Enables a greyscale display. Disabled by default (so the display is in colour).
+`PALETTE`
+0 to use saturated (BRIGHT) colours, 1 to use unsaturated (MUTED) colours, 2 to use a grayscale display. Set to 0 by default (so the display is in saturated colours).
 
 ```
-GRAY = 1
-```
-
-`UNSAT`
-0 to use saturated (BRIGHT) colours, 1 to use unsaturated (MUTED) colours.
-
-```
-UNSAT = 1
+PALETTE = 1
 ```
 
 `SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.  

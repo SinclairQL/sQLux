@@ -190,10 +190,6 @@ int optionParse(int argc, char *argv[])
                 "enable bilinear filter when zooming")
             ("FIXASPECT", po::value<int>()->default_value(0),
                 "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels")
-            ("GREY", po::value<int>()->default_value(0),
-                "1 enable greyscale display")
-            ("GRAY", po::value<int>()->default_value(0),
-                "1 enable grayscale display")
             ("IOROM1", po::value<string>(),
                 "rom in 1st IO area (Minerva only 0x10000 address)")
             ("IOROM2", po::value<string>(),
@@ -206,6 +202,8 @@ int optionParse(int argc, char *argv[])
                 "keyboard language DE, GB, US")
             ("NO_PATCH,n", po::value<int>()->default_value(0),
                 "disable patching the rom")
+            ("PALETTE", po::value<int>()->default_value(0),
+                "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display")
             ("PRINT", po::value<string>()->default_value("lpr"),
                 "command to use for print jobs")
             ("RAMTOP,r", po::value<int>(),
@@ -242,8 +240,6 @@ int optionParse(int argc, char *argv[])
                 "enable strict file locking")
             ("SYSROM", po::value<string>()->default_value("MIN198.rom"),
                 "system rom")
-            ("UNSAT", po::value<int>()->default_value(0),
-                "0 = Saturated Colours, 1 = Unsaturated Colours (slightly more CRT like)")
             ("WIN_SIZE,w", po::value<string>()->default_value("1x"),
                 "window size 1x, 2x, 3x, max, full")
             ;

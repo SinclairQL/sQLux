@@ -480,11 +480,12 @@ void QLSDLCreateIcon(SDL_Window* window)
 
 void QLSDLCreatePalette(const SDL_PixelFormat* format)
 {
+	int option = optionInt("PALETTE");
 	for (int i = 0; i < 16; i++) {
-		if (optionInt("GREY") || optionInt("GRAY")) {
+		if (option == 2) {
 			SDLcolors[i] = SDL_MapRGB(format, QLcolors_gray[i].r,
 						  QLcolors_gray[i].g, QLcolors_gray[i].b);
-		} else if (optionInt("UNSAT")) {
+		} else if (option == 1) {
 			SDLcolors[i] = SDL_MapRGB(format, QLcolors_unsat[i].r,
 						  QLcolors_unsat[i].g, QLcolors_unsat[i].b);
 		} else {
