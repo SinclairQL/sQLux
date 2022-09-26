@@ -35,7 +35,6 @@ make
 cd mingw
 cmake.exe -G "MinGW Makefiles" -DSUPPORT_SHADERS=TRUE ..
 mingw32-make
-make
 ```
 # Shader parameters in sqlux.ini
 `SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.
