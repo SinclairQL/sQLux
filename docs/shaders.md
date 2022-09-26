@@ -28,6 +28,7 @@ make
 ```
 cd mingw
 cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 -DSUPPORT_SHADERS=TRUE ..
+make
 ```
 ## Building MinGW on Windows
 ```
@@ -37,7 +38,6 @@ mingw32-make
 ```
 # Shader parameters in sqlux.ini
 `SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.
-
 
 ```
 SHADER = 2
@@ -49,8 +49,9 @@ The path to the GPU shader (written in OpenGL Shading Language) that is loaded w
 ```
 SHADER_FILE = ../shaders/crt-pi.glsl
 ```
-# Configuring the supplied shader
-`crt-pi.glsl` can be edited to modify the following attributes:
+# Configuration
+## The supplied shader
+The supplied shader `crt-pi.glsl` works "out of the box". However, optionally, it can be edited to modify the following attributes:
 ### `MASK_TYPE`
 The type of emulated CRT shadow mask.  
 0 = none, 1 = standard mask, 2 = trinitron like. Default = 1
@@ -74,6 +75,16 @@ By default the shader uses linear blending horizontally. If this is too blurry, 
 Simulated curvature to be applied in the x dimension, if `SHADER = 2` in `sqlux.ini`. Default = 0.06
 ### `CURVATURE_Y`
 Simulated curvature to be applied in the y dimension, if `SHADER = 2` in `sqlux.ini`. Default = 0.12
+## Older Raspberry Pis
+By default, when using the Raspberry Pi OS Bullseye edition, hardware graphics acceleration may not be enabled for Pi0 to Pi3. This can impact shader performance.
+
+To enable hardware acceleration, run the configuration tool:
+
+`sudo raspi-config`
+
+Select the options to enable glamor (A8) and GL Driver (A2), under the advanced options sub-menu, and reboot.
+
+**Note:** Hardware graphics acceleration *should* be enabled by default for the Pi4, so this change should *not* be needed for the Pi4.
 
 # Creating your own shader
 Examples of shaders which can be modified to use within sQLux can be found at e.g. [libretro shaders](https://github.com/libretro/glsl-shaders/tree/master/crt/shaders).  
