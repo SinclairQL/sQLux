@@ -60,6 +60,17 @@ extern "C" int main(int argc, char *argv[])
     parse_screen(optionString("RESOLUTION"));
     verbose = optionInt("VERBOSE");
 
+    // setup the boot_cmd if needed
+    const char *boot_cmd=optionString("BOOT_CMD");
+    if (strlen(boot_cmd)) {
+        ux_boot = 2;
+        int len = strlen(boot_cmd);
+        ux_bname = (char *)malloc(len + 2);
+        strcpy(ux_bname, boot_cmd);
+        ux_bname[len] = 0x0A;
+        ux_bname[len + 1] = 0;
+    }
+
     emulator::deviceParse();
 
     emulator::init();

@@ -178,6 +178,8 @@ int optionParse(int argc, char *argv[])
         config.add_options()
             ("BDI1", po::value<string>(),
                 "file exposed by the BDI interface")
+            ("BOOT_CMD,b", po::value<string>(),
+                "command to run on boot (executed in basic)")
             ("BOOT_DEVICE,d", po::value<string>()->default_value("MDV1"),
                 "device to load BOOT file from")
             ("CPU_HOG", po::value<int>()->default_value(1),
