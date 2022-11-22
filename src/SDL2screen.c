@@ -1185,7 +1185,9 @@ void QLSDLProcessEvents(void)
 	int w, h;
 
 	while (1) {
-		SDL_WaitEvent(&event);
+		if (!SDL_PollEvent(&event)) {
+			continue;
+		}
 
 		switch (event.type) {
 		case SDL_KEYDOWN:
