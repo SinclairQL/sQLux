@@ -33,7 +33,7 @@
 /*           1: ux_bfd is file handle */
 /*           2: ux_bname is command string */
 
-int boot_init(int);
+int boot_init(int, void *);
 int boot_open(int, void **);
 int boot_test(int, char *);
 void boot_close(int, void *);
@@ -120,7 +120,7 @@ int u_read(struct BOOT_PRIV *p, void *buf, int pno)
 		return qmaperr();
 }
 
-int boot_init(int idx)
+int boot_init(int idx, void * ignored)
 {
 	return 0;
 }
