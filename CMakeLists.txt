@@ -114,7 +114,6 @@ add_executable(sqlux
     unixstuff.c
     util.c
     uxfile.c
-    vm.c
     xc68.c
     xcodes.c
     xqlmouse.c
