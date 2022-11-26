@@ -68,6 +68,8 @@ jobs:
 
           # Produce a binary artifact and place it in the mounted volume
           run: |
+            git submodule init
+            git submodule update
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX:PATH=${{github.workspace}}/install
             cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
             cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}

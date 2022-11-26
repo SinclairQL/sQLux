@@ -30,5 +30,7 @@ jobs:
       - name: CI-Build
         run: |
           echo 'Running in MSYS2!'
+          git submodule init
+          git submodule update
           cmake -B ${{matrix.env}} -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build ${{matrix.env}}
