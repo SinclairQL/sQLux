@@ -1613,7 +1613,7 @@ void lea(void)
 		ARCALL(GetEA, (code >> 3) & 7, (code & 7));
 }
 
-void link(void)
+void link_ins(void)
 {
 	register w32 *r;
 	r = &(aReg[code & 7]);

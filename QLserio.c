@@ -170,8 +170,9 @@ int ser_test(int id, char *name)
 int ser_open(int id, void **priv)
 {
 	serdev_t *p;
-	const char *portnam;
+	char *portnam;
 	int unit = ser_par[0].i;
+	int err;
 
 	if (unit < 1 || unit >= MAXSERIAL)
 		return -1;
@@ -205,10 +206,13 @@ int ser_open(int id, void **priv)
 	}
 	sparams[unit] = p;
 
-	if (tty_open(portnam, p) > 0)
+	err = tty_open(portnam, p);
+	free(portnam);
+	if (err > 0) {
 		return 0;
-	else
-		return -1;
+	}
+
+	return -1;
 }
 
 int ser_pend(serdev_t *p)

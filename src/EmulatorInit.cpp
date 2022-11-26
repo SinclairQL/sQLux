@@ -94,56 +94,70 @@ void init()
 		exit(1);
 	}
 
+	char *romdir = optionString("ROMDIR");
+	char *sysrom = optionString("SYSROM");
+	char *romport = optionString("ROMPORT");
+	char *romim = optionString("ROMIM");
+	char *iorom1 = optionString("IOROM1");
+	char *iorom2 = optionString("IOROM2");
+
     try {
-        loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("SYSROM"), QL_ROM_BASE, QL_ROM_SIZE);
+        loadRom(std::string(romdir) + "/" + sysrom, QL_ROM_BASE, QL_ROM_SIZE);
     }
     catch (const exception &e)
     {
-        cout << "Error Loading ROM " << optionString("SYSROM") << " reason: " << e.what() << "\n";
+        cout << "Error Loading ROM " << sysrom << " reason: " << e.what() << "\n";
         exit(1);
     }
 
-	if (strlen(optionString("ROMPORT"))) {
+	if (strlen(romport)) {
         try {
-            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("ROMPORT"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+            loadRom(std::string(romdir) + "/" + romport, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("ROMPORT") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << romport << "reason: " << e.what() << "\n";
             exit(1);
         }
-	} else if (strlen(optionString("ROMIM"))) {
+	} else if (strlen(romim)) {
         try {
-            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("ROMIM"), QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+            loadRom(std::string(romdir) + "/" + romim, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("ROMIM") << "reason: " << e.what() << "\n";
-            exit(1);
-        }
-	}
-
-	if (strlen(optionString("IOROM1"))) {
-        try {
-            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("IOROM1"), QL_ROM2_BASE, QL_ROM2_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << optionString("IOROM1") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << romim << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}
 
-	if (strlen(optionString("IOROM2"))) {
+	if (strlen(iorom1)) {
         try {
-            loadRom(std::string(optionString("ROMDIR")) + "/" + optionString("IOROM2"), QL_ROM3_BASE, QL_ROM3_SIZE);
+            loadRom(std::string(romdir) + "/" + iorom1, QL_ROM2_BASE, QL_ROM2_SIZE);
         }
         catch(const exception &e)
         {
-            cout << "Error Loading ROM " << optionString("IOROM2") << "reason: " << e.what() << "\n";
+            cout << "Error Loading ROM " << iorom1 << "reason: " << e.what() << "\n";
             exit(1);
         }
 	}
+
+	if (strlen(iorom2)) {
+        try {
+            loadRom(std::string(romdir) + "/" + iorom2, QL_ROM3_BASE, QL_ROM3_SIZE);
+        }
+        catch(const exception &e)
+        {
+            cout << "Error Loading ROM " << iorom2 << "reason: " << e.what() << "\n";
+            exit(1);
+        }
+	}
+
+	free(romdir);
+	free(sysrom);
+	free(romport);
+	free(romim);
+	free(iorom1);
+	free(iorom2);
 
 	init_uqlx_tz();
 

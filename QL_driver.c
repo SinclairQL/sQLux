@@ -1059,6 +1059,7 @@ int prt_open(int id, void **priv)
 {
 	FILE *f;
 	struct PRT_PRIV *p;
+	char *prt_string = optionString("PRINT");
 
 	*priv = p = malloc(sizeof(struct PRT_PRIV));
 	if (*priv == NULL)
@@ -1072,10 +1073,11 @@ int prt_open(int id, void **priv)
 				strlen(prt_par[3].s) + 2);
 			strcpy(p, prt_par[3].s);
 		} else {
-			p = (void *)malloc(strlen(optionString("PRINT")) +
+			p = (void *)malloc(strlen(prt_string) +
 					   strlen(prt_par[2].s) + 2);
-			strcpy(p, optionString("PRINT"));
+			strcpy(p, prt_string);
 		}
+		free(prt_string);
 		strcat(p, " ");
 		if (prt_par[2].s)
 			strcat(p, prt_par[2].s); /* add options etc */
@@ -1087,7 +1089,8 @@ int prt_open(int id, void **priv)
 		free(p);
 	} else /* simple case */
 	{
-		f = popen(optionString("PRINT"), "w");
+		f = popen(prt_string, "w");
+		free(prt_string);
 		if (!f)
 			return qmaperr();
 	}

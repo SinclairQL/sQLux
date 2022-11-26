@@ -116,7 +116,7 @@ void trap1(void);
 void trap2(void);
 void trap3(void);
 void trap4(void);
-void link(void);
+void link_ins(void);
 void unlk(void);
 void move_to_usp(void);
 void move_from_usp(void);
@@ -489,7 +489,7 @@ static void SetTabEntries(void (**itable)(void))
 	SetTable(itable, "0100111001000100", LR trap4);
 #endif
 #endif
-        SetTable(itable, "0100111001010xxx", LR link);
+        SetTable(itable, "0100111001010xxx", LR link_ins);
         SetTable(itable, "0100111001011xxx", LR unlk);
         SetTable(itable, "0100111001100xxx", LR move_to_usp);
         SetTable(itable, "0100111001101xxx", LR move_from_usp);

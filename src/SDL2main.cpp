@@ -52,16 +52,18 @@ extern "C" int main(int argc, char *argv[])
     // set the homedir for the OS first
     SetHome();
 
-    if (emulator::optionParse(argc, argv)) {
+    if (!emulator::optionParse(argc, argv)) {
         return 0;
     }
 
     // Set some things that used to be set as side effects
-    parse_screen(optionString("RESOLUTION"));
+    char *resString = strdup(optionString("RESOLUTION"));
+    parse_screen(resString);
+    free(resString);
     verbose = optionInt("VERBOSE");
 
     // setup the boot_cmd if needed
-    const char *boot_cmd=optionString("BOOT_CMD");
+    char *boot_cmd=optionString("BOOT_CMD");
     if (strlen(boot_cmd)) {
         ux_boot = 2;
         int len = strlen(boot_cmd);
@@ -70,6 +72,7 @@ extern "C" int main(int argc, char *argv[])
         ux_bname[len] = 0x0A;
         ux_bname[len + 1] = 0;
     }
+    free(boot_cmd);
 
     emulator::deviceParse();
 

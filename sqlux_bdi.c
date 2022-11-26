@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -31,15 +32,16 @@ uint8_t bdi_buffer[512];
 void SQLUXBDISelect(uint8_t d)
 {
 	int bdi_file;
+	char *bdi_file_str = optionString("BDI1");
 
 	/* Currently only supporting 1 unit */
 	if ((d == 1) && (!bdi_files[d - 1])) {
-		bdi_debug("BDI: Opening %s\n", optionString("BDI1"));
-		if (strlen(optionString("BDI1"))) {
-			bdi_file = open(optionString("BDI1"), O_RDWR);
+		bdi_debug("BDI: Opening %s\n", bdi_file_str);
+		if (strlen(bdi_file_str)) {
+			bdi_file = open(bdi_file_str, O_RDWR);
 			if (bdi_file < 0) {
 				perror("BDI: Select Open File");
-				printf("BDI: ERROR Opening %s\n", optionString("BDI1"));
+				printf("BDI: ERROR Opening %s\n", bdi_file_str);
 			} else {
 				bdi_files[d - 1] = bdi_file;
 			}
@@ -52,6 +54,8 @@ void SQLUXBDISelect(uint8_t d)
 	}
 
 	bdi_unit = d;
+
+	free(bdi_file_str);
 
 	return;
 }

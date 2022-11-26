@@ -1,13 +1,18 @@
+#include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
-#include <boost/program_options.hpp>
-#include <boost/process/environment.hpp>
+#include <unistd.h>
 
+#include "CLI/App.hpp"
+#include "CLI/Formatter.hpp"
+#include "CLI/Config.hpp"
 #include "iequals.hpp"
+
 
 extern "C" {
     #include <sys/stat.h>
@@ -18,14 +23,13 @@ extern "C" {
 
 namespace emulator
 {
-using namespace std;
-namespace po = boost::program_options;
-namespace po_style = boost::program_options::command_line_style;
-namespace pid = boost::this_process;
+CLI::App sqluxOpt("sQLux Options Parser");
 
-static po::variables_map vm;
+using namespace std;
 
 static string argv0;
+
+std::vector<std::string> argvRemaining;
 
 std::vector<std::string> stringSplit(const std::string str, const std::string regex_str)
 {
@@ -77,7 +81,8 @@ void deviceInstall(std::vector<string> device)
 		if (lfree != -1) {
 			idev = lfree;
             string upper = device[0].substr(0, 3);
-            boost::to_upper(upper);
+            std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
+            //boost::to_upper(upper);
 			qdevs[idev].qname = strdup(upper.c_str());
 		}
 		if (ndev && ndev < 9) {
@@ -93,7 +98,7 @@ void deviceInstall(std::vector<string> device)
                 auto hex = fileString.find("%x");
                 if (hex != string::npos) {
                     char tbuf[17];
-                    snprintf(tbuf, 17, "%x", pid::get_id());
+                    snprintf(tbuf, 17, "%x", getpid());
                     fileString.erase(hex, 2);
                     fileString.insert(hex, tbuf);
                 }
@@ -150,13 +155,16 @@ void deviceInstall(std::vector<string> device)
 
 void deviceParse()
 {
-    if (!emulator::vm.count("DEVICE")) {
-        return;
-    }
-
-    for (auto &devString : vm["DEVICE"].as< vector<string> >()) {
-        auto device = stringSplit(devString, ",");
-        deviceInstall(device);
+    try {
+        if (sqluxOpt.get_option("--DEVICE")->count()) {
+            std::vector<std::string> devices = sqluxOpt.get_option("--DEVICE")->as<std::vector<std::string>>();
+            for (auto devString : devices) {
+                auto device = stringSplit(devString, ",");
+                deviceInstall(device);
+            }
+        }
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
     }
 }
 
@@ -164,176 +172,99 @@ int optionParse(int argc, char *argv[])
 {
     argv0 = string(argv[0]);
 
+    string home(homedir);
+    vector<string> config_files= {"sqlux.ini", home + "/.sqluxrc", home + "/.uqlxrc"};
+    std::string configFile;
+
+    for (auto &file: config_files) {
+        if (filesystem::exists(file)) {
+            cout << "Loading Config from: " << file <<"\n";
+            configFile = file;
+        }
+    }
+
     try {
-        po::options_description generic("Generic options");
-        generic.add_options()
-        ("CONFIG,f", po::value<string>(),
-                "sqlux.ini configuration file.")
-        ("HELP,h",
-            "produce help message")
-        ("VERBOSE,v", po::value<int>()->default_value(1),
-            "verbosity level 0-3")
-            ;
+        auto config_base=sqluxOpt.get_config_formatter_base();
+        config_base->arrayDelimiter(':');
 
-        po::options_description config("Configuration");
-        config.add_options()
-            ("BDI1", po::value<string>(),
-                "file exposed by the BDI interface")
-            ("BOOT_CMD,b", po::value<string>(),
-                "command to run on boot (executed in basic)")
-            ("BOOT_DEVICE,d", po::value<string>()->default_value("MDV1"),
-                "device to load BOOT file from")
-            ("CPU_HOG", po::value<int>()->default_value(1),
-                "1 = use all cpu, 0 = sleep when idle")
-            ("DEVICE", po::value< vector<string> >(),
-                "QDOS_name,path,flags (may be used multiple times")
-            ("FAST_STARTUP", po::value<int>()->default_value(0),
-                "1 = skip ram test (does not affect Minerva)")
-            ("FILTER", po::value<int>()->default_value(0),
-                "enable bilinear filter when zooming")
-            ("FIXASPECT", po::value<int>()->default_value(0),
-                "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels")
-            ("IOROM1", po::value<string>(),
-                "rom in 1st IO area (Minerva only 0x10000 address)")
-            ("IOROM2", po::value<string>(),
-                "rom in 2nd IO area (Minerva only 0x14000 address)")
-            ("JOY1", po::value<int>(),
-                "1-8 SDL2 joystick index")
-            ("JOY2", po::value<int>(),
-                "1-8 SDL2 joystick index")
-            ("KBD", po::value<string>()->default_value("US"),
-                "keyboard language DE, GB, US")
-            ("NO_PATCH,n", po::value<int>()->default_value(0),
-                "disable patching the rom")
-            ("PALETTE", po::value<int>()->default_value(0),
-                "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display")
-            ("PRINT", po::value<string>()->default_value("lpr"),
-                "command to use for print jobs")
-            ("RAMTOP,r", po::value<int>(),
-                "The memory space top (128K + QL ram, not valid if ramsize set)")
-            ("RAMSIZE", po::value<int>(),
-                "The size of ram")
-            ("RESOLUTION,g", po::value<string>()->default_value("512x256"),
-                "resolution of screen in mode 4")
-            ("ROMDIR", po::value<string>()->default_value("roms/"),
-                "path to the roms")
-            ("ROMPORT", po::value<string>(),
-                "rom in QL rom port (0xC000 address)")
-            ("ROMIM", po::value<string>(),
-                "rom in QL rom port (0xC000 address, legacy alias for romport)")
-            ("SER1", po::value<string>(),
-                "device for ser1")
-            ("SER2", po::value<string>(),
-                "device for ser2")
-            ("SER3", po::value<string>(),
-                "device for ser3")
-            ("SER4", po::value<string>(),
-                "device for ser4")
-            ("SHADER", po::value<int>()->default_value(0),
-                "0 = Disabled, 1 = Use flat shader, 2 = Use curved shader")
-            ("SHADER_FILE", po::value<string>()->default_value("shader.glsl"),
-                "Path to shader file to use if SHADER is 1 or 2")
-            ("SKIP_BOOT", po::value<int>()->default_value(1),
-                "1 = skip f1/f2 screen, 0 = show f1/f2 screen")
-            ("SOUND", po::value<int>()->default_value(0),
-                "volume in range 1-8, 0 to disable")
-            ("SPEED", po::value<float>()->default_value(0.0),
-                "speed in factor of BBQL speed, 0.0 for full speed")
-            ("STRICT_LOCK", po::value<int>()->default_value(0),
-                "enable strict file locking")
-            ("SYSROM", po::value<string>()->default_value("MIN198.rom"),
-                "system rom")
-            ("WIN_SIZE,w", po::value<string>()->default_value("1x"),
-                "window size 1x, 2x, 3x, max, full")
-            ;
-
-        po::options_description hidden("Hidden options");
-        hidden.add_options()
-            ("SQLUX-ARGS", po::value< vector<string> >(), "Arguments for QDOS")
-            ;
-
-        po::options_description cmdline_options;
-        cmdline_options.add(generic).add(config).add(hidden);
-
-        po::options_description config_file_options;
-        config_file_options.add(config); //.add(hidden);
-
-        po::options_description visible("Allowed options");
-        visible.add(generic).add(config);
-
-        po::positional_options_description p;
-        p.add("SQLUX-ARGS", -1);
-
-        store(po::command_line_parser(argc, argv).
-              options(cmdline_options).positional(p).style(po_style::unix_style|po_style::case_insensitive).run(), vm);
-        notify(vm);
-
-        if (vm.count("HELP")) {
-            cout << visible << "\n";
-            return 1;
-        }
-
-        if (vm.count("CONFIG")) {
-            ifstream ifs(vm["CONFIG"].as<string>().c_str());
-            if (!ifs) {
-                cout << "Cannot open config file " << vm["config"].as<string>() << "\n";
-                return 1;
-            } else {
-                store(parse_config_file(ifs, config_file_options), vm);
-                notify(vm);
-            };
-        } else {
-            string home(homedir);
-            vector<string> config_files= {"sqlux.ini", home + "/.sqluxrc", home + "/.uqlxrc"};
-
-            for (auto &file: config_files) {
-                if (filesystem::exists(file)) {
-                    cout << "Loading Config from: " << file <<"\n";
-                    ifstream ifs(file);
-                    if (!ifs) {
-                        cout << "Cannot open config file " << file << "\n";
-                    } else {
-                        store(parse_config_file(ifs, config_file_options), vm);
-                        notify(vm);
-                    }
-                    break;
-                }
-            }
-        }
+        sqluxOpt.option_defaults()->ignore_case()->configurable();
+        sqluxOpt.set_config("--CONFIG,-f", "sqlux.ini configuration file")->default_str(configFile);
+        sqluxOpt.add_option("--BDI1", "file exposed by the BDI interface");
+        sqluxOpt.add_option("--BOOT_CMD,-b", "command to run on boot (executed in basic)");
+        sqluxOpt.add_option("--BOOT_DEVICE,-d", "device to load BOOT file from")->default_str("mdv1");
+        sqluxOpt.add_option("--CPU_HOG", "1 = use all cpu, 0 = sleep when idle")->default_str("1");
+        sqluxOpt.add_option("--DEVICE", "QDOS_name,path,flags (may be used multiple times")->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
+        sqluxOpt.add_option("--FAST_STARTUP", "1 = skip ram test (does not affect Minerva)")->default_str("0");
+        sqluxOpt.add_option("--FILTER", "enable bilinear filter when zooming")->default_str("0");
+        sqluxOpt.add_option("--FIXASPECT", "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels")->default_str("0");
+        sqluxOpt.add_option("--IOROM1", "rom in 1st IO area (Minerva only 0x10000 address)");
+        sqluxOpt.add_option("--IOROM2", "rom in 2nd IO area (Minerva only 0x14000 address)");
+        sqluxOpt.add_option("--JOY1", "1-8 SDL2 joystick index");
+        sqluxOpt.add_option("--JOY2", "1-8 SDL2 joystick index");
+        sqluxOpt.add_option("--KBD", "keyboard language DE, GB, US")->default_str("US");
+        sqluxOpt.add_option("--NO_PATCH,-n", "disable patching the rom")->default_str("0");
+        sqluxOpt.add_option("--PALETTE", "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display")->default_str("0");
+        sqluxOpt.add_option("--PRINT", "command to use for print jobs")->default_str("lpr");
+        sqluxOpt.add_option("--RAMTOP,-r", "The memory space top (128K + QL ram, not valid if ramsize set)");
+        sqluxOpt.add_option("--RAMSIZE", "The size of ram");
+        sqluxOpt.add_option("--RESOLUTION,-g", "resolution of screen in mode 4")->default_str("512X256");
+        sqluxOpt.add_option("--ROMDIR", "path to the roms")->default_str("roms");
+        sqluxOpt.add_option("--ROMPORT", "rom in QL rom port (0xC000 address)");
+        sqluxOpt.add_option("--ROMIM", "rom in QL rom port (0xC000 address, legacy alias for romport)");
+        sqluxOpt.add_option("--SER1", "device for ser1");
+        sqluxOpt.add_option("--SER2", "device for ser2");
+        sqluxOpt.add_option("--SER3", "device for ser3");
+        sqluxOpt.add_option("--SER4", "device for ser4");
+        sqluxOpt.add_option("--SHADER", "0 = Disabled, 1 = Use flat shader, 2 = Use curved shader")->default_str("0");
+        sqluxOpt.add_option("--SHADER_FILE", "Path to shader file to use if SHADER is 1 or 2")->default_str("shader.glsl");
+        sqluxOpt.add_option("--SKIP_BOOT", "1 = skip f1/f2 screen, 0 = show f1/f2 screen")->default_str("1");
+        sqluxOpt.add_option("--SOUND", "volume in range 1-8, 0 to disable")->default_str("0");
+        sqluxOpt.add_option("--SPEED", "speed in factor of BBQL speed, 0.0 for full speed")->default_str("0.0");
+        sqluxOpt.add_option("--STRICT_LOCK", "enable strict file locking")->default_str("0");
+        sqluxOpt.add_option("--SYSROM", "system rom")->default_str("MIN198.rom");
+        sqluxOpt.add_option("--WIN_SIZE,-w", "window size 1x, 2x, 3x, max, full")->default_str("1x");
+        sqluxOpt.add_option("--VERBOSE,-v", "verbosity level 0-3")->default_str("1");
+        sqluxOpt.add_option("args", argvRemaining, "Arguments passed to QDOS");
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        return 0;
     }
-    catch(exception& e)
-    {
-        cout << e.what() << "\n";
-        return 1;
-    }
-    return 0;
+    CLI11_PARSE(sqluxOpt, argc, argv);
+
+    return 1;
 }
-}
+
+} // namespace emulator
 
 extern "C" {
 
 int optionInt(char *optionName)
 {
-    if (emulator::vm.count(optionName)) {
-        return emulator::vm[optionName].as<int>();
+    try {
+        return emulator::sqluxOpt.get_option(std::string("--") + std::string(optionName))->as<int>();
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
     }
 
     return 0;
 }
 
-const char *optionString(char *optionName)
+char *optionString(const char *optionName)
 {
-    if (emulator::vm.count(optionName)) {
-        return emulator::vm[optionName].as<std::string>().c_str();
+    try {
+        return strdup(emulator::sqluxOpt.get_option(std::string("--") + std::string(optionName))->as<std::string>().c_str());
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
     }
-
-    return "";
+    return strdup("");
 }
 
 float optionFloat(char *optionName)
 {
-    if (emulator::vm.count(optionName)) {
-        return emulator::vm[optionName].as<float>();
+    try {
+        return emulator::sqluxOpt.get_option(std::string("--") + std::string(optionName))->as<float>();
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
     }
 
     return 0.0;
@@ -341,10 +272,11 @@ float optionFloat(char *optionName)
 
 int optionArgc()
 {
-    if (emulator::vm.count("SQLUX-ARGS")) {
-        return emulator::vm["SQLUX-ARGS"].as< std::vector<std::string> >().size();
+    try {
+        return emulator::argvRemaining.size();
+    } catch (std::exception &e) {
+        std::cerr << e.what() << std::endl;
     }
-
     return 0;
 }
 
@@ -355,9 +287,8 @@ const char *optionArgv(int index)
     }
 
     index--;
-
-    if (emulator::vm.count("SQLUX-ARGS")) {
-        return emulator::vm["SQLUX-ARGS"].as< std::vector<std::string> >()[index].c_str();
+    if(index < emulator::argvRemaining.size()) {
+        return emulator::argvRemaining[index].c_str();
     }
 
     return "";

@@ -305,8 +305,11 @@ void QLSDLScreen(void)
 	uint32_t sdl_window_mode;
 	int i, w, h;
 	double ay;
+	char *sysrom = optionString("SYSROM");
+	char * win_size, *shader_str;
 
-	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", optionString("SYSROM"), RTOP / 1024);
+	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
+	free(sysrom);
 
 	Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
 #ifndef SDL_JOYSTICK_DISABLED
@@ -353,18 +356,20 @@ void QLSDLScreen(void)
 	    sdl_mode.h >= 600) {
 		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
-		if (!strcmp("2x", optionString("WIN_SIZE"))) {
+		win_size = optionString("WIN_SIZE");
+		if (!strcmp("2x", win_size)) {
 			w = qlscreen.xres * 2;
 			h = lrint(ay * 2.0);
-		} else if (!strcmp("3x", optionString("WIN_SIZE"))) {
+		} else if (!strcmp("3x", win_size)) {
 			w = qlscreen.xres * 3;
 			h = lrint(ay * 3.0);
-		} else if (!strcmp("max", optionString("WIN_SIZE"))) {
+		} else if (!strcmp("max", win_size)) {
 			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
-		} else if (!strcmp("full", optionString("WIN_SIZE"))) {
+		} else if (!strcmp("full", win_size)) {
 			sdl_window_mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 			ql_fullscreen = true;
 		}
+		free(win_size);
 	} else {
 		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
@@ -378,16 +383,18 @@ void QLSDLScreen(void)
 #endif
 
 	bool created = false;
-	if (shaders_selected)
+	if (shaders_selected) {
+		shader_str = optionString("SHADER_FILE");
 		created = QLGPUCreateDisplay(w , h, (int)lrint(ay),
 				&ql_windowid, sdl_win_name, sdl_window_mode,
-				shader, optionString("SHADER_FILE"));
-	else
+				shader, shader_str);
+		free(shader_str);
+	} else {
 		created = QLSDLCreateDisplay(w , h, (int)lrint(ay),
 				&ql_windowid, sdl_win_name, sdl_window_mode);
+	}
 
-	if (!created)
-	{
+	if (!created) {
 		printf("Window creation failed\n");
 		exit(-1);
 	}
@@ -1063,18 +1070,21 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 static void setKeyboardLayout (void)
 {
-	if (!strncmp("DE", optionString("KBD"), 2)) {
+	char *kbd_string = optionString("KBD");
+	printf("kbd: %s\n", kbd_string);
+
+	if (!strncasecmp("DE", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_DE;
 		if (V1) printf("Using DE keymap.\n");
-		return;
-	} else if (!strncmp("GB", optionString("KBD"), 2)) {
+	} else if (!strncasecmp("GB", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_GB;
 		if (V1) printf("Using GB keymap.\n");
-		return;
+	} else {
+		sdlqlmap = sdlqlmap_default;
+		if (V1) printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
 	}
 
-	sdlqlmap = sdlqlmap_default;
-	if (V1) printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
+	free(kbd_string);
 }
 
 

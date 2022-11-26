@@ -176,23 +176,25 @@ static uint32_t bootpatchaddr[] = {
 static void PatchBootDev()
 {
 	int i = 0;
+	char *boot_dev = optionString("BOOT_DEVICE");
 
 	/* patch the boot device in ROM */
 	while (bootpatchaddr[i]) {
 		if (!strncasecmp((void *)memBase + bootpatchaddr[i], "mdv1",
 				 4)) {
 
-			if (strlen(optionString("BOOT_DEVICE"))) {
+			if (strlen(boot_dev)) {
 				if (V2)
 					printf("Patching Boot Device %s at 0x%x\n",
-						optionString("BOOT_DEVICE"), bootpatchaddr[i]);
+						boot_dev, bootpatchaddr[i]);
 
 				strncpy((void *)memBase + bootpatchaddr[i],
-					optionString("BOOT_DEVICE"), 4);
+					boot_dev, 4);
 			}
 		}
 		i++;
 	}
+	free(boot_dev);
 }
 
 int LoadMainRom(void) /* load and modify QL ROM */
