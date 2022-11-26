@@ -68,6 +68,7 @@ jobs:
 
           # Produce a binary artifact and place it in the mounted volume
           run: |
+            git config --global --add safe.directory /home/runner/work/sQLux/sQLux
             git submodule init
             git submodule update
             cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX:PATH=${{github.workspace}}/install
