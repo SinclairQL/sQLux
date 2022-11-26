@@ -14,6 +14,10 @@ extern "C" {
     #include "Xscreen.h"
 }
 
+#if __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 static SDL_Thread *emuThread = NULL;
 
 void CleanRAMDev()
@@ -84,7 +88,11 @@ extern "C" int main(int argc, char *argv[])
 
     emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 
+#if __EMSCRIPTEN__
+    emscripten_set_main_loop(QLSDLProcessEvents, -1, 1);
+#else
     QLSDLProcessEvents();
+#endif
 
     emu_shutdown();
 

@@ -1194,11 +1194,16 @@ void QLSDLProcessEvents(void)
 	int keypressed;
 	int w, h;
 
+#if __EMSCRIPTEN__
+		if(!SDL_PollEvent(&event)) {
+			return;
+		}
+#else
 	while (1) {
 		if (!SDL_PollEvent(&event)) {
 			continue;
 		}
-
+#endif
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			QLSDProcessKey(&event.key.keysym, 1);
@@ -1272,7 +1277,9 @@ void QLSDLProcessEvents(void)
 		default:
 			break;
 		}
+#if !__EMSCRIPTEN__
 	}
+#endif
 }
 
 void QLSDLExit(void)
