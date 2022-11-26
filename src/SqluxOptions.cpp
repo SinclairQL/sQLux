@@ -4,9 +4,10 @@
 #include <regex>
 #include <sstream>
 #include <string>
-#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <boost/process/environment.hpp>
+
+#include "iequals.hpp"
 
 extern "C" {
     #include <sys/stat.h>
@@ -55,7 +56,7 @@ void deviceInstall(std::vector<string> device)
 
 	for (i = 0; i < MAXDEV; i++) {
 		if (qdevs[i].qname &&
-            (boost::iequals(qdevs[i].qname, device[0]))) {
+            (iequals(qdevs[i].qname, device[0]))) {
 			idev = i;
 			break;
 		} else if (qdevs[i].qname == NULL && lfree == -1) {
@@ -100,7 +101,7 @@ void deviceInstall(std::vector<string> device)
                 std::filesystem::path p{fileString};
 
                 // check file/dir exists unless its a ramdisk
-                if (!boost::iequals("ram", qdevs[idev].qname)) {
+                if (!iequals("ram", qdevs[idev].qname)) {
                     if (!std::filesystem::exists(p)) {
                         cerr << "Mountpoint " << fileString << " for device " << device[0] << ndev << "_ may not be accessible\n";
                     }
@@ -112,7 +113,7 @@ void deviceInstall(std::vector<string> device)
                 }
 
                 // ram devices need to end in /
-                if (boost::iequals("ram", qdevs[idev].qname) && (fileString.back() != '/')) {
+                if (iequals("ram", qdevs[idev].qname) && (fileString.back() != '/')) {
                     fileString.append("/");
                 }
 
