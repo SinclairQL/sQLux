@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    </head>
+    <body>
+        <script type='text/javascript'>
+          var Module = {};
+          fetch('sqlux.wasm')
+            .then(response =>
+              response.arrayBuffer()
+            ).then(buffer => {
+              Module.canvas = document.getElementById("canvas");
+              Module.wasmBinary = buffer;
+              var script = document.createElement('script');
+              script.src = "sqlux.js";
+              script.onload = function() {
+                console.log("Emscripten boilerplate loaded.")
+              }
+              document.body.appendChild(script);
+            });
+        </script>
+        <!--canvas id="canvas" style="width:720px; height:450px" width="1440" height="900"></canvas-->
+        <canvas id="canvas" style="width:100%; height:100%" width="1440" height="900"></canvas>
+
+    </body>
+</html>
+
