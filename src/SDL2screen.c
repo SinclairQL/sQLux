@@ -351,6 +351,7 @@ void QLSDLScreen(void)
 	    (strcmp(sdl_video_driver, "x11") == 0) ||
 	    (strcmp(sdl_video_driver, "cocoa") == 0) ||
 	    (strcmp(sdl_video_driver, "windows") == 0) ||
+	    (strcmp(sdl_video_driver, "emscripten") == 0) ||
 	    (strcmp(sdl_video_driver, "wayland") == 0) &&
 	    sdl_mode.w >= 800 &&
 	    sdl_mode.h >= 600) {
