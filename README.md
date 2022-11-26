@@ -4,7 +4,7 @@
 
 # sQLux (or QL Sux according to DaveP)
 
-sQLux is a [Sinclair QL](https://en.wikipedia.org/wiki/Sinclair_QL) emulator. It runs on Linux (including Rapsberry Pi), Mac and MS Windows. It is based on uQlx but with SDL2 used as its OS layer. 
+sQLux is a [Sinclair QL](https://en.wikipedia.org/wiki/Sinclair_QL) emulator. It runs on Linux (including Rapsberry Pi), Mac and MS Windows. It is based on uQlx but with SDL2 used as its OS layer.
 
 sQLux adds several features over the uQlx base code. See the [Documentation](docs/sqlux.md) for more details.
 
@@ -15,12 +15,12 @@ sQLux is in active development, with new functionality added regularly. However,
 ### Debian/Ubuntu
 
 ```
-apt install build-essential cmake git libboost-program-options-dev libboost-system-dev libsdl2-dev
+apt install build-essential cmake git libsdl2-dev
 ```
 ### Fedora
 
 ```
-dnf install boost-devel boost-static cmake gcc gcc-c++ git SDL2-devel
+dnf install cmake gcc gcc-c++ git SDL2-devel
 ```
 
 ## Building Linux
@@ -39,7 +39,7 @@ Basic instructions
 Instructions based on debian/ubuntu distro, for other distros you will have to modify as appropriate
 
 Download the SDL2 mingw SDK and adapt the following to your environment/version.
-The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases): 
+The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases):
 
     tar xvf SDL2-devel-2.0.18-mingw.tar.gz
     cd SDL2-2.0.18/
@@ -49,9 +49,7 @@ The SDL2 development libraries can be found [here](https://github.com/libsdl-org
     sudo mkdir /usr/local/x86_64-w64-mingw32
     sudo make cross
 
-Download, build and install a mingw version of the boost libraries. Instructions are given [here](https://github.com/libmingw-w64/libboost-mingw-w64)
-   
-Now the mingw versions of SDL2 and boost is available and we can build sQLux for Win64
+Now the mingw version of SDL2 is available and we can build sQLux for Win64
 
     mkdir mingw
     cd mingw
@@ -64,12 +62,11 @@ Install MSYS2 from here https://www.msys2.org/
 
 Run the mingw64 environment
 
-Install the toolchain, SDL2 and boost
+Install the toolchain and SDL2
 
     pacman -Sy mingw-w64-x86_64-toolchain
     pacman -Sy mingw-w64-x86_64-cmake
     pacman -Sy mingw-w64-x86_64-SDL2
-    pacman -Sy mingw-w64-x86_64-boost
 
 Create the build directory and compile
 
