@@ -23,6 +23,20 @@ apt install build-essential cmake git libsdl2-dev
 dnf install cmake gcc gcc-c++ git SDL2-devel
 ```
 
+## All Platforms
+
+sQLux uses git submodules, so either clone with the `--recursive` argument.
+
+```
+git clone --recursive https://github.com/SinclairQL/sQLux/
+
+or after cloning
+
+```
+git submodule init
+git submodule update
+```
+
 ## Building Linux
 
 sQLux has switched to using cmake as its build system
