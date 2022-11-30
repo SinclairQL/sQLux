@@ -1,28 +1,57 @@
+<!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    </head>
-    <body>
-        <script type='text/javascript'>
-          var Module = {};
-          fetch('sqlux.wasm')
-            .then(response =>
-              response.arrayBuffer()
-            ).then(buffer => {
-              Module.canvas = document.getElementById("canvas");
-              Module.wasmBinary = buffer;
-              var script = document.createElement('script');
-              script.src = "sqlux.js";
-              script.onload = function() {
-                console.log("Emscripten boilerplate loaded.")
-              }
-              document.body.appendChild(script);
-            });
-        </script>
-        <!--canvas id="canvas" style="width:720px; height:450px" width="1440" height="900"></canvas-->
-        <canvas id="canvas" style="width:100%; height:100%" width="1440" height="900"></canvas>
 
-    </body>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+  <label style="margin-right: 10px;">Upload flp/win image</label><input type="file" id="myfile" onchange="load_file()">
+  <label style="margin-right: 10px;">Save changes</label><button onclick="sync()">Save</button>
+  <br>
+  <script type='text/javascript'>
+      var Module = {};
+      fetch('sqlux.wasm')
+        .then(response =>
+          response.arrayBuffer()
+        ).then(buffer => {
+          Module.canvas = document.getElementById("canvas");
+          Module.canvas.oncontextmenu = function() {
+            return false;
+          }
+          Module.wasmBinary = buffer;
+          var script = document.createElement('script');
+          script.src = "sqlux.js";
+          script.onload = function () {
+            console.log("Emscripten boilerplate loaded.")
+          }
+          document.body.appendChild(script);
+        });
+  </script>
+  <canvas id="canvas" style="width: 1024px;height: 512px;" width="1024" height="512" oncontextmenu = "function(e) { e.preventDefault(); e.stopPropagation(); }"></canvas>
+  <script type="text/javascript">
+    let reader = new FileReader();
+
+    function load_file() {
+      let files = document.getElementById('myfile').files;
+      let file = files[0];
+      reader.addEventListener('loadend', update_win1);
+      reader.readAsArrayBuffer(file);
+    }
+
+    function update_win1(e) {
+      let result = reader.result;
+      const uint8_view = new Uint8Array(result);
+      console.log("Writing new image...");
+      FS.writeFile('/local/win1.win', uint8_view)
+      FS.syncfs(false, function (err) { console.log("New image written and synced."); });
+    }
+
+    function sync() {
+      FS.syncfs(false, function (err) { console.log("Sync done."); });
+    }
+  </script>
+</body>
+
 </html>
-

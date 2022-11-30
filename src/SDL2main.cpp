@@ -16,6 +16,9 @@ extern "C" {
 
 #if __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
+extern "C" {
+    #include "wasm_support.h"
+}
 #endif
 
 static SDL_Thread *emuThread = NULL;
@@ -51,13 +54,38 @@ extern "C" void emu_shutdown()
     CleanRAMDev();
 }
 
+extern "C" void emu_loop() {
+    static int init_done = 0;
+    int boot_file_ready = 1;
+
+#if __EMSCRIPTEN__
+    if(!init_done) {
+        boot_file_ready = wasm_does_boot_file_exist();
+    }
+#endif
+    if(boot_file_ready && !init_done) {
+	    emulator::deviceParse();
+	    emulator::init();
+	    QLSDLScreen();
+	    initSound(optionInt("SOUND"));
+	    emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
+	    init_done = 1;
+    }
+    if(init_done) {
+        QLSDLProcessEvents();
+    }
+}
+
 extern "C" int main(int argc, char *argv[])
 {
-    // set the homedir for the OS first
-    SetHome();
+#if __EMSCRIPTEN__
+	wasm_init_storage();
+#endif
+	// set the homedir for the OS first
+	SetHome();
 
-    if (!emulator::optionParse(argc, argv)) {
-        return 0;
+	if (!emulator::optionParse(argc, argv)) {
+		return 0;
     }
 
     // Set some things that used to be set as side effects
@@ -78,20 +106,11 @@ extern "C" int main(int argc, char *argv[])
     }
     free(boot_cmd);
 
-    emulator::deviceParse();
-
-    emulator::init();
-
-    QLSDLScreen();
-
-    initSound(optionInt("SOUND"));
-
-    emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 
 #if __EMSCRIPTEN__
-    emscripten_set_main_loop(QLSDLProcessEvents, -1, 1);
+    emscripten_set_main_loop(emu_loop, -1, 1);
 #else
-    QLSDLProcessEvents();
+    emu_loop();
 #endif
 
     emu_shutdown();
