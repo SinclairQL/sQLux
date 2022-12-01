@@ -28,19 +28,19 @@ void CleanRAMDev()
     int i, j;
 
     for (i = 0; i < MAXDEV; i++) {
-		if (qdevs[i].qname && strcmp(qdevs[i].qname, "RAM") == 0) {
-			for (j = 0; j < 8; j++) {
-				if ((qdevs[i].mountPoints[j] != NULL) &&
-				    qdevs[i].clean[j]) {
+        if (qdevs[i].qname && strcmp(qdevs[i].qname, "RAM") == 0) {
+            for (j = 0; j < 8; j++) {
+                if ((qdevs[i].mountPoints[j] != NULL) &&
+                    qdevs[i].clean[j]) {
                     if (V2) {
                         std::cout << "Cleaning: " << qdevs[i].mountPoints[j] << "\n";
                     }
-					std::filesystem::remove_all(qdevs[i].mountPoints[j]);
-				}
-			}
-			break;
-		}
-	}
+                    std::filesystem::remove_all(qdevs[i].mountPoints[j]);
+                }
+            }
+            break;
+        }
+    }
 }
 
 extern "C" void emu_shutdown()
@@ -64,12 +64,12 @@ extern "C" void emu_loop() {
     }
 #endif
     if(boot_file_ready && !init_done) {
-	    emulator::deviceParse();
-	    emulator::init();
-	    QLSDLScreen();
-	    initSound(optionInt("SOUND"));
-	    emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
-	    init_done = 1;
+        emulator::deviceParse();
+        emulator::init();
+        QLSDLScreen();
+        initSound(optionInt("SOUND"));
+        emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
+        init_done = 1;
     }
     if(init_done) {
         QLSDLProcessEvents();
@@ -79,13 +79,13 @@ extern "C" void emu_loop() {
 extern "C" int main(int argc, char *argv[])
 {
 #if __EMSCRIPTEN__
-	wasm_init_storage();
+    wasm_init_storage();
 #endif
-	// set the homedir for the OS first
-	SetHome();
+    // set the homedir for the OS first
+    SetHome();
 
-	if (!emulator::optionParse(argc, argv)) {
-		return 0;
+    if (!emulator::optionParse(argc, argv)) {
+        return 0;
     }
 
     // Set some things that used to be set as side effects
