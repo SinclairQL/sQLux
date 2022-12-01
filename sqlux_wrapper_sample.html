@@ -9,6 +9,7 @@
 <body>
   <label style="margin-right: 10px;">Upload flp/win image</label><input type="file" id="myfile" onchange="load_file()">
   <label style="margin-right: 10px;">Save changes</label><button onclick="sync()">Save</button>
+  <label style="margin-right: 10px;margin-left: 10px;">Clear local storage</label><button onclick="clear_storage()">Clear</button>
   <br>
   <script type='text/javascript'>
       var Module = {};
@@ -50,6 +51,11 @@
 
     function sync() {
       FS.syncfs(false, function (err) { console.log("Sync done."); });
+    }
+
+    function clear_storage() {
+      FS.unlink('/local/win1.win');
+      FS.syncfs(false, function (err) { console.log("Cleared local storage."); });
     }
   </script>
 </body>
