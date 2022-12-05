@@ -89,7 +89,7 @@ extern "C" int main(int argc, char *argv[])
     }
 
     // Set some things that used to be set as side effects
-    char *resString = strdup(optionString("RESOLUTION"));
+    char *resString = optionString("RESOLUTION");
     parse_screen(resString);
     free(resString);
     verbose = optionInt("VERBOSE");

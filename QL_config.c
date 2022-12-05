@@ -8,6 +8,7 @@
 #include "QL68000.h"
 #include "QL.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "debug.h"
 #include "iexl_general.h"
 #include "xcodes.h"
