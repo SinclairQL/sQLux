@@ -31,6 +31,10 @@
 #include "SqluxOptions.hpp"
 #include "version.h"
 
+#if __EMSCRIPTEN__
+#include "wasm_support.h"
+#endif
+
 /* UQLX basic extensions */
 
 extern int gKeyDown;
@@ -538,7 +542,11 @@ bas_err Kill_UQLX()
 	if (V1)
 		printf("\nexiting UQLX: Kill_UQLX %d\n\n", rx);
 
+#if __EMSCRIPTEN__
+	wasm_reload();
+#else
 	cleanup(rx);
+#endif
 	return 0;
 }
 

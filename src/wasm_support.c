@@ -1,6 +1,10 @@
 #include "emscripten.h"
 #include "wasm_support.h"
 
+void wasm_reload() {
+	MAIN_THREAD_ASYNC_EM_ASM("window.location.reload()");
+}
+
 EM_JS(int, wasm_does_boot_file_exist, (), {
     if (!FS.analyzePath(localWinFile).exists) {
         return 0;
