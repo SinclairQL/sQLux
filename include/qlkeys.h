@@ -69,6 +69,7 @@
 #define QL_POUND	0x2d
 #define QL_MINUS	0x15
 #define QL_EQUAL	0x25
+#define QL_SS		0x45
 
 #define QL_SHIFT	0x400
 #define QL_CTRL		0x200

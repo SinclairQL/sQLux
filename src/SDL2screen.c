@@ -81,20 +81,19 @@ uint32_t SDLcolors[16];
 struct SDLQLMap {
 	SDL_Keycode sdl_kc;
 	int code;
-	int qchar;
 };
 
 struct SDLQLMap_f {
     int mod;
 	SDL_Keycode sdl_kc;
 	int code;
-	int qchar;
 };
 
 #define MOD_NONE        (0x0)
 #define MOD_ALT         (1 << 0)
 #define MOD_CTRL        (1 << 1)
 #define MOD_SHIFT       (1 << 2)
+#define MOD_WILD        (1 << 3)
 
 static struct SDLQLMap_f *sdlqlmap = NULL;
 static void setKeyboardLayout (void);
@@ -761,173 +760,105 @@ static void SDLQLKeyrowChg(int code, int press)
 	}
 }
 
-static struct SDLQLMap sdlqlmap_DE[] = {
-				      { SDLK_LEFT, 0x31, 0x0 },
-				      { SDLK_UP, 0x32, 0x0 },
-				      { SDLK_RIGHT, 0x34, 0x0 },
-				      { SDLK_DOWN, 0x37, 0x0 },
+static struct SDLQLMap_f sdlqlmap_DE[] = {
+    { MOD_WILD,     SDLK_z,             QL_Y },
+    { MOD_WILD,     SDLK_MINUS,         QL_SS },        /* minus */
+    { MOD_WILD,     SDLK_y,             QL_Z },
+    { MOD_WILD,     0xB4,               QL_POUND },     /* accent */
+    { MOD_WILD,     0xE4,               QL_QUOTE },     /* Ä OK */
+    { MOD_WILD,     0xF6,               0x67 },         /* Ö OK */
+    { MOD_WILD,     0xFC,               QL_LBRACKET },  /* Ü OK */
+    { MOD_WILD,     0x5E,               QL_BACKSLASH }, /* < OK */
+    { MOD_WILD,     0x23,               0x65 },         /* # OK */
+    { MOD_WILD,     0x2B,               QL_RBRACKET },  /* + OK */
+    { MOD_WILD,     0xDF,               QL_MINUS },     /* ß OK */
+    { MOD_WILD,     0x3C,               0x6D },         /* ^ */
+    /* Accent ^ and \ is 0x6D */
 
-				      { SDLK_F1, 0x39, 0x0 },
-				      { SDLK_F2, 0x3B, 0x0 },
-				      { SDLK_F3, 0x3C, 0x0 },
-				      { SDLK_F4, 0x38, 0x0 },
-				      { SDLK_F5, 0x3D, 0x0 },
-
-				      { SDLK_RETURN, 0x30, 0x0 },
-				      { SDLK_SPACE, 0x36, 0x0 },
-				      { SDLK_TAB, 0x13, 0x0 },
-				      { SDLK_ESCAPE, 0x33, 0x0 },
-				      { SDLK_CAPSLOCK, 0x21, 0x0},
-				      { SDLK_RIGHTBRACKET, 0x28, 0x0 },
-				      { SDLK_5, 0x3A, 0x0 },
-				      { SDLK_4, 0x3E, 0x0 },
-				      { SDLK_7, 0x3F, 0x0 },
-				      { SDLK_LEFTBRACKET, 0x20, 0x0 },
-				      { SDLK_z, 0x16, 0x0 },
-
-				      { SDLK_PERIOD, 0x2A, 0x0 },
-				      { SDLK_c, 0x2B, 0x0 },
-				      { SDLK_b, 0x2C, 0x0 },
-				      //{ SDLK_BACKQUOTE, 0x2D, 0x0 },
-
-				      { SDLK_m, 0x2E, 0x0 },
-				      { SDLK_QUOTE, 0x2F, 0x0 },
-				      { SDLK_BACKSLASH, 0x35, 0x0 },
-				      { SDLK_k, 0x22, 0x0 },
-				      { SDLK_s, 0x23, 0x0 },
-				      { SDLK_f, 0x24, 0x0 },
-				      { SDLK_EQUALS, 0x25, 0x0 },
-				      { SDLK_g, 0x26, 0x0 },
-				      { SDLK_SEMICOLON, 0x27, 0x0 },
-				      { SDLK_l, 0x18, 0x0 },
-				      { SDLK_3, 0x19, 0x0 },
-				      { SDLK_h, 0x1A, 0x0 },
-				      { SDLK_1, 0x1B, 0x0 },
-				      { SDLK_a, 0x1C, 0x0 },
-				      { SDLK_p, 0x1D, 0x0 },
-				      { SDLK_d, 0x1E, 0x0 },
-				      { SDLK_j, 0x1F, 0x0 },
-				      { SDLK_9, 0x10, 0x0 },
-				      { SDLK_w, 0x11, 0x0 },
-				      { SDLK_i, 0x12, 0x0 },
-				      { SDLK_r, 0x14, 0x0 },
-				      { SDLK_MINUS, 0x45, 0x0 }, /* minus */
-				      { SDLK_y, 0x29, 0x0 },
-				      { SDLK_o, 0x17, 0x0 },
-				      { SDLK_8, 0x8, 0x0 },
-				      { SDLK_2, 0x9, 0x0 },
-				      { SDLK_6, 0xA, 0x0 },
-				      { SDLK_q, 0xB, 0x0 },
-				      { SDLK_e, 0xC, 0x0 },
-				      { SDLK_0, 0xD, 0x0 },
-				      { SDLK_t, 0xE, 0x0 },
-				      { SDLK_u, 0xF, 0x0 },
-				      { SDLK_x, 0x3, 0x0 },
-				      { SDLK_v, 0x4, 0x0 },
-				      { SDLK_SLASH, 0x5, 0x0 },
-				      { SDLK_n, 0x6, 0x0 },
-				      { SDLK_COMMA, 0x7, 0x0 },
-				      { 0xB4, 0x2D, 0x0 },       /* accent */
-				      { 0xE4, 0x2F, 0x0 }, 	    /* Ä OK */
-				      { 0xF6, 0x67, 0x0 },       /* Ö OK */
-				      { 0xFC, 0x20, 0x0 },       /* Ü OK */
-				      { 0x5E, 0x35, 0x0 },       /* < OK */
-				      { 0x23, 0x65, 0x0 },       /* # OK */
-				      { 0x2B, 0x28, 0x0 },       /* + OK */
-				      { 0xDF, 0x15, 0x0 },       /* ß OK */
-				      { 0x3C, 0x6D, 0x0 },       /* ^ */
-
-				      /* Accent ^ and \ is 0x6D */
-
-				      /*
-  {SDLK_Next,-0x1,0xDC},
-  {SDLK_Prior,-0x1,0xD4},
-  {SDLK_Home,-0x1,0xC1},
-  {SDLK_End,-0x1,0xC9},
-		 */
-				      { 0x0, 0x0, 0x0 } };
+    { 0x0, 0x0, 0x0 }
+};
 
 static struct SDLQLMap_f sdlqlmap_GB[] = {
-	{ MOD_NONE,     SDLK_BACKQUOTE,     (SWAP_SHIFT | QL_3), 0x00 },
-    { MOD_SHIFT,    SDLK_3,             (SWAP_SHIFT | QL_POUND), 0x00},
-	{ 0x0, 0x0, 0x0, 0x0 }
+    { MOD_NONE,     SDLK_BACKQUOTE,     (SWAP_SHIFT | QL_3) },
+    { MOD_SHIFT,    SDLK_3,             (SWAP_SHIFT | QL_POUND) },
+    { 0x0, 0x0, 0x0 }
 };
 
 static struct SDLQLMap sdlqlmap_default[] = {
-    { SDLK_LEFT,            QL_LEFT, 0x0 },
-	{ SDLK_UP,              QL_UP, 0x0 },
-	{ SDLK_RIGHT,           QL_RIGHT, 0x0 },
-	{ SDLK_DOWN,            QL_DOWN, 0x0 },
+    { SDLK_LEFT,            QL_LEFT },
+    { SDLK_UP,              QL_UP },
+    { SDLK_RIGHT,           QL_RIGHT },
+    { SDLK_DOWN,            QL_DOWN },
 
-	{ SDLK_F1,              QL_F1, 0x0 },
-	{ SDLK_F2,              QL_F2, 0x0 },
-	{ SDLK_F3,              QL_F3, 0x0 },
-	{ SDLK_F4,              QL_F4, 0x0 },
-	{ SDLK_F5,              QL_F5, 0x0 },
+    { SDLK_F1,              QL_F1 },
+    { SDLK_F2,              QL_F2 },
+    { SDLK_F3,              QL_F3 },
+    { SDLK_F4,              QL_F4 },
+    { SDLK_F5,              QL_F5 },
 
-	{ SDLK_RETURN,          QL_ENTER, 0x0 },
-	{ SDLK_SPACE,           QL_SPACE, 0x0 },
-	{ SDLK_TAB,             QL_TAB, 0x0 },
-	{ SDLK_ESCAPE,          QL_ESCAPE, 0x0 },
-	{ SDLK_CAPSLOCK,        QL_CAPSLOCK, 0x0 },
-	{ SDLK_RIGHTBRACKET,    QL_RBRACKET, 0x0 },
-	{ SDLK_LEFTBRACKET,     QL_LBRACKET, 0x0 },
-	{ SDLK_PERIOD,          QL_PERIOD, 0x0 },
-	{ SDLK_BACKQUOTE,       QL_POUND, 0x0 },
-	{ SDLK_QUOTE,           QL_QUOTE, 0x0 },
-	{ SDLK_BACKSLASH,       QL_BACKSLASH, 0x0 },
-	{ SDLK_EQUALS,          QL_EQUAL, 0x0 },
-	{ SDLK_SEMICOLON,       QL_SEMICOLON, 0x0 },
-	{ SDLK_MINUS,           QL_MINUS, 0x0 },
-	{ SDLK_SLASH,           QL_SLASH, 0x0 },
-	{ SDLK_COMMA,           QL_COMMA, 0x0 },
+    { SDLK_RETURN,          QL_ENTER },
+    { SDLK_SPACE,           QL_SPACE },
+    { SDLK_TAB,             QL_TAB },
+    { SDLK_ESCAPE,          QL_ESCAPE },
+    { SDLK_CAPSLOCK,        QL_CAPSLOCK },
+    { SDLK_RIGHTBRACKET,    QL_RBRACKET },
+    { SDLK_LEFTBRACKET,     QL_LBRACKET },
+    { SDLK_PERIOD,          QL_PERIOD },
+    { SDLK_BACKQUOTE,       QL_POUND },
+    { SDLK_QUOTE,           QL_QUOTE },
+    { SDLK_BACKSLASH,       QL_BACKSLASH },
+    { SDLK_EQUALS,          QL_EQUAL },
+    { SDLK_SEMICOLON,       QL_SEMICOLON },
+    { SDLK_MINUS,           QL_MINUS },
+    { SDLK_SLASH,           QL_SLASH },
+    { SDLK_COMMA,           QL_COMMA },
 
-	{ SDLK_0,               QL_0, 0x0 },
-	{ SDLK_1,               QL_1, 0x0 },
-	{ SDLK_2,               QL_2, 0x0 },
-	{ SDLK_3,               QL_3, 0x0 },
-	{ SDLK_4,               QL_4, 0x0 },
-    { SDLK_5,               QL_5, 0x0 },
-	{ SDLK_6,               QL_6, 0x0 },
-	{ SDLK_7,               QL_7, 0x0 },
-	{ SDLK_8,               QL_8, 0x0 },
-	{ SDLK_9,               QL_9, 0x0 },
+    { SDLK_0,               QL_0 },
+    { SDLK_1,               QL_1 },
+    { SDLK_2,               QL_2 },
+    { SDLK_3,               QL_3 },
+    { SDLK_4,               QL_4 },
+    { SDLK_5,               QL_5 },
+    { SDLK_6,               QL_6 },
+    { SDLK_7,               QL_7 },
+    { SDLK_8,               QL_8 },
+    { SDLK_9,               QL_9 },
 
-	{ SDLK_a,               QL_A, 0x0 },
-	{ SDLK_b,               QL_B, 0x0 },
-	{ SDLK_c,               QL_C, 0x0 },
-	{ SDLK_d,               QL_D, 0x0 },
-	{ SDLK_e,               QL_E, 0x0 },
-	{ SDLK_f,               QL_F, 0x0 },
-	{ SDLK_g,               QL_G, 0x0 },
-	{ SDLK_h,               QL_H, 0x0 },
-	{ SDLK_i,               QL_I, 0x0 },
-	{ SDLK_j,               QL_J, 0x0 },
-	{ SDLK_k,               QL_K, 0x0 },
-	{ SDLK_l,               QL_L, 0x0 },
-	{ SDLK_m,               QL_M, 0x0 },
-	{ SDLK_n,               QL_N, 0x0 },
-	{ SDLK_o,               QL_O, 0x0 },
-	{ SDLK_p,               QL_P, 0x0 },
-	{ SDLK_q,               QL_Q, 0x0 },
-	{ SDLK_r,               QL_R, 0x0 },
-	{ SDLK_s,               QL_S, 0x0 },
-	{ SDLK_t,               QL_T, 0x0 },
-	{ SDLK_u,               QL_U, 0x0 },
-    { SDLK_v,               QL_V, 0x0 },
-	{ SDLK_w,               QL_W, 0x0 },
-	{ SDLK_y,               QL_Y, 0x0 },
-	{ SDLK_x,               QL_X, 0x0 },
-    { SDLK_z,               QL_Z, 0x0 },
+    { SDLK_a,               QL_A },
+    { SDLK_b,               QL_B },
+    { SDLK_c,               QL_C },
+    { SDLK_d,               QL_D },
+    { SDLK_e,               QL_E },
+    { SDLK_f,               QL_F },
+    { SDLK_g,               QL_G },
+    { SDLK_h,               QL_H },
+    { SDLK_i,               QL_I },
+    { SDLK_j,               QL_J },
+    { SDLK_k,               QL_K },
+    { SDLK_l,               QL_L },
+    { SDLK_m,               QL_M },
+    { SDLK_n,               QL_N },
+    { SDLK_o,               QL_O },
+    { SDLK_p,               QL_P },
+    { SDLK_q,               QL_Q },
+    { SDLK_r,               QL_R },
+    { SDLK_s,               QL_S },
+    { SDLK_t,               QL_T },
+    { SDLK_u,               QL_U },
+    { SDLK_v,               QL_V },
+    { SDLK_w,               QL_W },
+    { SDLK_y,               QL_Y },
+    { SDLK_x,               QL_X },
+    { SDLK_z,               QL_Z },
 
 
-				      /*
-  {SDLK_Next,-0x1,0xDC},
-  {SDLK_Prior,-0x1,0xD4},
-  {SDLK_Home,-0x1,0xC1},
-  {SDLK_End,-0x1,0xC9},
-		 */
-	{ 0x0, 0x0, 0x0 }
+    /*
+    {SDLK_Next,-0x1,0xDC},
+    {SDLK_Prior,-0x1,0xD4},
+    {SDLK_Home,-0x1,0xC1},
+    {SDLK_End,-0x1,0xC9},
+    */
+    { 0x0, 0x0}
 };
 
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
@@ -995,13 +926,9 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
             int mod = sdl_altstate | sdl_controlstate << 1 |
                 sdl_shiftstate << 2;
             if ((keysym->sym == sdlqlmap[i].sdl_kc) && 
-                    (mod == sdlqlmap[i].mod)) {
+                    ((sdlqlmap[i].mod == MOD_WILD) || (mod == sdlqlmap[i].mod))) {
 
-                /* Does non control shift generate another key code? */
-                int code = ((!sdl_shiftstate) ||
-                        sdl_controlstate ||
-                        (!sdlqlmap[i].qchar))
-                       ? sdlqlmap[i].code : sdlqlmap[i].qchar;
+			    int code = sdlqlmap[i].code;
 
                 /* Code requires a change in shift state? */
                 if (SWAP_SHIFT & code) {
@@ -1028,11 +955,6 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 			int code = sdlqlmap_default[i].code;
 
-			/* Code requires a change in shift state? */
-			if (SWAP_SHIFT & code) {
-				code &= ~SWAP_SHIFT;
-				mod ^= (0x1 << 2);
-			}
 			if (pressed) {
 				queueKey(mod, code, 0);
 			}
@@ -1046,13 +968,11 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 static void setKeyboardLayout (void)
 {
 	char *kbd_string = optionString("KBD");
-	printf("kbd: %s\n", kbd_string);
 
-	//f (!strncasecmp("DE", kbd_string, 2)) {
-	//	sdlqlmap = sdlqlmap_DE;
-	//	if (V1) printf("Using DE keymap.\n");
-	//} else
-    if (!strncasecmp("GB", kbd_string, 2)) {
+	if (!strncasecmp("DE", kbd_string, 2)) {
+		sdlqlmap = sdlqlmap_DE;
+		if (V1) printf("Using DE keymap.\n");
+	} else if (!strncasecmp("GB", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_GB;
 		if (V1) printf("Using GB keymap.\n");
 	} else {
