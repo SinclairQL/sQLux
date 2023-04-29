@@ -40,27 +40,6 @@ namespace emulator
 {
 using namespace std;
 
-void loadRom(string name, uint32_t addr, int size)
-{
-    if (name[0] == '~') {
-        name.erase(0, 1);
-        name.insert(0, "/");
-        name.insert(0, homedir);
-    }
-
-    std::filesystem::path p{name};
-    if (std::filesystem::file_size(p) != size) {
-        throw std::length_error("Rom Size Error");
-    }
-
-    ifstream romFile(name.c_str(), std::ios::binary);
-    if (romFile.bad()) {
-        throw std::runtime_error("File NOT Found");
-    }
-    romFile.read((char *)memBase + addr, size);
-    romFile.close();
-}
-
 void init()
 {
 	char *rf;
