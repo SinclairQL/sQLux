@@ -1,8 +1,8 @@
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/errno.h>
 #include <sys/stat.h>
 
 #include "QL68000.h"
