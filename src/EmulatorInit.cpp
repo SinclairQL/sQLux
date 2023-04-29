@@ -10,6 +10,7 @@
 
 extern "C" {
     #include "debug.h"
+	#include "emulator_init.h"
     #include "memaccess.h"
     #include "QInstAddr.h"
     #include "QLtraps.h"
@@ -65,6 +66,7 @@ void init()
 	char *rf;
 	int rl = 0;
 	void *tbuff;
+	int ret;
 
 	if (V1)
 		cout << "*** sQLux release " << release << "\n\n";
@@ -101,55 +103,40 @@ void init()
 	char *iorom1 = optionString("IOROM1");
 	char *iorom2 = optionString("IOROM2");
 
-    try {
-        loadRom(std::string(romdir) + "/" + sysrom, QL_ROM_BASE, QL_ROM_SIZE);
-    }
-    catch (const exception &e)
-    {
-        cout << "Error Loading ROM " << sysrom << " reason: " << e.what() << "\n";
-        exit(1);
-    }
+    ret = emulatorLoadRom(romdir, sysrom, QL_ROM_BASE, QL_ROM_SIZE);
+	if (ret < 0) {
+		fprintf(stderr, "Error Loading sysrom %s\n", sysrom);
+		exit(ret);
+	}
 
 	if (strlen(romport)) {
-        try {
-            loadRom(std::string(romdir) + "/" + romport, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << romport << "reason: " << e.what() << "\n";
-            exit(1);
-        }
+    	ret = emulatorLoadRom(romdir, romport, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+		if (ret < 0) {
+			fprintf(stderr, "Error Loading romport %s\n", romport);
+			exit(ret);
+		}
 	} else if (strlen(romim)) {
-        try {
-            loadRom(std::string(romdir) + "/" + romim, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << romim << "reason: " << e.what() << "\n";
-            exit(1);
-        }
+	    ret = emulatorLoadRom(romdir, romim, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+		if (ret < 0) {
+			fprintf(stderr, "Error Loading romim %s\n", romim);
+			exit(ret);
+		}
 	}
 
 	if (strlen(iorom1)) {
-        try {
-            loadRom(std::string(romdir) + "/" + iorom1, QL_ROM2_BASE, QL_ROM2_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << iorom1 << "reason: " << e.what() << "\n";
-            exit(1);
-        }
+		ret = emulatorLoadRom(romdir, iorom1, QL_ROM2_BASE, QL_ROM2_SIZE);
+		if (ret < 0) {
+			fprintf(stderr, "Error Loading iorom1 %s\n", iorom1);
+			exit(ret);
+		}
 	}
 
 	if (strlen(iorom2)) {
-        try {
-            loadRom(std::string(romdir) + "/" + iorom2, QL_ROM3_BASE, QL_ROM3_SIZE);
-        }
-        catch(const exception &e)
-        {
-            cout << "Error Loading ROM " << iorom2 << "reason: " << e.what() << "\n";
-            exit(1);
-        }
+		ret = emulatorLoadRom(romdir, iorom2, QL_ROM3_BASE, QL_ROM3_SIZE);
+		if (ret < 0) {
+			fprintf(stderr, "Error Loading iorom2 %s\n", iorom2);
+			exit(ret);
+		}
 	}
 
 	free(romdir);
