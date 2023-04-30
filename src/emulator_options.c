@@ -155,7 +155,50 @@ int emulatorOptionParse(int argc, char **argv)
 		exit(1);
 	}
 
-	printf("SER2 Count %d\n", ap_count(parser, "ser2"));
+	return 0;
+}
+
+void emulatorOptionsRemove()
+{
+	ap_free(parser);
+}
+
+char *emulatorOptionString(const char *name)
+{
+	int i;
+
+	if (ap_count(parser, name)) {
+		return ap_get_str_value(parser, name);
+	}
+
+	i = 0;
+	while (emuOptions[i].option != NULL) {
+		if ((strcmp(emuOptions[i].option, name) == 0)
+			&& (emuOptions[i].type == EMU_OPT_CHAR)
+			&& (emuOptions[i].charVal != NULL)) {
+			return emuOptions[i].charVal;
+		}
+		i++;
+	}
+
+	return "";
+}
+
+int emulatorOptionInt(const char *name)
+{
+	int i;
+
+	if (ap_count(parser, name)) {
+		return ap_get_int_value(parser, name);
+	}
+
+	i = 0;
+	while (emuOptions[i].option != NULL) {
+		if (strcmp(emuOptions[i].option, name) == 0) {
+			return emuOptions[i].intVal;
+		}
+		i++;
+	}
 
 	return 0;
 }

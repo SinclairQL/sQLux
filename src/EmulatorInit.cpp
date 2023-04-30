@@ -8,6 +8,8 @@
 
 #include "SqluxOptions.hpp"
 
+#include "emulator_options.h"
+
 extern "C" {
     #include "debug.h"
 	#include "emulator_init.h"
@@ -75,12 +77,12 @@ void init()
 		exit(1);
 	}
 
-	char *romdir = optionString("ROMDIR");
-	char *sysrom = optionString("SYSROM");
-	char *romport = optionString("ROMPORT");
-	char *romim = optionString("ROMIM");
-	char *iorom1 = optionString("IOROM1");
-	char *iorom2 = optionString("IOROM2");
+	char *romdir = emulatorOptionString("romdir");
+	char *sysrom = emulatorOptionString("sysrom");
+	char *romport = emulatorOptionString("romport");
+	char *romim = emulatorOptionString("romim");
+	char *iorom1 = emulatorOptionString("iorom1");
+	char *iorom2 = emulatorOptionString("iorom2");
 
     ret = emulatorLoadRom(romdir, sysrom, QL_ROM_BASE, QL_ROM_SIZE);
 	if (ret < 0) {
@@ -117,13 +119,6 @@ void init()
 			exit(ret);
 		}
 	}
-
-	free(romdir);
-	free(sysrom);
-	free(romport);
-	free(romim);
-	free(iorom1);
-	free(iorom2);
 
 	init_uqlx_tz();
 
