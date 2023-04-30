@@ -11,8 +11,6 @@ void deviceParse(void);
 #ifdef __cplusplus
 extern "C" {
 #endif
-int optionInt(const char *optionName);
-char *optionString(const char *optionName);
 float optionFloat(const char *optionName);
 int optionArgc(void);
 const char *optionArgv(int index);

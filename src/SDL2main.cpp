@@ -68,7 +68,7 @@ extern "C" void emu_loop() {
         emulator::deviceParse();
         emulator::init();
         QLSDLScreen();
-        initSound(optionInt("SOUND"));
+        initSound(emulatorOptionInt("sound"));
         emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
         init_done = 1;
     }
@@ -92,13 +92,12 @@ extern "C" int main(int argc, char *argv[])
     }
 
     // Set some things that used to be set as side effects
-    char *resString = optionString("RESOLUTION");
+    char *resString = emulatorOptionString("resolution");
     parse_screen(resString);
-    free(resString);
-    verbose = optionInt("VERBOSE");
+    verbose = emulatorOptionInt("verbose");
 
     // setup the boot_cmd if needed
-    char *boot_cmd=optionString("BOOT_CMD");
+    char *boot_cmd=emulatorOptionString("boot_cmd");
     if (strlen(boot_cmd)) {
         ux_boot = 2;
         int len = strlen(boot_cmd);
@@ -107,7 +106,6 @@ extern "C" int main(int argc, char *argv[])
         ux_bname[len] = 0x0A;
         ux_bname[len + 1] = 0;
     }
-    free(boot_cmd);
 
 
 #if __EMSCRIPTEN__

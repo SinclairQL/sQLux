@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "debug.h"
+#include "emulator_options.h"
 #include "iexl_general.h"
 #include "xcodes.h"
 #include "QDOS.h"
@@ -177,7 +178,7 @@ static uint32_t bootpatchaddr[] = {
 static void PatchBootDev()
 {
 	int i = 0;
-	char *boot_dev = optionString("BOOT_DEVICE");
+	char *boot_dev = emulatorOptionString("boot_device");
 
 	/* patch the boot device in ROM */
 	while (bootpatchaddr[i]) {
@@ -195,7 +196,6 @@ static void PatchBootDev()
 		}
 		i++;
 	}
-	free(boot_dev);
 }
 
 int LoadMainRom(void) /* load and modify QL ROM */
@@ -215,7 +215,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 	//if(V1)printf("no_patch: %d\n",QMD.no_patch);
 
-	if (p && !optionInt("NO_PATCH")) {
+	if (p && !emulatorOptionInt("no_patch")) {
 		if (!isMinerva) {
 			if (p)
 				p = PatchFind();
@@ -240,7 +240,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			     RW((uw16 *)((Ptr)memBase + 0x12a)))),
 		   MDVH_CMD_CODE); /* read mdv sector header */
 
-		if (!isMinerva && optionInt("FAST_STARTUP"))
+		if (!isMinerva && emulatorOptionInt("fast_startup"))
 			WW(((uw16 *)((Ptr)memBase + RL(&memBase[1]))),
 			   FSTART_CMD_CODE); /* fast startup patch */
 		/* FastStartup() -- 0xadc7 */
@@ -270,7 +270,7 @@ int LoadMainRom(void) /* load and modify QL ROM */
 
 		PatchBootDev();
 	}
-	if (!p && !optionInt("NO_PATCH"))
+	if (!p && !emulatorOptionInt("no_patch"))
 		printf("warning : could not complete ROM patch\n");
 
 	/* last not least intrument the ROM code HW register access */

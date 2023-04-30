@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "emulator_options.h"
 #include "QL_hardware.h"
 #include "uqlx_cfg.h"
 #include "QL68000.h"
@@ -317,11 +318,10 @@ void QLSDLScreen(void)
 	uint32_t sdl_window_mode;
 	int i, w, h;
 	double ay;
-	char *sysrom = optionString("SYSROM");
+	char *sysrom = emulatorOptionString("sysrom");
 	char * win_size, *shader_str;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
-	free(sysrom);
 
 	Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
 #ifndef SDL_JOYSTICK_DISABLED
@@ -341,7 +341,7 @@ void QLSDLScreen(void)
 
 	/* Fix the aspect ratio to more like real hardware
 	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
-	int aspect = optionInt("FIXASPECT");
+	int aspect = emulatorOptionInt("fixaspect");
 	if (aspect == 1) {
 		ql_screen_ratio = (3.0 / 2.0);
 	} else if (aspect == 2) {
@@ -369,7 +369,7 @@ void QLSDLScreen(void)
 	    sdl_mode.h >= 600) {
 		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
-		win_size = optionString("WIN_SIZE");
+		win_size = emulatorOptionString("win_size");
 		if (!strcmp("2x", win_size)) {
 			w = qlscreen.xres * 2;
 			h = lrint(ay * 2.0);
@@ -382,14 +382,13 @@ void QLSDLScreen(void)
 			sdl_window_mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 			ql_fullscreen = true;
 		}
-		free(win_size);
 	} else {
 		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
 	int shader = 0;
 #ifdef ENABLE_SHADERS
-	shader = optionInt("SHADER");
+	shader = emulatorOptionInt("shader");
 	if ((shader == 1) || (shader == 2)) {
 		shaders_selected = true;
 	}
@@ -397,11 +396,10 @@ void QLSDLScreen(void)
 
 	bool created = false;
 	if (shaders_selected) {
-		shader_str = optionString("SHADER_FILE");
+		shader_str = emulatorOptionString("shader_file");
 		created = QLGPUCreateDisplay(w , h, (int)lrint(ay),
 				&ql_windowid, sdl_win_name, sdl_window_mode,
 				shader, shader_str);
-		free(shader_str);
 	} else {
 		created = QLSDLCreateDisplay(w , h, (int)lrint(ay),
 				&ql_windowid, sdl_win_name, sdl_window_mode);
@@ -447,7 +445,7 @@ static bool QLSDLCreateDisplay(int w , int h, int ly, uint32_t* id,
 	dest_rect.w = qlscreen.xres;
 	dest_rect.h = ly;
 
-	if (optionInt("FILTER"))
+	if (emulatorOptionInt("filter"))
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
 
 	ql_screen = SDL_CreateRGBSurfaceWithFormat(
@@ -500,7 +498,7 @@ void QLSDLCreateIcon(SDL_Window* window)
 
 void QLSDLCreatePalette(const SDL_PixelFormat* format)
 {
-	int option = optionInt("PALETTE");
+	int option = emulatorOptionInt("palette");
 	for (int i = 0; i < 16; i++) {
 		if (option == 2) {
 			SDLcolors[i] = SDL_MapRGB(format, QLcolors_gray[i].r,
@@ -692,8 +690,8 @@ static void QLSDLInitJoystick(void)
 {
 #ifndef SDL_JOYSTICK_DISABLED
 	// Open joystick 1 and 2, if defined
-	QLSDLOpenJoystick(0, optionInt("JOY1"));
-	QLSDLOpenJoystick(1, optionInt("JOY2"));
+	QLSDLOpenJoystick(0, emulatorOptionInt("joy1"));
+	QLSDLOpenJoystick(1, emulatorOptionInt("joy2"));
 #endif
 }
 
@@ -925,7 +923,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
         while (sdlqlmap[i].sdl_kc != 0) {
             int mod = sdl_altstate | sdl_controlstate << 1 |
                 sdl_shiftstate << 2;
-            if ((keysym->sym == sdlqlmap[i].sdl_kc) && 
+            if ((keysym->sym == sdlqlmap[i].sdl_kc) &&
                     ((sdlqlmap[i].mod == MOD_WILD) || (mod == sdlqlmap[i].mod))) {
 
 			    int code = sdlqlmap[i].code;
@@ -967,7 +965,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 static void setKeyboardLayout (void)
 {
-	char *kbd_string = optionString("KBD");
+	char *kbd_string = emulatorOptionString("kbd");
 
 	if (!strncasecmp("DE", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_DE;
@@ -978,8 +976,6 @@ static void setKeyboardLayout (void)
 	} else {
 		if (V1) printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
 	}
-
-	free(kbd_string);
 }
 
 

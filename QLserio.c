@@ -32,6 +32,7 @@
 #include "QDOS.h"
 #include "QL_cconv.h"
 #include "driver.h"
+#include "emulator_options.h"
 #include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
@@ -192,22 +193,21 @@ int ser_open(int id, void **priv)
 
 	switch (unit) {
 	case 1:
-		portnam = optionString("SER1");
+		portnam = emulatorOptionString("ser1");
 		break;
 	case 2:
-		portnam = optionString("SER2");
+		portnam = emulatorOptionString("ser2");
 		break;
 	case 3:
-		portnam = optionString("SER3");
+		portnam = emulatorOptionString("ser3");
 		break;
 	case 4:
-		portnam = optionString("SER4");
+		portnam = emulatorOptionString("ser4");
 		break;
 	}
 	sparams[unit] = p;
 
 	err = tty_open(portnam, p);
-	free(portnam);
 	if (err > 0) {
 		return 0;
 	}

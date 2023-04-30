@@ -181,6 +181,7 @@ char *emulatorOptionString(const char *name)
 		i++;
 	}
 
+	fprintf(stderr, "Not Found Option: %s\n", name);
 	return "";
 }
 
@@ -200,5 +201,6 @@ int emulatorOptionInt(const char *name)
 		i++;
 	}
 
+	fprintf(stderr, "Not Found Option: %s\n", name);
 	return 0;
 }

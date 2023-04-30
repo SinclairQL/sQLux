@@ -54,10 +54,10 @@ void init()
 
 	tzset();
 
-	if (optionInt("RAMSIZE")) {
-		RTOP = (128 + optionInt("RAMSIZE")) * 1024;
+	if (emulatorOptionInt("ramsize")) {
+		RTOP = (128 + emulatorOptionInt("ramsize")) * 1024;
 	} else {
-		RTOP = optionInt("RAMTOP") * 1024;
+		RTOP = emulatorOptionInt("ramtop") * 1024;
 	}
 
 	if (RTOP < (256 * 1024)) {
@@ -169,8 +169,8 @@ void init()
 	else if (V1)
 		printf("Emulation Speed: FULL\n");
 
-	if (V1 && (optionInt("SOUND") > 0))
-		printf("sound enabled, volume %i.\n", optionInt("SOUND"));
+	if (V1 && (emulatorOptionInt("sound") > 0))
+		printf("sound enabled, volume %i.\n", emulatorOptionInt("sound"));
 
 	if (!isMinerva) {
 		qlux_table[IPC_CMD_CODE] = UseIPC; /* install pseudoops */
@@ -203,7 +203,7 @@ void init()
 	}
 	qlux_table[BASEXT_CMD_CODE] = BASEXTCmd;
 
-	if (optionInt("SKIP_BOOT"))
+	if (emulatorOptionInt("skip_boot"))
 		qlux_table[0x4e43] = btrap3;
 
 	InitialSetup();

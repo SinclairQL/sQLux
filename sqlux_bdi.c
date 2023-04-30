@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "emulator_options.h"
 #include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
@@ -32,7 +33,7 @@ uint8_t bdi_buffer[512];
 void SQLUXBDISelect(uint8_t d)
 {
 	int bdi_file;
-	char *bdi_file_str = optionString("BDI1");
+	char *bdi_file_str = emulatorOptionString("bdi1");
 
 	/* Currently only supporting 1 unit */
 	if ((d == 1) && (!bdi_files[d - 1])) {

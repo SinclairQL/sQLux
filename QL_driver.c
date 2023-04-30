@@ -19,6 +19,7 @@
 
 #include "driver.h"
 #include "dummies.h"
+#include "emulator_options.h"
 #include "QDOS.h"
 
 #include "QInstAddr.h"
@@ -1059,7 +1060,7 @@ int prt_open(int id, void **priv)
 {
 	FILE *f;
 	struct PRT_PRIV *p;
-	char *prt_string = optionString("PRINT");
+	char *prt_string = emulatorOptionString("print");
 
 	*priv = p = malloc(sizeof(struct PRT_PRIV));
 	if (*priv == NULL)
@@ -1077,7 +1078,6 @@ int prt_open(int id, void **priv)
 					   strlen(prt_par[2].s) + 2);
 			strcpy(p, prt_string);
 		}
-		free(prt_string);
 		strcat(p, " ");
 		if (prt_par[2].s)
 			strcat(p, prt_par[2].s); /* add options etc */
@@ -1090,7 +1090,6 @@ int prt_open(int id, void **priv)
 	} else /* simple case */
 	{
 		f = popen(prt_string, "w");
-		free(prt_string);
 		if (!f)
 			return qmaperr();
 	}

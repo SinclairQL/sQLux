@@ -380,7 +380,7 @@ OSErr QFOpenDisk(struct mdvFile *f)
 			perror("could not stat file/device");
 
 #ifndef NO_LOCK
-		if (optionInt("STRICT_LOCK")) {
+		if (emulatorOptionInt("strict_lock")) {
 			xmode = (sbuf.st_mode | S_ISGID) & (~S_IXGRP);
 			if (chmod(qdevs[fs].mountPoints[drnum], xmode))
 				if (errno != EROFS)
