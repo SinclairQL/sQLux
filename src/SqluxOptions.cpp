@@ -235,31 +235,3 @@ int optionParse(int argc, char *argv[])
 }
 
 } // namespace emulator
-
-extern "C" {
-
-int optionArgc()
-{
-    try {
-        return emulator::argvRemaining.size();
-    } catch (std::exception &e) {
-        std::cerr << e.what() << std::endl;
-    }
-    return 0;
-}
-
-const char *optionArgv(int index)
-{
-    if (index == 0) {
-        return emulator::argv0.c_str();
-    }
-
-    index--;
-    if(index < emulator::argvRemaining.size()) {
-        return emulator::argvRemaining[index].c_str();
-    }
-
-    return "";
-}
-
-}

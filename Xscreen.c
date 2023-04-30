@@ -152,9 +152,9 @@ void mangle_args(char *dev)
 		return; /* same, for other reasons */
 
 	if (scr_par[4].i >= 0)
-		sprintf(GXS + 2, "%s__%ld", dev, scr_par[4].i);
+		snprintf(GXS + 2, 0x400, "%s__%ld", dev, scr_par[4].i);
 	else
-		sprintf(GXS + 2, "%s", dev);
+		snprintf(GXS + 2, 0x400, "%s", dev);
 
 	WW(GXS, strlen(GXS + 2));
 	aReg[0] = UQLX_STR_SCRATCH;

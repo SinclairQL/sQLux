@@ -9,7 +9,7 @@
 #include "sds.h"
 #include "unixstuff.h"
 
-int emulatorLoadRom(char *romDir, char *romName, uint32_t addr, size_t size)
+int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr, size_t size)
 {
 	struct stat romStat;
 	int ret, romFile;

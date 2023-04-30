@@ -178,7 +178,7 @@ static uint32_t bootpatchaddr[] = {
 static void PatchBootDev()
 {
 	int i = 0;
-	char *boot_dev = emulatorOptionString("boot_device");
+	const char *boot_dev = emulatorOptionString("boot_device");
 
 	/* patch the boot device in ROM */
 	while (bootpatchaddr[i]) {

@@ -92,12 +92,12 @@ extern "C" int main(int argc, char *argv[])
     }
 
     // Set some things that used to be set as side effects
-    char *resString = emulatorOptionString("resolution");
+    const char *resString = emulatorOptionString("resolution");
     parse_screen(resString);
     verbose = emulatorOptionInt("verbose");
 
     // setup the boot_cmd if needed
-    char *boot_cmd=emulatorOptionString("boot_cmd");
+    const char *boot_cmd=emulatorOptionString("boot_cmd");
     if (strlen(boot_cmd)) {
         ux_boot = 2;
         int len = strlen(boot_cmd);

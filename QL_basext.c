@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "emulator_options.h"
 #include "QL.h"
 #include "QL_files.h"
 #include "QFilesPriv.h"
@@ -630,7 +631,7 @@ bas_err UQLX_getXargc()
 		return QERR_BP;
 #endif
 
-	return bas_retint(optionArgc());
+	return bas_retint(emulatorOptionArgc());
 }
 
 bas_err UQLX_getXarg()
@@ -650,10 +651,10 @@ bas_err UQLX_getXarg()
 		return QERR_BP;
 
 	if (/*n>UQLX_argc-1 || */ n < 0 ||
-	    ((n > 0) && (n > optionArgc())))
+	    ((n > 0) && (n >= emulatorOptionArgc())))
 		return bas_retstr(0, NULL);
 
-	r = optionArgv(n);
+	r = emulatorOptionArgv(n);
 
 	return bas_retstr(strlen(r), r);
 }

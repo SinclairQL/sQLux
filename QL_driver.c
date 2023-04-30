@@ -1060,7 +1060,7 @@ int prt_open(int id, void **priv)
 {
 	FILE *f;
 	struct PRT_PRIV *p;
-	char *prt_string = emulatorOptionString("print");
+	const char *prt_string = emulatorOptionString("print");
 
 	*priv = p = malloc(sizeof(struct PRT_PRIV));
 	if (*priv == NULL)

@@ -9,8 +9,10 @@ extern "C" {
 
 int emulatorOptionParse(int argc, char **argv);
 void emulatorOptionsRemove(void);
-char *emulatorOptionString(const char *name);
+const char *emulatorOptionString(const char *name);
 int emulatorOptionInt(const char *name);
+int emulatorOptionArgc(void);
+const char *emulatorOptionArgv(int idx);
 
 #ifdef __cplusplus
 };

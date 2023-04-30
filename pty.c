@@ -7,7 +7,7 @@
  * This file is part of the Emu system.
  *
  * Copyright 1990 by PCS Computer Systeme, GmbH. Munich, West Germany.
- * 
+ *
  * Copyright 1994 by Jordan K. Hubbard and Michael W. Elbel
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -17,10 +17,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -36,7 +36,7 @@
 /*#include "QLtypes.h"*/
 #include "QL68000.h"
 
-#include <stdio.h> 
+#include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include <errno.h>
@@ -137,7 +137,7 @@ typedef int		pid_t;
 /* moved to QSerial.h */
 #if 0
 typedef struct _FakeRec *FakeTerm;
-typedef struct _FakeRec 
+typedef struct _FakeRec
 {
      char *command;			/* command name			*/
      char **command_args;		/* command arguments		*/
@@ -214,15 +214,15 @@ void pty_close(int id,void *priv)
 {
   FakeTerm tp;
   char *fb;
-  
-  serdev_t *p=priv; 
-  
+
+  serdev_t *p=priv;
+
   /*printf("pty_close\n");*/
-  
+
   ser_write(p,&fb,0);   /* attempt to generate a EOF/EOT */
 
   fake_tty_close(p->w);
-  
+
   if (p->w->job_control==2)
     kill(p->w->pid, 2);
 
@@ -231,7 +231,7 @@ void pty_close(int id,void *priv)
       pty_list=pty_list->next;
       return;
     }
-  
+
   tp=pty_list;
   while(tp)
     {
@@ -239,12 +239,12 @@ void pty_close(int id,void *priv)
 	{
 	  tp->next=tp->next->next;
 	  free(p->w);
-	  
+
 	  return;
-	}  
+	}
       tp=tp->next;
     }
-  
+
   /*printf("WARNING: closed pty not in list\n");*/
 }
 
@@ -255,7 +255,7 @@ static void fork_process(FakeTerm w)
 {
      int i, res;
      sigset_t mask,omask;
- 
+
      /* Make sure we don't get the signal just yet - do it the BSD way,
 	linux doesn't support sighold */
 #if 0
@@ -309,7 +309,7 @@ static void fork_process(FakeTerm w)
 #if 0
 	  fprintf(stderr,"opened tty: %s, result %d\n",w->tname,fd);
 #endif
-          
+
 #if 0
 	  /* set various signals to non annoying (for SYSV) values */
 	  if (getpgrp() == getpid()) {
@@ -333,7 +333,7 @@ static void fork_process(FakeTerm w)
 
 	  if (w->login_shell)
 	       argp[0] = "-";
-	  else	
+	  else
 	       argp[0] = w->command;
 	  /*printf("*******\n");*/
 	  execvp(w->command, argp);
@@ -349,7 +349,7 @@ static void fork_process(FakeTerm w)
 
      /*
       * Now that we have stored the widget ID, we can enable SIGCHLD
-      * and deal with a possible early failure. 
+      * and deal with a possible early failure.
       */
      sigprocmask(SIG_SETMASK,&omask,NULL);
 }
@@ -361,7 +361,7 @@ static void process_init(FakeTerm w)
      w->uid = getuid();
      w->gid = getgid();
 
-     sprintf(envterm, "TERM=%s", w->term_type);
+     snprintf(envterm, 1024, "TERM=%s", w->term_type);
      tmp = strdup (envterm);
      putenv(tmp);
 
@@ -455,42 +455,42 @@ static int doargs(char *p, char **cmdp, char ***argp)
 #if 1
     p3=malloc(strlen(p)*2);
     issp=q=qq=0;
-    
+
     for(p1=p,pp=p3;*p1;)
       {
 	if (*p1=='\'') q=(!q),qq=1;
 	else qq=0;
-	if (q || qq) 
+	if (q || qq)
 	  {
 	    *pp++=*p1++;
 	    continue;
 	  }
-	
+
 
 	if ((*p1!='<') && (*p1!='>') && !(isdigit(*p1) && (*(p1+1)=='<' || *(p1+1)=='>')))
 	  {
 	    if (!issp || *p1!=' ')
 	      *pp++=*p1++;
 	    else p1++;
-	    
+
 	    if (*(p1-1)==' ') issp=1;
 	    else issp=0;
-	  
+
 	  }
-	
+
 	else  /* insert spaces around redirection form */
 	  {
 	    *pp++=' ';
 	    ff=0;
 	    if (!isdigit(*p1)) ff++;
 	    *pp++=*p1++;
-	    
+
 	    while(ff<2 && (*p1=='<' || *p1=='>'))
 	      {
 		*pp++=*p1++;
 		ff++;
 	      }
-	    
+
 	    *pp++=' ';
 	  }
       }
@@ -498,25 +498,25 @@ static int doargs(char *p, char **cmdp, char ***argp)
     pp=p3;    /* free !!!! */
 
     /*printf("pty args are : %s\n",pp);*/
-    
+
 #endif
 #if 1
     p1=pp;
     n=1;
-    
+
     while (p3)
       {
 	p3=strpbrk(p3," '\t");
 	if (p3)
 	  {
-	    if (*p3=='\'') 
+	    if (*p3=='\'')
 	      {
-		p3=strpbrk(p3+1,"'"); 
+		p3=strpbrk(p3+1,"'");
 		if (p3)p3+=1;
-		
+
 		continue;
 	      }
-	    
+
 	    *p3++=0;
 	  }
 	n++;
@@ -527,7 +527,7 @@ static int doargs(char *p, char **cmdp, char ***argp)
     while(--n>0)
       {
 	/*printf("setting arg %d to %s\n",x-xav,p3);*/
-	
+
 	*x=p3;
 	if(ff == 0)
 	{
@@ -539,7 +539,7 @@ static int doargs(char *p, char **cmdp, char ***argp)
 
     *x = NULL;
     *argp = xav;
-    return n;  
+    return n;
 
 #else
 
@@ -547,7 +547,7 @@ static int doargs(char *p, char **cmdp, char ***argp)
     for(n = 0, p1 = p3; (p2 = strtok(p1, " \t")); p1 = NULL, n++)
         ;
     free(p3);
-    
+
     xav = x = malloc((n+1) * sizeof(char *));
     n = 0;
     for(p1 = p; (p2 = strtok(p1, " \t")); n++, p1 = NULL)
@@ -561,7 +561,7 @@ static int doargs(char *p, char **cmdp, char ***argp)
     }
     *x = NULL;
     *argp = xav;
-    return n;  
+    return n;
 
 #endif
 }
@@ -573,7 +573,7 @@ void conv_fnames(char ***cmd, int *redir)
 
 
 
-FakeTerm fake_tty_open(char *cmd) 
+FakeTerm fake_tty_open(char *cmd)
 {
 	FakeTerm w;
 	int redir[20];
@@ -616,7 +616,7 @@ void fake_tty_close(FakeTerm w)
     if(w)
     {
 	char **x;
-	
+
 	if (w->master >= 0)
 	    close(w->master);
 	if (w->slave >= 0)
@@ -625,13 +625,13 @@ void fake_tty_close(FakeTerm w)
 	    free(w->tname);
 	x = w->command_args;
 	if (x && *x) free(x);
-	
+
 	/* for(x = w->command_args; x && *x; x++)
-	   { 
+	   {
 	        if(*x) free(*x);
 	   }*/
 	/*if(w->command_args) free (w->command_args);*/
-	
+
 	/*free(w);*/
 	/*w = NULL;*/
 	process_cleanup(w);
@@ -646,7 +646,7 @@ int check(int f1, int f2, fd_set *rfds)
 	int nb;
 	int nn;
 	char buf[80];
-		
+
 	if(ioctl(f1, FIONREAD, &nn) == 0)
 	{
 	    if(nn > 80) nn = 80;
@@ -666,11 +666,11 @@ void fake_handle_process()
 
     FD_ZERO(&rfds);
     nr = 0;
-    
+
     while ( !done )
     {
 	FD_SET(0, &rfds);
-	FD_SET(w->master, &rfds);    
+	FD_SET(w->master, &rfds);
 	n = select ( FD_SETSIZE, &rfds, 0, 0, NULL);
   	switch(n)
 	{

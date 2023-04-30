@@ -77,12 +77,12 @@ void init()
 		exit(1);
 	}
 
-	char *romdir = emulatorOptionString("romdir");
-	char *sysrom = emulatorOptionString("sysrom");
-	char *romport = emulatorOptionString("romport");
-	char *romim = emulatorOptionString("romim");
-	char *iorom1 = emulatorOptionString("iorom1");
-	char *iorom2 = emulatorOptionString("iorom2");
+	const char *romdir = emulatorOptionString("romdir");
+	const char *sysrom = emulatorOptionString("sysrom");
+	const char *romport = emulatorOptionString("romport");
+	const char *romim = emulatorOptionString("romim");
+	const char *iorom1 = emulatorOptionString("iorom1");
+	const char *iorom2 = emulatorOptionString("iorom2");
 
     ret = emulatorLoadRom(romdir, sysrom, QL_ROM_BASE, QL_ROM_SIZE);
 	if (ret < 0) {

@@ -318,8 +318,8 @@ void QLSDLScreen(void)
 	uint32_t sdl_window_mode;
 	int i, w, h;
 	double ay;
-	char *sysrom = emulatorOptionString("sysrom");
-	char * win_size, *shader_str;
+	const char *sysrom = emulatorOptionString("sysrom");
+	const char * win_size, *shader_str;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
 
@@ -965,7 +965,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 static void setKeyboardLayout (void)
 {
-	char *kbd_string = emulatorOptionString("kbd");
+	const char *kbd_string = emulatorOptionString("kbd");
 
 	if (!strncasecmp("DE", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_DE;

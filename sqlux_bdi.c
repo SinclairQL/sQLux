@@ -33,7 +33,7 @@ uint8_t bdi_buffer[512];
 void SQLUXBDISelect(uint8_t d)
 {
 	int bdi_file;
-	char *bdi_file_str = emulatorOptionString("bdi1");
+	const char *bdi_file_str = emulatorOptionString("bdi1");
 
 	/* Currently only supporting 1 unit */
 	if ((d == 1) && (!bdi_files[d - 1])) {
@@ -55,8 +55,6 @@ void SQLUXBDISelect(uint8_t d)
 	}
 
 	bdi_unit = d;
-
-	free(bdi_file_str);
 
 	return;
 }

@@ -202,3 +202,13 @@ int emulatorOptionInt(const char *name)
 
 	return 0;
 }
+
+int emulatorOptionArgc()
+{
+	return ap_count_args(parser);
+}
+
+char *emulatorOptionArgv(int idx)
+{
+	return ap_get_arg_at_index(parser, idx);
+}

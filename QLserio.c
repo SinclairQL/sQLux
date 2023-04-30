@@ -171,7 +171,7 @@ int ser_test(int id, char *name)
 int ser_open(int id, void **priv)
 {
 	serdev_t *p;
-	char *portnam;
+	const char *portnam;
 	int unit = ser_par[0].i;
 	int err;
 
