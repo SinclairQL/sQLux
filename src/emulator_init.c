@@ -22,7 +22,7 @@ int emulatorLoadRom(char *romDir, char *romName, uint32_t addr, size_t size)
 		romPath = sdscatprintf(sdsnew(""), "%s/%s", romDir, romName);
 	}
 
-	ret = lstat(romPath, &romStat);
+	ret = stat(romPath, &romStat);
 	if (ret < 0) {
 		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n",
 			__func__, strerror(errno), romPath);
