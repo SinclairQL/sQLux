@@ -80,7 +80,7 @@ else ()
     set(SDL2_GPU_LIB_DIRS "")
 endif ()
 
-include_directories(${CMAKE_CURRENT_LIST_DIR} include/ sds/ CLI11/include/ ${SDL2_INCLUDE_DIRS} ${SDL2_GPU_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_LIST_DIR} include/ sds/ args/src/ CLI11/include/ ${SDL2_INCLUDE_DIRS} ${SDL2_GPU_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
@@ -127,7 +127,9 @@ add_executable(sqlux
     src/sqlux_hexdump.c
     src/SDL2main.cpp
     src/SqluxOptions.cpp
+    src/emulator_options.c
     sds/sds.c
+    args/src/args.c
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)

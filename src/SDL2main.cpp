@@ -7,6 +7,7 @@
 extern "C" {
     #include <SDL.h>
     #include "debug.h"
+    #include "emulator_options.h"
     #include "QL_sound.h"
     #include "SDL2screen.h"
     #include "unixstuff.h"
@@ -83,6 +84,8 @@ extern "C" int main(int argc, char *argv[])
 #endif
     // set the homedir for the OS first
     SetHome();
+
+    emulatorOptionParse(argc, argv);
 
     if (!emulator::optionParse(argc, argv)) {
         return 0;
