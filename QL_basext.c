@@ -650,6 +650,10 @@ bas_err UQLX_getXarg()
 	if (bas_getln(&n) < 0)
 		return QERR_BP;
 
+	if (n == 0) {
+		return bas_retstr(5, "sqlux");
+	}
+
 	if (/*n>UQLX_argc-1 || */ n < 0 ||
 	    ((n > 0) && (n >= emulatorOptionArgc())))
 		return bas_retstr(0, NULL);
