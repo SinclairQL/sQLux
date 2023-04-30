@@ -84,6 +84,7 @@ int emulatorOptionParse(int argc, char **argv)
 {
 	int i;
 	sds helptext = sdsnew(helpTextInit);
+	const char *configFile;
 
 	parser = ap_new_parser();
 	if (!parser) {
@@ -128,6 +129,8 @@ int emulatorOptionParse(int argc, char **argv)
 
 	sdsfree(helptext);
 
+	ap_add_str_opt(parser, "config f", "sqlux.ini");
+
 	i = 0;
 	while (emuOptions[i].option != NULL) {
 		sds optItem = sdsnew("");
@@ -154,6 +157,8 @@ int emulatorOptionParse(int argc, char **argv)
 	if (!ap_parse(parser, argc, argv)) {
 		exit(1);
 	}
+
+	configFile = ap_get_str_value(parser, "config");
 
 	return 0;
 }
