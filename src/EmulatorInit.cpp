@@ -164,8 +164,8 @@ void init()
 		qlscreen.qm_len = 0x8000;
 	}
 
-	if (V1 && (optionFloat("SPEED") > 0.0))
-		printf("Emulation Speed: %.1f\n", optionFloat("SPEED"));
+	if (V1 && (atof(emulatorOptionString("speed")) > 0.0))
+		printf("Emulation Speed: %s\n", emulatorOptionString("speed"));
 	else if (V1)
 		printf("Emulation Speed: FULL\n");
 

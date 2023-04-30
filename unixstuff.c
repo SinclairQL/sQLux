@@ -33,6 +33,7 @@
 #include <unistd.h>
 
 #include "debug.h"
+#include "emulator_options.h"
 #include "xcodes.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
@@ -361,7 +362,7 @@ int QLRun(void *data)
 	int scrchange, i;
 	int loop = 0;
 
-	int speed = (int)(optionFloat("SPEED") * 20.0);
+	int speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
 	speed = (speed >= 0) && (sem50Hz != NULL) ? speed : 0;
 
 exec:

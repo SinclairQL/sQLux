@@ -238,17 +238,6 @@ int optionParse(int argc, char *argv[])
 
 extern "C" {
 
-float optionFloat(char *optionName)
-{
-    try {
-        return emulator::sqluxOpt.get_option(std::string("--") + std::string(optionName))->as<float>();
-    } catch (std::exception &e) {
-        std::cerr << e.what() << std::endl;
-    }
-
-    return 0.0;
-}
-
 int optionArgc()
 {
     try {
