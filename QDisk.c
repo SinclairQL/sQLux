@@ -23,6 +23,7 @@
 #include "QL_config.h"
 #include "unix.h"
 #include "emudisk.h"
+#include "emulator_options.h"
 #include "QDOS.h"
 #include "dummies.h"
 #include "memaccess.h"

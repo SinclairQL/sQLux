@@ -15,6 +15,7 @@
 #include <SDL_timer.h>
 
 #include "debug.h"
+#include "emulator_options.h"
 #include "instructions.h"
 #include "xcodes.h"
 #include "QL.h"

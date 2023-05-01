@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "debug.h"
 #include "emulator_options.h"
@@ -13,6 +15,7 @@
 #include "QL68000.h"
 #include "QLtraps.h"
 #include "QL_config.h"
+#include "QL_cconv.h"
 #include "QL_hardware.h"
 #include "QL_screen.h"
 #include "sds.h"
@@ -20,6 +23,9 @@
 #include "version.h"
 #include "xcodes.h"
 #include "xqlmouse.h"
+
+// TODO: fixup iexl_general.h to not break stuff
+void InitialSetup(void);
 
 int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr, size_t size)
 {
