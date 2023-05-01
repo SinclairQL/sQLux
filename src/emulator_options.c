@@ -272,12 +272,31 @@ void deviceInstall(sds *device, int count)
 static int iniHandler(void* user, const char* section, const char* name,
                    const char* value)
 {
-	if(match(name, "device")) {
+	int i;
+
+	if (match(name, "device")) {
 		int count;
 		sds *splitDevice = sdssplitlen(value, strlen(value), ",", 1, &count);
 		deviceInstall(splitDevice, count);
 		sdsfreesplitres(splitDevice, count);
 		return 0;
+	}
+
+	i = 0;
+	while (emuOptions[i].option != NULL) {
+		if (match(name, emuOptions[i].option)) {
+			if (emuOptions[i].type == EMU_OPT_CHAR) {
+				emuOptions[i].charVal = strdup(value);
+				return 0;
+			} else if (emuOptions[i].type == EMU_OPT_INT) {
+				emuOptions[i].intVal = atoi(value);
+				return 0;
+			}
+
+			return 1;
+		}
+
+		i++;
 	}
 
 	return 1;
