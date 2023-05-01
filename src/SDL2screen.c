@@ -19,7 +19,6 @@
 #include "qlkeys.h"
 #include "qlmouse.h"
 #include "QL_screen.h"
-#include "SqluxOptions.hpp"
 #include "unixstuff.h"
 #include "QL_sound.h"
 

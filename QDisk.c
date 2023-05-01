@@ -28,7 +28,6 @@
 #include "memaccess.h"
 
 #include "SDL2screen.h"
-#include "SqluxOptions.hpp"
 
 #include "unixstuff.h"
 #include "uqlx_cfg.h"

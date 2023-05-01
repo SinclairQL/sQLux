@@ -29,7 +29,6 @@
 #include "unixstuff.h"
 #include "xcodes.h"
 #include "SDL2screen.h"
-#include "SqluxOptions.hpp"
 #include "version.h"
 
 #if __EMSCRIPTEN__

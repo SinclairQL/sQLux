@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr, size_t size);
+void emulatorInit(void);
 
 #ifdef __cplusplus
 };

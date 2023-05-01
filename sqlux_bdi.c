@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #include "emulator_options.h"
-#include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
 static int bdi_files[8];

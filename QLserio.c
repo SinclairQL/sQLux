@@ -33,7 +33,6 @@
 #include "QL_cconv.h"
 #include "driver.h"
 #include "emulator_options.h"
-#include "SqluxOptions.hpp"
 #include "uqlx_cfg.h"
 
 #ifdef __linux__

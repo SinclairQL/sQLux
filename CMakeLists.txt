@@ -24,18 +24,14 @@ endif()
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -gstabs")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og -gstabs")
     else()
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -ggdb -fsanitize=address")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Ogdb -ggdb -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og -ggdb -fsanitize=address")
     endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast")
 endif()
 
 find_package(Git)
@@ -49,7 +45,6 @@ add_custom_target( SubmarineGitVersion
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     set(USE_FLAGS "-pthread -s USE_SDL=2 -s USE_PTHREADS=1")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ${USE_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} -s MAXIMUM_MEMORY=1GB -s ALLOW_MEMORY_GROWTH=1 -s PTHREAD_POOL_SIZE=2 -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini --preload-file ${CMAKE_SOURCE_DIR}/roms/MIN198.rom@./roms/MIN198.rom --preload-file ${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom --preload-file default_win1.win" )
     execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win -fdd)
@@ -121,12 +116,10 @@ add_executable(sqlux
     sqlux_bdi.c
     mmodes.c
     ${CMAKE_CURRENT_BINARY_DIR}/version.c
-    src/EmulatorInit.cpp
     src/emulator_init.c
     src/sqlux_windows.c
     src/sqlux_hexdump.c
-    src/SDL2main.cpp
-    src/SqluxOptions.cpp
+    src/SDL2main.c
     src/emulator_options.c
     sds/sds.c
     args/src/args.c
@@ -134,8 +127,6 @@ add_executable(sqlux
     )
 set_source_files_properties( ${CMAKE_CURRENT_BINARY_DIR}/version.c
 PROPERTIES GENERATED TRUE)
-
-target_compile_features(sqlux PUBLIC cxx_std_17)
 
 add_dependencies(sqlux SubmarineGitVersion)
 

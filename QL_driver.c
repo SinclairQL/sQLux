@@ -30,8 +30,6 @@
 #include "memaccess.h"
 #include "QVFS.h"
 
-#include "SqluxOptions.hpp"
-
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)
 #define max(_a_, _b_) (_a_ > _b_ ? _a_ : _b_)
 
