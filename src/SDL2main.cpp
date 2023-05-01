@@ -87,10 +87,6 @@ extern "C" int main(int argc, char *argv[])
 
     emulatorOptionParse(argc, argv);
 
-    if (!emulator::optionParse(argc, argv)) {
-        return 0;
-    }
-
     // Set some things that used to be set as side effects
     const char *resString = emulatorOptionString("resolution");
     parse_screen(resString);

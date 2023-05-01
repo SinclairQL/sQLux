@@ -1,7 +1,12 @@
+#include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include "args.h"
+#include "emudisk.h"
 #include "sds.h"
+#include "unixstuff.h"
 #include "version.h"
 
 
@@ -78,6 +83,189 @@ static ArgParser* parser;
 static bool match(const char *name, const char *option)
 {
 	return (strcasecmp(name, option) == 0);
+}
+
+static void toupperStr(sds lower)
+{
+	int i;
+
+	for (i = 0; i < sdslen(lower); i++) {
+		lower[i] = toupper(lower[i]);
+	}
+}
+
+static sds replaceX(sds fileString) {
+	if (strstr(fileString, "%x")) {
+		sds *split;
+		int count;
+		sds pidStr;
+
+		split = sdssplitlen(fileString, sdslen(fileString), "%x", 2, &count);
+
+		if (count > 2) {
+			fprintf(stderr, "WARNING: Only one %%x allowed\n");
+		}
+
+		sdsfree(fileString);
+		fileString = sdsnew("");
+
+		fileString = sdscatprintf(fileString, "%s%x%s", split[0], getpid(), split[1]);
+
+		sdsfreesplitres(split, count);
+	}
+
+	return fileString;
+}
+
+static bool fileExists(const sds fileString)
+{
+	struct stat statBuf;
+	int ret;
+
+	ret = stat(fileString, &statBuf);
+	if (ret < 0) {
+		return false;
+	}
+	return true;
+}
+
+static bool isDirectory(const sds fileString)
+{
+	struct stat statBuf;
+	int ret;
+
+	ret = stat(fileString, &statBuf);
+	if (ret < 0) {
+		return false;
+	}
+	return S_ISDIR(statBuf.st_mode);
+}
+
+void deviceInstall(sds *device, int count)
+{
+	/*DIR *dirp;*/
+	short ndev = 0;
+	short len = 0;
+	short idev = -1;
+	short lfree = -1;
+	short i;
+	char tmp[401];
+	int err;
+
+	struct stat sbuf;
+
+	if (isdigit(device[0][sdslen(device[0]) - 1])) {
+		ndev = device[0][sdslen(device[0]) - 1] - '0';
+		sdsrange(device[0], 0, -2);
+	} else {
+		ndev = -1;
+	}
+
+	for (i = 0; i < MAXDEV; i++) {
+		if (qdevs[i].qname && (match(qdevs[i].qname, device[0]))) {
+			idev = i;
+			break;
+		} else if (qdevs[i].qname == NULL && lfree == -1) {
+			lfree = i;
+		}
+	}
+
+	if (idev == -1 && lfree == -1) {
+		fprintf(stderr,
+			"sorry, no more free entries in Directory Device Driver table\n");
+		fprintf(stderr,
+			"check your sqlux.ini if you really need all this devices\n");
+
+		return;
+	}
+
+	if (idev != -1 && ndev == 0) {
+		memset((qdevs + idev), 0, sizeof(EMUDEV_t));
+	} else {
+		if (lfree != -1) {
+			idev = lfree;
+			toupperStr(device[0]);
+			qdevs[idev].qname = strdup(device[0]);
+		}
+		if (ndev && ndev < 9) {
+			if (count > 1) {
+				sds fileString;
+
+				if (device[1][0] == '~') {
+					fileString =
+						sdscatprintf(sdsnew(""),
+							     "%s/%s", homedir,
+							     device[1] + 1);
+				} else {
+					fileString = sdsnew(device[1]);
+				}
+
+				fileString = replaceX(fileString);
+
+				// check file/dir exists unless its a ramdisk
+				if (!match("ram", qdevs[idev].qname)) {
+					if (!fileExists(fileString)) {
+						fprintf(stderr,
+							"Mountpoint %s for device %s%d_ may not be accessible\n",
+							fileString, device[0],
+							ndev);
+					}
+				}
+
+				if (isDirectory(fileString) &&
+				    (fileString[sdslen(fileString) - 1] !=
+				     '/')) {
+					fileString = sdscat(fileString, "/");
+				}
+
+				// ram devices need to end in /
+				if (match("ram", qdevs[idev].qname) &&
+				    (fileString[sdslen(fileString) - 1] !=
+				     '/')) {
+					fileString = sdscat(fileString, "/");
+				}
+
+				qdevs[idev].mountPoints[ndev - 1] =
+					strdup(fileString);
+				qdevs[idev].Present[ndev - 1] = 1;
+			} else {
+				qdevs[idev].Present[ndev - 1] = 0;
+			}
+
+			if (count > 2) {
+				int flag_set = 0;
+
+				for (int i = 2; i < count; i++) {
+					if (strstr(device[i], "native") ||
+					    strstr(device[i], "qdos-fs")) {
+						flag_set |=
+							qdevs[idev].Where[ndev -
+									  1] =
+								1;
+					} else if (strstr(device[i],
+							  "qdos-like")) {
+						flag_set |=
+							qdevs[idev].Where[ndev -
+									  1] =
+								2;
+					}
+
+					if (strstr(device[i], "clean")) {
+						flag_set |=
+							qdevs[idev].clean[ndev -
+									  1] =
+								1;
+					}
+				}
+
+				if (!flag_set) {
+					fprintf(stderr,
+						"WARNING: flag %s in definition of %s%d_ not recognised",
+						device[i], device[0], ndev);
+				}
+			}
+		}
+	}
 }
 
 int emulatorOptionParse(int argc, char **argv)
@@ -158,6 +346,12 @@ int emulatorOptionParse(int argc, char **argv)
 		exit(1);
 	}
 
+	for (i = 0; i < ap_count(parser, "device"); i++) {
+		int count;
+		const char *device = ap_get_str_value_at_index(parser, "device", i);
+		sds *splitDevice = sdssplitlen(device, strlen(device), ",", 1, &count);
+		deviceInstall(splitDevice, count);
+	}
 	configFile = ap_get_str_value(parser, "config");
 
 	return 0;
