@@ -10,3 +10,6 @@
 [submodule "args"]
 	path = args
 	url = https://github.com/dmulholl/args
+[submodule "inih"]
+	path = inih
+	url = https://github.com/benhoyt/inih
