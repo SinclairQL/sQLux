@@ -5,6 +5,7 @@
 
 #include "args.h"
 #include "emudisk.h"
+#include "ini.h"
 #include "sds.h"
 #include "unixstuff.h"
 #include "version.h"
@@ -268,6 +269,20 @@ void deviceInstall(sds *device, int count)
 	}
 }
 
+static int iniHandler(void* user, const char* section, const char* name,
+                   const char* value)
+{
+	if(match(name, "device")) {
+		int count;
+		sds *splitDevice = sdssplitlen(value, strlen(value), ",", 1, &count);
+		deviceInstall(splitDevice, count);
+		sdsfreesplitres(splitDevice, count);
+		return 0;
+	}
+
+	return 1;
+}
+
 int emulatorOptionParse(int argc, char **argv)
 {
 	int i;
@@ -351,8 +366,14 @@ int emulatorOptionParse(int argc, char **argv)
 		const char *device = ap_get_str_value_at_index(parser, "device", i);
 		sds *splitDevice = sdssplitlen(device, strlen(device), ",", 1, &count);
 		deviceInstall(splitDevice, count);
+		sdsfreesplitres(splitDevice, count);
 	}
 	configFile = ap_get_str_value(parser, "config");
+
+	if (ini_parse(configFile, iniHandler, NULL) < 0) {
+		fprintf(stderr, "Can't load '%s'\n", configFile);
+		return 1;
+	}
 
 	return 0;
 }
