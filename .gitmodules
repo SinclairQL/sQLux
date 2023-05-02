@@ -1,9 +1,6 @@
 [submodule "sdl-gpu"]
 	path = sdl-gpu
 	url = https://github.com/ikjordan/sdl-gpu.git
-[submodule "CLI11"]
-	path = CLI11
-	url = https://github.com/CLIUtils/CLI11
 [submodule "sds"]
 	path = sds
 	url = https://github.com/antirez/sds
