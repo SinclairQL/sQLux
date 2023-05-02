@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9)
 
 OPTION(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
 project(sqlux)
@@ -167,6 +167,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
+
+set_property(TARGET sqlux
+    PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 # Ensure that a bare cmake will always exclude shaders
 UNSET(SUPPORT_SHADERS CACHE)
