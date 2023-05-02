@@ -195,7 +195,7 @@ void cleanup(int err)
 #ifdef UX_WAIT
 #include <sys/wait.h>
 struct cleanup_entry {
-	void (*cleanup)();
+	void (*cleanup)(pid_t, int);
 	unsigned long int id;
 	pid_t pid;
 	struct cleanup_entry *next;
@@ -204,7 +204,7 @@ struct cleanup_entry {
 static struct cleanup_entry *cleanup_list = NULL;
 static int run_reaper;
 
-static int qm_wait(fc) int *fc;
+static int qm_wait(int *fc)
 {
 	int pid;
 
@@ -244,7 +244,7 @@ static void qm_reaper()
 		while (ce) {
 			if (pid == ce->pid) {
 				*last = ce->next;
-				(*(ce->cleanup))(ce->pid, ce->id, failcode);
+				(*(ce->cleanup))(ce->pid, ce->id);
 				free(ce);
 				found = 1;
 				break;

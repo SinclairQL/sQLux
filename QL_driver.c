@@ -752,7 +752,7 @@ int ioskip(int (*io_read)(void *, void *, int), void *priv, int len)
 		return ss;
 }
 
-void ioread(int (*io_read)(), void *priv, uw32 addr, int *count, int lf)
+void ioread(int (*io_read)(void *priv, Ptr from, int cnt), void *priv, uw32 addr, int *count, int lf)
 {
 	int cnt, ocnt, startpos;
 	int c, fn, err, sz, e;
@@ -841,7 +841,7 @@ errexit:
 
 /* io_handle, similar to SERIO vector */
 
-void io_handle(int (*io_read)(), int (*io_write)(), int (*io_pend)(),
+void io_handle(int (*io_read)(void *p, void *buf, int len), int (*io_write)(void *p, void *buf, int len), int (*io_pend)(Ptr priv),
 	       void *priv)
 {
 	void *addr;
@@ -987,18 +987,19 @@ struct PRT_PRIV {
 	int tra;
 };
 
-int prt_pend()
+int prt_pend(void *priv)
 {
 	return QERR_EF; /* never anything pending */
 }
 
-int prt_read(struct PRT_PRIV *p, void *buf, int len)
+int prt_read(void *priv, void *buf, int len)
 {
 	return QERR_EF;
 }
 
-int prt_write(struct PRT_PRIV *p, void *buf, int len)
+int prt_write(void *priv, void *buf, int len)
 {
+	struct PRT_PRIV *p = (struct PRT_PRIV *)priv;
 	int res, i, sig, nlen;
 	char conv[4];
 

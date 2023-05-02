@@ -126,7 +126,7 @@ int ip_open(int id, void **priv)
 				struct servent *s;
 
 				if ((h = gethostbyname(host)) != NULL) {
-					int (*func)();
+					int (*func)(int socket, const struct sockaddr *address, socklen_t address_len);
 
 					s = getservbyname(aport, (dindx & 1) ?
 									 "udp" :
