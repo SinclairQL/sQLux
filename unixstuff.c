@@ -355,12 +355,14 @@ void SetHome()
 #endif
 }
 
+int speed = 0;
+
 int QLRun(void *data)
 {
 	int scrchange, i;
 	int loop = 0;
 
-	int speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
+	speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
 	speed = (speed >= 0) && (sem50Hz != NULL) ? speed : 0;
 
 exec:

@@ -64,6 +64,7 @@ bas_err UQLX_getXres();
 bas_err UQLX_getYres();
 bas_err UQLX_scr_llen();
 bas_err UQLX_scr_base();
+bas_err EMU_speed();
 static bas_err MakeDir();
 
 struct BAS_PFENTRY *ext_list = NULL;
@@ -244,6 +245,7 @@ void add_bas_proc(char *name, bas_err (*command)())
 #define BN_SCR_YLIM "SCR_YLIM"
 #define BN_SCR_LLEN "SCR_LLEN"
 #define BN_SCR_BASE "SCR_BASE"
+#define BN_EMU_SPEED "EMU_SPEED"
 #if 0
 #define BN_MAKEDIR "MakeDir"
 #endif
@@ -264,6 +266,7 @@ void init_bas_exts()
 	add_bas_fun(BN_SCR_YLIM, UQLX_getYres);
 	add_bas_fun(BN_SCR_LLEN, UQLX_scr_llen);
 	add_bas_fun(BN_SCR_BASE, UQLX_scr_base);
+	add_bas_proc(BN_EMU_SPEED, EMU_speed);
 	create_link_table(ext_list);
 }
 
@@ -662,3 +665,18 @@ bas_err UQLX_getXarg()
 	return bas_retstr(strlen(r), r);
 }
 
+bas_err EMU_speed()
+{
+	w32 n;
+	const char *r;
+
+	if (bas_argcount() != 1)
+		return QERR_BP;
+
+	if (bas_getln(&n) < 0)
+		return QERR_BP;
+
+	speed = n;
+
+	return 0;
+}

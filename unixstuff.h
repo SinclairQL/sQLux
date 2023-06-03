@@ -5,6 +5,7 @@ extern int QLdone;
 extern char *homedir;
 extern char *ux_bname;
 extern int ux_boot;
+extern int speed;
 
 void cleanup(int err);
 void set_rtc_emu(void);
