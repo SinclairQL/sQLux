@@ -5,3 +5,13 @@ root = true
 [*]
 end_of_line = lf
 insert_final_newline = true
+
+# Tab indentation (no size specified)
+[*.{c,h}]
+indent_style = tab
+indent_size = 8
+
+# 4 space indentation
+[*.md]
+indent_style = space
+indent_size = 4
