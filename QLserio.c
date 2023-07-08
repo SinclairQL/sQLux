@@ -152,7 +152,7 @@ open_arg ser_par[6];
 
 extern serdev_t *sparams[MAXSERIAL + 1];
 
-int ser_init(int idx)
+int ser_init(int idx, void *priv)
 {
 	int i;
 

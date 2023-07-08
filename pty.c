@@ -162,7 +162,10 @@ void pty_cleanup(pid_t pid, int id);
 
 open_arg pty_par[4];
 
-int pty_init(int idx){return 0;}
+int pty_init(int idx, void *priv)
+{
+	return 0;
+}
 
 int pty_test(int id, char *name)
 {
