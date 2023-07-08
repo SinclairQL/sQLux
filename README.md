@@ -29,6 +29,7 @@ sQLux uses git submodules, so either clone with the `--recursive` argument.
 
 ```
 git clone --recursive https://github.com/SinclairQL/sQLux/
+```
 
 or after cloning
 
