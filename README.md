@@ -100,9 +100,9 @@ support.
 The 32bit build can be built using win32 threads for XP compatibility and therefore does
 not include the high resolution timer support.
 
-# uqlxrc
+# sqlux.ini
 
-The emulator currently reads an existing uqlxrc file, so it will re-use any uQlx setup already existing.
+The emulator currently reads an existing sqlux.ini file, so it will re-use any uQlx setup already existing.
 
 NOTE: ROMIM has changed to now only accept 1 rom name
 
@@ -110,7 +110,7 @@ NOTE: RAMTOP is where in memory the top of the ram is, not the amount of ram.
 As ram on QL starts at 128k in memory map then to created a 128k QL you
 need to set RAMTOP = 256
 
-sQLux supports additional parameters over those used for uqlxrc. See the [Documentation](docs/sqlux.md) for more details.
+sQLux supports additional parameters over those used for sqlux.ini. See the [Documentation](docs/sqlux.md) for more details.
 
 # Shader support
 sQLux has support for GPU shaders, to emulate the effects seen when using a CRT display. See the [Shader documentation](docs/shaders.md) for more details on how to build and run sQLux with GPU shaders.
