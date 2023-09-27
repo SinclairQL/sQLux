@@ -17,7 +17,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
@@ -39,7 +39,6 @@
 
 #include "QInstAddr.h"
 #include "unix.h"
-#include "uqlx_cfg.h"
 
 #include "QLfiles.h"
 #include "QFilesPriv.h"
@@ -67,23 +66,23 @@ int qvf_test(int id, char *name)
 
   /* no delete or directory yet */
   key=reg[3];
-  
+
   i=RW(name);
   if (i>4000) i=4000;
   strncpy(qvf_buff,name+2,i);
   qvf_buff[i]=0;
-  
+
   cname=qvf_buff;
-  
+
   if(RW(name)>3)
     if (!strncasecmp(cname,"XVFS_",5))
       {
 	cname+=5;     /* skip optional name heading */
 	strict=1;
       }
-    
+
   if (!strict && cname[0]!='/' ) return 0;
-  
+
   if (key==-1 || key==4)
     {
       qerrno=QERR_NI;
@@ -94,16 +93,16 @@ int qvf_test(int id, char *name)
   if (strlen(cname)>4000)
     return strict ? -1 :0;
 #endif
-  
+
   cmount=qvf_mount;
   *cmount++='/';
   cmount[0]=0;
   pname=cname;
   qvf_mname[0]=0;
-  
+
 
   if (*pname=='/') pname++;
-   
+
 
   if (key==4)
     res=match(qvf_mount, qvf_mname, pname, 1,0,4000,0);
@@ -116,24 +115,24 @@ int qvf_test(int id, char *name)
 	  qerrno=QERR_EX;
 	  return -2;
 	}
-      
-      
+
+
       cmount=qvf_mount;
       *cmount++='/';
       cmount[0]=0;
       pname=cname;
       qvf_mname[0]=0;
-      
+
       if (*pname=='/') pname++;
-      
+
       if (key >=2 ) creat=1;
       res=match(qvf_mount, qvf_mname, pname, 0,creat,4000,0);
     }
- 
+
   /*printf("qvf_mount: %s\nqvf_mname: %s\nres=%d\n",qvf_mount,qvf_mname,res);*/
 
-  
-  return res; 
+
+  return res;
 }
 
 int qvf_open(int id, void **priv)
@@ -144,7 +143,7 @@ int qvf_open(int id, void **priv)
   struct mdvFile *f;
   char *cp;
   struct stat sbuf;
-  
+
   if (reg[3]==4)
     /*fd = qopendir(qvf_mount,qvf_mname,4000);*/
     return -1;
@@ -159,14 +158,14 @@ int qvf_open(int id, void **priv)
 	    fd = qopenfile(qvf_mount,qvf_mname,O_RDONLY ,0666,4000);
 	}
     }
-    
+
   if (fd<0)
     return -1;
 
   fstat(fd,&sbuf);
 
   p=*priv=malloc(sizeof(qvf_priv));
-  
+
   f=&(p->f);
 
 #ifndef EMX
@@ -181,7 +180,7 @@ int qvf_open(int id, void **priv)
       SET_FCB(f,&(p->fcb));
       strcpy(GET_FCB(f)->uxname,"/");   /* HACK !!! hide mount */
       strncat(GET_FCB(f)->uxname,qvf_mname,4094);
-      
+
       SET_HFILE(f,fd);
       /*SET_FNUMBER(f,-1);*/
       SET_OPEN(f,true);
@@ -198,7 +197,7 @@ int qvf_open(int id, void **priv)
       cp=strrchr(qvf_mname,'/');
       if (cp) cp++;
       else cp=qvf_mname;
-  
+
       strncpy(NAME_REF(f)+2,cp,36);
       WW(NAME_REF(f),min(36,strlen(cp)));
     }
@@ -208,7 +207,7 @@ int qvf_open(int id, void **priv)
 
   return 0;
 }
- 
+
 void qvf_close(int id, void *priv)
 {
   qvf_priv *p=priv;
@@ -251,7 +250,7 @@ void qvf_io(int id, void *priv)
     io_handle(qvf_read,qvf_write,qvf_pend, p);
   else
     QHostIO(&(p->f),reg[0],0);
-  
+
 }
 
 #endif /* QVFS */

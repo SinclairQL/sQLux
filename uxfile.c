@@ -642,7 +642,7 @@ void QGetHeaderFromPath(qdos_file_hdr *h, char *path, char *mount)
 	char mpath[4200];
 	struct mdvFile f;
 
-	strlcpy(mpath, mount, sizeof(mpath));
+	strncpy(mpath, mount, sizeof(mpath));
 
 	fd = qopenfile(mpath, path, O_RDONLY | O_BINARY, 0, 4000);
 	if (fd < 0) {
@@ -691,10 +691,10 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 
 #ifdef __WIN32__
 	sqlux_getemppath(sizeof(templ), templ);
-	strlcat(templ, "/QDOSXXXXXX", sizeof(templ));
+	strncat(templ, "/QDOSXXXXXX", sizeof(templ));
 	fd = sqlux_mkstemp(templ);
 #else
-	strlcpy(templ, template, sizeof(templ));
+	strncpy(templ, template, sizeof(templ));
 	fd = mkstemp(templ);
 #endif
 	if (fd < 0) {

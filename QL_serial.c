@@ -1,5 +1,5 @@
 /*
- *		Copyright (c) 1996 jonathan hudson  
+ *		Copyright (c) 1996 jonathan hudson
  */
 
 /* most of the code has moved to QLserio.c */
@@ -20,7 +20,6 @@
 #include "unix.h"
 
 #include "QSerial.h"
-#include "uqlx_cfg.h"
 
 static short defbaud[1] = {9600};
 
@@ -29,7 +28,7 @@ serdev_t *sparams[MAXSERIAL+1];
 Cond SetBaudRate(short rate)
 {
     short i;
-    
+
     for(i = 1; i < MAXSERIAL+1; i++)
     {
 	defbaud[0] = rate;

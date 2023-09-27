@@ -31,7 +31,6 @@
 #include "SDL2screen.h"
 
 #include "unixstuff.h"
-#include "uqlx_cfg.h"
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)

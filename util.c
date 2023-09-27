@@ -38,7 +38,6 @@
 #include "QSerial.h"
 #include "QDOS.h"
 #include "driver.h"
-#include "uqlx_cfg.h"
 #include "util.h"
 
 

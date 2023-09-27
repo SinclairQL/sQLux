@@ -21,7 +21,6 @@
 #include "QInstAddr.h"
 #include "qmtrap.h"
 #include "unix.h"
-#include "uqlx_cfg.h"
 #include "QL_screen.h"
 
 #define min(_a_, _b_) (_a_ < _b_ ? _a_ : _b_)

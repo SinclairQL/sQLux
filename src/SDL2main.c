@@ -4,12 +4,12 @@
 #include <unistd.h>
 
 #include "debug.h"
+#include "emudisk.h"
 #include "emulator_init.h"
 #include "emulator_options.h"
 #include "QL_sound.h"
 #include "SDL2screen.h"
 #include "unixstuff.h"
-#include "uqlx_cfg.h"
 #include "Xscreen.h"
 
 #if __EMSCRIPTEN__
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
         ux_boot = 2;
         int len = strlen(boot_cmd);
         ux_bname = (char *)malloc(len + 2);
-        strcpy(ux_bname, boot_cmd);
+        strncpy(ux_bname, boot_cmd, len + 2);
         ux_bname[len] = 0x0A;
         ux_bname[len + 1] = 0;
     }

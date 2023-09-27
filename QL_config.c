@@ -30,7 +30,6 @@
 #include <string.h>
 /*#include "ConfigDialog.h"*/
 #include "QFilesPriv.h"
-#include "uqlx_cfg.h"
 #include "xqlmouse.h"
 #include "Xscreen.h"
 

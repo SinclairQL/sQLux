@@ -26,7 +26,6 @@
 #include "QL_cconv.h"
 #include "unix.h"
 #include "unixstuff.h"
-#include "uqlx_cfg.h"
 #include "memaccess.h"
 #include "QVFS.h"
 
@@ -299,7 +298,7 @@ static void InitDevDriver(struct DRV *driver, int indx)
 
 		WW(p + 3, DEVO_CMD_CODE);
 
-		strlcpy((Ptr)(p + 6) + 4, name, 36); /* name for QPAC2 etc */
+		strncpy((Ptr)(p + 6) + 4, name, 36); /* name for QPAC2 etc */
 		WW((Ptr)(p + 3 + 3) + 2, strlen(name));
 		WL((Ptr)(p + 3) + 2,
 		   0x264f4eba); /* so much code is needed to fool QPAC2 ...*/
@@ -1075,15 +1074,15 @@ int prt_open(int id, void **priv)
 			len = (prt_par[2].s ? strlen(prt_par[2].s) : 0) +
 				  strlen(prt_par[3].s) + 2;
 			p = (void *)malloc(len);
-			strlcpy(p, prt_par[3].s, len);
+			strncpy(p, prt_par[3].s, len);
 		} else {
 			len = strlen(prt_string) + strlen(prt_par[2].s) + 2;
 			p = (void *)malloc(len);
-			strlcpy(p, prt_string, len);
+			strncpy(p, prt_string, len);
 		}
-		strlcat(p, " ", len);
+		strncat(p, " ", len);
 		if (prt_par[2].s)
-			strlcat(p, prt_par[2].s, len); /* add options etc */
+			strncat(p, prt_par[2].s, len); /* add options etc */
 		printf("executing command �%s�\n", p);
 		f = popen(p, "w");
 		if (!f)

@@ -41,7 +41,6 @@
 #include "QDOS.h"
 #include "QDOS_driver_ip.h"
 #include "driver.h"
-#include "uqlx_cfg.h"
 
 #include "util.h"
 #include "iptraps.h"

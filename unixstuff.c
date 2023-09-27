@@ -47,7 +47,6 @@
 #include "QL_files.h"
 #include "QL_sound.h"
 #include "uxfile.h"
-#include "uqlx_cfg.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
 #include "version.h"

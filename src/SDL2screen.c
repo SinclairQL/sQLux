@@ -13,7 +13,6 @@
 #include "debug.h"
 #include "emulator_options.h"
 #include "QL_hardware.h"
-#include "uqlx_cfg.h"
 #include "QL68000.h"
 #include "SDL2screen.h"
 #include "qlkeys.h"

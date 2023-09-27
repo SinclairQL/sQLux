@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #include "emulator_options.h"
-#include "uqlx_cfg.h"
 
 static int bdi_files[8];
 static uint32_t bdi_address;

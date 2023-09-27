@@ -33,7 +33,6 @@
 #include "QL_cconv.h"
 #include "driver.h"
 #include "emulator_options.h"
-#include "uqlx_cfg.h"
 
 #ifdef __linux__
 #include <sys/ioctl.h>
