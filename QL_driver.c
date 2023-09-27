@@ -1070,19 +1070,20 @@ int prt_open(int id, void **priv)
 
 	if (prt_par[2].i || prt_par[3].i) {
 		char *p;
+		int len;
 		if (prt_par[3].i) {
-			int len = (prt_par[2].s ? strlen(prt_par[2].s) : 0) +
+			len = (prt_par[2].s ? strlen(prt_par[2].s) : 0) +
 				  strlen(prt_par[3].s) + 2;
 			p = (void *)malloc(len);
 			strlcpy(p, prt_par[3].s, len);
 		} else {
-			int len = strlen(prt_string) + strlen(prt_par[2].s) + 2;
+			len = strlen(prt_string) + strlen(prt_par[2].s) + 2;
 			p = (void *)malloc(len);
 			strlcpy(p, prt_string, len);
 		}
-		strcat(p, " ");
+		strlcat(p, " ", len);
 		if (prt_par[2].s)
-			strcat(p, prt_par[2].s); /* add options etc */
+			strlcat(p, prt_par[2].s, len); /* add options etc */
 		printf("executing command �%s�\n", p);
 		f = popen(p, "w");
 		if (!f)
