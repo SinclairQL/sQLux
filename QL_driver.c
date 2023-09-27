@@ -299,7 +299,7 @@ static void InitDevDriver(struct DRV *driver, int indx)
 
 		WW(p + 3, DEVO_CMD_CODE);
 
-		strcpy((Ptr)(p + 6) + 4, name); /* name for QPAC2 etc */
+		strlcpy((Ptr)(p + 6) + 4, name, 36); /* name for QPAC2 etc */
 		WW((Ptr)(p + 3 + 3) + 2, strlen(name));
 		WL((Ptr)(p + 3) + 2,
 		   0x264f4eba); /* so much code is needed to fool QPAC2 ...*/
@@ -752,7 +752,8 @@ int ioskip(int (*io_read)(void *, void *, int), void *priv, int len)
 		return ss;
 }
 
-void ioread(int (*io_read)(void *priv, Ptr from, int cnt), void *priv, uw32 addr, int *count, int lf)
+void ioread(int (*io_read)(void *priv, Ptr from, int cnt), void *priv,
+	    uw32 addr, int *count, int lf)
 {
 	int cnt, ocnt, startpos;
 	int c, fn, err, sz, e;
@@ -784,7 +785,8 @@ void ioread(int (*io_read)(void *priv, Ptr from, int cnt), void *priv, uw32 addr
 
 	if (cnt > 0) {
 		if (lf) {
-			for (i = 0, fn = cnt, p = (Ptr)memBase + from; fn > 0;) {
+			for (i = 0, fn = cnt, p = (Ptr)memBase + from;
+			     fn > 0;) {
 				e = err = (*io_read)(priv, p, 1);
 
 				if (err < 0) {
@@ -841,8 +843,9 @@ errexit:
 
 /* io_handle, similar to SERIO vector */
 
-void io_handle(int (*io_read)(void *p, void *buf, int len), int (*io_write)(void *p, void *buf, int len), int (*io_pend)(Ptr priv),
-	       void *priv)
+void io_handle(int (*io_read)(void *p, void *buf, int len),
+	       int (*io_write)(void *p, void *buf, int len),
+	       int (*io_pend)(Ptr priv), void *priv)
 {
 	void *addr;
 	int err, res;
@@ -1068,14 +1071,14 @@ int prt_open(int id, void **priv)
 	if (prt_par[2].i || prt_par[3].i) {
 		char *p;
 		if (prt_par[3].i) {
-			p = (void *)malloc(
-				(prt_par[2].s ? strlen(prt_par[2].s) : 0) +
-				strlen(prt_par[3].s) + 2);
-			strcpy(p, prt_par[3].s);
+			int len = (prt_par[2].s ? strlen(prt_par[2].s) : 0) +
+				  strlen(prt_par[3].s) + 2;
+			p = (void *)malloc(len);
+			strlcpy(p, prt_par[3].s, len);
 		} else {
-			p = (void *)malloc(strlen(prt_string) +
-					   strlen(prt_par[2].s) + 2);
-			strcpy(p, prt_string);
+			int len = strlen(prt_string) + strlen(prt_par[2].s) + 2;
+			p = (void *)malloc(len);
+			strlcpy(p, prt_string, len);
 		}
 		strcat(p, " ");
 		if (prt_par[2].s)
