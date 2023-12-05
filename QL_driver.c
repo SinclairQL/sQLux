@@ -271,11 +271,14 @@ static void InitDevDriver(struct DRV *driver, int indx)
 	w32 savedRegs[4];
 	w32 *p;
 	char *name = (driver->namep)->name;
+	int namelen = strlen(name);
+
+	if ((namelen & 1) != 0) {
+		namelen++;
+	}
 
 	BlockMoveData(aReg, savedRegs, 4 * sizeof(w32));
-	reg[1] = 40 + strlen(name);
-	if ((strlen(name) & 1) != 0)
-		reg[1]++;
+	reg[1] = 40 + namelen;
 
 	if (driver->slot != 0) {
 		if (driver->slot < reg[1]) {
@@ -298,7 +301,7 @@ static void InitDevDriver(struct DRV *driver, int indx)
 
 		WW(p + 3, DEVO_CMD_CODE);
 
-		strncpy((Ptr)(p + 6) + 4, name, 36); /* name for QPAC2 etc */
+		strncpy((Ptr)(p + 6) + 4, name, namelen); /* name for QPAC2 etc */
 		WW((Ptr)(p + 3 + 3) + 2, strlen(name));
 		WL((Ptr)(p + 3) + 2,
 		   0x264f4eba); /* so much code is needed to fool QPAC2 ...*/
