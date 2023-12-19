@@ -1,0 +1,146 @@
+name: Build Linux arm
+
+# Alternate try.
+# Fails on installing cross-arch libs on todays's version of the ubuntu runner.
+# act -v -j build_job -W .github/workflows/build-arm.yml -P self-hosted=ubuntu:22.04
+
+on:
+  push:
+    branches: [ none ]
+  pull_request:
+    branches: [ none ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build_job:
+
+    name: Build on ${{ matrix.distro }} ${{ matrix.arch }}
+
+    runs-on: ubuntu-22.04
+
+    # Run steps on a matrix of arch/distro combinations
+    continue-on-error: true
+    strategy:
+      matrix:
+        include:
+          - name: linux-arm64-ubuntu-22.04
+            arch: aarch64
+            source_arch: arm64
+            distro: ubuntu22.04
+          - name: linux-armhf-ubuntu-22.04
+            arch: armhf
+            source_arch: armhf
+            distro: ubuntu22.04
+
+    steps:
+
+      - name: 'Cleanup build folder'
+        run: |
+          pwd
+          ls -la ./
+          sudo rm -rf ./* || true
+          sudo rm -rf ./.??* || true
+          ls -la ./
+
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+
+      - name: Install dependencies and prepare for build
+        run: |
+          echo "######### get additional SW"
+          apt update || sudo apt update
+          apt -y install sudo || true
+          sudo apt install -y \
+            zip git \
+            cmake libc6-dev-i386 \
+            gcc g++ make
+          mkdir release
+
+      - name: Get Version and ReleaseTag
+        run: |
+          if [[ "xxx${{ github.event.ref }}" =~ ^xxxrefs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "RELEASE_TAG=${{ github.event.ref }}" >> $GITHUB_OUTPUT
+              echo "############### Got RELEASE_TAG ${{ github.event.ref }}"
+          fi
+          echo "############### showing all known tags"
+          git tag
+          PROJ_VERSION=$(cat VERSION)
+          echo "PROJ_VERSION=${PROJ_VERSION}" >> $GITHUB_ENV
+          echo "############### Building version ${PROJ_VERSION}"
+
+      - name: Install cross-build tooling and configure CMake
+        run: |
+          echo "############### Install cross-build tooling and configure CMake"
+          if [ "${{ matrix.arch }}" == 'armhf' ]; then
+            sudo dpkg --add-architecture armhf
+            sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+            sudo rm /etc/apt/sources.list.d/*
+            echo -e "deb [arch=armhf] http://ports.ubuntu.com/ jammy main restricted universe multiverse\ndeb [arch=armhf] http://ports.ubuntu.com/ jammy-updates main restricted universe multiverse\ndeb [arch=armhf] http://ports.ubuntu.com/ jammy-security main restricted universe multiverse\ndeb [arch=armhf] http://ports.ubuntu.com/ jammy-backports main restricted universe multiverse" \
+              | sudo tee /etc/apt/sources.list.d/armhf.list
+            sudo apt update  -q -y
+            apt list -a libgcc-s1 libstdc++6
+            sudo apt install -q -y \
+              crossbuild-essential-armhf \
+              gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+            sudo apt install -q -y --no-install-recommends --no-install-suggests \
+              libsdl2-dev:armhf
+              # libc6:armhf libc6-dev:armhf \
+              # libgl-dev:armhf libopengl-dev:armhf
+            cmake -B ${{github.workspace}}/build \
+              -DSUPPORT_SHADERS=True \
+              -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+              -DCMAKE_TOOLCHAIN_FILE=Toolchain-armhf.cmake
+          elif [ "${{ matrix.arch }}" == 'aarch64' ]; then
+            sudo dpkg --add-architecture arm64
+            sudo sed -i 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+            sudo rm /etc/apt/sources.list.d/*
+            echo -e "deb [arch=arm64] http://ports.ubuntu.com/ jammy main restricted universe multiverse\ndeb [arch=arm64] http://ports.ubuntu.com/ jammy-updates main restricted universe multiverse\ndeb [arch=arm64] http://ports.ubuntu.com/ jammy-security main restricted universe multiverse\ndeb [arch=arm64] http://ports.ubuntu.com/ jammy-backports main restricted universe multiverse" \
+              | sudo tee /etc/apt/sources.list.d/arm64.list
+            sudo apt update  -y
+            apt list -a libgcc-s1 libstdc++6
+            sudo apt install -q -y \
+              crossbuild-essential-arm64 \
+              gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+            sudo apt install -q -y --no-install-recommends --no-install-suggests \
+              libsdl2-dev:arm64
+              # libc6:arm64 libc6-dev:arm64 \
+              # libgcc-s1:arm64 libstdc++6:arm64 \
+              # libgl-dev:arm64 libopengl-dev:arm64
+            cmake -B ${{github.workspace}}/build \
+              -DSUPPORT_SHADERS=True \
+              -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+              -DCMAKE_TOOLCHAIN_FILE=Toolchain-arm64.cmake
+          fi
+
+      - name: Build
+        # Build your program with the given configuration
+        run: |
+          cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          mv build/sqlux release/sqlux-linux-ubuntu-${{ matrix.arch }}
+
+      - name: Create Package
+        run: |
+          mkdir                                             sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/
+          cp    examples/sqlux.ini                          sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/
+          cp -r mdv*                                        sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/
+          cp -r roms                                        sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/
+          cp release/sqlux-linux-ubuntu-${{ matrix.arch }}  sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/sqlux
+          zip -r sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}.zip \
+            sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}/
+
+      - name: Upload Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "linux-${{ matrix.arch }}-${{ env.PROJ_VERSION }}"
+          prerelease: true
+          title: "Linux-Ubuntu-${{ matrix.arch }} Development Build"
+          files: |
+            sqlux-linux-ubuntu-${{ matrix.arch }}-${{ env.PROJ_VERSION }}.zip

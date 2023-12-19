@@ -1,0 +1,88 @@
+name: Build Windows MSYS2
+
+on:
+  push:
+    branches: [ none ]
+  pull_request:
+    branches: [ none ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_job:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      matrix:
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{matrix.sys}}
+          update: true
+          install: >-
+            git
+            zip
+            mingw-w64-${{matrix.env}}-cc
+            mingw-w64-${{matrix.env}}-SDL2
+            mingw-w64-${{matrix.env}}-cmake
+
+      - name: Get Version and ReleaseTag
+        run: |
+          if [[ "xxx${{ github.event.ref }}" =~ ^xxxrefs/tags/v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            RELEASE_TAG="${{ github.event.ref }}"
+            RELEASE_DESCR="Release"
+            RELEASE_PRERELEASE="false"
+          else
+            RELEASE_TAG="latest"
+            RELEASE_DESCR="Development"
+            RELEASE_PRERELEASE="true"
+          fi
+          echo "############### RELEASE_TAG        = ${RELEASE_TAG}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"                                  >> $GITHUB_ENV
+          echo "############### RELEASE_DESCR      = ${RELEASE_DESCR}"
+          echo "RELEASE_DESCR=${RELEASE_DESCR}"                              >> $GITHUB_ENV
+          echo "############### RELEASE_PRERELEASE = ${RELEASE_PRERELEASE}"
+          echo "RELEASE_PRERELEASE=${RELEASE_PRERELEASE}"                    >> $GITHUB_ENV
+          echo "############### showing all known tags"
+          git tag
+          echo "############### Building version '${RELEASE_TAG}'"
+
+      - name: Build on MSYS
+        run: |
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build/ --config ${{env.BUILD_TYPE}}
+
+      - name: Create Package
+        run: |
+          mkdir -v sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}
+          cp -v  examples/sqlux.ini     sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*          sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -vr roms                   sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux.exe        sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          zip -r sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}.zip \
+            sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+
+      - name: Upload Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "Windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}"
+          prerelease: ${{ env.RELEASE_PRERELEASE }}
+          title: "Windows-${{ matrix.sys }} ${{ env.RELEASE_DESCR }} Build"
+          files: |
+            sqlux-windows-*.zip

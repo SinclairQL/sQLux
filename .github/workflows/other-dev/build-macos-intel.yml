@@ -1,0 +1,99 @@
+name: Build MacOS Intel
+
+on:
+  push:
+    branches: [ none ]
+  pull_request:
+    branches: [ none ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_job:
+
+    name: Build on MacOS Intel
+
+    runs-on: macos-12
+
+    continue-on-error: true
+
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+
+      - name: get Arch and O.S. info
+        run: |
+          sw_vers
+          sysctl machdep.cpu.brand_string
+
+      - name: Install Dependencies
+        run: |
+          brew install sdl2
+
+      - name: Get Version and ReleaseTag
+        run: |
+          if [[ "xxx${{ github.event.ref }}" =~ ^xxxrefs/tags/v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            RELEASE_TAG="${{ github.event.ref }}"
+            RELEASE_DESCR="Release"
+            RELEASE_PRERELEASE="false"
+          else
+            RELEASE_TAG="latest"
+            RELEASE_DESCR="Development"
+            RELEASE_PRERELEASE="true"
+          fi
+          echo "############### RELEASE_TAG        = ${RELEASE_TAG}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"                                  >> $GITHUB_ENV
+          echo "############### RELEASE_DESCR      = ${RELEASE_DESCR}"
+          echo "RELEASE_DESCR=${RELEASE_DESCR}"                              >> $GITHUB_ENV
+          echo "############### RELEASE_PRERELEASE = ${RELEASE_PRERELEASE}"
+          echo "RELEASE_PRERELEASE=${RELEASE_PRERELEASE}"                    >> $GITHUB_ENV
+          echo "############### showing all known tags"
+          git tag
+          echo "############### Building version '${RELEASE_TAG}'"
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      # # Type 1
+      # # https://github.com/marketplace/actions/upload-files-to-a-github-release
+      # - name: Create Package and Upload Release - type 1
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: build/sqlux
+      #     asset_name: sqlux-macos-intel
+      #     release_name: ${{ env.RELEASE_TAG }}
+      #     tag: ${{ github.ref }}
+      #     overwrite: true
+      #     body: "Release ${{ env.RELEASE_TAG }}"
+
+      # Type 2
+      # https://github.com/marvinpinto/action-automatic-releases
+      - name: Create Package
+        run: |
+          mkdir                         sqlux-macos-${{ env.RELEASE_TAG }}/
+          cp -v  examples/sqlux.ini     sqlux-macos-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*          sqlux-macos-${{ env.RELEASE_TAG }}/
+          cp -vr roms                   sqlux-macos-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux            sqlux-macos-${{ env.RELEASE_TAG }}/
+          zip -r sqlux-macos-${{ env.RELEASE_TAG }}.zip \
+            sqlux-macos-${{ env.RELEASE_TAG }}/
+
+      - name: Upload Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "MacOS-intel-${{ env.RELEASE_TAG }}"
+          prerelease: ${{ env.RELEASE_PRERELEASE }}
+          title: "MacOS Development Build"
+          files: |
+            sqlux-macos-*.zip
