@@ -6,6 +6,10 @@ romdir/*
 docs/uqlx.html
 docs/socket.html
 
+# ignore eventual builds, but not the directory itself
+build/*
+!build/.gitkeep
+
 #tex stuff
 *.aux
 *.dvi
