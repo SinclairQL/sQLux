@@ -1,8 +1,13 @@
-name: Build arm
+name: Build Linux arm
+
+# Old action from upstream
 
 on:
   push:
+    branches: [ none ]
   pull_request:
+    branches: [ none ]
+
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -19,7 +24,7 @@ jobs:
       matrix:
         include:
           - arch: aarch64
-            distro: ubuntu20.04
+            distro: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2.1.0
