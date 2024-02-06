@@ -9,4 +9,4 @@ ${TARGETS} : FORCE
 FORCE: ;
 
 clean:
-	rm -rf build/
+	rm -rf build/*
