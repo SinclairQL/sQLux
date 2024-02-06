@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 OPTION(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
-project(sqlux)
+project(sqlux C)
 
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
 
@@ -75,7 +75,7 @@ else ()
     set(SDL2_GPU_LIB_DIRS "")
 endif ()
 
-include_directories(${CMAKE_CURRENT_LIST_DIR} include/ sds/ args/src/ inih/ CLI11/include/ ${SDL2_INCLUDE_DIRS} ${SDL2_GPU_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_LIST_DIR} include/ sds/ args/src/ inih/ ${SDL2_INCLUDE_DIRS} ${SDL2_GPU_INCLUDE_DIRS})
 
 add_executable(sqlux
     Init.c
