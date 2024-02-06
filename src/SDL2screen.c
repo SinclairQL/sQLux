@@ -779,6 +779,8 @@ static struct SDLQLMap_f sdlqlmap_GB[] = {
     { MOD_SHIFT,    SDLK_3,             (SWAP_SHIFT | QL_POUND) },
     { MOD_SHIFT,    SDLK_QUOTE,         QL_2 },
     { MOD_SHIFT,    SDLK_2,             QL_QUOTE },
+    { MOD_NONE,     SDLK_HASH,          (SWAP_SHIFT | QL_3) },
+    { MOD_SHIFT,    SDLK_HASH,		QL_POUND },
     { 0x0, 0x0, 0x0 }
 };
 
