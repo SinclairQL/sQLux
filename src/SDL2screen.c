@@ -22,6 +22,7 @@
 #include "QL_sound.h"
 
 #define SWAP_SHIFT 0x100
+#define SWAP_CNTRL 0x200
 
 static SDL_Window *ql_window = NULL;
 static uint32_t ql_windowid = 0;
@@ -41,6 +42,30 @@ bool screenWritten = false;	// True if screen memory has been written
 bool shaders_selected = false;
 
 SDL_sem* sem50Hz = NULL;
+
+typedef enum {
+    KEY_US,
+    KEY_GB,
+    KEY_DE,
+    KEY_ES,
+} KeyboardType;
+
+typedef enum {
+    KEY_ACTION_NONE,
+    KEY_ACTION_DIA,
+    KEY_ACTION_CIR,
+    KEY_ACTION_GRA,
+} KeyboardAction;
+
+typedef struct DeadKey {
+	int id;					// Dead key id
+	bool ignore;			// True if dead key release should not be sent to ROM
+	int replace_code;		// Key code sent to ROM to generate accented char
+	KeyboardAction action;	// Indicates if dead key active, and if so, the type of accent to be added
+} DeadKey;
+
+KeyboardType keyboard = KEY_US;
+DeadKey dkey;
 
 struct QLcolor {
 	int r;
@@ -93,6 +118,8 @@ struct SDLQLMap_f {
 #define MOD_CTRL        (1 << 1)
 #define MOD_SHIFT       (1 << 2)
 #define MOD_WILD        (1 << 3)
+#define MOD_GRF         (1 << 4)
+#define MOD_CSFT        (MOD_CTRL | MOD_SHIFT)
 
 static struct SDLQLMap_f *sdlqlmap = NULL;
 static void setKeyboardLayout (void);
@@ -740,21 +767,28 @@ static void QLSDLOpenJoystick(int index, int which)
 
 /* Store the keys pressed */
 unsigned int sdl_keyrow[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-int sdl_shiftstate, sdl_controlstate, sdl_altstate;
+int sdl_shiftstate, sdl_controlstate, sdl_altstate, sdl_grfstate;
+int usegrfstate = 0;
 
 static void SDLQLKeyrowChg(int code, int press)
 {
-	int j;
+	code &=0xff; 				// Make sure that array bounds are not exceeded
+	int row = 7 - code / 8;
+	int col = 0x1 << (code % 8);
 
-	if (code > -1) {
-		j = 1 << (code % 8);
-
-		if (press)
-			sdl_keyrow[7 - code / 8] |= j;
-		else
-			sdl_keyrow[7 - code / 8] &= ~j;
-	}
+	if (press)
+		sdl_keyrow[row] |= col;
+	else
+		sdl_keyrow[row] &= ~col;
 }
+
+// Adjust for Windows and X11 generating different scan codes for dead keys
+#ifdef __WIN32__
+#define SDL_DEADKEY_1 SDLK_BACKQUOTE
+#else
+#define SDL_DEADKEY_1 SDLK_SLASH
+#endif
+#define SDL_DEADKEY_2 180
 
 static struct SDLQLMap_f sdlqlmap_DE[] = {
     { MOD_WILD,     SDLK_z,             QL_Y },
@@ -775,12 +809,55 @@ static struct SDLQLMap_f sdlqlmap_DE[] = {
 };
 
 static struct SDLQLMap_f sdlqlmap_GB[] = {
-    { MOD_NONE,     SDLK_BACKQUOTE,     (SWAP_SHIFT | QL_3) },
+    { MOD_NONE,     SDLK_BACKQUOTE,     (SWAP_SHIFT | QL_3) },  // For UK Mac
     { MOD_SHIFT,    SDLK_3,             (SWAP_SHIFT | QL_POUND) },
     { MOD_SHIFT,    SDLK_QUOTE,         QL_2 },
     { MOD_SHIFT,    SDLK_2,             QL_QUOTE },
     { MOD_NONE,     SDLK_HASH,          (SWAP_SHIFT | QL_3) },
     { MOD_SHIFT,    SDLK_HASH,		QL_POUND },
+    { 0x0, 0x0, 0x0 }
+};
+
+static struct SDLQLMap_f sdlqlmap_ES[] = {
+    { MOD_SHIFT,    SDLK_1,             QLSH_PERIOD }, // !
+    { MOD_SHIFT,    SDLK_2,             (QL_LBRACKET) }, // "
+    { MOD_SHIFT,    SDLK_3,             (SWAP_SHIFT | QL_PERIOD) }, // .
+    { MOD_SHIFT,    SDLK_6,             QL_7 }, // &
+    { MOD_SHIFT,    SDLK_7,             QL_6 }, // /
+    { MOD_SHIFT,    SDLK_8,             QL_9 }, // (
+    { MOD_SHIFT,    SDLK_9,             QL_0 }, // )
+    { MOD_SHIFT,    SDLK_0,             (SWAP_SHIFT | QL_EQUAL) }, // =
+    { MOD_SHIFT,    SDLK_PERIOD,        QL_QUOTE }, // :
+    { MOD_SHIFT,    SDLK_COMMA,         (SWAP_SHIFT | QL_QUOTE) }, // ;
+    { MOD_NONE,     161,                (SWAP_SHIFT | QL_1) }, // ¡
+    { MOD_SHIFT,    161,                QLSH_2 }, // ¿
+    { MOD_NONE,     186,                (SWAP_SHIFT | SWAP_CNTRL | QL_Z) }, // º
+    { MOD_SHIFT,    186,                (SWAP_CNTRL | QL_Z) }, // º as no ª
+    { MOD_NONE,     SDLK_QUOTE,         (SWAP_CNTRL | QL_LBRACKET) }, // '
+    { MOD_SHIFT,    SDLK_QUOTE,         QLSH_COMMA }, // ?
+    { MOD_NONE,     SDLK_PLUS,          (SWAP_SHIFT | QL_EQUAL) }, // +
+    { MOD_SHIFT,    SDLK_PLUS,          QL_8 }, // *
+    { MOD_NONE,     SDL_DEADKEY_2,      QL_LBRACKET }, // ´
+    { MOD_NONE,     231,                (SWAP_SHIFT | QL_POUND) }, // ç
+    { MOD_SHIFT,    231,                (SWAP_CNTRL | QL_H) }, // Ç
+    { MOD_WILD,     241,                QL_SEMICOLON }, // ñ Ñ û
+    { MOD_WILD,     SDLK_LESS,          QL_SLASH }, // < >
+    { MOD_NONE,     SDL_DEADKEY_1,      QL_RBRACKET }, // `
+    { MOD_SHIFT,    SDL_DEADKEY_1,      QLSH_RBRACKET }, // ^
+    { MOD_CTRL,     SDLK_PLUS,          (SWAP_SHIFT | QL_RBRACKET) }, // down arrow
+    { MOD_CSFT,     SDLK_PLUS,          QL_LBRACKET }, // Up arrow
+    { MOD_CTRL,     231,                QL_QUOTE }, // right arrow
+    { MOD_CSFT,     231,                QL_QUOTE }, // left arrow
+    { MOD_GRF,      SDLK_1,             (SWAP_CNTRL | QL_0) }, // |
+    { MOD_GRF,      SDLK_2,             (SWAP_CNTRL | QL_8) }, // @
+    { MOD_GRF,      SDLK_3,             (SWAP_SHIFT | QL_3) }, // #
+    { MOD_GRF,      SDL_DEADKEY_1,      QL_POUND }, // [
+    { MOD_GRF,      SDLK_PLUS,          QL_BACKSLASH }, // ]
+    { MOD_GRF,      231,                (SWAP_CNTRL | QL_POUND) }, // }
+    { MOD_GRF,      SDL_DEADKEY_2,      (SWAP_CNTRL | QL_EQUAL) }, // {
+    { MOD_GRF,      186,                (SWAP_CNTRL | QL_9) }, // backslash
+    { MOD_GRF,      SDLK_z,             (SWAP_CNTRL | SWAP_SHIFT | QL_X) }, // «
+    { MOD_GRF,      SDLK_x,             (SWAP_CNTRL | SWAP_SHIFT | QL_Y) }, // »
     { 0x0, 0x0, 0x0 }
 };
 
@@ -864,6 +941,7 @@ static struct SDLQLMap sdlqlmap_default[] = {
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
+	// printf("Key %8x Scan %8x P: %i\n", keysym->sym, keysym->scancode, pressed); fflush(stdout);
 
 	/* Handle extended cursor keys */
 	/* backspace maps to control left */
@@ -911,8 +989,14 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	case SDLK_RCTRL:
 		sdl_controlstate = pressed;
 		return;
-	case SDLK_LALT:
 	case SDLK_RALT:
+		if (usegrfstate)
+		{
+			sdl_grfstate = pressed;
+			return;
+		}
+		// else drop through
+	case SDLK_LALT:
 		sdl_altstate = pressed;
 		return;
 	case SDLK_F11:
@@ -921,37 +1005,219 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 		return;
 	}
 
-    if (sdlqlmap) {
-        while (sdlqlmap[i].sdl_kc != 0) {
-            int mod = sdl_altstate | sdl_controlstate << 1 |
-                sdl_shiftstate << 2;
-            if ((keysym->sym == sdlqlmap[i].sdl_kc) &&
-                    ((sdlqlmap[i].mod == MOD_WILD) || (mod == sdlqlmap[i].mod))) {
+#ifndef __WIN32__
+	// Convert X11 dead keys
+	if (keysym->sym == 0x40000000)
+	{
+		keysym->sym = keysym->scancode;
+		// Avoid spanish deadkey clash with keycode for 4
+		if ((keyboard == KEY_ES) && (keysym->sym == SDLK_4))
+		{
+			keysym->sym = SDL_DEADKEY_2;
+		}
+	}
+#endif
 
-			    int code = sdlqlmap[i].code;
+	// Action Spanish deadkeys not processed in MGE ROM
+	if ((keyboard == KEY_ES) && (!sdl_grfstate) && (!sdl_controlstate))
+	{
+		if (pressed)
+		{
+			if ((keysym->sym == SDL_DEADKEY_1) ||
+			    ((keysym->sym == SDL_DEADKEY_2) && sdl_shiftstate))
+			{
+				dkey.id = keysym->sym;
+				dkey.action = (keysym->sym == SDL_DEADKEY_2) ? KEY_ACTION_DIA : sdl_shiftstate ? KEY_ACTION_CIR : KEY_ACTION_GRA;
+				dkey.ignore = true;
+				return;
+			}
+		}
+		else
+		{
+			if ((dkey.id == keysym->sym) && dkey.ignore)
+			{
+				dkey.id = 0;
+				dkey.ignore = false;
+				return;
+			}
+		}
+	}
 
-                /* Code requires a change in shift state? */
-                if (SWAP_SHIFT & code) {
-                    code &= ~SWAP_SHIFT;
-                    mod ^= (0x1 << 2);
-                }
-                if (pressed) {
-                    queueKey(mod, code, 0);
-                }
-                SDLQLKeyrowChg(code, pressed);
-                return; // Only one key can be mapped
-            }
-            i++;
-        }
-    }
+	// Is a dead key active?
+	if (dkey.action != KEY_ACTION_NONE)
+	{
+		if (pressed)
+		{
+			int replace_mod;
 
-    // Reset the search
-    i = 0;
+			if ((keysym->sym == SDLK_a) ||
+			    (keysym->sym == SDLK_e) ||
+			    (keysym->sym == SDLK_i) ||
+			    (keysym->sym == SDLK_o) ||
+			    (keysym->sym == SDLK_u))
+			{
+				// determine what key combination to send
+				if (dkey.action == KEY_ACTION_CIR)
+				{
+					switch (keysym->sym)
+					{
+						case SDLK_a:
+							replace_mod = 0x02;
+							dkey.replace_code = QL_PERIOD;
+						break;
+						case SDLK_e:
+							replace_mod = 0x06;
+							dkey.replace_code = QL_L;
+						break;
+						case SDLK_i:
+							replace_mod = 0x06;
+							dkey.replace_code = QL_P;
+						break;
+						case SDLK_o:
+							replace_mod = 0x06;
+							dkey.replace_code = QL_SEMICOLON;
+						break;
+						case SDLK_u:
+							replace_mod = 0x02;
+							dkey.replace_code = QL_SEMICOLON;
+						break;
+					}
+				}
+				else if (dkey.action == KEY_ACTION_DIA)
+				{
+					replace_mod = 0x06;
+					switch (keysym->sym)
+					{
+						case SDLK_a:
+							dkey.replace_code = QL_R;
+						break;
+						case SDLK_e:
+							dkey.replace_code = QL_S;
+						break;
+						case SDLK_i:
+							dkey.replace_code = QL_M;
+						break;
+						case SDLK_o:
+							dkey.replace_code = QL_4;
+						break;
+						case SDLK_u:
+							replace_mod = 0x04;
+							dkey.replace_code = QL_BACKSLASH;
+						break;
+					}
+				}
+				else // Grave
+				{
+					replace_mod = 0x06;
+					switch (keysym->sym)
+					{
+						case SDLK_a:
+							dkey.replace_code = QL_9;
+						break;
+						case SDLK_e:
+							dkey.replace_code = QL_Q;
+						break;
+						case SDLK_i:
+							dkey.replace_code = QL_O;
+						break;
+						case SDLK_o:
+							dkey.replace_code = QL_I;
+						break;
+						case SDLK_u:
+							dkey.replace_code = QL_COMMA;
+						break;
+					}
+				}
+
+				// Need to detect the release of the translated key
+				dkey.id = keysym->sym;
+				dkey.ignore = false;
+			}
+			else
+			{
+				// Need to send base key
+				if (dkey.action == KEY_ACTION_CIR) // ^
+				{
+					dkey.replace_code = QL_RBRACKET;
+					replace_mod = 0x04;
+				}
+				else if (dkey.action == KEY_ACTION_DIA) // "
+				{
+					dkey.replace_code = QL_LBRACKET;
+					replace_mod = 0x04;
+				}
+				else
+				{
+					dkey.replace_code = QL_RBRACKET; // `
+					replace_mod = 0x2;
+				}
+			}
+
+			// Clear the deadkey
+			dkey.action = KEY_ACTION_NONE;
+
+			// Press the key
+			queueKey(replace_mod, dkey.replace_code, 0);
+			SDLQLKeyrowChg(dkey.replace_code, pressed);
+			return;
+		}
+	}
+
+	// Check for releasing a translated dead key
+	if (!pressed && (dkey.id == keysym->sym) && !dkey.ignore)
+	{
+		SDLQLKeyrowChg(dkey.replace_code, pressed);
+		dkey.replace_code = 0;
+		dkey.id = 0;
+		return;
+	}
+	else
+	{
+		if (sdlqlmap) {
+#ifdef __WIN32__
+			// Windows always sets the control key when alt Gr is pressed
+			int mod = sdl_altstate | ((sdl_controlstate && (!sdl_grfstate)) ? 2 : 0) |
+				sdl_shiftstate << 2 | sdl_grfstate << 4;
+#else
+			int mod = sdl_altstate | (sdl_controlstate << 1) |
+				sdl_shiftstate << 2 | sdl_grfstate << 4;
+#endif
+			while (sdlqlmap[i].sdl_kc != 0) {
+				if ((keysym->sym == sdlqlmap[i].sdl_kc) &&
+						((sdlqlmap[i].mod == MOD_WILD) || (mod == sdlqlmap[i].mod))) {
+
+					int code = sdlqlmap[i].code;
+
+					/* Code requires a change in shift state? */
+					if (SWAP_SHIFT & code) {
+						code &= ~SWAP_SHIFT;
+						mod ^= (0x1 << 2);
+					}
+					/* Code requires a change in control state? */
+					if (SWAP_CNTRL & code) {
+						code &= ~SWAP_CNTRL;
+						mod ^= (0x1 << 1);
+					}
+					if (pressed) {
+						queueKey(mod, code, 0);
+					}
+					SDLQLKeyrowChg(code, pressed);
+					return; // Only one key can be mapped
+				}
+				i++;
+			}
+		}
+	}
+	// Reset the search
+	i = 0;
+
+	// Merge back alt Gr and Alt
+	int sdl_altcomstate = (sdl_altstate | sdl_grfstate) ? 1 : 0;
 
 	while (sdlqlmap_default[i].sdl_kc != 0) {
 		if (keysym->sym == sdlqlmap_default[i].sdl_kc) {
-			int mod = sdl_altstate | sdl_controlstate << 1 |
-				  sdl_shiftstate << 2;
+			int mod = sdl_altcomstate | sdl_controlstate << 1 |
+				sdl_shiftstate << 2;
 
 			int code = sdlqlmap_default[i].code;
 
@@ -968,15 +1234,25 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 static void setKeyboardLayout (void)
 {
 	const char *kbd_string = emulatorOptionString("kbd");
+	usegrfstate = 0;
+	keyboard = KEY_US;
 
 	if (!strncasecmp("DE", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_DE;
+		keyboard = KEY_DE;
 		if (V1) printf("Using DE keymap.\n");
 	} else if (!strncasecmp("GB", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_GB;
+		keyboard = KEY_GB;
 		if (V1) printf("Using GB keymap.\n");
+	} else if (!strncasecmp("ES", kbd_string, 2)) {
+		sdlqlmap = sdlqlmap_ES;
+		keyboard = KEY_ES;
+		usegrfstate = 1;
+		if (V1) printf("Using ES keymap.\n");
 	} else {
 		if (V1) printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
+		sdlqlmap = NULL;
 	}
 }
 
