@@ -132,7 +132,7 @@ Now the mingw version of SDL2 is available and we can build sQLux for Win64
 
     mkdir mingw
     cd mingw
-    cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
+    cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
     make
 
 ## Building MinGW on Windows

@@ -56,7 +56,7 @@ struct emuOpts emuOptions[] = {
 {"iorom2", "", "rom in 2nd IO area (Minerva only 0x14000 address)", EMU_OPT_CHAR, 0, NULL},
 {"joy1", "", "1-8 SDL2 joystick index", EMU_OPT_INT, 0, NULL},
 {"joy2", "", "1-8 SDL2 joystick index", EMU_OPT_INT, 0, NULL},
-{"kbd", "", "keyboard language DE, GB, US", EMU_OPT_CHAR, 0, "US"},
+{"kbd", "", "keyboard language DE, GB, ES, US", EMU_OPT_CHAR, 0, "US"},
 {"no_patch", "n", "disable patching the rom", EMU_OPT_INT, 0, NULL},
 {"palette", "", "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display", EMU_OPT_INT, 0, NULL},
 {"print", "", "command to use for print jobs", EMU_OPT_CHAR, 0, "lpr"},
