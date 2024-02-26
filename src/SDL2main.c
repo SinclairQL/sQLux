@@ -87,11 +87,31 @@ void emu_loop() {
     }
 }
 
+#ifdef __WIN32__
+#include <windows.h>
+static void reattach_console(void)
+{
+   // Will succeed if launched from console,
+   // will fail if launched from GUI
+   if (AttachConsole(ATTACH_PARENT_PROCESS))
+   {
+       freopen("CONIN$", "r", stdin);
+       freopen("CONOUT$", "w", stdout);
+       freopen("CONOUT$", "w", stderr);
+   }
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #if __EMSCRIPTEN__
     wasm_init_storage();
 #endif
+#ifdef __WIN32__
+    // Display output if started from console
+    reattach_console();
+#endif
+
     // set the homedir for the OS first
     SetHome();
 
