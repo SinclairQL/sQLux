@@ -49,7 +49,7 @@ cp /bullseye/sqlux/arm64/sqlux /build/release/sqlux_arm64
 
 # temp turn off exit on error to stop error on sudo missing
 set +e
-source /quasi-msys2-w64/env/all_quiet.src
+source /quasi-msys2-w64/env/all.src
 set -e
 
 cp -r sqlux sqlux-w64
@@ -79,7 +79,7 @@ FIXASPECT = 1
 EOF
 
 # Download vanpeebles game as example program
-curl -O http://www.dilwyn.me.uk/games/adventures/198-adventure.zip
+curl -O https://dilwyn.qlforum.co.uk/games/adventures/198-adventure.zip
 unzip 198-adventure.zip "198adDisk ImageFinal.img"
 mv "198adDisk ImageFinal.img" sqlux-$VERSION/198ad.img
 rm 198-adventure.zip
