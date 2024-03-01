@@ -17,6 +17,15 @@ cmake --build x86_64/
 cp x86_64/sqlux /build/release/sqlux_x86_64
 popd
 
+# Build the i386 version
+cp -r sqlux sqlux-i386
+pushd sqlux-i386
+git clean -xfd
+cmake -B i386 -DCMAKE_TOOLCHAIN_FILE=Toolchain-cross-m32.cmake -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/ -DCMAKE_BUILD_TYPE=Release
+cmake --build i386
+cp i386/sqlux /build/release/sqlux_i386
+popd
+
 # Build the raspian version
 cp -r sqlux /raspbian/sqlux
 pushd /raspbian/sqlux
@@ -131,6 +140,7 @@ cp -r sqlux/docs sqlux-$VERSION/
 
 # copy the binaries into release
 cp release/sqlux_x86_64 sqlux-$VERSION/sqlux_x86_64
+cp release/sqlux_i386 sqlux-$VERSION/sqlux_i386
 cp release/sqlux_armv6 sqlux-$VERSION/sqlux_armv6
 cp release/sqlux_armv7 sqlux-$VERSION/sqlux_armv7
 cp release/sqlux_arm64 sqlux-$VERSION/sqlux_arm64

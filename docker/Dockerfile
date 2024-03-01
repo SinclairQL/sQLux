@@ -22,9 +22,11 @@ apt-get -y install \
   curl \
   debootstrap \
   gawk \
+  gcc-multilib \
   git \
   gpg \
   libsdl2-dev \
+  libsdl2-dev:i386 \
   lld \
   locales \
   qemu-user-static \
