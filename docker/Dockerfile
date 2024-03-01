@@ -68,11 +68,20 @@ mkdir /raspbian
 debootstrap --no-check-gpg --foreign --arch=armhf --include=build-essential,cmake,libsdl2-dev bookworm /raspbian http://archive.raspbian.org/raspbian
 cp /usr/bin/qemu-arm-static /raspbian/usr/bin
 chroot /raspbian /debootstrap/debootstrap --second-stage
+EOF
 
+RUN --security=insecure <<EOF
 mkdir /bookworm
 debootstrap --no-check-gpg --foreign --arch=arm64 --include=build-essential,cmake,libsdl2-dev bookworm /bookworm https://deb.debian.org/debian
 cp /usr/bin/qemu-aarch64-static /bookworm/usr/bin
 chroot /bookworm /debootstrap/debootstrap --second-stage
+EOF
+
+RUN --security=insecure <<EOF
+mkdir /bookworm32
+debootstrap --no-check-gpg --foreign --arch=armhf --include=build-essential,cmake,libsdl2-dev bookworm /bookworm32 https://deb.debian.org/debian
+cp /usr/bin/qemu-arm-static /bookworm32/usr/bin
+chroot /bookworm32 /debootstrap/debootstrap --second-stage
 EOF
 
 COPY ./build-sqlux-release.sh /build/

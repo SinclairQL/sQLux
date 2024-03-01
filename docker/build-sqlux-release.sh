@@ -31,6 +31,20 @@ EOF
 
 cp /raspbian/sqlux/armv6/sqlux /build/release/sqlux_armv6
 
+# Build the armv7 version
+cp -r sqlux /bookworm32/sqlux
+pushd /bookworm32/sqlux
+git clean -xfd
+popd
+
+chroot /bookworm32 /bin/bash -x <<'EOF'
+cd sqlux
+cmake -B armv7/ -DCMAKE_BUILD_TYPE=Release
+cmake --build armv7/
+EOF
+
+cp /bookworm32/sqlux/armv7/sqlux /build/release/sqlux_armv7
+
 # Build the arm64 version
 cp -r sqlux /bookworm/sqlux
 pushd /bookworm/sqlux
@@ -118,9 +132,10 @@ cp -r sqlux/docs sqlux-$VERSION/
 # copy the binaries into release
 cp release/sqlux_x86_64 sqlux-$VERSION/sqlux_x86_64
 cp release/sqlux_armv6 sqlux-$VERSION/sqlux_armv6
+cp release/sqlux_armv7 sqlux-$VERSION/sqlux_armv7
 cp release/sqlux_arm64 sqlux-$VERSION/sqlux_arm64
 cp release/sqlux_w64.exe sqlux-$VERSION/sqlux_w64.exe
-cp release/sqlux_w32.exe sqlux-$VERSION/sqlux_w64.exe
+cp release/sqlux_w32.exe sqlux-$VERSION/sqlux_w32.exe
 
 # zip the release
 zip -r sqlux-$VERSION.zip sqlux-$VERSION/
