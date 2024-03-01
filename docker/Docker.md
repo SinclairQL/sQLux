@@ -24,5 +24,5 @@ Replace sqlux-dir and sqlux-release in the command with the the checked out sqlu
 directory where the build artifacts will be place.
  
 ```
-docker run -v <sqlux-dir>:/build/sqlux -v <sqlux-release>:/build/release -it sqlux-build ./build-sqlux-release.sh
+docker run -v <sqlux-dir>:/build/sqlux -v <sqlux-release>:/build/release -it sqlux-build
 ```

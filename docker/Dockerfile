@@ -58,3 +58,6 @@ COPY ./build-sqlux-release.sh /build/
 
 ENV LANG en_US.utf8
 WORKDIR /build
+
+ENTRYPOINT ["/build/build-sqlux-release.sh"]
+
