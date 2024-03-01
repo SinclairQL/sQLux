@@ -32,22 +32,27 @@ EOF
 cp /raspbian/sqlux/armv6/sqlux /build/release/sqlux_armv6
 
 # Build the arm64 version
-cp -r sqlux /bullseye/sqlux
-pushd /bullseye/sqlux
+cp -r sqlux /bookworm/sqlux
+pushd /bookworm/sqlux
 git clean -xfd
 popd
 
-chroot /bullseye /bin/bash -x <<'EOF'
+chroot /bookworm /bin/bash -x <<'EOF'
 cd sqlux
 cmake -B arm64/ -DCMAKE_BUILD_TYPE=Release
 cmake --build arm64/
 EOF
 
-cp /bullseye/sqlux/arm64/sqlux /build/release/sqlux_arm64
+cp /bookworm/sqlux/arm64/sqlux /build/release/sqlux_arm64
 
 # Build the Windows 64bit version
+(
+export WINEPREFIX=/root/.wine64
+export WINEARCH=win64
+export MINGW_CC=x86_64-w64-mingw32-gcc
 
 # temp turn off exit on error to stop error on sudo missing
+
 set +e
 source /quasi-msys2-w64/env/all.src
 set -e
@@ -59,6 +64,28 @@ cmake -B w64 -DCMAKE_BUILD_TYPE=Release
 cmake --build w64
 cp w64/sqlux.exe /build/release/sqlux_w64.exe
 popd
+)
+
+# Build the Windows 32bit version
+(
+export WINEPREFIX=/root/.wine32
+export WINEARCH=win32
+export MINGW_CC=i686-w64-mingw32-gcc
+
+# temp turn off exit on error to stop error on sudo missing
+
+set +e
+source /quasi-msys2-w32/env/all.src
+set -e
+
+cp -r sqlux sqlux-w32
+pushd sqlux-w32
+git clean -xfd
+cmake -B w32 -DCMAKE_BUILD_TYPE=Release
+cmake --build w32
+cp w32/sqlux.exe /build/release/sqlux_w32.exe
+popd
+)
 
 pushd sqlux
 VERSION=`git describe --tags --always`
@@ -93,6 +120,7 @@ cp release/sqlux_x86_64 sqlux-$VERSION/sqlux_x86_64
 cp release/sqlux_armv6 sqlux-$VERSION/sqlux_armv6
 cp release/sqlux_arm64 sqlux-$VERSION/sqlux_arm64
 cp release/sqlux_w64.exe sqlux-$VERSION/sqlux_w64.exe
+cp release/sqlux_w32.exe sqlux-$VERSION/sqlux_w64.exe
 
 # zip the release
 zip -r sqlux-$VERSION.zip sqlux-$VERSION/
