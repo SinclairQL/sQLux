@@ -60,6 +60,8 @@ static open_arg ip_par[2];
 #ifdef __WIN32__
 int ws2_init = 0;
 WSADATA wsaData;
+#else
+#define SOCKET int
 #endif
 
 int ip_init(int idx, void *p)
@@ -125,7 +127,7 @@ int ip_open(int id, void **priv)
 				struct servent *s;
 
 				if ((h = gethostbyname(host)) != NULL) {
-					int (*func)(int socket, const struct sockaddr *address, socklen_t address_len);
+					int (*func)(SOCKET socket, const struct sockaddr *address, socklen_t address_len);
 
 					s = getservbyname(aport, (dindx & 1) ?
 									 "udp" :
