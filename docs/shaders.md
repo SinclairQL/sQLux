@@ -20,7 +20,7 @@ git submodule update --init --recursive
 
 ## Building linux
 ```
-cd linux
+cd build
 cmake -DSUPPORT_SHADERS=TRUE ..
 make
 ```
