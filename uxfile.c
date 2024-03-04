@@ -691,7 +691,7 @@ int QHOpenDir(struct mdvFile *f, int fstype)
 
 #ifdef __WIN32__
 	sqlux_getemppath(sizeof(templ), templ);
-	strncat(templ, "/QDOSXXXXXX", sizeof(templ));
+	strncat(templ, "/QDOSXXXXXX", sizeof(templ)-1);
 	fd = sqlux_mkstemp(templ);
 #else
 	strncpy(templ, template, sizeof(templ));
