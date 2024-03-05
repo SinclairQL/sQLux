@@ -1087,7 +1087,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 					switch (keysym->sym)
 					{
 						case SDLK_a:
-							dkey.replace_code = QL_R;
+							dkey.replace_code = sdl_shiftstate ? QL_SLASH : QL_R;
 						break;
 						case SDLK_e:
 							dkey.replace_code = QL_S;
@@ -1096,11 +1096,12 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 							dkey.replace_code = QL_M;
 						break;
 						case SDLK_o:
-							dkey.replace_code = QL_4;
+							dkey.replace_code = sdl_shiftstate ? QL_D : QL_4;
 						break;
 						case SDLK_u:
-							replace_mod = 0x04;
-							dkey.replace_code = QL_BACKSLASH;
+							if (!sdl_shiftstate)
+								replace_mod = 0x04;
+							dkey.replace_code = sdl_shiftstate ? QL_G : QL_BACKSLASH;
 						break;
 					}
 				}
