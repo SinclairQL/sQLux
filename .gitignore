@@ -1,7 +1,14 @@
-qlux
-*.o
+# Devenv
+.devenv*
+devenv.local.nix
 
-romdir/*
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+roms/*
 
 docs/uqlx.html
 docs/socket.html
@@ -10,17 +17,6 @@ docs/socket.html
 build/*
 !build/.gitkeep
 
-#tex stuff
-*.aux
-*.dvi
-*.fn
-*.ky
-*.log
-*.pg
-*.toc
-*.vr
-
 # Visual studio
 .vscode/*
 *.code-workspace
-
