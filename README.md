@@ -1,3 +1,9 @@
+# Progress Halted
+
+In real life I am too busy building bare metal clouds so don't expect to see
+any new features for a while. I am still happy to review PRs. Also if you want
+to take over that could be arranged!
+
 # sQLux (or QL Sux according to DaveP)
 
 sQLux is a [Sinclair QL](https://en.wikipedia.org/wiki/Sinclair_QL) emulator. It runs on Linux (including Rapsberry Pi), Mac and MS Windows. It is based on uQlx but with SDL2 used as its OS layer.
