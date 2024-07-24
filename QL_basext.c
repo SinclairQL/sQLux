@@ -65,6 +65,8 @@ bas_err UQLX_getYres();
 bas_err UQLX_scr_llen();
 bas_err UQLX_scr_base();
 bas_err EMU_speed();
+bas_err MACHINE();
+
 static bas_err MakeDir();
 
 struct BAS_PFENTRY *ext_list = NULL;
@@ -246,6 +248,7 @@ void add_bas_proc(char *name, bas_err (*command)())
 #define BN_SCR_LLEN "SCR_LLEN"
 #define BN_SCR_BASE "SCR_BASE"
 #define BN_EMU_SPEED "EMU_SPEED"
+#define BN_MACHINE "MACHINE"
 #if 0
 #define BN_MAKEDIR "MakeDir"
 #endif
@@ -267,6 +270,7 @@ void init_bas_exts()
 	add_bas_fun(BN_SCR_LLEN, UQLX_scr_llen);
 	add_bas_fun(BN_SCR_BASE, UQLX_scr_base);
 	add_bas_proc(BN_EMU_SPEED, EMU_speed);
+	add_bas_fun(BN_MACHINE, MACHINE);
 	create_link_table(ext_list);
 }
 
@@ -679,4 +683,14 @@ bas_err EMU_speed()
 	speed = n;
 
 	return 0;
+}
+
+bas_err MACHINE()
+{
+#ifndef HPR_STYLE
+	if (bas_argcount() != 0)
+		return QERR_BP;
+#endif
+
+	return bas_retint(32);
 }
