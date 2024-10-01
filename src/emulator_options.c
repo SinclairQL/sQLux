@@ -22,7 +22,7 @@ Positionals:\n\
 \n\
 Options:\n\
   -h,--help                   Print this help message and exit\n\
-  -f,--CONFIG [sqlux.ini]     Read an ini file\n";
+  -f,--config [sqlux.ini]     Read an ini file\n";
 
 static const char * const helpTextTail = "\
   --version                   version number\n";
