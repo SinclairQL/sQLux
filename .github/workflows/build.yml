@@ -64,7 +64,7 @@ jobs:
           git tag
           echo "############### Building version '${RELEASE_TAG}'"
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           retention-days: 1
           name: definitions
@@ -118,7 +118,7 @@ jobs:
           zip -r sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}.zip \
                  sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           retention-days: 1
           name: sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}
@@ -199,7 +199,7 @@ jobs:
           zip -r sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}.zip \
                  sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           retention-days: 1
           name: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}
@@ -249,7 +249,7 @@ jobs:
           zip -r sqlux-macos-intel-${{ env.RELEASE_TAG }}.zip \
                  sqlux-macos-intel-${{ env.RELEASE_TAG }}/
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           retention-days: 1
           name: sqlux-macos-intel-${{ env.RELEASE_TAG }}
@@ -310,7 +310,7 @@ jobs:
           zip -r sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}.zip \
                  sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           retention-days: 1
           name: sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}
