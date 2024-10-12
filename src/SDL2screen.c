@@ -1459,28 +1459,41 @@ void QLSDLExit(void)
 
 Uint32 QLSDL50Hz(Uint32 interval, void *param)
 {
-	SDL_Event event;
-	SDL_AtomicSet(&doPoll, 1);
+        SDL_Event event;
+        SDL_AtomicSet(&doPoll, 1);
 
-	schedCount = 0;
+        schedCount = 0;
 
-	if (sem50Hz && !SDL_SemValue(sem50Hz)) {
-		SDL_SemPost(sem50Hz);
-	}
+        if (sem50Hz && !SDL_SemValue(sem50Hz)) {
+                SDL_SemPost(sem50Hz);
+        }
 
-	if (screenWritten && renderer_idle) {
-		screenWritten = false;
-		event.user.type = SDL_USEREVENT;
-		event.user.code = USER_CODE_SCREENREFRESH;
-		event.user.data1 = NULL;
-		event.user.data2 = NULL;
+        if(++frame_count==25) // If 1/2 a second has passed, flip the flash status and redraw screen to show
+        {
+                frame_count=0;
+                flash=1-flash;
 
-		event.type = SDL_USEREVENT;
+                screenWritten = false;
+                event.user.type = SDL_USEREVENT;
+                event.user.code = USER_CODE_SCREENREFRESH;
+                event.user.data1 = NULL;
+                event.user.data2 = NULL;
 
-		SDL_PushEvent(&event);
-	}
+                event.type = SDL_USEREVENT;
 
-	flash=1-flash;
+                SDL_PushEvent(&event);
+        }
+        else    if (screenWritten && renderer_idle) {
+                screenWritten = false;
+                event.user.type = SDL_USEREVENT;
+                event.user.code = USER_CODE_SCREENREFRESH;
+                event.user.data1 = NULL;
+                event.user.data2 = NULL;
 
-	return interval;
+                event.type = SDL_USEREVENT;
+
+                SDL_PushEvent(&event);
+        }
+
+        return interval;
 }
