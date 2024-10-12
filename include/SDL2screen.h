@@ -27,7 +27,6 @@ extern int sdl_shiftstate, sdl_controlstate, sdl_altstate;
 
 extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
-extern bool screenWritten;
 extern bool shaders_selected;
 extern bool ql_fullscreen;
 extern double ql_screen_ratio;

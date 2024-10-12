@@ -837,7 +837,6 @@ void ioread(int (*io_read)(void *priv, Ptr from, int cnt), void *priv,
 
 errexit:
 	*count = cnt;
-	ChangedMemory(from, from + cnt);
 
 	reg[0] = e;
 	return;
