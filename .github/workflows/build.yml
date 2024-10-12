@@ -334,7 +334,7 @@ jobs:
       RELEASE_PRERELEASE: ${{needs.get_release_definitions.outputs.RELEASE_PRERELEASE}}
     steps:
       - name: Restore Artifacts Cache
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4.1.8
         with:
           path: artifacts
       - name: list Artifacts
