@@ -23,6 +23,7 @@
 
 #define SWAP_SHIFT 0x100
 #define SWAP_CNTRL 0x200
+#define BIT(nr) (1UL << (nr))
 
 static SDL_Window *ql_window = NULL;
 static uint32_t ql_windowid = 0;
@@ -536,48 +537,80 @@ void QLSDLCreatePalette(const SDL_PixelFormat* format)
 	}
 }
 
-void QLSDLWritePixels(uint32_t *pixel_ptr32)
+// frame counter for flash
+static int curframe = 0;
+
+static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
+					uint8_t *emulatorScreenPtr,
+					uint8_t *emulatorScreenPtrEnd)
 {
-	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
-	int t1, t2, i, color;
+	int curpix = 0;
+	uint32_t flashbg = 0;
+	int flashon = 0;
 
-	while (scr_ptr <
-	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
-		t1 = *scr_ptr++;
-		t2 = *scr_ptr++;
+	while (emulatorScreenPtr < emulatorScreenPtrEnd) {
+		uint8_t t1 = *emulatorScreenPtr++;
+		uint8_t t2 = *emulatorScreenPtr++;
 
-		if (display_mode == 8) {
-			for (i = 0; i < 8; i += 2) {
-				uint32_t x;
+		switch (display_mode) {
+		case 8:
+			for (int i = 6; i > -2; i -= 2) {
+				uint8_t p1 = (t1 >> i) & 0x03;
+				uint8_t p2 = (t2 >> i) & 0x03;
 
-				color = ((t1 & 2) << 1) + ((t2 & 3)) +
-					((t1 & 1) << 3);
+				int color = ((p1 & 2) << 1) + ((p2 & 3));
+				int flashbit = (p1 & 1);
 
-				x = SDLcolors[color];
+				uint32_t x = SDLcolors[color];
 
-				*(pixel_ptr32 + 7 - (i)) = x;
-				*(pixel_ptr32 + 7 - (i + 1)) = x;
+				if ((curframe & BIT(5)) && flashon) {
+					x = flashbg;
+				}
 
-				t1 >>= 2;
-				t2 >>= 2;
+				*pixelPtr32++ = x;
+				*pixelPtr32++ = x;
+
+				// flash happens after the pixel
+				if (flashbit) {
+					if (flashon == 0) {
+						flashbg = x;
+						flashon = 1;
+					} else {
+						flashon = 0;
+					}
+				}
+
+				// Handle flash end of line
+				// stride is fixed at 256 because mode 8
+				// is fixed at that size on QL and Q68
+				curpix++;
+				curpix %= 256;
+				if (curpix == 0) {
+					flashbg = 0;
+					flashon = 0;
+				}
 			}
-		} else {
-			for (i = 0; i < 8; i++) {
-				uint32_t x;
+			break;
+		case 1:
+		case 4:
+			for (int i = 7; i > -1; i--) {
+				uint8_t p1 = (t1 >> i) & 0x01;
+				uint8_t p2 = (t2 >> i) & 0x01;
 
-				color = ((t1 & 1) << 2) + ((t2 & 1) << 1) +
-					((t1 & 1) & (t2 & 1));
+				int color = ((p1 & 1) << 2) + ((p2 & 1) << 1) +
+					    ((p1 & 1) & (p2 & 1));
 
-				x = SDLcolors[color];
+				uint32_t x = SDLcolors[color];
 
-				*(pixel_ptr32 + 7 - i) = x;
-
-				t1 >>= 1;
-				t2 >>= 1;
+				*pixelPtr32++ = x;
 			}
+			break;
 		}
-		pixel_ptr32 += 8;
 	}
+
+	// frame counter for flash
+	curframe++;
+	curframe %= 64;
 }
 
 static void QLSDLUpdatePixelBuffer()
@@ -586,8 +619,11 @@ static void QLSDLUpdatePixelBuffer()
 		SDL_LockSurface(ql_screen);
 	}
 
-	QLSDLWritePixels(ql_screen->pixels);
+	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
+	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
 
+	emulatorUpdatePixelBufferQL(ql_screen->pixels, emulatorScreenPtr,
+				    emulatorScreenPtrEnd);
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
