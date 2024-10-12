@@ -609,10 +609,13 @@ void QLSDLUpdateScreenLong(uint32_t offset, uint32_t data)
 	QLSDLUpdateScreenWord(offset + 2, data & 0xFFFF);
 }
 
+int flash=0;
+
 void QLSDLWritePixels(uint32_t *pixel_ptr32)
 {
 	uint8_t *scr_ptr = (void *)memBase + qlscreen.qm_lo;
 	int t1, t2, i, color;
+	int flashColour,flashOn=0,rowCount=0;
 
 	while (scr_ptr <
 	       (uint8_t *)((void *)memBase + qlscreen.qm_lo + qlscreen.qm_len)) {
@@ -620,26 +623,39 @@ void QLSDLWritePixels(uint32_t *pixel_ptr32)
 		t2 = *scr_ptr++;
 
 		if (display_mode == 8) {
-			for (i = 0; i < 8; i += 2) {
-				uint32_t x;
 
-				color = ((t1 & 2) << 1) + ((t2 & 3)) +
-					((t1 & 1) << 3);
+			for (i = 7; i >=0 ; i -= 2) {
+				uint32_t x;
+		
+				color = flash&&flashOn?flashColour
+						:((t1 & 128) >> 5) + ((t2 & 192) >> 6); //+ ((t1 & 1) << 3);
 
 				x = SDLcolors[color];
 
 				*(pixel_ptr32 + 7 - (i)) = x;
 				*(pixel_ptr32 + 7 - (i + 1)) = x;
 
-				t1 >>= 2;
-				t2 >>= 2;
+				if(t1&64) //  FLASH BIT ON ???ad
+				{
+					if(flashOn) flashOn=0; // If was on, switch off.
+					else // Switch on. Record current colour and switch on flash.
+					{
+						flashOn=1;
+						flashColour=color;
+					}
+				}
+
+				t1 <<= 2;
+				t2 <<= 2;
 			}
+
+			if(++rowCount==64) flashOn=rowCount=0; // Reset flash at the end of each row
+			
 		} else {
 			for (i = 0; i < 8; i++) {
 				uint32_t x;
 
-				color = ((t1 & 1) << 2) + ((t2 & 1) << 1) +
-					((t1 & 1) & (t2 & 1));
+				color = ((t1 & 1) << 2) + ((t2 & 1) << 1) + ((t1 & 1) & (t2 & 1));
 
 				x = SDLcolors[color];
 
@@ -1440,6 +1456,7 @@ void QLSDLExit(void)
 	}
 }
 
+
 Uint32 QLSDL50Hz(Uint32 interval, void *param)
 {
 	SDL_Event event;
@@ -1462,6 +1479,8 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 
 		SDL_PushEvent(&event);
 	}
+
+	flash=1-flash;
 
 	return interval;
 }
