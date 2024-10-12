@@ -100,7 +100,7 @@ jobs:
         if: ${{ github.event.inputs.build_enabled_x86_64 != 'false' }}
         run: |
           echo "############### configuring cmake"
-          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build w/ CMake
         if: ${{ github.event.inputs.build_enabled_x86_64 != 'false' }}
         run: |
@@ -233,7 +233,7 @@ jobs:
       - name: Configure CMake
         if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
         run: |
-          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build w/ CMake
         if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
         run: |
