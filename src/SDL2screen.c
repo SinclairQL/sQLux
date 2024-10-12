@@ -38,7 +38,6 @@ bool ql_fullscreen = false;
 double ql_screen_ratio = 1.0;
 
 SDL_atomic_t doPoll;
-bool screenWritten = false;	// True if screen memory has been written
 bool shaders_selected = false;
 
 SDL_sem* sem50Hz = NULL;
@@ -1379,8 +1378,7 @@ Uint32 QLSDL50Hz(Uint32 interval, void *param)
 		SDL_SemPost(sem50Hz);
 	}
 
-	if (screenWritten && renderer_idle) {
-		screenWritten = false;
+	if (renderer_idle) {
 		event.user.type = SDL_USEREVENT;
 		event.user.code = USER_CODE_SCREENREFRESH;
 		event.user.data1 = NULL;
