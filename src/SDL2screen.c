@@ -1181,6 +1181,10 @@ static void setKeyboardLayout(void)
 		usegrfstate = 1;
 		if (V1)
 			printf("Using ES keymap.\n");
+	} else if (!strncasecmp("US", kbd_string, 2)) {
+		if (V1)
+			printf("Using US keymap.\n");
+		sdlqlmap = NULL;
 	} else {
 		if (V1)
 			printf("Using default keymap. (use KBD=<countrycode> in sqlux.ini to change)\n");
