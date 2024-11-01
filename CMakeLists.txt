@@ -172,6 +172,7 @@ if(SUPPORT_SHADERS)
   set(DISABLE_GLES_1 "TRUE")
   add_subdirectory(sdl-gpu)
   target_compile_options(SDL_gpu PRIVATE "-w")
+  target_compile_options(SDL_gpu PRIVATE "-Wno-incompatible-pointer-types")
   add_dependencies(sqlux SDL_gpu)
 endif()
 
