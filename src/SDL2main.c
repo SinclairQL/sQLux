@@ -109,7 +109,10 @@ int main(int argc, char *argv[])
 #endif
 #ifdef __WIN32__
     // Display output if started from console
-    reattach_console();
+    if (!getenv("SQLUX_WIN_DISABLE_CONSOLE_OUTPUT"))
+    {
+    	reattach_console();
+    }
 #endif
 
     // set the homedir for the OS first
