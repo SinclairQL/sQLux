@@ -632,6 +632,18 @@ static void QLSDLUpdatePixelBuffer()
 	}
 }
 
+// Needed for the shader code
+void QLSDLWritePixels(uint32_t *pixelPtr32)
+{
+	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
+	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
+
+	emulatorUpdatePixelBufferQL(pixelPtr32, emulatorScreenPtr,
+				    emulatorScreenPtrEnd);
+
+}
+
+
 void QLSDLRenderScreen(void)
 {
 	void *texture_buffer;

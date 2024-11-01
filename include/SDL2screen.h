@@ -17,6 +17,7 @@ void QLSDLExit(void);
 Uint32 QLSDL50Hz(Uint32 interval, void *param);
 void QLSDLUpdateScreenWord(uint32_t, uint16_t);
 void QLSDLUpdateScreenLong(uint32_t, uint32_t);
+void QLSDLWritePixels(uint32_t *pixelPtr32);
 
 void QLSDLCreatePalette(const SDL_PixelFormat *format);
 void QLSDLCreateIcon(SDL_Window *window);
