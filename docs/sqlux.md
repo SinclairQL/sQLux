@@ -889,7 +889,7 @@ Returns value of the (UNIX) environment variable name as string
 
 **getXargc**
 
-Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
+Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed by sqlux not counted.
 
 ```
 qm -m -r 1024 arg1 arg2 arg3
@@ -913,8 +913,6 @@ results in
 1       arg1
 2       arg2
 3       arg3
-4       arg4
-5       arg5
 ```
 
 **getXres**
