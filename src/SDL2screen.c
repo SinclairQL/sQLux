@@ -47,6 +47,7 @@ typedef enum {
 	KEY_US,
 	KEY_GB,
 	KEY_DE,
+	KEY_DE_CH,
 	KEY_ES,
 } KeyboardType;
 
@@ -640,9 +641,7 @@ void QLSDLWritePixels(uint32_t *pixelPtr32)
 
 	emulatorUpdatePixelBufferQL(pixelPtr32, emulatorScreenPtr,
 				    emulatorScreenPtrEnd);
-
 }
-
 
 void QLSDLRenderScreen(void)
 {
@@ -781,6 +780,46 @@ static struct SDLQLMap_f sdlqlmap_DE[] = {
 	{ MOD_WILD, 0x3C, 0x6D }, /* ^ */
 	/* Accent ^ and \ is 0x6D */
 
+	{ 0x0, 0x0, 0x0 }
+};
+
+static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
+	{ MOD_NONE, 167, (SWAP_SHIFT | SWAP_CNTRL | QL_V) }, // §
+	{ MOD_SHIFT, 167, (SWAP_CNTRL | QL_Z) }, // °
+	{ MOD_SHIFT, SDLK_1, QL_EQUAL }, // +
+	{ MOD_CTRL, SDLK_1, (SWAP_SHIFT | SWAP_CNTRL | QL_BACKSLASH) }, // |
+	{ MOD_SHIFT, SDLK_2, QL_QUOTE }, // "
+	{ MOD_CTRL, SDLK_2, (SWAP_SHIFT | SWAP_CNTRL | QL_2) }, // @
+	{ MOD_SHIFT, SDLK_3, QLSH_8 }, // *
+	{ MOD_CTRL, SDLK_3, (SWAP_SHIFT | SWAP_CNTRL | QL_3) }, // #
+	{ MOD_SHIFT, SDLK_4, (SWAP_CNTRL | QLSH_9) }, // ç
+	{ MOD_SHIFT, SDLK_6, QL_7 }, // &
+	{ MOD_SHIFT, SDLK_7, (SWAP_SHIFT | QL_SLASH) }, // slash
+	{ MOD_CTRL, SDLK_7, (SWAP_SHIFT | SWAP_CNTRL | QL_BACKSLASH) }, // |
+	{ MOD_SHIFT, SDLK_8, QL_9 }, // (
+	{ MOD_SHIFT, SDLK_9, QL_0 }, // )
+	{ MOD_SHIFT, SDLK_0, (SWAP_SHIFT | QL_EQUAL) }, // =
+	{ MOD_NONE, 39, QL_QUOTE }, // '
+	{ MOD_SHIFT, 39, QLSH_SLASH }, // ?
+	{ MOD_NONE, 94, (SWAP_SHIFT | QL_6) }, // ^
+	{ MOD_SHIFT, 94, (SWAP_CNTRL | QLSH_SLASH) }, // `
+	{ MOD_NONE, 252, (SWAP_CNTRL | QL_QUOTE) }, // ü
+	{ MOD_CTRL, 252, (QL_CTRL | QL_LBRACKET) }, // [
+	{ MOD_NONE, 168, (SWAP_SHIFT | QL_1) }, // !
+	{ MOD_SHIFT, 168, QLSH_QUOTE }, // ¨
+	{ MOD_CTRL, 168, (QL_CTRL | QL_RBRACKET) }, // ]
+	{ MOD_NONE, 246, (SWAP_CNTRL | SWAP_SHIFT | QL_4) }, // ö
+	{ MOD_NONE, 228, (SWAP_CNTRL | QL_ESCAPE) }, // ä
+	{ MOD_CTRL, 228, (SWAP_SHIFT | QL_CTRL | QL_LBRACKET) }, // {
+	{ MOD_NONE, 36, (SWAP_SHIFT | QL_4) }, // $
+	{ MOD_SHIFT, 36, (SWAP_SHIFT | QL_POUND) }, // £
+	{ MOD_CTRL, 36, (SWAP_SHIFT | QL_CTRL | QL_RBRACKET) }, // }
+	{ MOD_NONE, 60, (SWAP_SHIFT | QL_PERIOD) }, // <
+	{ MOD_SHIFT, 60, QL_COMMA }, // >
+	{ MOD_CTRL, 60, (QL_CTRL | QL_BACKSLASH) }, // bash
+	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // ;
+	{ MOD_SHIFT, SDLK_COMMA, (SWAP_SHIFT | QL_SEMICOLON) }, // :
+	{ MOD_NONE, SDLK_MINUS, QL_MINUS }, // -
 	{ 0x0, 0x0, 0x0 }
 };
 
@@ -1177,7 +1216,12 @@ static void setKeyboardLayout(void)
 	usegrfstate = 0;
 	keyboard = KEY_US;
 
-	if (!strncasecmp("DE", kbd_string, 2)) {
+	if (!strncasecmp("DE_ch", kbd_string, 5)) {
+		sdlqlmap = sdlqlmap_DE_ch;
+		keyboard = KEY_DE_CH;
+		if (V1)
+			printf("Using DE_ch keymap.\n");
+	} else if (!strncasecmp("DE", kbd_string, 2)) {
 		sdlqlmap = sdlqlmap_DE;
 		keyboard = KEY_DE;
 		if (V1)
