@@ -161,7 +161,7 @@ jobs:
           fetch-tags: 'true'
           fetch-depth: '1000'
           submodules: 'true'
-      - uses: uraimo/run-on-arch-action@v2.6.0
+      - uses: uraimo/run-on-arch-action@v2.8.1
         if: ${{ github.event.inputs.build_enabled_arm != 'false' }}
         name: Build w/ CMake
         with:
@@ -209,8 +209,8 @@ jobs:
 #### MacOS
   build_macos:
     if: ${{ github.event.inputs.job_enabled_macos != 'false' }}
-    name: Build MacOS x86_64 on MacOS-12
-    runs-on: macos-12
+    name: Build MacOS x86_64 on MacOS-14
+    runs-on: macos-14
     needs:
       - get_release_definitions
     env:
