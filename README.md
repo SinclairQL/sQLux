@@ -40,7 +40,6 @@ Automatic builds are run and releases are available for the following architectu
 
 - Windows (built w/ MSYS2)
   - 64bit
-  - 32bit
 
 Releases are uploaded on Github automatically whenever a new tag, merge or pull request is pushed:
 
@@ -50,8 +49,6 @@ Releases are uploaded on Github automatically whenever a new tag, merge or pull 
 - `master` branch: Development Releases
   - Every commit or pull into master branch generates a pre-release artifact
   - older Development Releases are overwritten each time a new non-tagged build is run
-
-
 
 # Building
 
@@ -94,7 +91,6 @@ sQLux has switched to using cmake as its build system
 
 1. Build and test
     ```sh
-    cmake -B build/
     make
     # then test the binary
     ./build/sqlux --help
@@ -113,7 +109,6 @@ sQLux has switched to using cmake as its build system
 2. Build and test
 
     ```sh
-    cmake -B build/
     make
     # then test the binary
     ./build/sqlux --help
@@ -136,10 +131,7 @@ The SDL2 development libraries can be found [here](https://github.com/libsdl-org
 
 Now the mingw version of SDL2 is available and we can build sQLux for Win64
 
-    mkdir mingw
-    cd mingw
-    cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
-    make
+    make mingw64
 
 ## Building MinGW on Windows
 

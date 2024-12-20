@@ -25,7 +25,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
+      "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows -Wno-incompatible-pointer-types")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
