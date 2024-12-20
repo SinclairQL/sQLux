@@ -121,6 +121,7 @@ Instructions based on debian/ubuntu distro, for other distros you will have to m
 Download the SDL2 mingw SDK and adapt the following to your environment/version.
 The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases):
 
+```sh
     tar xvf SDL2-devel-2.0.18-mingw.tar.gz
     cd SDL2-2.0.18/
     sed -i "s|/opt/local/|/usr/local/|" x86_64-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
@@ -128,6 +129,7 @@ The SDL2 development libraries can be found [here](https://github.com/libsdl-org
     sudo mkdir /usr/local/i686-w64-mingw32
     sudo mkdir /usr/local/x86_64-w64-mingw32
     sudo make cross
+```
 
 Now the mingw version of SDL2 is available and we can build sQLux for Win64
 
@@ -141,16 +143,19 @@ Run the mingw64 environment
 
 Install the toolchain and SDL2
 
+```sh
     pacman -Sy mingw-w64-x86_64-toolchain
     pacman -Sy mingw-w64-x86_64-cmake
     pacman -Sy mingw-w64-x86_64-SDL2
+```
 
 Create the build directory and compile
 
-    mkdir mingw
-    cd mingw
-    cmake.exe -G "MinGW Makefiles" ..
-    mingw32-make
+```sh
+    make
+    # then test the binary
+    ./build/sqlux --help
+```
 
 This will generate `sqlux.exe`. Dependencies are statically linked, so `sqlux.exe` will run without the need for additional dlls.
 
