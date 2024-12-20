@@ -2,7 +2,10 @@ name: Build and upload Latest Release
 
 on:
   push:
-    branches: [ master ]
+    branches: 
+      - master
+    tags:
+      - v**
 
 env:
   GIT_PAGER:
