@@ -427,8 +427,8 @@ jobs:
           prerelease: ${{ env.RELEASE_PRERELEASE}}
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: artifacts/definitions/RELEASE_LOG.md
-          files:
-            - artifacts/*/*.zip
-            - artifacts/*/*.pdf
+          files: |
+            artifacts/*/*.zip
+            artifacts/*/*.pdf
 
 

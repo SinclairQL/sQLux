@@ -422,13 +422,13 @@ jobs:
         run: |
           ls -la artifacts/*/*
       - name: ${{ env.RELEASE_TAG }} ${{ env.RELEASE_DESCR }}
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ env.RELEASE_PRERELEASE}}
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: artifacts/definitions/RELEASE_LOG.md
-          files:
-            - artifacts/*/*.zip
-            - artifacts/*/*.pdf
+          files: |
+            artifacts/*/*.zip
+            artifacts/*/*.pdf
 
 
