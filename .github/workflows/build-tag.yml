@@ -1,9 +1,7 @@
-name: Build and upload Latest Release
+name: Build and Upload Tagged Release
 
 on:
   push:
-    branches: 
-      - master
     tags:
       - v**
 
@@ -21,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - name: Define Release Strategy
