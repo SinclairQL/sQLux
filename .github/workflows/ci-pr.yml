@@ -194,39 +194,6 @@ jobs:
             echo "############### building with cmake"
             cmake --build build/ --config ${{env.BUILD_TYPE}} --parallel 4
 
-#### MacOS
-  build_macos:
-    if: ${{ github.event.inputs.job_enabled_macos != 'false' }}
-    name: Build MacOS x86_64 on MacOS-14
-    runs-on: macos-14-large
-    needs:
-      - get_release_definitions
-    env:
-      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: "blob:none"
-          fetch-tags: 'true'
-          fetch-depth: '1000'
-          submodules: 'true'
-      - name: get Arch and O.S. info
-        run: |
-          sw_vers
-          sysctl machdep.cpu.brand_string
-      - name: Install Dependencies
-        run: |
-          brew install sdl2
-      - name: Configure CMake
-        if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
-        run: |
-          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
-      - name: Build w/ CMake
-        if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
-        run: |
-          cmake --build build/ --config ${{env.BUILD_TYPE}}
-
 #### MacOS - aarch64
   build_macos_aarch64:
     if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
