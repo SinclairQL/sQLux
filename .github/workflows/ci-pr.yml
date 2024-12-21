@@ -77,6 +77,10 @@ jobs:
   build_manual:
     name: Build sQLux Manual
     runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
     steps:
       - uses: actions/checkout@v4
         with:
