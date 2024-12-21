@@ -232,11 +232,11 @@ jobs:
           path: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}*.zip
 
 
-#### MacOS
+#### MacOS - x86_64
   build_macos:
     if: ${{ github.event.inputs.job_enabled_macos != 'false' }}
     name: Build MacOS x86_64 on MacOS-14
-    runs-on: macos-14
+    runs-on: macos-14-large
     needs:
       - get_release_definitions
     env:
@@ -281,6 +281,54 @@ jobs:
           name: sqlux-macos-intel-${{ env.RELEASE_TAG }}
           path: sqlux-macos-intel-${{ env.RELEASE_TAG }}.zip
 
+#### MacOS - aarch64
+  build_macos_aarch64:
+    if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+    name: Build MacOS aarch64 on MacOS-14
+    runs-on: macos-14
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'false'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: get Arch and O.S. info
+        run: |
+          sw_vers
+          sysctl machdep.cpu.brand_string
+      - name: Install Dependencies
+        run: |
+          brew install sdl2
+      - name: Configure CMake
+        if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+        run: |
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+      - name: Build w/ CMake
+        if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+        run: |
+          cmake --build build/ --config ${{env.BUILD_TYPE}}
+      - name: Create Artifact
+        run: |
+          mkdir  sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -v  examples/sqlux.ini sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*      sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -vr roms               sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux        sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/ ||
+                              touch sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/sqlux
+          zip -r sqlux-macos-aarch64-${{ env.RELEASE_TAG }}.zip \
+                 sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-macos-aarch64-${{ env.RELEASE_TAG }}
+          path: sqlux-macos-aarch64-${{ env.RELEASE_TAG }}.zip
 
 #### WINDOWS
   build_windows:
@@ -354,6 +402,7 @@ jobs:
       - build_x86_64
       - build_arm
       - build_macos
+      - build_macos_aarch64
       - build_windows
       - build_manual
     env:
