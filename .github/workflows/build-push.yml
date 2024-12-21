@@ -79,6 +79,10 @@ jobs:
   build_manual:
     name: Build sQLux Manual
     runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -423,6 +427,8 @@ jobs:
           prerelease: ${{ env.RELEASE_PRERELEASE}}
           tag_name: ${{ env.RELEASE_TAG }}
           body_path: artifacts/definitions/RELEASE_LOG.md
-          files: artifacts/*/*.zip
+          files:
+            - artifacts/*/*.zip
+            - artifacts/*/*.pdf
 
 
