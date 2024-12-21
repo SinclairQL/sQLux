@@ -75,6 +75,31 @@ jobs:
       RELEASE_DESCR: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_DESCR }}
       RELEASE_PRERELEASE: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_PRERELEASE }}
 
+#### Build Manual PDF
+  build_manual:
+    name: Build sQLux Manual
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y pandoc wkhtmltopdf
+      - name: Generate Manual
+        run: |
+          pandoc -f markdown -t html5 --metadata title="sQLux Manual" docs/sqlux.md -o sqlux-${{ env.RELEASE_TAG }}.pdf
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-${{ env.RELEASE_TAG }}
+          path: sqlux-${{ env.RELEASE_TAG }}.pdf
+
 #### Linux x86_64
   build_x86_64:
     if: ${{ github.event.inputs.job_enabled_x86_64 != 'false' }}
@@ -330,6 +355,7 @@ jobs:
       - build_arm
       - build_macos
       - build_windows
+      - build_manual
     env:
       RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
       RELEASE_DESCR: ${{needs.get_release_definitions.outputs.RELEASE_DESCR}}
