@@ -1,14 +1,12 @@
-name: Build and upload Latest Release
+name: Build and Upload Tagged Release
 
 on:
   push:
-    branches: 
-      - master
     tags:
       - v**
 
 env:
-  GIT_PAGER:
+  GIT_PAGER:  
   BUILD_TYPE: Release
 
 jobs:
@@ -21,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - name: Define Release Strategy
@@ -91,7 +89,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - name: Install Dependencies
@@ -161,7 +159,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - uses: uraimo/run-on-arch-action@v2.8.1
@@ -223,7 +221,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - name: get Arch and O.S. info
@@ -281,7 +279,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           filter: "blob:none"
-          fetch-tags: 'true'
+          fetch-tags: 'false'
           fetch-depth: '1000'
           submodules: 'true'
       - uses: msys2/setup-msys2@v2
