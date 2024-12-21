@@ -235,56 +235,6 @@ jobs:
           name: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}
           path: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}*.zip
 
-
-#### MacOS
-  build_macos:
-    if: ${{ github.event.inputs.job_enabled_macos != 'false' }}
-    name: Build MacOS x86_64 on MacOS-14
-    runs-on: macos-14-large
-    needs:
-      - get_release_definitions
-    env:
-      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: "blob:none"
-          fetch-tags: 'true'
-          fetch-depth: '1000'
-          submodules: 'true'
-      - name: get Arch and O.S. info
-        run: |
-          sw_vers
-          sysctl machdep.cpu.brand_string
-      - name: Install Dependencies
-        run: |
-          brew install sdl2
-      - name: Configure CMake
-        if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
-        run: |
-          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
-      - name: Build w/ CMake
-        if: ${{ github.event.inputs.build_enabled_macos != 'false' }}
-        run: |
-          cmake --build build/ --config ${{env.BUILD_TYPE}}
-      - name: Create Artifact
-        run: |
-          mkdir  sqlux-macos-intel-${{ env.RELEASE_TAG }}/
-          cp -v  examples/sqlux.ini sqlux-macos-intel-${{ env.RELEASE_TAG }}/
-          cp -vr examples/mdv*      sqlux-macos-intel-${{ env.RELEASE_TAG }}/
-          cp -vr roms               sqlux-macos-intel-${{ env.RELEASE_TAG }}/
-          cp -v  build/sqlux        sqlux-macos-intel-${{ env.RELEASE_TAG }}/ ||
-                              touch sqlux-macos-intel-${{ env.RELEASE_TAG }}/sqlux
-          zip -r sqlux-macos-intel-${{ env.RELEASE_TAG }}.zip \
-                 sqlux-macos-intel-${{ env.RELEASE_TAG }}/
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          retention-days: 1
-          name: sqlux-macos-intel-${{ env.RELEASE_TAG }}
-          path: sqlux-macos-intel-${{ env.RELEASE_TAG }}.zip
-
 #### MacOS - aarch64
   build_macos_aarch64:
     if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
@@ -405,7 +355,6 @@ jobs:
       - get_release_definitions
       - build_x86_64
       - build_arm
-      - build_macos
       - build_macos_aarch64
       - build_windows
       - build_manual
