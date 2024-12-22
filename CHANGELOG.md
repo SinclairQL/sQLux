@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## 1.1.0 - 2024-12-22
+### Added
+- Zip the complete source on release including submodules
+- Use kacl-cli to generate version if git doesnt work
+- Add install target to Makefile
+
+### Fixed
+- Fix the build instructions in the doc
+
 ## 1.0.10 - 2024-12-21
 ### Added
 - workflows now generate a PDF manual
