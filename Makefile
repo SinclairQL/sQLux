@@ -13,6 +13,9 @@ mingw64 : ${TARGETS_MINGW}
 	cmake -DCMAKE_TOOLCHAIN_FILE=Toolchain-mingw-w64-x86_64.cmake -B build
 	cmake --build build -j 8
 
+install :
+	cmake --install build
+
 ${TARGETS} : FORCE
 ${TARGETS_MINGW} : FORCE
 
