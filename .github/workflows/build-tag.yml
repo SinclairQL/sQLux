@@ -103,7 +103,7 @@ jobs:
         with:
           retention-days: 1
           name: sqlux-complete-source-${{ env.RELEASE_TAG }}
-          path: sqlux-complete-source-${{ env.RELEASE_TAG }}.pdf
+          path: sqlux-complete-source-${{ env.RELEASE_TAG }}.zip
   
 #### Build Manual PDF
   build_manual:
