@@ -76,12 +76,18 @@ So far the supported machines/OS are:
 - MacOS on x86_64, arm64
 
 sQLux requires SDL2 library, so make sure you have installed the development package for that on your distro or OS.
+It also requires the kacl-cli and/or the git binary to generate correct build version.
 
 To make it
 
+```sh
+make
 ```
-cmake -B build/
-cmake --build build/
+
+Test the exe is compiled
+
+```sh 
+./build/sqlux --version
 ```
 
 Do not delete the directory where you compiled it unless you know what
@@ -95,8 +101,8 @@ The name of the executable will be ’sqlux’.
 ==============
 
 
-```
-cmake --install build/
+```sh
+make install
 ```
 
 This will install sqlux executable in your default prefix (normally /usr/local/bin).
