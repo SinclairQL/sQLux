@@ -75,6 +75,36 @@ jobs:
       RELEASE_DESCR: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_DESCR }}
       RELEASE_PRERELEASE: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_PRERELEASE }}
 
+#### Prepare buildable source
+  zip_source:
+    name: Zip Complete Source
+    runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'false'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip
+      - name: Zip The Source
+        id: DefineReleaseStrategy
+        run: |
+          zip -r sqlux-complete-source-${{ env.RELEASE_TAG }}.zip *
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-complete-source-${{ env.RELEASE_TAG }}
+          path: sqlux-complete-source-${{ env.RELEASE_TAG }}.pdf
+  
 #### Build Manual PDF
   build_manual:
     name: Build sQLux Manual
@@ -358,6 +388,7 @@ jobs:
       - build_macos_aarch64
       - build_windows
       - build_manual
+      - zip_source
     env:
       RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
       RELEASE_DESCR: ${{needs.get_release_definitions.outputs.RELEASE_DESCR}}
