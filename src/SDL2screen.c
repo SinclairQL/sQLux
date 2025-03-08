@@ -941,19 +941,76 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_y, QL_Y },
 					      { SDLK_x, QL_X },
 					      { SDLK_z, QL_Z },
-
-					      /*
-    {SDLK_Next,-0x1,0xDC},
-    {SDLK_Prior,-0x1,0xD4},
-    {SDLK_Home,-0x1,0xC1},
-    {SDLK_End,-0x1,0xC9},
-    */
+    /* Map keypad */
+					      { SDLK_KP_DIVIDE, QL_SLASH },
+					      { SDLK_KP_MINUS, QL_MINUS },
+					      { SDLK_KP_ENTER, QL_ENTER },
+					      { SDLK_KP_1, QL_1 },
+					      { SDLK_KP_2, QL_2 },
+					      { SDLK_KP_3, QL_3 },
+					      { SDLK_KP_4, QL_4 },
+					      { SDLK_KP_5, QL_5 },
+					      { SDLK_KP_6, QL_6 },
+					      { SDLK_KP_7, QL_7 },
+					      { SDLK_KP_8, QL_8 },
+					      { SDLK_KP_9, QL_9 },
+					      { SDLK_KP_0, QL_0 },
+					      { SDLK_KP_PERIOD, QL_PERIOD },
 					      { 0x0, 0x0 } };
 
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
 	// printf("Key %8x Scan %8x P: %i\n", keysym->sym, keysym->scancode, pressed); fflush(stdout);
+
+	/* Handle key pad entries that require shift */
+	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed) {
+		queueKey(1 << 2, QL_8, 0);
+		return;
+	}
+	if ((keysym->sym == SDLK_KP_PLUS) && pressed) {
+		queueKey(1 << 2, QL_EQUAL, 0);
+		return;
+	}
+
+	/* Convert keypad entries that depend on num lock not being set */
+	if (((SDL_GetModState() & KMOD_NUM) != (KMOD_NUM)) && pressed)
+	{
+		switch (keysym->sym) {
+		case SDLK_KP_1:
+			keysym->sym = SDLK_END;
+			break;
+		case SDLK_KP_2:
+			keysym->sym = SDLK_DOWN;
+		break;
+		case SDLK_KP_3:
+			keysym->sym = SDLK_PAGEDOWN;
+		break;
+		case SDLK_KP_4:
+			keysym->sym = SDLK_LEFT;
+		break;
+		case SDLK_KP_5:
+			return;
+		case SDLK_KP_6:
+			keysym->sym = SDLK_RIGHT;
+		break;
+		case SDLK_KP_7:
+			keysym->sym = SDLK_HOME;
+		break;
+		case SDLK_KP_8:
+			keysym->sym = SDLK_UP;
+		break;
+		case SDLK_KP_9:
+			keysym->sym = SDLK_PAGEUP;
+		break;
+		case SDLK_KP_0:
+			keysym->sym = SDLK_INSERT;
+		break;
+		case SDLK_KP_PERIOD:
+			keysym->sym = SDLK_DELETE;
+		break;
+		}
+	}
 
 	/* Handle extended cursor keys */
 	/* backspace maps to control left */
