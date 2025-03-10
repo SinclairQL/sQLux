@@ -24,3 +24,5 @@ build/*
 # Synology and other nas files
 .DS_Store
 
+# sqlux.ini so testing versions dont sneak back in
+sqlux.ini
