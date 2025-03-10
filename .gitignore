@@ -20,3 +20,7 @@ build/*
 # Visual studio
 .vscode/*
 *.code-workspace
+
+# Synology and other nas files
+.DS_Store
+
