@@ -246,6 +246,8 @@ void add_bas_proc(char *name, bas_err (*command)())
 #define BN_SCR_LLEN "SCR_LLEN"
 #define BN_SCR_BASE "SCR_BASE"
 #define BN_EMU_SPEED "EMU_SPEED"
+#define BN_EMU_EXIT "EMU_EXIT"
+#define BN_EMU_VER "EMU_VER$"
 #if 0
 #define BN_MAKEDIR "MakeDir"
 #endif
@@ -267,6 +269,12 @@ void init_bas_exts()
 	add_bas_fun(BN_SCR_LLEN, UQLX_scr_llen);
 	add_bas_fun(BN_SCR_BASE, UQLX_scr_base);
 	add_bas_proc(BN_EMU_SPEED, EMU_speed);
+
+	// Universal EMU_ commands
+	add_bas_proc(BN_EMU_EXIT, Kill_UQLX);
+	add_bas_fun(BN_EMU_VER, UQLX_Relse);
+
+	// link these into basic
 	create_link_table(ext_list);
 }
 
@@ -509,8 +517,8 @@ int bas_retfloat(int i)
 		i <<= shift;
 	}
 
-	while (! (i & 0x40000000)) {
-		shift ++;
+	while (!(i & 0x40000000)) {
+		shift++;
 		i <<= 1;
 	}
 
@@ -523,7 +531,7 @@ output:
 
 	WriteWord(p, exponent);
 
-	WriteLong(p+2, i);
+	WriteLong(p + 2, i);
 
 	reg[4] = 2;
 
