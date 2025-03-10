@@ -23,6 +23,7 @@
 
 #define SWAP_SHIFT 0x100
 #define SWAP_CNTRL 0x200
+#define SWAP_ALT 0x400
 #define BIT(nr) (1UL << (nr))
 
 static SDL_Window *ql_window = NULL;
@@ -765,20 +766,63 @@ static void SDLQLKeyrowChg(int code, int press)
 #endif
 #define SDL_DEADKEY_2 180
 
+// Note this is the Windows keymap. Modified from MacOS with no test
 static struct SDLQLMap_f sdlqlmap_DE[] = {
-	{ MOD_WILD, SDLK_z, QL_Y },
-	{ MOD_WILD, SDLK_MINUS, QL_SS }, /* minus */
-	{ MOD_WILD, SDLK_y, QL_Z },
-	{ MOD_WILD, 0xB4, QL_POUND }, /* accent */
-	{ MOD_WILD, 0xE4, QL_QUOTE }, /* Ä OK */
-	{ MOD_WILD, 0xF6, 0x67 }, /* Ö OK */
-	{ MOD_WILD, 0xFC, QL_LBRACKET }, /* Ü OK */
-	{ MOD_WILD, 0x5E, QL_BACKSLASH }, /* < OK */
-	{ MOD_WILD, 0x23, 0x65 }, /* # OK */
-	{ MOD_WILD, 0x2B, QL_RBRACKET }, /* + OK */
-	{ MOD_WILD, 0xDF, QL_MINUS }, /* ß OK */
-	{ MOD_WILD, 0x3C, 0x6D }, /* ^ */
-	/* Accent ^ and \ is 0x6D */
+	// These should be valid for all platforms
+	{ MOD_WILD, SDLK_z, QL_Y }, // Y	OK
+	{ MOD_WILD, SDLK_y, QL_Z }, // Z	OK
+	{ MOD_WILD, SDLK_MINUS, QL_SS }, // ß?	OK
+	{ MOD_WILD, 0xE4, QL_QUOTE }, // Ää 	OK
+	{ MOD_WILD, 0xF6, QL_SEMICOLON }, // Öö	OK
+	{ MOD_WILD, 0xFC, QL_LBRACKET }, // Üü 	OK
+	{ MOD_WILD, 0x3c, QL_BACKSLASH }, // <>	OK
+	{ MOD_WILD, 0x23, QL_EQUAL }, // #' 	OK
+	{ MOD_SHIFT, 0xb4, (SWAP_CNTRL | QL_SLASH) }, // ` 	OK
+	{ MOD_NONE, 0xb4, (SWAP_SHIFT | QL_EQUAL) }, // ' on acc key OK
+	{ MOD_NONE, 0x5e, (SWAP_SHIFT | QL_BACKSLASH) }, // ^ 	NOK
+	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
+	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
+	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
+
+	// The following are Windows-specific (Alt-GR-based)
+	{ MOD_ALT, SDLK_LESS, (SWAP_ALT | SWAP_CNTRL | QL_8) }, // |	OK
+	{ MOD_ALT, SDLK_8, (SWAP_ALT | SWAP_CNTRL | QL_9) }, // [	OK
+	{ MOD_ALT, SDLK_9, (SWAP_ALT | SWAP_CNTRL | QL_0) }, // ]	OK
+	{ MOD_ALT, SDLK_7, (SWAP_ALT | SWAP_CNTRL | QL_MINUS) }, // {	OK
+	{ MOD_ALT, SDLK_0, (SWAP_ALT | SWAP_CNTRL | QL_EQUAL) }, // }	OK
+	{ MOD_ALT, SDLK_PLUS, (SWAP_CNTRL | QL_COMMA) }, // ~	OK
+	{ MOD_ALT, SDLK_2, (SWAP_CNTRL | QL_BACKSLASH) }, // @	OK
+
+	{ 0x0, 0x0, 0x0 }
+};
+
+// This is the MacOS keymap. Mostly identical with the Windows one
+static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
+	// These should be valid for all platforms
+	{ MOD_WILD, SDLK_z, QL_Y }, // Y	OK
+	{ MOD_WILD, SDLK_y, QL_Z }, // Z	OK
+	{ MOD_WILD, SDLK_MINUS, QL_SS }, // ß?	OK
+	{ MOD_WILD, 0xE4, QL_QUOTE }, // Ää 	OK
+	{ MOD_WILD, 0xF6, QL_SEMICOLON }, // Öö	OK
+	{ MOD_WILD, 0xFC, QL_LBRACKET }, // Üü 	OK
+	{ MOD_WILD, 0x3c, QL_BACKSLASH }, // <>	OK
+	{ MOD_WILD, 0x23, QL_EQUAL }, // #' 	OK
+	{ MOD_SHIFT, 0xb4, (SWAP_CNTRL | QL_SLASH) }, // ` 	OK
+	{ MOD_NONE, 0xb4, (SWAP_SHIFT | QL_EQUAL) }, // ' on acc key OK
+	{ MOD_NONE, 0x5e, (SWAP_SHIFT | QL_BACKSLASH) }, // ^ 	NOK
+	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
+	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
+	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
+
+	// The following are MacOS-specific ("Option"-based)
+	{ MOD_ALT, SDLK_7, (SWAP_ALT | SWAP_CNTRL | QL_8) }, // |	OK
+	{ MOD_ALT, SDLK_5, (SWAP_ALT | SWAP_CNTRL | QL_9) }, // [	OK
+	{ MOD_ALT, SDLK_6, (SWAP_ALT | SWAP_CNTRL | QL_0) }, // ]	OK
+	{ MOD_ALT, SDLK_8, (SWAP_ALT | SWAP_CNTRL | QL_MINUS) }, // {	OK
+	{ MOD_ALT, SDLK_9, (SWAP_ALT | SWAP_CNTRL | QL_EQUAL) }, // }	OK
+	{ MOD_ALT, SDLK_n,
+	  (SWAP_ALT | SWAP_CNTRL | QL_BACKSLASH) }, // ~	OK
+	{ MOD_ALT, SDLK_l, (SWAP_ALT | SWAP_CNTRL | QL_COMMA) }, // @	NOK
 
 	{ 0x0, 0x0, 0x0 }
 };
@@ -941,7 +985,7 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_y, QL_Y },
 					      { SDLK_x, QL_X },
 					      { SDLK_z, QL_Z },
-    /* Map keypad */
+					      /* Map keypad */
 					      { SDLK_KP_DIVIDE, QL_SLASH },
 					      { SDLK_KP_MINUS, QL_MINUS },
 					      { SDLK_KP_ENTER, QL_ENTER },
@@ -961,7 +1005,10 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 {
 	int i = 0;
-	// printf("Key %8x Scan %8x P: %i\n", keysym->sym, keysym->scancode, pressed); fflush(stdout);
+	//printf("Key %8x Scan %8x P: %i SH: %d ALT: %d CTRL: %d GRF: %d\n",
+	//	keysym->sym, keysym->scancode, pressed,
+	// 	sdl_shiftstate, sdl_altstate, sdl_controlstate,
+	//	sdl_grfstate); fflush(stdout);
 
 	/* Handle key pad entries that require shift */
 	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed) {
@@ -974,41 +1021,40 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	}
 
 	/* Convert keypad entries that depend on num lock not being set */
-	if (((SDL_GetModState() & KMOD_NUM) != (KMOD_NUM)) && pressed)
-	{
+	if (((SDL_GetModState() & KMOD_NUM) != (KMOD_NUM)) && pressed) {
 		switch (keysym->sym) {
 		case SDLK_KP_1:
 			keysym->sym = SDLK_END;
 			break;
 		case SDLK_KP_2:
 			keysym->sym = SDLK_DOWN;
-		break;
+			break;
 		case SDLK_KP_3:
 			keysym->sym = SDLK_PAGEDOWN;
-		break;
+			break;
 		case SDLK_KP_4:
 			keysym->sym = SDLK_LEFT;
-		break;
+			break;
 		case SDLK_KP_5:
 			return;
 		case SDLK_KP_6:
 			keysym->sym = SDLK_RIGHT;
-		break;
+			break;
 		case SDLK_KP_7:
 			keysym->sym = SDLK_HOME;
-		break;
+			break;
 		case SDLK_KP_8:
 			keysym->sym = SDLK_UP;
-		break;
+			break;
 		case SDLK_KP_9:
 			keysym->sym = SDLK_PAGEUP;
-		break;
+			break;
 		case SDLK_KP_0:
 			keysym->sym = SDLK_INSERT;
-		break;
+			break;
 		case SDLK_KP_PERIOD:
 			keysym->sym = SDLK_DELETE;
-		break;
+			break;
 		}
 	}
 
@@ -1279,7 +1325,12 @@ static void setKeyboardLayout(void)
 		if (V1)
 			printf("Using DE_ch keymap.\n");
 	} else if (!strncasecmp("DE", kbd_string, 2)) {
+// MacOS receives a specific keymap...
+#if defined(__APPLE__) && defined(__MACH__)
+		sdlqlmap = sdlqlmap_DE_MacOS;
+#else
 		sdlqlmap = sdlqlmap_DE;
+#endif
 		keyboard = KEY_DE;
 		if (V1)
 			printf("Using DE keymap.\n");

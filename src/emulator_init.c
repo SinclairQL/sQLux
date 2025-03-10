@@ -47,11 +47,13 @@ int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr, size
 		return ret;
 	}
 
-	if (romStat.st_size != size) {
+	if (romStat.st_size > size) {
 		fprintf(stderr, "FUNC: %s ERR: Rom Size Error VAL: %zd != %jd\n",
 			__func__, size, (intmax_t)romStat.st_size);
 		return -1;
 	}
+	else if (romStat.st_size < size)
+		puts ("SQLX WARNING: ROM is not 48k");
 
 	romFile = open(romPath, O_RDONLY);
 	if (romFile < 0) {
