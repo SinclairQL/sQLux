@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## 1.1.1 - 2025-03-12
+### Changed
+- Updated German keypmap for MacOS and windows/linux
+
+### Added
+- Add EMU_EXIT and EMU_VER$ extensions
+- Support for the keypad on PC keyboards
+- Support for loading ROMs that are shorter than allocated space
+
 ## 1.1.0 - 2024-12-22
 ### Added
 - Zip the complete source on release including submodules
