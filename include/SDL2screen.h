@@ -15,9 +15,9 @@ void QLSDLRenderScreen(void);
 void QLSDLProcessEvents(void);
 void QLSDLExit(void);
 Uint32 QLSDL50Hz(Uint32 interval, void *param);
-void QLSDLWritePixels(uint32_t *pixel_ptr32);
 void QLSDLUpdateScreenWord(uint32_t, uint16_t);
 void QLSDLUpdateScreenLong(uint32_t, uint32_t);
+void QLSDLWritePixels(uint32_t *pixelPtr32);
 
 void QLSDLCreatePalette(const SDL_PixelFormat *format);
 void QLSDLCreateIcon(SDL_Window *window);
@@ -27,7 +27,6 @@ extern int sdl_shiftstate, sdl_controlstate, sdl_altstate;
 
 extern SDL_atomic_t doPoll;
 extern SDL_sem* sem50Hz;
-extern bool screenWritten;
 extern bool shaders_selected;
 extern bool ql_fullscreen;
 extern double ql_screen_ratio;

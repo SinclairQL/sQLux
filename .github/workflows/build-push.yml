@@ -1,0 +1,414 @@
+name: Build and Upload Latest Release
+
+on:
+  push:
+    branches: 
+      - master
+
+env:
+  GIT_PAGER:
+  BUILD_TYPE: Release
+
+jobs:
+
+#### Prepare build definitions
+  get_release_definitions:
+    name: Get Release definitions
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Define Release Strategy
+        id: DefineReleaseStrategy
+        run: |
+          pip install python-kacl
+          # GIT_REV_NAME: as seen in https://stackoverflow.com/a/11489642
+          # Creates a Stable Release only if tags are pushed at the same time as the relevant commit:
+          #   git push origin <my branch> --tags
+          # Tag can be lightweight or annotated.
+          GIT_REV_NAME=$(git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null || true | sed -n 's/^\([^^~]\{1,\}\)\(\^0\)\{0,1\}$/\1/p')
+          echo "############### GIT_REV_NAME       = ${GIT_REV_NAME}"
+          # Stable Release: regex checks exact match to '^v<maj>.<min>.<patch>$'
+          if [[ "xxx${GIT_REV_NAME}" =~ ^xxxv[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "############### Matched an exact Stable Release Tag"
+            RELEASE_TAG="${GIT_REV_NAME}"
+            RELEASE_DESCR="Stable Release"
+            RELEASE_PRERELEASE="false"
+            kacl-cli get ${GIT_REV_NAME:1} > RELEASE_LOG.md \
+              || echo "Release description unavailable" > RELEASE_LOG.md
+          elif [[ "xxx${GIT_REV_NAME}" =~ ^xxxv[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "############### Matched an RC Release Tag"
+            RELEASE_TAG="${GIT_REV_NAME}"
+            RELEASE_DESCR="Release Candidate"
+            RELEASE_PRERELEASE="true"
+            kacl-cli get ${GIT_REV_NAME:1} > RELEASE_LOG.md \
+              || echo "Release description unavailable" > RELEASE_LOG.md
+          else
+            echo "############### Unmatched release Tags, going to 'latest'"
+            kacl-cli get unreleased > RELEASE_LOG.md \
+              || echo "Release description unavailable" > RELEASE_LOG.md
+            RELEASE_TAG="latest"
+            RELEASE_DESCR="Development Release"
+            RELEASE_PRERELEASE="true"
+          fi
+          echo "############### RELEASE_TAG        = ${RELEASE_TAG}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"                                  >> $GITHUB_OUTPUT
+          echo "############### RELEASE_DESCR      = ${RELEASE_DESCR}"
+          echo "RELEASE_DESCR=${RELEASE_DESCR}"                              >> $GITHUB_OUTPUT
+          echo "############### RELEASE_PRERELEASE = ${RELEASE_PRERELEASE}"
+          echo "RELEASE_PRERELEASE=${RELEASE_PRERELEASE}"                    >> $GITHUB_OUTPUT
+          echo "############### showing all known tags"
+          git tag
+          echo "############### Building version '${RELEASE_TAG}'"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: definitions
+          path: RELEASE_LOG.md
+    outputs:
+      RELEASE_TAG: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_TAG }}
+      RELEASE_DESCR: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_DESCR }}
+      RELEASE_PRERELEASE: ${{ steps.DefineReleaseStrategy.outputs.RELEASE_PRERELEASE }}
+
+#### Prepare buildable source
+  zip_source:
+    name: Zip Complete Source
+    runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y zip
+      - name: Zip The Source
+        id: DefineReleaseStrategy
+        run: |
+          zip -r sqlux-complete-source-${{ env.RELEASE_TAG }}.zip *
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-complete-source-${{ env.RELEASE_TAG }}
+          path: sqlux-complete-source-${{ env.RELEASE_TAG }}.zip
+  
+#### Build Manual PDF
+  build_manual:
+    name: Build sQLux Manual
+    runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y pandoc wkhtmltopdf
+      - name: Generate Manual
+        run: |
+          pandoc -f markdown -t html5 --metadata title="sQLux Manual" docs/sqlux.md -o sqlux-${{ env.RELEASE_TAG }}.pdf
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-${{ env.RELEASE_TAG }}
+          path: sqlux-${{ env.RELEASE_TAG }}.pdf
+
+#### Linux x86_64
+  build_x86_64:
+    if: ${{ github.event.inputs.job_enabled_x86_64 != 'false' }}
+    name: Build Linux x86_64 on Ubuntu-22.04
+    runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: Install Dependencies
+        if: ${{ github.event.inputs.build_enabled_x86_64 != 'false' }}
+        run: |
+          sudo apt update
+          sudo apt install -y git cmake libsdl2-dev
+      - name: Configure CMake
+        if: ${{ github.event.inputs.build_enabled_x86_64 != 'false' }}
+        run: |
+          echo "############### configuring cmake"
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+      - name: Build w/ CMake
+        if: ${{ github.event.inputs.build_enabled_x86_64 != 'false' }}
+        run: |
+          echo "############### building with cmake"
+          cmake --version
+          cmake --build build/ --config ${{env.BUILD_TYPE}} --parallel 4
+      - name: Create Artifact
+        run: |
+          mkdir  sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
+          cp -v  examples/sqlux.ini     sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*          sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
+          cp -vr roms                   sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux            sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/ ||
+                                  touch sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/sqlux
+          zip -r sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}.zip \
+                 sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}
+          path: sqlux-linux-x86_64-Ubuntu-22.04-${{ env.RELEASE_TAG }}.zip
+
+
+#### Linux ARM
+  build_arm:
+    if: ${{ github.event.inputs.job_enabled_arm != 'false' }}
+    name: Build Linux arm on ${{ matrix.distro }} ${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    continue-on-error: true
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            arch_source: arm64
+            distro: ubuntu22.04
+            distroDescr: ubuntu22.04-jammy
+          - arch: armv7
+            arch_source: armhf
+            distro: ubuntu22.04
+            distroDescr: ubuntu22.04-jammy
+          - arch: armv7
+            arch_source: armhf
+            distro: buster
+            distroDescr: debian10-buster
+          - arch: armv7
+            arch_source: armhf
+            distro: bullseye
+            distroDescr: debian11-bullseye
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - uses: uraimo/run-on-arch-action@v2.8.1
+        if: ${{ github.event.inputs.build_enabled_arm != 'false' }}
+        name: Build w/ CMake
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          shell: /bin/sh
+          install: |
+            case "${{ matrix.distro }}" in
+              ubuntu*|jessie|stretch|buster|bullseye)
+                apt-get update  -q -y
+                apt-get install -q -y git libsdl2-dev cmake gcc g++ make
+                ;;
+            esac
+          run: |
+            git config --global --add safe.directory ${PWD}
+            git config --global --add safe.directory ${PWD}/sQLux
+            git config --global --add safe.directory ${PWD}/sQLux/args
+            git config --global --add safe.directory ${PWD}/sQLux/sdl-gpu
+            git config --global --add safe.directory ${PWD}/sQLux/sds
+            echo "############### configuring cmake"
+            cmake -B build/ \
+              -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+              -DCMAKE_TOOLCHAIN_FILE=Toolchain-${{ matrix.arch_source }}.cmake
+            echo "############### building with cmake"
+            cmake --build build/ --config ${{env.BUILD_TYPE}} --parallel 4
+      - name: Create Artifact
+        run: |
+          mkdir  sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
+          cp -v  examples/sqlux.ini sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*      sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
+          cp -vr roms               sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux        sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/ ||
+                              touch sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/sqlux
+          zip -r sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}.zip \
+                 sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}
+          path: sqlux-linux-${{ matrix.arch }}-${{ matrix.distroDescr }}-${{ env.RELEASE_TAG }}*.zip
+
+#### MacOS - aarch64
+  build_macos_aarch64:
+    if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+    name: Build MacOS aarch64 on MacOS-14
+    runs-on: macos-14
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - name: get Arch and O.S. info
+        run: |
+          sw_vers
+          sysctl machdep.cpu.brand_string
+      - name: Install Dependencies
+        run: |
+          brew install sdl2
+      - name: Configure CMake
+        if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+        run: |
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSUPPORT_SHADERS=True
+      - name: Build w/ CMake
+        if: ${{ github.event.inputs.job_enabled_macos_aarch64 != 'false' }}
+        run: |
+          cmake --build build/ --config ${{env.BUILD_TYPE}}
+      - name: Create Artifact
+        run: |
+          mkdir  sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -v  examples/sqlux.ini sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*      sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -vr roms               sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux        sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/ ||
+                              touch sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/sqlux
+          zip -r sqlux-macos-aarch64-${{ env.RELEASE_TAG }}.zip \
+                 sqlux-macos-aarch64-${{ env.RELEASE_TAG }}/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-macos-aarch64-${{ env.RELEASE_TAG }}
+          path: sqlux-macos-aarch64-${{ env.RELEASE_TAG }}.zip
+
+#### WINDOWS
+  build_windows:
+    if: ${{ github.event.inputs.job_enabled_windows != 'false' }}
+    name: Build Windows on ${{ matrix.env }} ${{ matrix.sys }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    needs:
+      - get_release_definitions
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+    continue-on-error: true
+    strategy:
+      matrix:
+        include:
+          - { sys: mingw64, env: x86_64 }
+          - { sys: mingw32, env: i686 }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: "blob:none"
+          fetch-tags: 'true'
+          fetch-depth: '1000'
+          submodules: 'true'
+      - uses: msys2/setup-msys2@v2
+        if: ${{ !github.event.act }}
+        with:
+          msystem: ${{matrix.sys}}
+          update: true
+          install: >-
+            git
+            zip
+            mingw-w64-${{matrix.env}}-cc
+            mingw-w64-${{matrix.env}}-SDL2
+            mingw-w64-${{matrix.env}}-cmake
+      - name: Configure CMake
+        if: ${{ github.event.inputs.build_enabled_windows != 'false' }}
+        run: |
+          cmake -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Build w/ CMake
+        if: ${{ github.event.inputs.build_enabled_windows != 'false' }}
+        run: |
+          cmake --build build/ --config ${{env.BUILD_TYPE}}
+      - name: Create Package
+        run: |
+          mkdir  sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}
+          cp -v  examples/sqlux.ini sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -vr examples/mdv*      sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -vr roms               sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+          cp -v  build/sqlux.exe    sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/ ||
+                              touch sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/sqlux.exe
+          zip -r sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}.zip \
+                 sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}/
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          retention-days: 1
+          name: sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}
+          path: sqlux-windows-${{ matrix.sys }}-${{ env.RELEASE_TAG }}*.zip
+
+
+#### Upload artifacts to Releases
+  upload_artifacts:
+    name: Upload Artifacts to Releases
+    runs-on: ubuntu-22.04
+    needs:
+      # - prepare_artifacts_cache
+      - get_release_definitions
+      - build_x86_64
+      - build_arm
+      - build_macos_aarch64
+      - build_windows
+      - build_manual
+      - zip_source
+    env:
+      RELEASE_TAG: ${{needs.get_release_definitions.outputs.RELEASE_TAG}}
+      RELEASE_DESCR: ${{needs.get_release_definitions.outputs.RELEASE_DESCR}}
+      RELEASE_PRERELEASE: ${{needs.get_release_definitions.outputs.RELEASE_PRERELEASE}}
+    steps:
+      - name: Restore Artifacts Cache
+        uses: actions/download-artifact@v4.1.8
+        with:
+          path: artifacts
+      - name: list Artifacts
+        run: |
+          ls -la artifacts/*/*
+      - name: ${{ env.RELEASE_TAG }} ${{ env.RELEASE_DESCR }}
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ env.RELEASE_PRERELEASE}}
+          tag_name: ${{ env.RELEASE_TAG }}
+          body_path: artifacts/definitions/RELEASE_LOG.md
+          files: |
+            artifacts/*/*.zip
+            artifacts/*/*.pdf
+
+

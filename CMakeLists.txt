@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.10)
 
 option(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
 option(GPL2_CODE "Set to enable GPL2 code inclusion" OFF)
@@ -25,7 +25,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
+      "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows -Wno-incompatible-pointer-types")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -48,7 +48,8 @@ add_custom_target(
   COMMAND
     ${CMAKE_COMMAND} -D GIT_EXECUTABLE=${GIT_EXECUTABLE} -D
     INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/version.c.in -D
-    OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c -P
+    OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c -D
+    CHANGELOG_FILE=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md -P
     ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
@@ -172,6 +173,7 @@ if(SUPPORT_SHADERS)
   set(DISABLE_GLES_1 "TRUE")
   add_subdirectory(sdl-gpu)
   target_compile_options(SDL_gpu PRIVATE "-w")
+  target_compile_options(SDL_gpu PRIVATE "-Wno-incompatible-pointer-types")
   add_dependencies(sqlux SDL_gpu)
 endif()
 

@@ -76,12 +76,18 @@ So far the supported machines/OS are:
 - MacOS on x86_64, arm64
 
 sQLux requires SDL2 library, so make sure you have installed the development package for that on your distro or OS.
+It also requires the kacl-cli and/or the git binary to generate correct build version.
 
 To make it
 
+```sh
+make
 ```
-cmake -B build/
-cmake --build build/
+
+Test the exe is compiled
+
+```sh 
+./build/sqlux --version
 ```
 
 Do not delete the directory where you compiled it unless you know what
@@ -95,8 +101,8 @@ The name of the executable will be ’sqlux’.
 ==============
 
 
-```
-cmake --install build/
+```sh
+make install
 ```
 
 This will install sqlux executable in your default prefix (normally /usr/local/bin).
@@ -319,7 +325,7 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language. Valid options are `GB`, `DE`, `ES` and `US`. Defaults to `US`.
+Select the keyboard language. Valid options are `GB`, `DE`, `DE_ch`, `ES` and `US`. Defaults to `US`.
 
 ```
 KBD = DE
@@ -889,7 +895,7 @@ Returns value of the (UNIX) environment variable name as string
 
 **getXargc**
 
-Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
+Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed by sqlux not counted.
 
 ```
 qm -m -r 1024 arg1 arg2 arg3
@@ -913,8 +919,6 @@ results in
 1       arg1
 2       arg2
 3       arg3
-4       arg4
-5       arg5
 ```
 
 **getXres**

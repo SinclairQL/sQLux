@@ -40,7 +40,6 @@ Automatic builds are run and releases are available for the following architectu
 
 - Windows (built w/ MSYS2)
   - 64bit
-  - 32bit
 
 Releases are uploaded on Github automatically whenever a new tag, merge or pull request is pushed:
 
@@ -50,8 +49,6 @@ Releases are uploaded on Github automatically whenever a new tag, merge or pull 
 - `master` branch: Development Releases
   - Every commit or pull into master branch generates a pre-release artifact
   - older Development Releases are overwritten each time a new non-tagged build is run
-
-
 
 # Building
 
@@ -94,7 +91,6 @@ sQLux has switched to using cmake as its build system
 
 1. Build and test
     ```sh
-    cmake -B build/
     make
     # then test the binary
     ./build/sqlux --help
@@ -113,7 +109,6 @@ sQLux has switched to using cmake as its build system
 2. Build and test
 
     ```sh
-    cmake -B build/
     make
     # then test the binary
     ./build/sqlux --help
@@ -126,6 +121,7 @@ Instructions based on debian/ubuntu distro, for other distros you will have to m
 Download the SDL2 mingw SDK and adapt the following to your environment/version.
 The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases):
 
+```sh
     tar xvf SDL2-devel-2.0.18-mingw.tar.gz
     cd SDL2-2.0.18/
     sed -i "s|/opt/local/|/usr/local/|" x86_64-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
@@ -133,13 +129,11 @@ The SDL2 development libraries can be found [here](https://github.com/libsdl-org
     sudo mkdir /usr/local/i686-w64-mingw32
     sudo mkdir /usr/local/x86_64-w64-mingw32
     sudo make cross
+```
 
 Now the mingw version of SDL2 is available and we can build sQLux for Win64
 
-    mkdir mingw
-    cd mingw
-    cmake -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 ..
-    make
+    make mingw64
 
 ## Building MinGW on Windows
 
@@ -149,16 +143,19 @@ Run the mingw64 environment
 
 Install the toolchain and SDL2
 
+```sh
     pacman -Sy mingw-w64-x86_64-toolchain
     pacman -Sy mingw-w64-x86_64-cmake
     pacman -Sy mingw-w64-x86_64-SDL2
+```
 
 Create the build directory and compile
 
-    mkdir mingw
-    cd mingw
-    cmake.exe -G "MinGW Makefiles" ..
-    mingw32-make
+```sh
+    make
+    # then test the binary
+    ./build/sqlux --help
+```
 
 This will generate `sqlux.exe`. Dependencies are statically linked, so `sqlux.exe` will run without the need for additional dlls.
 
