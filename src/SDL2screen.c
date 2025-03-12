@@ -783,6 +783,10 @@ static struct SDLQLMap_f sdlqlmap_DE[] = {
 	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
 	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
 	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7)},
+	{ MOD_NONE, SDLK_KP_MINUS, QL_SLASH },
+	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET},
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_RBRACKET) },
 
 	// The following are Windows-specific (Alt-GR-based)
 	{ MOD_ALT, SDLK_LESS, (SWAP_ALT | SWAP_CNTRL | QL_8) }, // |	OK
@@ -813,6 +817,10 @@ static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
 	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
 	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
 	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7)},
+	{ MOD_NONE, SDLK_KP_MINUS, QL_SLASH },
+	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET},
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_RBRACKET) },
 
 	// The following are MacOS-specific ("Option"-based)
 	{ MOD_ALT, SDLK_7, (SWAP_ALT | SWAP_CNTRL | QL_8) }, // |	OK
@@ -864,6 +872,10 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // ;
 	{ MOD_SHIFT, SDLK_COMMA, (SWAP_SHIFT | QL_SEMICOLON) }, // :
 	{ MOD_NONE, SDLK_MINUS, QL_MINUS }, // -
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7)},
+	{ MOD_NONE, SDLK_KP_MINUS, QL_SLASH },
+	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET},
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_RBRACKET) },
 	{ 0x0, 0x0, 0x0 }
 };
 
@@ -874,6 +886,8 @@ static struct SDLQLMap_f sdlqlmap_GB[] = {
 	{ MOD_SHIFT, SDLK_2, QL_QUOTE },
 	{ MOD_NONE, SDLK_HASH, (SWAP_SHIFT | QL_3) },
 	{ MOD_SHIFT, SDLK_HASH, QL_POUND },
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL)},
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
 
@@ -916,6 +930,9 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ MOD_GRF, 186, (SWAP_CNTRL | QL_9) }, // backslash
 	{ MOD_GRF, SDLK_z, (SWAP_CNTRL | SWAP_SHIFT | QL_X) }, // «
 	{ MOD_GRF, SDLK_x, (SWAP_CNTRL | SWAP_SHIFT | QL_Y) }, // »
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_6)},
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL)},
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
 
@@ -1010,12 +1027,12 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	// 	sdl_shiftstate, sdl_altstate, sdl_controlstate,
 	//	sdl_grfstate); fflush(stdout);
 
-	/* Handle key pad entries that require shift */
-	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed) {
+	/* Handle key pad entries that require shift - with the US keyboard */
+	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
 		queueKey(1 << 2, QL_8, 0);
 		return;
 	}
-	if ((keysym->sym == SDLK_KP_PLUS) && pressed) {
+	if ((keysym->sym == SDLK_KP_PLUS) && pressed && !sdlqlmap) {
 		queueKey(1 << 2, QL_EQUAL, 0);
 		return;
 	}
