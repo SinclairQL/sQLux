@@ -945,3 +945,18 @@ Returns the base address of the screen
 
 Returns the number of bytes a line on the screen occupies
 
+**emu_speed**
+
+Change the emulation speed dynamically
+```
+emu_speed(1)
+```
+
+**emu_exit**
+
+An alias for Kill_UQLX, exits the emulator
+
+**emu_vers$**
+
+An alias for UQLX_RELEASE$ returns the release string.
+
