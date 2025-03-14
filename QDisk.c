@@ -1896,8 +1896,22 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		*reg = 0;
 		break;
 	case 74:
-	case 77:
 		*reg = -15;
+		break;
+	case 77:
+		h = GetFileHeader(GET_FNUMBER(f));
+		uint8_t ftyp = GET_FTYP(h);
+		if (ftyp != 0) {
+			*reg = -15;
+		} else {
+			SET_FTYP(h, 0xFF);
+			SET_ISDIR(f, true);
+			int fver = GET_FVER(h);
+			SET_FVER(h, fver + 1);
+			SET_FDUPDT(h, 0);
+			SET_FDTBAC(h, 0);
+			RewriteHeader();
+		}
 		break;
 	case 78:
 		/*  FS.VERS : read/write file version  */
