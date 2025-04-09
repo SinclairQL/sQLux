@@ -50,6 +50,7 @@ typedef enum {
 	KEY_DE,
 	KEY_DE_CH,
 	KEY_ES,
+	KEY_IT,
 } KeyboardType;
 
 typedef enum {
@@ -934,6 +935,39 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ 0x0, 0x0, 0x0 }
 };
 
+static struct SDLQLMap_f sdlqlmap_IT[] = {
+    { MOD_SHIFT,     SDLK_0,    (SWAP_SHIFT | QL_EQUAL)},
+    { MOD_SHIFT,     SDLK_9,   (QLSH_0)},
+    { MOD_SHIFT,      SDLK_8,    (QLSH_9)},
+    { MOD_SHIFT,     SDLK_7,    (SWAP_SHIFT | QL_SLASH)},
+    { MOD_SHIFT,     SDLK_6,    (QLSH_7 )},
+    { MOD_SHIFT, SDLK_3, (SWAP_SHIFT | QL_POUND)},
+    { MOD_SHIFT, SDLK_2, QL_QUOTE},
+    { MOD_SHIFT, SDLK_QUOTE, QL_SLASH },
+    { MOD_SHIFT, 0xec, (QLSH_6)},
+    { MOD_ALT, 0x2b, QL_RBRACKET},
+    { MOD_ALT, 0xe8, QL_LBRACKET},
+    { MOD_CTRL, 0x2b, (SWAP_SHIFT|SWAP_CNTRL|QLSH_RBRACKET)},
+    { MOD_NONE, 0x2b, (SWAP_SHIFT|QL_EQUAL)}, // +
+    { MOD_SHIFT, 0x2b, (QL_8)}, // *
+    { MOD_CTRL, 0xe8, (SWAP_SHIFT|SWAP_CNTRL|QLSH_LBRACKET)},
+    { MOD_NONE, 0xec, (SWAP_CNTRL|QL_CTRL|QL_4)}, // ì
+    { MOD_NONE, 0x00e0, (SWAP_CNTRL|QL_MINUS)}, // à
+    { MOD_NONE, 0x00f2, (SWAP_CNTRL|QL_7)}, // ò
+    { MOD_ALT, 0x00f2, (SWAP_SHIFT|QL_2)}, // @
+    { MOD_SHIFT, 0x00e0, (SWAP_CNTRL|QL_Z)}, // °
+    { MOD_ALT, 0x00e0, (SWAP_SHIFT|QL_3)}, // #
+    { MOD_NONE, 0xe8, (SWAP_CNTRL|QL_0)}, // è
+    { MOD_SHIFT, 0xe8, (SWAP_CNTRL|QL_3)}, // é
+    { MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // :
+    { MOD_SHIFT, SDLK_COMMA, SWAP_SHIFT|QL_SEMICOLON }, // ;
+    { MOD_NONE, 0x3c, SWAP_SHIFT|QL_COMMA }, // <
+    { MOD_SHIFT, 0x3c, QL_PERIOD}, // >
+    { MOD_SHIFT, 249, (SWAP_CNTRL | QL_V) }, // §
+    { MOD_NONE, 249, (SWAP_CNTRL | QL_9) }, // wrong accented 'u' - couldn't find how to reproduce it from the international QL keymap
+    { 0x0, 0x0, 0x0}
+};
+
 static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_UP, QL_UP },
 					      { SDLK_RIGHT, QL_RIGHT },
@@ -1024,6 +1058,8 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	//	keysym->sym, keysym->scancode, pressed,
 	// 	sdl_shiftstate, sdl_altstate, sdl_controlstate,
 	//	sdl_grfstate); fflush(stdout);
+				//printf("%d ", keysym->sym);
+				//fflush(stdout);
 
 	/* Handle key pad entries that require shift - with the US keyboard */
 	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
@@ -1360,6 +1396,12 @@ static void setKeyboardLayout(void)
 		usegrfstate = 1;
 		if (V1)
 			printf("Using ES keymap.\n");
+	} else if (!strncasecmp("IT", kbd_string, 2)) {
+		sdlqlmap = sdlqlmap_IT;
+		keyboard = KEY_IT;
+		usegrfstate = 1;
+		if (V1)
+			printf("Using IT keymap.\n");
 	} else if (!strncasecmp("US", kbd_string, 2)) {
 		if (V1)
 			printf("Using US keymap.\n");
