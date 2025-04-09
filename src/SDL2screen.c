@@ -1058,8 +1058,6 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	//	keysym->sym, keysym->scancode, pressed,
 	// 	sdl_shiftstate, sdl_altstate, sdl_controlstate,
 	//	sdl_grfstate); fflush(stdout);
-				//printf("%d ", keysym->sym);
-				//fflush(stdout);
 
 	/* Handle key pad entries that require shift - with the US keyboard */
 	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
