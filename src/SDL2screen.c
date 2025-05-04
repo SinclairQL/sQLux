@@ -935,6 +935,12 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ 0x0, 0x0, 0x0 }
 };
 
+// IT keyboard mapping tested on a PC full Italian keyboard
+// updated 2025-05-04 by mrzap000 
+// issues fixed:
+//	ALT was mapped instead of ALTGR (now ALTGR correctly used
+//	curly brackets were mapped as CTRL-[] (now mapped as SHIFT-ALTGR-[])
+
 static struct SDLQLMap_f sdlqlmap_IT[] = {
     { MOD_SHIFT,     SDLK_0,    (SWAP_SHIFT | QL_EQUAL)},
     { MOD_SHIFT,     SDLK_9,   (QLSH_0)},
@@ -945,18 +951,18 @@ static struct SDLQLMap_f sdlqlmap_IT[] = {
     { MOD_SHIFT, SDLK_2, QL_QUOTE},
     { MOD_SHIFT, SDLK_QUOTE, QL_SLASH },
     { MOD_SHIFT, 0xec, (QLSH_6)},
-    { MOD_ALT, 0x2b, QL_RBRACKET},
-    { MOD_ALT, 0xe8, QL_LBRACKET},
-    { MOD_CTRL, 0x2b, (SWAP_SHIFT|SWAP_CNTRL|QLSH_RBRACKET)},
+    { MOD_GRF, 0x2b, QL_RBRACKET}, // ]
+    { MOD_GRF, 0xe8, QL_LBRACKET}, // [
+    { MOD_SHIFT|MOD_GRF, 0x2b, (QLSH_RBRACKET)}, // }
     { MOD_NONE, 0x2b, (SWAP_SHIFT|QL_EQUAL)}, // +
     { MOD_SHIFT, 0x2b, (QL_8)}, // *
-    { MOD_CTRL, 0xe8, (SWAP_SHIFT|SWAP_CNTRL|QLSH_LBRACKET)},
+    { MOD_SHIFT|MOD_GRF, 0xe8, (QLSH_LBRACKET)}, // {
     { MOD_NONE, 0xec, (SWAP_CNTRL|QL_CTRL|QL_4)}, // ì
     { MOD_NONE, 0x00e0, (SWAP_CNTRL|QL_MINUS)}, // à
     { MOD_NONE, 0x00f2, (SWAP_CNTRL|QL_7)}, // ò
-    { MOD_ALT, 0x00f2, (SWAP_SHIFT|QL_2)}, // @
+    { MOD_GRF, 0x00f2, (SWAP_SHIFT|QL_2)}, // @
     { MOD_SHIFT, 0x00e0, (SWAP_CNTRL|QL_Z)}, // °
-    { MOD_ALT, 0x00e0, (SWAP_SHIFT|QL_3)}, // #
+    { MOD_GRF, 0x00e0, (SWAP_SHIFT|QL_3)}, // #
     { MOD_NONE, 0xe8, (SWAP_CNTRL|QL_0)}, // è
     { MOD_SHIFT, 0xe8, (SWAP_CNTRL|QL_3)}, // é
     { MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // :
