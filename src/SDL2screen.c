@@ -784,9 +784,9 @@ static struct SDLQLMap_f sdlqlmap_DE[] = {
 	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
 	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
 	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
-	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7)},
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7) },
 	{ MOD_NONE, SDLK_KP_MINUS, QL_SLASH },
-	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET},
+	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_RBRACKET) },
 
 	// The following are Windows-specific (Alt-GR-based)
@@ -818,9 +818,9 @@ static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
 	{ MOD_SHIFT, 0x5e, (SWAP_CNTRL | QL_Y) }, // °	OK
 	{ MOD_WILD, 0x2B, QL_RBRACKET }, // + OK */
 	{ MOD_WILD, 0xDF, QL_MINUS }, // ß OK */
-	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7)},
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_7) },
 	{ MOD_NONE, SDLK_KP_MINUS, QL_SLASH },
-	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET},
+	{ MOD_NONE, SDLK_KP_PLUS, QL_RBRACKET },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_RBRACKET) },
 
 	// The following are MacOS-specific ("Option"-based)
@@ -873,7 +873,7 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // ;
 	{ MOD_SHIFT, SDLK_COMMA, (SWAP_SHIFT | QL_SEMICOLON) }, // :
 	{ MOD_NONE, SDLK_MINUS, QL_MINUS }, // -
-	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL)},
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
@@ -885,7 +885,7 @@ static struct SDLQLMap_f sdlqlmap_GB[] = {
 	{ MOD_SHIFT, SDLK_2, QL_QUOTE },
 	{ MOD_NONE, SDLK_HASH, (SWAP_SHIFT | QL_3) },
 	{ MOD_SHIFT, SDLK_HASH, QL_POUND },
-	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL)},
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
@@ -929,43 +929,45 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ MOD_GRF, 186, (SWAP_CNTRL | QL_9) }, // backslash
 	{ MOD_GRF, SDLK_z, (SWAP_CNTRL | SWAP_SHIFT | QL_X) }, // «
 	{ MOD_GRF, SDLK_x, (SWAP_CNTRL | SWAP_SHIFT | QL_Y) }, // »
-	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_6)},
-	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL)},
+	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_6) },
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
 
 static struct SDLQLMap_f sdlqlmap_IT[] = {
-    { MOD_SHIFT,     SDLK_0,    (SWAP_SHIFT | QL_EQUAL)},
-    { MOD_SHIFT,     SDLK_9,   (QLSH_0)},
-    { MOD_SHIFT,      SDLK_8,    (QLSH_9)},
-    { MOD_SHIFT,     SDLK_7,    (SWAP_SHIFT | QL_SLASH)},
-    { MOD_SHIFT,     SDLK_6,    (QLSH_7 )},
-    { MOD_SHIFT, SDLK_3, (SWAP_SHIFT | QL_POUND)},
-    { MOD_SHIFT, SDLK_2, QL_QUOTE},
-    { MOD_SHIFT, SDLK_QUOTE, QL_SLASH },
-    { MOD_SHIFT, 0xec, (QLSH_6)},
-    { MOD_ALT, 0x2b, QL_RBRACKET},
-    { MOD_ALT, 0xe8, QL_LBRACKET},
-    { MOD_CTRL, 0x2b, (SWAP_SHIFT|SWAP_CNTRL|QLSH_RBRACKET)},
-    { MOD_NONE, 0x2b, (SWAP_SHIFT|QL_EQUAL)}, // +
-    { MOD_SHIFT, 0x2b, (QL_8)}, // *
-    { MOD_CTRL, 0xe8, (SWAP_SHIFT|SWAP_CNTRL|QLSH_LBRACKET)},
-    { MOD_NONE, 0xec, (SWAP_CNTRL|QL_CTRL|QL_4)}, // ì
-    { MOD_NONE, 0x00e0, (SWAP_CNTRL|QL_MINUS)}, // à
-    { MOD_NONE, 0x00f2, (SWAP_CNTRL|QL_7)}, // ò
-    { MOD_ALT, 0x00f2, (SWAP_SHIFT|QL_2)}, // @
-    { MOD_SHIFT, 0x00e0, (SWAP_CNTRL|QL_Z)}, // °
-    { MOD_ALT, 0x00e0, (SWAP_SHIFT|QL_3)}, // #
-    { MOD_NONE, 0xe8, (SWAP_CNTRL|QL_0)}, // è
-    { MOD_SHIFT, 0xe8, (SWAP_CNTRL|QL_3)}, // é
-    { MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // :
-    { MOD_SHIFT, SDLK_COMMA, SWAP_SHIFT|QL_SEMICOLON }, // ;
-    { MOD_NONE, 0x3c, SWAP_SHIFT|QL_COMMA }, // <
-    { MOD_SHIFT, 0x3c, QL_PERIOD}, // >
-    { MOD_SHIFT, 249, (SWAP_CNTRL | QL_V) }, // §
-    { MOD_NONE, 249, (SWAP_CNTRL | QL_9) }, // wrong accented 'u' - couldn't find how to reproduce it from the international QL keymap
-    { 0x0, 0x0, 0x0}
+	{ MOD_SHIFT, SDLK_0, (SWAP_SHIFT | QL_EQUAL) },
+	{ MOD_SHIFT, SDLK_9, (QLSH_0) },
+	{ MOD_SHIFT, SDLK_8, (QLSH_9) },
+	{ MOD_SHIFT, SDLK_7, (SWAP_SHIFT | QL_SLASH) },
+	{ MOD_SHIFT, SDLK_6, (QLSH_7) },
+	{ MOD_SHIFT, SDLK_3, (SWAP_SHIFT | QL_POUND) },
+	{ MOD_SHIFT, SDLK_2, QL_QUOTE },
+	{ MOD_SHIFT, SDLK_QUOTE, QL_SLASH },
+	{ MOD_SHIFT, 0xec, (QLSH_6) },
+	{ MOD_GRF, 0x2b, QL_RBRACKET }, // ]
+	{ MOD_GRF, 0xe8, QL_LBRACKET }, // [
+	{ MOD_SHIFT | MOD_GRF, 0x2b, (QLSH_RBRACKET) }, // }
+	{ MOD_NONE, 0x2b, (SWAP_SHIFT | QL_EQUAL) }, // +
+	{ MOD_SHIFT, 0x2b, (QL_8) }, // *
+	{ MOD_SHIFT | MOD_GRF, 0xe8, (QLSH_LBRACKET) }, // {
+	{ MOD_NONE, 0xec, (SWAP_CNTRL | QL_CTRL | QL_4) }, // ì
+	{ MOD_NONE, 0x00e0, (SWAP_CNTRL | QL_MINUS) }, // à
+	{ MOD_NONE, 0x00f2, (SWAP_CNTRL | QL_7) }, // ò
+	{ MOD_GRF, 0x00f2, (SWAP_SHIFT | QL_2) }, // @
+	{ MOD_SHIFT, 0x00e0, (SWAP_CNTRL | QL_Z) }, // °
+	{ MOD_GRF, 0x00e0, (SWAP_SHIFT | QL_3) }, // #
+	{ MOD_NONE, 0xe8, (SWAP_CNTRL | QL_0) }, // è
+	{ MOD_SHIFT, 0xe8, (SWAP_CNTRL | QL_3) }, // é
+	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // :
+	{ MOD_SHIFT, SDLK_COMMA, SWAP_SHIFT | QL_SEMICOLON }, // ;
+	{ MOD_NONE, 0x3c, SWAP_SHIFT | QL_COMMA }, // <
+	{ MOD_SHIFT, 0x3c, QL_PERIOD }, // >
+	{ MOD_SHIFT, 249, (SWAP_CNTRL | QL_V) }, // §
+	{ MOD_NONE, 249,
+	  (SWAP_CNTRL |
+	   QL_9) }, // wrong accented 'u' - couldn't find how to reproduce it from the international QL keymap
+	{ 0x0, 0x0, 0x0 }
 };
 
 static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
