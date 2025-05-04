@@ -325,7 +325,7 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language. Valid options are `GB`, `DE`, `DE_ch`, `ES` and `US`. Defaults to `US`.
+Select the keyboard language. Valid options are `GB`, `DE`, `DE_ch`, `ES`, `IT` and `US`. Defaults to `US`.
 
 ```
 KBD = DE
