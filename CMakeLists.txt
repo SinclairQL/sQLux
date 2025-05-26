@@ -9,13 +9,13 @@ project(sqlux C)
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
+  "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
 	-DNEWSERIAL -DSH_MEM -DXSCREEN \
-    -DEVM_SCR -D_GNU_SOURCE -DMOUSE -DQVFS")
+    -DEVM_SCR -D_GNU_SOURCE -DMOUSE -DQVFS -Wno-incompatible-pointer-types")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY"
+    "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY"
   )
 endif()
 
@@ -25,7 +25,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(CMAKE_C_FLAGS
-      "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows -Wno-incompatible-pointer-types")
+    "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -34,7 +34,7 @@ if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
   else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -ggdb -fsanitize=address")
     set(CMAKE_EXE_LINKER_FLAGS
-        "${CMAKE_EXE_LINKER_FLAGS} -Ogdb -ggdb -fsanitize=address")
+      "${CMAKE_EXE_LINKER_FLAGS} -Ogdb -ggdb -fsanitize=address")
   endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
@@ -46,23 +46,23 @@ find_package(Git)
 add_custom_target(
   SubmarineGitVersion
   COMMAND
-    ${CMAKE_COMMAND} -D GIT_EXECUTABLE=${GIT_EXECUTABLE} -D
-    INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/version.c.in -D
-    OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c -D
-    CHANGELOG_FILE=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md -P
-    ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake)
+  ${CMAKE_COMMAND} -D GIT_EXECUTABLE=${GIT_EXECUTABLE} -D
+  INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/version.c.in -D
+  OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c -D
+  CHANGELOG_FILE=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md -P
+  ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(USE_FLAGS "-pthread -s USE_SDL=2 -s USE_PTHREADS=1")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 ${USE_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} -s MAXIMUM_MEMORY=1GB -s ALLOW_MEMORY_GROWTH=1 -s PTHREAD_POOL_SIZE=2 -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini --preload-file ${CMAKE_SOURCE_DIR}/roms/MIN198.rom@./roms/MIN198.rom --preload-file ${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom --preload-file default_win1.win"
+    "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} -s MAXIMUM_MEMORY=1GB -s ALLOW_MEMORY_GROWTH=1 -s PTHREAD_POOL_SIZE=2 -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini --preload-file ${CMAKE_SOURCE_DIR}/roms/MIN198.rom@./roms/MIN198.rom --preload-file ${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom --preload-file default_win1.win"
   )
   execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win
-                          -fdd)
+    -fdd)
   file(GLOB mdv1_files "${CMAKE_SOURCE_DIR}/mdv1/*")
   execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win
-                          -w ${mdv1_files})
+    -w ${mdv1_files})
   configure_file(sqlux_wrapper_sample.html index.html COPYONLY)
 else()
   find_package(SDL2 REQUIRED)
@@ -71,7 +71,7 @@ endif()
 if(SUPPORT_SHADERS)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(SDL2_GPU_INCLUDE_DIRS
-        "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/include")
+      "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/include")
     set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/lib")
     set(SDL2_GPU_LIBRARIES "-lSDL2_gpu_s -lopengl32")
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -148,7 +148,7 @@ add_executable(
   args/src/args.c
   inih/ini.c)
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c
-                            PROPERTIES GENERATED TRUE)
+  PROPERTIES GENERATED TRUE)
 
 add_dependencies(sqlux SubmarineGitVersion)
 
@@ -198,7 +198,7 @@ if(SDL2_LIBRARIES)
       -static-libstdc++)
   else()
     target_link_libraries(sqlux ${SDL2_GPU_LIB_DIRS} ${SDL2_LIBRARIES}
-                          ${SDL2_GPU_LIBRARIES})
+      ${SDL2_GPU_LIBRARIES})
   endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   target_link_libraries(sqlux ${SDL2_LIBRARIES})
