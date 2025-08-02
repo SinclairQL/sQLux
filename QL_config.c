@@ -166,12 +166,12 @@ int testMinervaVersion(char *ver)
 	return 0;
 }
 
-static uint32_t bootpatchaddr[] = {
-                    0x842A, /* Minerva 1.89 */
-                    0x83CA, /* Minerva 1.98 */
-                    0x83CC, /* Minerva 1.98a1 */
-                    0x4BE6, /* JS */
-                    0 };
+static uint32_t bootpatchaddr[] = { 0x842A, /* Minerva 1.89 */
+				    0x83CA, /* Minerva 1.98 */
+				    0x83CC, /* Minerva 1.98a1 */
+				    0x8440, /* Minerva 1.91j1 */
+				    0x4BE6, /* JS */
+				    0 };
 
 static void PatchBootDev()
 {
@@ -181,12 +181,13 @@ static void PatchBootDev()
 	/* patch the boot device in ROM */
 	while (bootpatchaddr[i]) {
 		if (!strncasecmp((void *)memBase + bootpatchaddr[i], "mdv1",
+				 4) ||
+		    !strncasecmp((void *)memBase + bootpatchaddr[i], "win1",
 				 4)) {
-
 			if (strlen(boot_dev)) {
 				if (V2)
 					printf("Patching Boot Device %s at 0x%x\n",
-						boot_dev, bootpatchaddr[i]);
+					       boot_dev, bootpatchaddr[i]);
 
 				strncpy((void *)memBase + bootpatchaddr[i],
 					boot_dev, 4);
