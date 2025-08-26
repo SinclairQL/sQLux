@@ -122,12 +122,8 @@ Download the SDL2 mingw SDK and adapt the following to your environment/version.
 The SDL2 development libraries can be found [here](https://github.com/libsdl-org/SDL/releases):
 
 ```sh
-    tar xvf SDL2-devel-2.0.18-mingw.tar.gz
-    cd SDL2-2.0.18/
-    sed -i "s|/opt/local/|/usr/local/|" x86_64-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
-    sed -i "s|/opt/local/|/usr/local/|" i686-w64-mingw32/lib/cmake/SDL2/sdl2-config.cmake
-    sudo mkdir /usr/local/i686-w64-mingw32
-    sudo mkdir /usr/local/x86_64-w64-mingw32
+    tar xvf SDL2-devel-2.32.8-mingw.tar.gz
+    cd SDL2-2.32.8/
     sudo make cross
 ```
 
