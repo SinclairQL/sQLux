@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <SDL.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "debug.h"
