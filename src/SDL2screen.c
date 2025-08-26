@@ -858,12 +858,15 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_NONE, 94, (SWAP_SHIFT | QL_6) }, // ^
 	{ MOD_SHIFT, 94, (SWAP_CNTRL | QLSH_SLASH) }, // `
 	{ MOD_NONE, 252, (SWAP_CNTRL | QL_QUOTE) }, // ü
+	{ MOD_SHIFT, 252, (SWAP_CNTRL | QL_SHIFT | QL_G) }, // Ü
 	{ MOD_CTRL, 252, (QL_CTRL | QL_LBRACKET) }, // [
 	{ MOD_NONE, 168, (SWAP_SHIFT | QL_1) }, // !
 	{ MOD_SHIFT, 168, QLSH_QUOTE }, // ¨
 	{ MOD_CTRL, 168, (QL_CTRL | QL_RBRACKET) }, // ]
 	{ MOD_NONE, 246, (SWAP_CNTRL | SWAP_SHIFT | QL_4) }, // ö
+	{ MOD_SHIFT, 246, (SWAP_CNTRL | QL_SHIFT | QL_2) }, // Ö
 	{ MOD_NONE, 228, (SWAP_CNTRL | QL_ESCAPE) }, // ä
+	{ MOD_SHIFT, 228, (SWAP_CNTRL | QL_SHIFT) | QL_D }, // Ä
 	{ MOD_CTRL, 228, (SWAP_SHIFT | QL_CTRL | QL_LBRACKET) }, // {
 	{ MOD_NONE, 36, (SWAP_SHIFT | QL_4) }, // $
 	{ MOD_SHIFT, 36, (SWAP_SHIFT | QL_POUND) }, // £
@@ -874,8 +877,6 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // ;
 	{ MOD_SHIFT, SDLK_COMMA, (SWAP_SHIFT | QL_SEMICOLON) }, // :
 	{ MOD_NONE, SDLK_MINUS, QL_MINUS }, // -
-	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
-	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
 	{ 0x0, 0x0, 0x0 }
 };
 
