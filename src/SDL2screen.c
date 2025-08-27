@@ -1463,6 +1463,7 @@ static void QLProcessMouse(int x, int y)
 	QLMovePointer(qlx, qly);
 }
 
+#ifndef SDL_JOYSTICK_DISABLED
 static int QLConvertWhichToIndex(Sint32 which)
 {
 	for (int i = 0; i < 2; ++i) {
@@ -1511,6 +1512,7 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
 		SDLQLKeyrowChg(joy_char[index][4], pressed);
 	}
 }
+#endif
 
 void QLSDLProcessEvents(void)
 {
