@@ -144,30 +144,26 @@ w8 ReadRTClock(w32 addr)
 
 void FrameInt(void)
 {
-	if ((intReg & 8) != 0) /* controlla che sia abilitato */
-	{
-		theInt = 8;
-		intReg ^= 8;
-		pendingInterrupt = 2;
-		*((uw8 *)memBase + 0x280a0l) = 16;
-		extraFlag = true;
-		nInst2 = nInst;
-		nInst = 0;
-	}
+	theInt = 8;
+	pendingInterrupt = 2;
+	*((uw8 *)memBase + 0x280a0l) = 16;
+	extraFlag = true;
+	nInst2 = nInst;
+	nInst = 0;
 }
 
-inline void REGP1 WriteInt(aw8 d)
+void WriteInt(uint8_t d)
 {
-	intReg = d;
+	// remove the mask bits
+	d &= 0x1F;
+
+	// clear interrupts
+	theInt &= ~d;
 }
 
-w8 IntRead(void)
+uint8_t IntRead(void)
 {
-	register w8 t;
-
-	t = theInt;
-	theInt = 0;
-	return t;
+	return theInt;
 }
 
 static int ipc_wait = 1;

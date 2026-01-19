@@ -125,7 +125,6 @@ Cond    badCodeAddress;
 int   nInst2;
 extern int script;
 
-volatile w8     intReg=0;
 volatile w8     theInt=0;
 
 Cond doTrace;            /* trace after current instruction */
