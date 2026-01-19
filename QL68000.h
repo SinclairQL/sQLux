@@ -141,7 +141,6 @@ extern Cond             isHW;
 #endif
 extern w32              lastAddr;
 extern volatile Cond    extraFlag;
-extern volatile w8      intReg;
 extern volatile w8      theInt;
 
 extern char             dispScreen;
@@ -205,7 +204,7 @@ STATIC void RewriteEA_w(aw16 ) REGP1;
 STATIC void RewriteEA_l(aw32 ) REGP1;
 
 void FrameInt(void);
-void WriteInt(aw8) REGP1;
+void WriteInt(uint8_t);
 
 void ExceptionIn(char) REGP1;
 void ExceptionOut(void);
