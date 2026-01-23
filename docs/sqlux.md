@@ -76,18 +76,12 @@ So far the supported machines/OS are:
 - MacOS on x86_64, arm64
 
 sQLux requires SDL2 library, so make sure you have installed the development package for that on your distro or OS.
-It also requires the kacl-cli and/or the git binary to generate correct build version.
 
 To make it
 
-```sh
-make
 ```
-
-Test the exe is compiled
-
-```sh 
-./build/sqlux --version
+cmake -B build/
+cmake --build build/
 ```
 
 Do not delete the directory where you compiled it unless you know what
@@ -101,8 +95,8 @@ The name of the executable will be ’sqlux’.
 ==============
 
 
-```sh
-make install
+```
+cmake --install build/
 ```
 
 This will install sqlux executable in your default prefix (normally /usr/local/bin).
@@ -316,8 +310,9 @@ FILTER = 1
 `FIXASPECT`
 On BBQL the pixels are not square.   
 1 enables sQLux to display a BBQL screen that will fill a 4:3 monitor at full screen.  
-2 enables sQLux to display pixels at an aspect ratio matching that for a BBQL.   
-0 Displays square pixels  
+2 enables sQLux to display pixels at an aspect ratio matching that for a BBQL.
+3 enables sQLux to display pixels at an aspect ratio matching an Spectrum (ideal for BatmanQL)
+0 Displays square pixels (512x256)
 Defaults to 0
 
 ```
@@ -325,7 +320,7 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language. Valid options are `GB`, `DE`, `DE_ch`, `ES`, `IT` and `US`. Defaults to `US`.
+Select the keyboard language. Valid options are `GB`, `DE`, `ES` and `US`. Defaults to `US`.
 
 ```
 KBD = DE
@@ -895,7 +890,7 @@ Returns value of the (UNIX) environment variable name as string
 
 **getXargc**
 
-Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed by sqlux not counted.
+Returns the number of arguments that were given to the emulator at startup, options or arguments that have been consumed away by Xtk not counted.
 
 ```
 qm -m -r 1024 arg1 arg2 arg3
@@ -919,6 +914,8 @@ results in
 1       arg1
 2       arg2
 3       arg3
+4       arg4
+5       arg5
 ```
 
 **getXres**
@@ -944,19 +941,4 @@ Returns the base address of the screen
 **scr_llen**
 
 Returns the number of bytes a line on the screen occupies
-
-**emu_speed**
-
-Change the emulation speed dynamically
-```
-emu_speed(1)
-```
-
-**emu_exit**
-
-An alias for Kill_UQLX, exits the emulator
-
-**emu_vers$**
-
-An alias for UQLX_RELEASE$ returns the release string.
 
