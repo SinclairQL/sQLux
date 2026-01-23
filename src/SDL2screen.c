@@ -40,6 +40,8 @@ static char sdl_win_name[128];
 bool ql_fullscreen = false;
 double ql_screen_ratio = 1.0;
 
+extern volatile bool is_display_blank;		// Boolean to handle bit 1 of port $18063
+
 SDL_atomic_t doPoll;
 bool shaders_selected = false;
 
@@ -343,6 +345,74 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button,
 				    Sint16 pressed);
 static int QLConvertWhichToIndex(Sint32 which);
 
+/* =============================================================== */
+/*           NEW HIGH PRECISION (50.000 Hz) PULSE                  */
+/* 				(Replaces legacy QLSDL50Hz)"                       */
+/* =============================================================== */
+static int active_metronome = 1;
+extern int schedCount;
+
+int Pulse50Thread(void *ptr) {
+    Uint64 frequency = SDL_GetPerformanceFrequency();
+    Uint64 ticks_por_frame = frequency / 50; // Exactamente 20ms
+    Uint64 next_trigger = SDL_GetPerformanceCounter();
+
+    while (active_metronome) {
+        Uint64 Now = SDL_GetPerformanceCounter();
+
+        	// FRAME TRIGGER?
+        if (Now >= next_trigger) {
+            
+            SDL_AtomicSet(&doPoll, 1);
+            schedCount = 0;
+
+            if (sem50Hz) {
+                if (!SDL_SemValue(sem50Hz)) {
+                    SDL_SemPost(sem50Hz);
+                }
+            }
+
+            // Screen Refresh
+            if (renderer_idle) {
+                SDL_Event event;
+                event.user.type = SDL_USEREVENT;
+                event.user.code = USER_CODE_SCREENREFRESH;
+                event.user.data1 = NULL;
+                event.user.data2 = NULL;
+                event.type = SDL_USEREVENT;
+                SDL_PushEvent(&event);
+            }
+
+			// PREPARE NEXT FRAME (DRIFT CORRECTION)
+			// We add 20ms to the PREVIOUS target time.
+			// This automatically corrects 49Hz to a rock-solid 50Hz.
+            next_trigger += ticks_por_frame;
+
+            // Watchdog protection (reset if lag exceeds 1 sec)
+            if (Now > next_trigger + frequency) {
+                next_trigger = Now + ticks_por_frame;
+            }
+        }
+
+        Now = SDL_GetPerformanceCounter();
+        if (Now < next_trigger) {
+            Uint64 remaining_ticks = next_trigger - Now;
+            double ms_remaining = ((double)remaining_ticks * 1000.0) / frequency;
+
+            // If more than 1.5ms remain, sleep to save CPU cycles
+            if (ms_remaining > 1.5) {
+                SDL_Delay((Uint32)(ms_remaining - 1.0));
+            } else {
+                // If remaining time is very short, use busy-wait for maximum precision
+                SDL_Delay(0); 
+            }
+        }
+    }
+    return 0;
+}
+
+
+
 void QLSDLScreen(void)
 {
 	SDL_DisplayMode sdl_mode;
@@ -377,6 +447,8 @@ void QLSDLScreen(void)
 		ql_screen_ratio = (3.0 / 2.0);
 	} else if (aspect == 2) {
 		ql_screen_ratio = 1.355;
+	} else if (aspect == 3) {
+		ql_screen_ratio = 2.0;
 	} else {
 		ql_screen_ratio = 1.0;
 	}
@@ -446,7 +518,8 @@ void QLSDLScreen(void)
 
 	SDL_AtomicSet(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
-	fiftyhz_timer = SDL_AddTimer(20, QLSDL50Hz, NULL);
+
+	SDL_CreateThread(Pulse50Thread, "MetronomoQL", NULL);
 }
 
 static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
@@ -656,8 +729,11 @@ void QLSDLRenderScreen(void)
 	SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels,
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
-	SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL,
-			 SDL_FLIP_NONE);
+	if (!is_display_blank) {
+		SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL,
+				 SDL_FLIP_NONE);
+	}
+
 	SDL_RenderPresent(ql_renderer);
 }
 
@@ -1616,33 +1692,10 @@ void QLSDLExit(void)
 	}
 #endif
 
-	SDL_RemoveTimer(fiftyhz_timer);
+
+	active_metronome = 0; // <-- Detiene el bucle del hilo suavemente
 	if (shaders_selected) {
 		QLGPUClean();
 	}
 }
 
-Uint32 QLSDL50Hz(Uint32 interval, void *param)
-{
-	SDL_Event event;
-	SDL_AtomicSet(&doPoll, 1);
-
-	schedCount = 0;
-
-	if (sem50Hz && !SDL_SemValue(sem50Hz)) {
-		SDL_SemPost(sem50Hz);
-	}
-
-	if (renderer_idle) {
-		event.user.type = SDL_USEREVENT;
-		event.user.code = USER_CODE_SCREENREFRESH;
-		event.user.data1 = NULL;
-		event.user.data2 = NULL;
-
-		event.type = SDL_USEREVENT;
-
-		SDL_PushEvent(&event);
-	}
-
-	return interval;
-}

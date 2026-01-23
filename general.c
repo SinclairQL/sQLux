@@ -14,12 +14,13 @@
 #include "sqlux_bdi.h"
 #include "dummies.h"
 #include "unixstuff.h"
-
+#include <stdbool.h>
 #include <signal.h>
 #include <time.h>
 
 #include "sqlux_debug.h"
 
+volatile bool is_display_blank = false; // Display active by default (bit 1 set to 0)
 void debug(char *);
 void debug2(char *, long);
 
@@ -245,7 +246,11 @@ void WriteHWByte(aw32 addr, aw8 d)
 
 	switch (addr) {
 	case 0x018063: /* Display control */
+				// Bit 1 a 1 = Disabled display (Blank)
+				// Bit 1 a 0 = Enabled display
+		is_display_blank = (d & 0x02) ? true : false;
 		SetDisplay(d, true);
+		break; // add for security
 	case 0x018000:
 	case 0x018001:
 		/* ignore write to real-time clock registers */

@@ -18,6 +18,9 @@ typedef struct {
 	float y;
 } vec2;
 
+extern volatile bool is_display_blank;   // Boolean to handle bit 1 of port $18063
+
+
 static uint32_t* screen_buffer = NULL;
 static GPU_Image* image = 0;
 static GPU_Target* screen = 0;
@@ -110,16 +113,20 @@ void QLGPUUpdateDisplay(void)
 	// Update the display memory
 	QLSDLWritePixels(screen_buffer);
 
-	// Update the image using the updated memory buffer
-	GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
+		GPU_Clear(screen);
+		
+	// Only paint if bit 1 (video blanking) is zero
+	if (!is_display_blank) {
+		// Update the image using the updated memory buffer
+		GPU_UpdateImageBytes(image, NULL, (unsigned char*)screen_buffer, qlscreen.xres * 4);
+		// Render to screen, using the active shader
+		GPU_ActivateShaderProgram(shader, &shader_block);
+		UpdateShader((float)qlscreen.xres, (float)qlscreen.yres,
+			(float)frect.w, (float)frect.h);
+		GPU_BlitRect(image, NULL, screen, &frect);
+		GPU_ActivateShaderProgram(0, NULL);
+	}
 
-	// Render to screen, using the active shader
-	GPU_Clear(screen);
-	GPU_ActivateShaderProgram(shader, &shader_block);
-	UpdateShader((float)qlscreen.xres, (float)qlscreen.yres,
-		(float)frect.w, (float)frect.h);
-	GPU_BlitRect(image, NULL, screen, &frect);
-	GPU_ActivateShaderProgram(0, NULL);
 	GPU_Flip(screen);
 }
 

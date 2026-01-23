@@ -315,9 +315,10 @@ FILTER = 1
 
 `FIXASPECT`
 On BBQL the pixels are not square.   
+0 Displays square pixels (512x256)
 1 enables sQLux to display a BBQL screen that will fill a 4:3 monitor at full screen.  
-2 enables sQLux to display pixels at an aspect ratio matching that for a BBQL.   
-0 Displays square pixels  
+2 enables sQLux to display pixels at an aspect ratio matching that for a BBQL.
+3 enables sQLux to display pixels at an aspect ratio 1:1 matching a Spectrum (ideal for BatmanQL)
 Defaults to 0
 
 ```
