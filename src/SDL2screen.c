@@ -51,7 +51,7 @@ typedef enum {
 	KEY_US,
 	KEY_GB,
 	KEY_DE,
-	KEY_DE_CH,
+	KEY_GB_CH,
 	KEY_ES,
 	KEY_IT,
 } KeyboardType;
@@ -913,7 +913,7 @@ static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
 	{ 0x0, 0x0, 0x0 }
 };
 
-static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
+static struct SDLQLMap_f sdlqlmap_GB_ch[] = {
 	{ MOD_NONE, 167, (SWAP_SHIFT | SWAP_CNTRL | QL_V) }, // §
 	{ MOD_SHIFT, 167, (SWAP_CNTRL | QL_Z) }, // °
 	{ MOD_SHIFT, SDLK_1, QL_EQUAL }, // +
@@ -933,6 +933,7 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_SHIFT, 39, QLSH_SLASH }, // ?
 	{ MOD_NONE, 94, (SWAP_SHIFT | QL_6) }, // ^
 	{ MOD_SHIFT, 94, (SWAP_CNTRL | QLSH_SLASH) }, // `
+	{ MOD_WILD, 94, (SWAP_SHIFT | SWAP_CNTRL | QL_SHIFT | QL_POUND) }, // ~
 	{ MOD_NONE, 252, (SWAP_CNTRL | QL_QUOTE) }, // ü
 	{ MOD_SHIFT, 252, (SWAP_CNTRL | QL_SHIFT | QL_G) }, // Ü
 	{ MOD_CTRL, 252, (QL_CTRL | QL_LBRACKET) }, // [
@@ -940,9 +941,9 @@ static struct SDLQLMap_f sdlqlmap_DE_ch[] = {
 	{ MOD_SHIFT, 168, QLSH_QUOTE }, // ¨
 	{ MOD_CTRL, 168, (QL_CTRL | QL_RBRACKET) }, // ]
 	{ MOD_NONE, 246, (SWAP_CNTRL | SWAP_SHIFT | QL_4) }, // ö
-	{ MOD_SHIFT, 246, (SWAP_CNTRL | QL_SHIFT | QL_2) }, // Ö
+	{ MOD_SHIFT, 246, (SWAP_CNTRL | QL_SHIFT | QL_D) }, // Ö
 	{ MOD_NONE, 228, (SWAP_CNTRL | QL_ESCAPE) }, // ä
-	{ MOD_SHIFT, 228, (SWAP_CNTRL | QL_SHIFT) | QL_D }, // Ä
+	{ MOD_SHIFT, 228, (SWAP_CNTRL | QL_SHIFT) | QL_2 }, // Ä
 	{ MOD_CTRL, 228, (SWAP_SHIFT | QL_CTRL | QL_LBRACKET) }, // {
 	{ MOD_NONE, 36, (SWAP_SHIFT | QL_4) }, // $
 	{ MOD_SHIFT, 36, (SWAP_SHIFT | QL_POUND) }, // £
@@ -1448,11 +1449,11 @@ static void setKeyboardLayout(void)
 	usegrfstate = 0;
 	keyboard = KEY_US;
 
-	if (!strncasecmp("DE_ch", kbd_string, 5)) {
-		sdlqlmap = sdlqlmap_DE_ch;
-		keyboard = KEY_DE_CH;
+	if (!strncasecmp("GB_ch", kbd_string, 5)) {
+		sdlqlmap = sdlqlmap_GB_ch;
+		keyboard = KEY_GB_CH;
 		if (V1)
-			printf("Using DE_ch keymap.\n");
+			printf("Using GB_ch keymap.\n");
 	} else if (!strncasecmp("DE", kbd_string, 2)) {
 // MacOS receives a specific keymap...
 #if defined(__APPLE__) && defined(__MACH__)
@@ -1698,4 +1699,3 @@ void QLSDLExit(void)
 		QLGPUClean();
 	}
 }
-
