@@ -168,9 +168,10 @@ int testMinervaVersion(char *ver)
 
 static uint32_t bootpatchaddr[] = { 0x842A, /* Minerva 1.89 */
 				    0x84CA, /* Minerva 1.97 */
-				    0x83CA, /* Minerva 1.98 */
+				    0x83CA, /* Minerva 1.98 & io-fix */
 				    0x83CC, /* Minerva 1.98a1 */
-				    0x8440, /* Minerva 1.91j1 */
+				    0x8440, /* Minerva 1.98j1/2 */
+				    0x83C0, /* Minerva 1.98j3/4 */
 				    0x4BE6, /* JS */
 				    0 };
 
@@ -229,9 +230,11 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			}
 		}
 
-		WW((((Ptr)memBase + 0x4000 + RW((uw16 *)((Ptr)memBase + 0x124)))),
+		WW((((Ptr)memBase + 0x4000 +
+		     RW((uw16 *)((Ptr)memBase + 0x124)))),
 		   MDVR_CMD_CODE); /* read mdv sector */
-		WW((((Ptr)memBase + 0x4000 + RW((uw16 *)((Ptr)memBase + 0x126)))),
+		WW((((Ptr)memBase + 0x4000 +
+		     RW((uw16 *)((Ptr)memBase + 0x126)))),
 		   MDVW_CMD_CODE); /* write mdv sector */
 		WW(((uw16 *)((Ptr)memBase + 0x4000 +
 			     RW((uw16 *)((Ptr)memBase + 0x128)))),
@@ -260,7 +263,8 @@ int LoadMainRom(void) /* load and modify QL ROM */
 				a = 0x4330;
 				p = LookFor(&a, 0x90023dbc, 120);
 				if (p)
-					WW(((uw16 *)((Ptr)memBase + a)), 0x9802);
+					WW(((uw16 *)((Ptr)memBase + a)),
+					   0x9802);
 			}
 
 			PatchKeyTrans();
