@@ -167,6 +167,7 @@ int testMinervaVersion(char *ver)
 }
 
 static uint32_t bootpatchaddr[] = { 0x842A, /* Minerva 1.89 */
+				    0x84CA, /* Minerva 1.97 */
 				    0x83CA, /* Minerva 1.98 */
 				    0x83CC, /* Minerva 1.98a1 */
 				    0x8440, /* Minerva 1.91j1 */
