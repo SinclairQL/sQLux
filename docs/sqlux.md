@@ -1,13 +1,11 @@
-sQLux
-=====
+# sQLux
 
 **UQLX original Richard Zidlicky**
 **sQLux alterations Graeme Gregory**
 Copyright © 1996,1997,1998,1999 Richard Zidlicky
 Copyright © 2020,2021 Graeme Gregory
 
-Contents
---------
+## Contents
 
 1. [Introduction](#1-Introduction)
 2. [Compiling](#2-Compiling)
@@ -19,8 +17,7 @@ Contents
 8. [Printing](#8-Printing)
 9. [SuperBasic Extensions](#9-SuperBasic-Extensions)
 
-1 Introduction
-==============
+# 1 Introduction
 
 sQLux is a fork of the UQLX Sinclair QL emulator, the original
 Introduction is below.
@@ -46,15 +43,13 @@ UQLX is designed to cooperate neatly with the underlying OS, some of the feature
 [1.1 System Requirements](#11-system-requirements)
 [1.2 COPYRIGHT](#12-copyright)
 
-1.1 System Requirements
------------------------
+## 1.1 System Requirements
 
 Nearly any UNIX or similar system will do, provided you have gcc and SDL2 installed.
 
 ---
 
-1.2 COPYRIGHT
--------------
+## 1.2 COPYRIGHT
 
 New parts of sQLux are license under the zlib license, files are marked where appropriate. (SPDX: Zlib)
 
@@ -64,8 +59,7 @@ The copyright notice can be found in the file ‘`COPYRIGHT`’ – if not try t
 
 ---
 
-2 Compiling
-===========
+# 2 Compiling
 
 Several machines/OS versions are directly supported.
 
@@ -86,7 +80,7 @@ make
 
 Test the exe is compiled
 
-```sh 
+```sh
 ./build/sqlux --version
 ```
 
@@ -97,9 +91,7 @@ The name of the executable will be ’sqlux’.
 
 ---
 
-3 Installation
-==============
-
+# 3 Installation
 
 ```sh
 make install
@@ -109,21 +101,19 @@ This will install sqlux executable in your default prefix (normally /usr/local/b
 
 ---
 
-4 Customization
-===============
+# 4 Customization
 
 sQLux will look for a configuration file in the following patches in order.
 
- - $PWD/sqlux.ini (The current working directory)
- - $HOME/.sqluxrc
- - $HOME/.uqlxrc
+- $PWD/sqlux.ini (The current working directory)
+- $HOME/.sqluxrc
+- $HOME/.uqlxrc
 
 It is possible to share configuration with uQLx but the ROMIN= format has changed.
 
 ---
 
-4.1 About sqlux.ini files
-=========================
+# 4.1 About sqlux.ini files
 
 The sqlux.ini options file uses a `KEY = VALUE` format. The ’`#`’ character can be used to start comments, rest of the line is not evaluated.
 
@@ -276,7 +266,7 @@ assumed.
 
 applicable only to non-`qdos-fs`. Filenames are not case sensitive and (sub)directory creation mimics SMSQ behaviour.
 Dots in filenames/directory names are converted to underscores "\_" on load and directory listing (but the converse is
-not true). Be careful not to mix files with the same names on qdos side ie test.c and test\_c in same directory.
+not true). Be careful not to mix files with the same names on qdos side ie test.c and test_c in same directory.
 
 `BDI1`
 file that is exposed by the BDI interface, this is normally the file from an old style QL-SD device.
@@ -286,7 +276,7 @@ BDI1 = QL_BDI.bin
 ```
 
 `BOOT_DEVICE`
-changes the device the QDOS rom boots from, in rom the default is mdv1_. Set this to any valid device from above, but it is limited to 4 characters.
+changes the device the QDOS rom boots from, in rom the default is mdv1\_. Set this to any valid device from above, but it is limited to 4 characters.
 
 ```
 BOOT_DEVICE = FLP1
@@ -314,7 +304,7 @@ FILTER = 1
 ```
 
 `FIXASPECT`
-On BBQL the pixels are not square.   
+On BBQL the pixels are not square.  
 0 Displays square pixels for Mode 4 (512x256)
 1 enables sQLux to display a BBQL screen that will fill a 4:3 monitor at full screen.  
 2 enables sQLux to display pixels at an aspect ratio matching that for a BBQL.
@@ -326,7 +316,7 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language. Valid options are `GB`, `DE`, `DE_ch`, `ES`, `IT` and `US`. Defaults to `US`.
+Select the keyboard language. Valid options are `GB`, `GB_ch`, `DE`, `ES`, `IT` and `US`. Defaults to `US`.
 
 ```
 KBD = DE
@@ -352,12 +342,14 @@ The index into SDL2 for a joystick to emulate connection to the QL through the C
 ```
 JOY1 = 1
 ```
+
 `JOY2`
 The index into SDL2 for a joystick to emulate connection to the QL through the CTL2 port. An integer in the range 1 to 8. 1 maps to the first joystick detected by SDL2.
 
 ```
 JOY2 = 1
 ```
+
 `PALETTE`
 0 to use saturated (BRIGHT) colours, 1 to use unsaturated (MUTED) colours, 2 to use a grayscale display. Set to 0 by default (so the display is in saturated colours).
 
@@ -365,7 +357,7 @@ JOY2 = 1
 PALETTE = 1
 ```
 
-`SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.  
+`SHADER` Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.  
 Note that sQLux must have been compiled with shader support. See the [Shader documentation](docs/shaders.md) for more details.
 
 ```
@@ -404,8 +396,7 @@ KBD = GB
 
 ---
 
-5 Program Invocation
-====================
+# 5 Program Invocation
 
 UQLX often prints diagnostic messages to `stdout` and `stderr`, so start it in its own terminal.
 
@@ -426,8 +417,7 @@ ln -s BOOT boot         # in mdv1_
 [5.4 The big screen feature](#54-the-big-screen-feature)
 [5.5 Keyboard](#55-Keyboard)
 
-5.1 Command Line options
-------------------------
+## 5.1 Command Line options
 
 sqlux supports the following command line options; these override
 settings in the config file.
@@ -511,8 +501,7 @@ set the verbosity level, so make sQLux quiet set to 0, level 1 is the default fo
 
 ---
 
-5.2 BOOT Files
---------------
+## 5.2 BOOT Files
 
 Usually there are no special requirements for sQLux boot files, just remember to store it as ‘`mdv1_BOOT`’ (or other device if using BOOTDEV) - case will be significant in the default installation.
 
@@ -533,8 +522,7 @@ Extensions](#9-SuperBasic-Extensions)
 
 ---
 
-5.3 ROM Images
---------------
+## 5.3 ROM Images
 
 Thanks to Tony Firshman, Minerva v1.89 onwards is now GPL and can be bundled with sQLux - it is ‘`roms/MIN198`’.
 
@@ -544,8 +532,9 @@ For various reasons you may run into some trouble when trying romimages other th
 - rom image has been patched by GC, SGC or similar. All QL extensions that have something better than a 68008 CPU are likely to do this.
 - some TK2 roms fail possibly because they get confused by the UQLX filesystem which is a mix of the basic and FS II. TK232.rom bundled seems to work ok.
 
-5.4 The big screen feature
---------------------------
+    5.4 The big screen feature
+
+---
 
 If you choose to work with a screen bigger than 512x256, there are a few important points.
 
@@ -559,8 +548,7 @@ Pointer Environment is patched when activated to recognise the new screen parame
 
 Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel ratio. Length of screen buffer must always be truncated nearest 32K boundary, therefore some screen sizes may result in a certain waste of memory.
 
-5.5 Keyboard
-------------
+## 5.5 Keyboard
 
 By default sQLux uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
 
@@ -568,8 +556,8 @@ This scheme does not take into account international keyboard on the host of int
 
 Alternatively get a USA keyboard or use stickers to give that genuine QL feel.
 
-5.6 Sound
----------
+## 5.6 Sound
+
 sQLux can optionally generate sound. It supports the SuperBASIC BEEP command. Note that the QL manual states that the length parameter in a BEEP command is in units of 72 microseconds. This is incorrect. The original QL uses a unit length of 43.64 microseconds. sQLux also uses this unit of length.
 
 sQLux attempts to faithfully reproduce the behaviour of the original QL. This includes support for negative values of grd_y, including the correct behaviour for -8. Behaviour when either pitch or pitch_2 equals 255 is also correctly emulated.
@@ -578,23 +566,22 @@ All optional parameters, including Fuzzy and Random, are fully supported. The sl
 
 Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL 8049 sound code.
 
-5.6.1 Known Issues
-------------------
+## 5.6.1 Known Issues
+
 1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
 2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
 3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be easily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
 
-5.7 Joystick
-------------
+## 5.7 Joystick
+
 SDL2 is used to provide Joystick support. Analogue or digital joysticks are supported. Axis 0 and axis 1 of the joystick are mapped. Moving the joystick generates key presses. All buttons on the joystick are mapped to the fire key.
 As documented by [Sinclair](http://www.dilwyn.me.uk/docs/ebooks/olqlug/QL%20Manual%20-%20Concepts.htm#joystick), Joystick 1 (assumed connected through CTL1) maps to the cursor keys and spacebar. Joystick 2 (assumed connected through CTL2) maps to F1 through to F5.
 
-5.7.1 Known limitations
------------------------
-Currently only devices that are detected by SDL2 as Joysticks are supported. Devices that are *only* identified as GameControllers are not supported.
+## 5.7.1 Known limitations
 
-6 Filesystems
-=============
+Currently only devices that are detected by SDL2 as Joysticks are supported. Devices that are _only_ identified as GameControllers are not supported.
+
+# 6 Filesystems
 
 Both QDOS/SMSQ diskimages and the host filesystem can be accessed, for configuration details see the ‘`sqlux.ini`’ file.
 
@@ -602,7 +589,7 @@ It is also possible to use real QDOS floppies, but some care must be taken. Espe
 
 There is no file locking, so try not to use the same file in two processes at same time.
 
-The Host Filesystem can be accessed both translated and untranslated The translated version is used in the default configuration to host ’mdv1_’ and some other devices.
+The Host Filesystem can be accessed both translated and untranslated The translated version is used in the default configuration to host ’mdv1\_’ and some other devices.
 
 The untranslated version is accessed as the uQVFSx Filesystem, see that section. The uQVFSx Filesystem is good if you want to access a Unix file of which you know the (Unix)filename or simply need very long pathnames.
 
@@ -613,8 +600,7 @@ It can be also used to access raw and special devices, eg the /proc filesystem.
 [6.1 UNIX Filesystem Interface](#61-UNIX-Filesystem-Interface)
 [6.2 QDOS floppy and QXL.WIN](#62-QDOS-floppy-and-QXL-WIN)
 
-6.1 Host Filesystem Interface
------------------------------
+## 6.1 Host Filesystem Interface
 
 The Host FS Interface provides access to the underlying UNIX (or similar) host filesystem. Standard QDOS and most QDOS-FS II file operations are mapped to UNIX calls, full (sub-)directory access is provided.
 
@@ -647,8 +633,7 @@ The ‘`.`’ and ‘`..`’ directories are accessible just like that in QDOS b
 
 ---
 
-6.2 QDOS floppy and QXL.WIN
----------------------------
+## 6.2 QDOS floppy and QXL.WIN
 
 QXL.WIN files are now supported as well as direct use of floppy/QXL.WIN
 devices. Currently, `disk swaps are only recognised when all files on that device are closed!`
@@ -663,8 +648,7 @@ dd if=/dev/fd0 of=DiskImagename
 
 On Linux anything works, unless you have a very special floppy use `/dev/fd0` as filename.
 
-7 Other Devices
-===============
+# 7 Other Devices
 
 Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.
 
@@ -676,17 +660,15 @@ Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.
 
 ---
 
-7.1 TCP/IP
-----------
+## 7.1 TCP/IP
 
 The `TCP/IP` features are described in the files ‘`docs/socket.*`’ that came with this UQLX distribution or here:
 
-7.2 pty device
---------------
+## 7.2 pty device
 
-`pty*j/t*_programname` *par1* ....
+`pty*j/t*_programname` _par1_ ....
 
-*j*
+_j_
 
 job control options
 
@@ -698,7 +680,7 @@ don’t care if child process exits. Default behaviour is to indicate EOF on rea
 
 kill child job after closing the QDOS channel. Default is don’t care.
 
-*t*
+_t_
 
 translation options
 
@@ -714,11 +696,11 @@ translate char 26 (`^Z`)as end of file
 
 translate QDOS <–> ISO-8859-1 font
 
-*program name*
+_program name_
 
 name of program to be executed and parameters
 
-*parm*
+_parm_
 
 arguments to be passed to the invoked program. This can be
 unix-style options, filenames etc.
@@ -735,7 +717,6 @@ unix-style options, filenames etc.
 ```
 
 Connect to an NNTP server and post a test message. Most likely you will have to use another NNTP server and change the "From:" to contain a legal address.
-
 
 ```
 100 PRINT "NNTP Posting software"
@@ -770,18 +751,17 @@ Connect to an NNTP server and post a test message. Most likely you will have to 
 380 END DEFine
 ```
 
-7.3 ser device
---------------
+## 7.3 ser device
 
 `ser*npht*_*b*baudrate`
 
 except for the `_baudrate`, the options have the same meaning as in QDOS where applicable.
 
-*n*
+_n_
 
 unit number, currently 1,2
 
-*p*
+_p_
 
 parity
 
@@ -793,7 +773,7 @@ parity
 
 `S`
 
-*h*
+_h_
 
 handshake
 
@@ -805,7 +785,7 @@ use handshake
 
 ignore handshake
 
-*t*
+_t_
 
 translation
 
@@ -833,18 +813,17 @@ The serial device names should be specified in the ‘`sqlux.ini`’ file, good 
 
 ---
 
-8 Printing
-==========
+# 8 Printing
 
 The `prt` device can be used for printing. The data sent to `prt` is piped to the printer command specified in ‘`.~/.uqlxrc`’ which may be overridden or modified by providing additional arguments to the `prt` device.
 
 `prt*ft*_*add_options*!*alt_command*`
 
-*f*
+_f_
 
 ignore for QDOS compatibility
 
-*t*
+_t_
 
 translation: use active TRA table
 
@@ -871,18 +850,18 @@ If your system doesn’t have a `-Praw` you can add it by editing ‘`/etc/print
 ```
 PRINT = cat >/dev/lp0
 ```
+
 For this to work you will probably need to change ‘`/dev/lp0`’ permissions. Obviously this should not be used together with a standard lpd..
 
-*Some care must be used when specifying printer/filter commands: when closing the printer channel uqlx calls `pclose` which waits until the command(s) exits – in this situation uqlx may appear to hang.*
+_Some care must be used when specifying printer/filter commands: when closing the printer channel uqlx calls `pclose` which waits until the command(s) exits – in this situation uqlx may appear to hang._
 
 If this happens, kill the filter process from another xterm.
 
 ---
 
-9 SuperBasic Extensions
-=======================
+# 9 SuperBasic Extensions
 
-**Kill_UQLX** *result*
+**Kill_UQLX** _result_
 
 Kill the emulator returning result to the calling program
 
@@ -890,7 +869,7 @@ Kill the emulator returning result to the calling program
 
 Returns release identification as string
 
-**getXenv$** *name*
+**getXenv$** _name_
 
 Returns value of the (UNIX) environment variable name as string
 
@@ -904,7 +883,7 @@ qm -m -r 1024 arg1 arg2 arg3
 PRINT getXargc          => 4   (arg0=qm !)
 ```
 
-**getXarg$** *nth*
+**getXarg$** _nth_
 
 Returns the nth argument, continuing from above example
 
@@ -913,7 +892,6 @@ for i=0 to getXargc-1 : PRINT i, getXarg$(i)
 ```
 
 results in
-
 
 ```
 0       sqlux
@@ -949,6 +927,7 @@ Returns the number of bytes a line on the screen occupies
 **emu_speed**
 
 Change the emulation speed dynamically
+
 ```
 emu_speed(1)
 ```
@@ -960,4 +939,3 @@ An alias for Kill_UQLX, exits the emulator
 **emu_vers$**
 
 An alias for UQLX_RELEASE$ returns the release string.
-
