@@ -221,6 +221,7 @@ jobs:
           make_latest: true
           generate_release_notes: true
           name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.RELEASE_NAME }}
           files: |
             artifacts/*/*.zip
             artifacts/*/*.pdf
