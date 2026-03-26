@@ -216,7 +216,7 @@ jobs:
           ls -la artifacts/*/*
       - name: Release ${{ env.RELEASE_NAME }}
         uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
+        if: ${{ (github.ref_type == 'tag') || (github.ref_name == 'master') }}
         with:
           make_latest: true
           generate_release_notes: true
