@@ -96,7 +96,6 @@ include_directories(
   ${sds_SOURCE_DIR}/
   ${args_SOURCE_DIR}/src/
   ${inih_SOURCE_DIR}/
-  GPL2/
   uqlx/
   ${SDL2_INCLUDE_DIRS}
   ${SDL2_GPU_INCLUDE_DIRS})
@@ -159,10 +158,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   target_sources(sqlux PRIVATE src/wasm_support.c)
-endif()
-
-if(GPL2_CODE)
-  target_sources(sqlux PRIVATE GPL2/w5100.c GPL2/w5100_socket.c)
 endif()
 
 if(SDL2_LIBRARIES)
