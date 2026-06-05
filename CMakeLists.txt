@@ -1,10 +1,30 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.30)
 
 option(LTO "Use LTO in compile" OFF)
 
 project(sqlux C)
 
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
+
+include(FetchContent)
+FetchContent_Declare(
+  args
+  GIT_REPOSITORY https://github.com/dmulholl/args.git
+  GIT_TAG 3.3.0
+)
+FetchContent_MakeAvailable(args)
+FetchContent_Declare(
+  sds
+  GIT_REPOSITORY https://github.com/antirez/sds.git
+  GIT_TAG 2.0.0
+)
+FetchContent_MakeAvailable(sds)
+FetchContent_Declare(
+  inih
+  GIT_REPOSITORY https://github.com/benhoyt/inih.git
+  GIT_TAG r62
+)
+FetchContent_MakeAvailable(inih)
 
 set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
@@ -73,9 +93,9 @@ set(SDL2_GPU_LIB_DIRS "")
 include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
   include/
-  sds/
-  args/src/
-  inih/
+  ${sds_SOURCE_DIR}/
+  ${args_SOURCE_DIR}/src/
+  ${inih_SOURCE_DIR}/
   GPL2/
   uqlx/
   ${SDL2_INCLUDE_DIRS}
@@ -125,9 +145,10 @@ add_executable(
   src/sqlux_hexdump.c
   src/SDL2main.c
   src/emulator_options.c
-  sds/sds.c
-  args/src/args.c
-  inih/ini.c)
+  ${sds_SOURCE_DIR}/sds.c
+  ${args_SOURCE_DIR}/src/args.c
+  ${inih_SOURCE_DIR}/ini.c)
+
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c
   PROPERTIES GENERATED TRUE)
 
