@@ -28,7 +28,7 @@
 #include "dummies.h"
 #include "memaccess.h"
 
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 
 #include "unixstuff.h"
 

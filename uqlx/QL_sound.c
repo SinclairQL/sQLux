@@ -1,6 +1,7 @@
-/* Sound updated for SDL2 */
-#include <SDL.h>
+/* Sound updated for SDL3 */
+#include <SDL3/SDL.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "debug.h"
 #include "QL68000.h"
 #include "QL_sound.h"
@@ -20,7 +21,7 @@ typedef struct {		// Beep parameters written to ipc8049
 } ipc_sound;
 
 typedef struct {
-	SDL_mutex* mutex; 	// Mutex protecting writing to the structure
+	SDL_Mutex* mutex; 	// Mutex protecting writing to the structure
 	int in_use;		// Index to pic_sound buffer being played
 	int last_written;	// Latest buffer to play
 	ipc_sound beep[3];	// The buffers
@@ -45,8 +46,7 @@ typedef struct {
 static bool sound_enabled = false;	// True if sound enabled successfully
 static int audio_volume; 		// audio volume, 0 to 127
 
-static SDL_AudioDeviceID QLSDLAudio;
-static SDL_AudioSpec want;
+static SDL_AudioStream *QLSDLStream = NULL;
 static SDL_AudioSpec have;
 
 static sound_data sound;
@@ -56,6 +56,8 @@ static current_sound c_sound;
  * Local functions
  */
 void audioCallback(void* userdata, Uint8* stream, int len);
+static void SDLCALL QLAudioStreamCallback(void* userdata, SDL_AudioStream* stream,
+					  int additional_amount, int total_amount);
 
 static void setVolume(int volume);
 static void setPitchDuration();
@@ -80,28 +82,33 @@ static void silenceBuffer(int start, Sint8* buffer, int len);
 void initSound(int volume) {
 	if ((volume != 0) && (!sound_enabled)) {
 		// Create the sound driver
-		if(SDL_Init(SDL_INIT_AUDIO)) {
+		if(!SDL_Init(SDL_INIT_AUDIO)) {
 			if (V1) {
 				printf("Audio Failed to initialize: %s\n", SDL_GetError());
 			}
 			return;
 		}
 
-		SDL_zero(want);
-		want.freq = FREQUENCY;
-		want.format = AUDIO_S8;
-		want.channels = 1;
-		want.samples = SAMPLES;
-		want.callback = audioCallback;
+		SDL_zero(have);
+		have.freq = FREQUENCY;
+		have.format = SDL_AUDIO_S8;
+		have.channels = 1;
 
-		QLSDLAudio = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+		// SDL3 converts our buffers to the device format via the stream,
+		// so we always generate at the requested FREQUENCY.
+		QLSDLStream = SDL_OpenAudioDeviceStream(
+			SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &have,
+			QLAudioStreamCallback, NULL);
 
-		if(!QLSDLAudio) {
+		if(!QLSDLStream) {
 			if (V1) {
 				printf("Failed to open audio device: %s\n", SDL_GetError());
 			}
 			return;
 		}
+
+		// The device is opened paused; start it running.
+		SDL_ResumeAudioStreamDevice(QLSDLStream);
 
 		sound.mutex = SDL_CreateMutex();
 
@@ -126,8 +133,9 @@ void closeSound() {
 	if (sound.mutex)
 		SDL_DestroyMutex(sound.mutex);
 
-	if (QLSDLAudio) {
-		SDL_CloseAudioDevice(QLSDLAudio);
+	if (QLSDLStream) {
+		SDL_DestroyAudioStream(QLSDLStream);
+		QLSDLStream = NULL;
 	}
 }
 
@@ -232,8 +240,8 @@ void BeepSound(unsigned char *arg) {
 		sound.beep[write_num].fuzz, sound.beep[write_num].random);
 #endif
 
-		// Always unpause the sound here, in case the callback has paused itself
-		SDL_PauseAudioDevice(QLSDLAudio, 0);
+		// Make sure the device is running, in case it was paused
+		SDL_ResumeAudioStreamDevice(QLSDLStream);
 	}
 }
 
@@ -246,6 +254,33 @@ void KillSound() {
 		sound.in_use = -1;
 		sound.last_written = -1;
 		SDL_UnlockMutex(sound.mutex);
+	}
+}
+
+/*
+ * SDL3 audio stream callback. SDL asks us for `additional_amount` bytes of
+ * data; we generate it in SAMPLES-sized chunks using the existing
+ * audioCallback() (which fills a buffer SDL2-style) and feed it to the stream.
+ * The format is signed 8-bit mono, so one byte == one sample.
+ */
+static void SDLCALL QLAudioStreamCallback(void* userdata, SDL_AudioStream* stream,
+					  int additional_amount, int total_amount)
+{
+	UNUSED(total_amount);
+
+	Sint8 buffer[SAMPLES];
+
+	while (additional_amount > 0) {
+		int len = (additional_amount < (int)sizeof(buffer))
+				  ? additional_amount
+				  : (int)sizeof(buffer);
+
+		// Default to silence; audioCallback only writes when playing.
+		SDL_memset(buffer, 0, len);
+		audioCallback(userdata, (Uint8*)buffer, len);
+		SDL_PutAudioStreamData(stream, buffer, len);
+
+		additional_amount -= len;
 	}
 }
 
@@ -289,7 +324,8 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 	}
 
 	if ((c_sound.left < 0) || (sound.in_use == -1)){
-		SDL_PauseAudioDevice(QLSDLAudio, 1);
+		// Nothing to play: the stream buffer is pre-filled with
+		// silence by QLAudioStreamCallback, so just leave it.
 		soundOn = false;
 	}
 	else {

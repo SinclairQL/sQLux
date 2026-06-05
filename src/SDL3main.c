@@ -1,6 +1,7 @@
 #include <ftw.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -9,7 +10,7 @@
 #include "emulator_init.h"
 #include "emulator_options.h"
 #include "QL_sound.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "unixstuff.h"
 #include "Xscreen.h"
 

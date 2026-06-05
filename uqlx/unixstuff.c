@@ -48,7 +48,7 @@
 #include "QL_sound.h"
 #include "uxfile.h"
 #include "QL_screen.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "version.h"
 #include "Xscreen.h"
 
@@ -156,7 +156,7 @@ static int flptest = 0;
 
 void dosignal()
 {
-	SDL_AtomicSet(&doPoll, 0);
+	SDL_SetAtomicInt(&doPoll, 0);
 
 	if (--scrcnt < 0) {
 		set_rtc_emu();
@@ -179,12 +179,12 @@ void cleanup(int err)
 
 	SDL_Event event;
 
-	event.user.type = SDL_USEREVENT;
+	event.user.type = SDL_EVENT_USER;
 	event.user.code = USER_CODE_EMUEXIT;
 	event.user.data1 = NULL;
 	event.user.data2 = NULL;
 
-	event.type = SDL_USEREVENT;
+	event.type = SDL_EVENT_USER;
 
 	ret = SDL_PushEvent(&event);
 	if (ret <= 0) {
@@ -371,10 +371,10 @@ exec:
         
         // Exactly when the SDL Timer triggers (50Hz stable).
         if (sem50Hz) {
-            SDL_SemWait(sem50Hz);
+            SDL_WaitSemaphore(sem50Hz);
             
             // Safety drain:
-            while (SDL_SemTryWait(sem50Hz) == 0) {
+            while (SDL_TryWaitSemaphore(sem50Hz)) {
                 // Consume accumulated ticks
             }
         } else {

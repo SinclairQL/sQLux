@@ -8,7 +8,7 @@
 #include "memaccess.h"
 #include "general.h"
 #include "QL_screen.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 
 static int is_hw(uint32_t addr)
 {

@@ -6,7 +6,7 @@
 
 #include "QL68000.h"
 #include "debug.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "memaccess.h"
 #include "mmodes.h"
 #include "unixstuff.h"
@@ -446,7 +446,7 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
       qlux_table[code=RW(pc++)&0xffff]();
     }
 
-  if (SDL_AtomicGet(&doPoll)) dosignal();
+  if (SDL_GetAtomicInt(&doPoll)) dosignal();
 
   if(extraFlag)
     {

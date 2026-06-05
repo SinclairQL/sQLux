@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
-#include <SDL_timer.h>
+#include <SDL3/SDL_timer.h>
 
 #include "debug.h"
 #include "emulator_options.h"

@@ -71,7 +71,7 @@ add_custom_target(
   ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(USE_FLAGS "-pthread -s USE_SDL=2 -s USE_PTHREADS=1")
+  set(USE_FLAGS "-pthread -s USE_SDL=3 -s USE_PTHREADS=1")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 ${USE_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} -s MAXIMUM_MEMORY=1GB -s ALLOW_MEMORY_GROWTH=1 -s PTHREAD_POOL_SIZE=2 -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini --preload-file ${CMAKE_SOURCE_DIR}/roms/MIN198.rom@./roms/MIN198.rom --preload-file ${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom --preload-file default_win1.win"
@@ -83,12 +83,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
     -w ${mdv1_files})
   configure_file(sqlux_wrapper_sample.html index.html COPYONLY)
 else()
-  find_package(SDL2 REQUIRED)
+  find_package(SDL3 REQUIRED)
 endif()
-
-set(SDL2_GPU_LIBRARIES "-lm")
-set(SDL2_GPU_INCLUDE_DIRS "")
-set(SDL2_GPU_LIB_DIRS "")
 
 include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
@@ -97,8 +93,7 @@ include_directories(
   ${args_SOURCE_DIR}/src/
   ${inih_SOURCE_DIR}/
   uqlx/
-  ${SDL2_INCLUDE_DIRS}
-  ${SDL2_GPU_INCLUDE_DIRS})
+  ${SDL3_INCLUDE_DIRS})
 
 add_executable(
   sqlux
@@ -119,7 +114,7 @@ add_executable(
   uqlx/QLserio.c
   uqlx/QLtraps.c
   uqlx/QVFS.c
-  src/SDL2screen.c
+  src/SDL3screen.c
   uqlx/Xscreen.c
   uqlx/dummies.c
   uqlx/general.c
@@ -142,7 +137,7 @@ add_executable(
   src/emulator_init.c
   src/sqlux_windows.c
   src/sqlux_hexdump.c
-  src/SDL2main.c
+  src/SDL3main.c
   src/emulator_options.c
   ${sds_SOURCE_DIR}/sds.c
   ${args_SOURCE_DIR}/src/args.c
@@ -160,33 +155,26 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   target_sources(sqlux PRIVATE src/wasm_support.c)
 endif()
 
-if(SDL2_LIBRARIES)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_link_libraries(
-      sqlux
-      -Wl,-Bstatic
-      -L/usr/local/${TOOLCHAIN_PREFIX}/lib
-      ${SDL2_GPU_LIB_DIRS}
-      -L.
-      -lmingw32
-      -lSDL2main
-      -lSDL2
-      ${SDL2_GPU_LIBRARIES}
-      -lwsock32
-      -lwinmm
-      -lsetupapi
-      -limm32
-      -lversion
-      -static-libgcc
-      -static-libstdc++)
-  else()
-    target_link_libraries(sqlux ${SDL2_GPU_LIB_DIRS} ${SDL2_LIBRARIES}
-      ${SDL2_GPU_LIBRARIES})
-  endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_link_libraries(
+    sqlux
+    -Wl,-Bstatic
+    -L/usr/local/${TOOLCHAIN_PREFIX}/lib
+    -L.
+    -lmingw32
+    -lSDL3
+    -lm
+    -lwsock32
+    -lwinmm
+    -lsetupapi
+    -limm32
+    -lversion
+    -static-libgcc
+    -static-libstdc++)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  target_link_libraries(sqlux ${SDL2_LIBRARIES})
+  target_link_libraries(sqlux -lm)
 else()
-  target_link_libraries(sqlux SDL2::SDL2 ${SDL2_GPU_LIBRARIES})
+  target_link_libraries(sqlux SDL3::SDL3 -lm)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

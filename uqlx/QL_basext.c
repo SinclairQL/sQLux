@@ -28,7 +28,7 @@
 
 #include "unixstuff.h"
 #include "xcodes.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "version.h"
 
 #if __EMSCRIPTEN__

@@ -6,15 +6,16 @@
 
 #include <inttypes.h>
 #include <math.h>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "debug.h"
 #include "emulator_options.h"
 #include "QL_hardware.h"
 #include "QL68000.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "qlkeys.h"
 #include "qlmouse.h"
 #include "QL_screen.h"
@@ -31,8 +32,7 @@ static uint32_t ql_windowid = 0;
 static SDL_Surface *ql_screen = NULL;
 static SDL_Renderer *ql_renderer = NULL;
 static SDL_Texture *ql_texture = NULL;
-static SDL_Rect dest_rect;
-static SDL_TimerID fiftyhz_timer;
+static SDL_FRect dest_rect;
 static bool renderer_idle = true;
 static const char *sdl_video_driver;
 static char sdl_win_name[128];
@@ -41,9 +41,9 @@ double ql_screen_ratio = 1.0;
 
 extern volatile bool is_display_blank; // Boolean to handle bit 1 of port $18063
 
-SDL_atomic_t doPoll;
+SDL_AtomicInt doPoll;
 
-SDL_sem *sem50Hz = NULL;
+SDL_Semaphore *sem50Hz = NULL;
 
 typedef enum {
 	KEY_US,
@@ -332,7 +332,7 @@ static joy_data joy[2] = { { NULL, -1, 0, 1 }, { NULL, -1, 0, 1 } };
 #endif
 
 static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
-			       const char *name, uint32_t sdl_window_mode);
+			       const char *name, SDL_WindowFlags sdl_window_mode);
 static void QLSDLUpdateScreen();
 static void QLSDLUpdatePixelBuffer();
 
@@ -361,23 +361,23 @@ int Pulse50Thread(void *ptr)
 
 		// FRAME TRIGGER?
 		if (Now >= next_trigger) {
-			SDL_AtomicSet(&doPoll, 1);
+			SDL_SetAtomicInt(&doPoll, 1);
 			schedCount = 0;
 
 			if (sem50Hz) {
-				if (!SDL_SemValue(sem50Hz)) {
-					SDL_SemPost(sem50Hz);
+				if (!SDL_GetSemaphoreValue(sem50Hz)) {
+					SDL_SignalSemaphore(sem50Hz);
 				}
 			}
 
 			// Screen Refresh
 			if (renderer_idle) {
 				SDL_Event event;
-				event.user.type = SDL_USEREVENT;
+				event.user.type = SDL_EVENT_USER;
 				event.user.code = USER_CODE_SCREENREFRESH;
 				event.user.data1 = NULL;
 				event.user.data2 = NULL;
-				event.type = SDL_USEREVENT;
+				event.type = SDL_EVENT_USER;
 				SDL_PushEvent(&event);
 			}
 
@@ -412,8 +412,9 @@ int Pulse50Thread(void *ptr)
 
 void QLSDLScreen(void)
 {
-	SDL_DisplayMode sdl_mode;
-	uint32_t sdl_window_mode;
+	const SDL_DisplayMode *sdl_mode;
+	int disp_w, disp_h;
+	SDL_WindowFlags sdl_window_mode;
 	int i, w, h;
 	double ay;
 	const char *sysrom = emulatorOptionString("sysrom");
@@ -421,21 +422,23 @@ void QLSDLScreen(void)
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
 
-	Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_TIMER;
+	SDL_InitFlags flags = SDL_INIT_VIDEO;
 #ifndef SDL_JOYSTICK_DISABLED
 	flags |= SDL_INIT_JOYSTICK;
 #endif
-	if (SDL_Init(flags) < 0) {
+	if (!SDL_Init(flags)) {
 		printf("SDL_Init Error: %s\n", SDL_GetError());
 		exit(-1);
 	}
 
 	sdl_video_driver = SDL_GetCurrentVideoDriver();
-	SDL_GetCurrentDisplayMode(0, &sdl_mode);
+	sdl_mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+	disp_w = sdl_mode ? sdl_mode->w : 800;
+	disp_h = sdl_mode ? sdl_mode->h : 600;
 
 	if (V1)
 		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
-		       sdl_mode.w, sdl_mode.h);
+		       disp_w, disp_h);
 
 	/* Fix the aspect ratio to more like real hardware
 	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
@@ -463,9 +466,9 @@ void QLSDLScreen(void)
 	    (strcmp(sdl_video_driver, "cocoa") == 0) ||
 	    (strcmp(sdl_video_driver, "windows") == 0) ||
 	    (strcmp(sdl_video_driver, "emscripten") == 0) ||
-	    (strcmp(sdl_video_driver, "wayland") == 0) && sdl_mode.w >= 800 &&
-		    sdl_mode.h >= 600) {
-		sdl_window_mode = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+	    (strcmp(sdl_video_driver, "wayland") == 0) && disp_w >= 800 &&
+		    disp_h >= 600) {
+		sdl_window_mode = SDL_WINDOW_RESIZABLE;
 
 		win_size = emulatorOptionString("win_size");
 		if (!strcmp("2x", win_size)) {
@@ -477,11 +480,11 @@ void QLSDLScreen(void)
 		} else if (!strcmp("max", win_size)) {
 			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
 		} else if (!strcmp("full", win_size)) {
-			sdl_window_mode |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+			sdl_window_mode |= SDL_WINDOW_FULLSCREEN;
 			ql_fullscreen = true;
 		}
 	} else {
-		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
+		sdl_window_mode = SDL_WINDOW_FULLSCREEN;
 	}
 
 	bool created = QLSDLCreateDisplay(w, h, (int)lrint(ay), &ql_windowid,
@@ -492,23 +495,21 @@ void QLSDLScreen(void)
 		exit(-1);
 	}
 
-	SDL_SetHint(SDL_HINT_GRAB_KEYBOARD, "1");
+	SDL_SetWindowKeyboardGrab(ql_window, true);
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
 
 	QLSDLInitJoystick();
 
-	SDL_AtomicSet(&doPoll, 0);
+	SDL_SetAtomicInt(&doPoll, 0);
 	sem50Hz = SDL_CreateSemaphore(0);
 
 	SDL_CreateThread(Pulse50Thread, "MetronomoQL", NULL);
 }
 
 static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
-			       const char *name, uint32_t sdl_window_mode)
+			       const char *name, SDL_WindowFlags sdl_window_mode)
 {
-	ql_window =
-		SDL_CreateWindow(name, SDL_WINDOWPOS_CENTERED,
-				 SDL_WINDOWPOS_CENTERED, w, h, sdl_window_mode);
+	ql_window = SDL_CreateWindow(name, w, h, sdl_window_mode);
 
 	if (ql_window == NULL) {
 		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
@@ -518,21 +519,18 @@ static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
 	QLSDLCreateIcon(ql_window);
 	ql_windowid = SDL_GetWindowID(ql_window);
 
-	ql_renderer = SDL_CreateRenderer(ql_window, -1,
-					 SDL_RENDERER_ACCELERATED |
-						 SDL_RENDERER_PRESENTVSYNC);
+	ql_renderer = SDL_CreateRenderer(ql_window, NULL);
+	SDL_SetRenderVSync(ql_renderer, 1);
 
-	SDL_RenderSetLogicalSize(ql_renderer, qlscreen.xres, ly);
+	SDL_SetRenderLogicalPresentation(ql_renderer, qlscreen.xres, ly,
+					 SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 	dest_rect.x = dest_rect.y = 0;
 	dest_rect.w = qlscreen.xres;
 	dest_rect.h = ly;
 
-	if (emulatorOptionInt("filter"))
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
-
-	ql_screen = SDL_CreateRGBSurfaceWithFormat(
-		0, qlscreen.xres, qlscreen.yres, 32, SDL_PIXELFORMAT_RGBA32);
+	ql_screen = SDL_CreateSurface(qlscreen.xres, qlscreen.yres,
+				      SDL_PIXELFORMAT_RGBA32);
 
 	if (ql_screen == NULL) {
 		printf("Error Creating Surface\n");
@@ -547,6 +545,11 @@ static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
 		printf("Error Creating texture\n");
 		return false;
 	}
+
+	SDL_SetTextureScaleMode(ql_texture, emulatorOptionInt("filter") ?
+						    SDL_SCALEMODE_LINEAR :
+						    SDL_SCALEMODE_NEAREST);
+
 	QLSDLCreatePalette(ql_screen->format);
 	return true;
 }
@@ -554,44 +557,34 @@ static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
 void QLSDLCreateIcon(SDL_Window *window)
 {
 	SDL_Surface *icon;
-	uint32_t rmask, gmask, bmask, amask;
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	int shift = (sqluxlogo.bytes_per_pixel == 3) ? 8 : 0;
-	rmask = 0xff000000 >> shift;
-	gmask = 0x00ff0000 >> shift;
-	bmask = 0x0000ff00 >> shift;
-	amask = 0x000000ff >> shift;
-#else // little endian, like x86
-	rmask = 0x000000ff;
-	gmask = 0x0000ff00;
-	bmask = 0x00ff0000;
-	amask = (sqluxlogo.bytes_per_pixel == 3) ? 0 : 0xff000000;
-#endif
-	icon = SDL_CreateRGBSurfaceFrom(
-		(void *)sqluxlogo.pixel_data, sqluxlogo.width, sqluxlogo.height,
-		sqluxlogo.bytes_per_pixel * 8,
-		sqluxlogo.bytes_per_pixel * sqluxlogo.width, rmask, gmask,
-		bmask, amask);
+	/* The logo is stored as 32x32 RGBA bytes in memory order */
+	icon = SDL_CreateSurfaceFrom(sqluxlogo.width, sqluxlogo.height,
+				     SDL_PIXELFORMAT_RGBA32,
+				     (void *)sqluxlogo.pixel_data,
+				     sqluxlogo.bytes_per_pixel * sqluxlogo.width);
 
 	SDL_SetWindowIcon(window, icon);
-	SDL_FreeSurface(icon);
+	SDL_DestroySurface(icon);
 }
 
-void QLSDLCreatePalette(const SDL_PixelFormat *format)
+void QLSDLCreatePalette(SDL_PixelFormat format)
 {
+	const SDL_PixelFormatDetails *details = SDL_GetPixelFormatDetails(format);
 	int option = emulatorOptionInt("palette");
 	for (int i = 0; i < 16; i++) {
 		if (option == 2) {
-			SDLcolors[i] = SDL_MapRGB(format, QLcolors_gray[i].r,
+			SDLcolors[i] = SDL_MapRGB(details, NULL,
+						  QLcolors_gray[i].r,
 						  QLcolors_gray[i].g,
 						  QLcolors_gray[i].b);
 		} else if (option == 1) {
-			SDLcolors[i] = SDL_MapRGB(format, QLcolors_unsat[i].r,
+			SDLcolors[i] = SDL_MapRGB(details, NULL,
+						  QLcolors_unsat[i].r,
 						  QLcolors_unsat[i].g,
 						  QLcolors_unsat[i].b);
 		} else {
-			SDLcolors[i] = SDL_MapRGB(format, QLcolors[i].r,
+			SDLcolors[i] = SDL_MapRGB(details, NULL, QLcolors[i].r,
 						  QLcolors[i].g, QLcolors[i].b);
 		}
 	}
@@ -692,17 +685,11 @@ static void QLSDLUpdatePixelBuffer()
 
 void QLSDLRenderScreen(void)
 {
-	void *texture_buffer;
-	int pitch;
-	int w, h;
-	SDL_PixelFormat pixelformat;
-
 	SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels,
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
 	if (!is_display_blank) {
-		SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0,
-				 NULL, SDL_FLIP_NONE);
+		SDL_RenderTexture(ql_renderer, ql_texture, NULL, &dest_rect);
 	}
 
 	SDL_RenderPresent(ql_renderer);
@@ -710,12 +697,9 @@ void QLSDLRenderScreen(void)
 
 void SDLQLFullScreen(void)
 {
-	int w, h;
-
 	ql_fullscreen = !ql_fullscreen;
 
-	SDL_SetWindowFullscreen(
-		ql_window, ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	SDL_SetWindowFullscreen(ql_window, ql_fullscreen);
 }
 
 static void QLSDLUpdateScreen()
@@ -741,38 +725,41 @@ static void QLSDLOpenJoystick(int index, int which)
 	if ((which > 0) && (which < 9)) {
 		// Convert from 1-base to 0-base
 		int which0 = which - 1;
-		int joysticks = SDL_NumJoysticks();
+		int joysticks = 0;
+		SDL_JoystickID *ids = SDL_GetJoysticks(&joysticks);
 
-		if (joysticks) {
-			// Check for duplicate indexes
-			if (QLConvertWhichToIndex(which0) == -1) {
-				if (joysticks > which0) {
-					joy[index].sdl_id =
-						SDL_JoystickOpen(which0);
+		if (joysticks && ids) {
+			if (joysticks > which0) {
+				SDL_JoystickID id = ids[which0];
+
+				// Check for duplicate ids
+				if (QLConvertWhichToIndex(id) == -1) {
+					joy[index].sdl_id = SDL_OpenJoystick(id);
 					if (joy[index].sdl_id == NULL) {
 						if (V1)
 							printf("Joystick %i initialisation failed\n",
 							       index + 1);
 					} else {
-						joy[index].which = which0;
+						joy[index].which = id;
 						if (V1)
 							printf("Joystick %i initialised\n",
 							       index + 1);
 					}
 				} else {
 					if (V1)
-						printf("Joystick %i initialisation failed. Index %i too high\n",
+						printf("Joystick %i initialisation failed. Duplicate index %i\n",
 						       index + 1, which);
 				}
 			} else {
 				if (V1)
-					printf("Joystick %i initialisation failed. Duplicate index %i\n",
+					printf("Joystick %i initialisation failed. Index %i too high\n",
 					       index + 1, which);
 			}
 		} else {
 			if (V1)
-				printf("No joysticks detected by SDL2\n");
+				printf("No joysticks detected by SDL\n");
 		}
+		SDL_free(ids);
 	} else {
 		if ((V1) && which)
 			printf("Joystick %i initialisation failed. Unknown index: %i\n",
@@ -800,7 +787,7 @@ static void SDLQLKeyrowChg(int code, int press)
 
 // Adjust for Windows and X11 generating different scan codes for dead keys
 #ifdef __WIN32__
-#define SDL_DEADKEY_1 SDLK_BACKQUOTE
+#define SDL_DEADKEY_1 SDLK_GRAVE
 #else
 #define SDL_DEADKEY_1 SDLK_SLASH
 #endif
@@ -809,8 +796,8 @@ static void SDLQLKeyrowChg(int code, int press)
 // Note this is the Windows keymap. Modified from MacOS with no test
 static struct SDLQLMap_f sdlqlmap_DE[] = {
 	// These should be valid for all platforms
-	{ MOD_WILD, SDLK_z, QL_Y }, // Y	OK
-	{ MOD_WILD, SDLK_y, QL_Z }, // Z	OK
+	{ MOD_WILD, SDLK_Z, QL_Y }, // Y	OK
+	{ MOD_WILD, SDLK_Y, QL_Z }, // Z	OK
 	{ MOD_WILD, SDLK_MINUS, QL_SS }, // ß?	OK
 	{ MOD_WILD, 0xE4, QL_QUOTE }, // Ää 	OK
 	{ MOD_WILD, 0xF6, QL_SEMICOLON }, // Öö	OK
@@ -843,8 +830,8 @@ static struct SDLQLMap_f sdlqlmap_DE[] = {
 // This is the MacOS keymap. Mostly identical with the Windows one
 static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
 	// These should be valid for all platforms
-	{ MOD_WILD, SDLK_z, QL_Y }, // Y	OK
-	{ MOD_WILD, SDLK_y, QL_Z }, // Z	OK
+	{ MOD_WILD, SDLK_Z, QL_Y }, // Y	OK
+	{ MOD_WILD, SDLK_Y, QL_Z }, // Z	OK
 	{ MOD_WILD, SDLK_MINUS, QL_SS }, // ß?	OK
 	{ MOD_WILD, 0xE4, QL_QUOTE }, // Ää 	OK
 	{ MOD_WILD, 0xF6, QL_SEMICOLON }, // Öö	OK
@@ -868,9 +855,9 @@ static struct SDLQLMap_f sdlqlmap_DE_MacOS[] = {
 	{ MOD_ALT, SDLK_6, (SWAP_ALT | SWAP_CNTRL | QL_0) }, // ]	OK
 	{ MOD_ALT, SDLK_8, (SWAP_ALT | SWAP_CNTRL | QL_MINUS) }, // {	OK
 	{ MOD_ALT, SDLK_9, (SWAP_ALT | SWAP_CNTRL | QL_EQUAL) }, // }	OK
-	{ MOD_ALT, SDLK_n,
+	{ MOD_ALT, SDLK_N,
 	  (SWAP_ALT | SWAP_CNTRL | QL_BACKSLASH) }, // ~	OK
-	{ MOD_ALT, SDLK_l, (SWAP_ALT | SWAP_CNTRL | QL_COMMA) }, // @	NOK
+	{ MOD_ALT, SDLK_L, (SWAP_ALT | SWAP_CNTRL | QL_COMMA) }, // @	NOK
 
 	{ 0x0, 0x0, 0x0 }
 };
@@ -920,9 +907,9 @@ static struct SDLQLMap_f sdlqlmap_GB_ch[] = {
 };
 
 static struct SDLQLMap_f sdlqlmap_GB[] = {
-	{ MOD_NONE, SDLK_BACKQUOTE, (SWAP_SHIFT | QL_3) }, // For UK Mac
+	{ MOD_NONE, SDLK_GRAVE, (SWAP_SHIFT | QL_3) }, // For UK Mac
 	{ MOD_SHIFT, SDLK_3, (SWAP_SHIFT | QL_POUND) },
-	{ MOD_SHIFT, SDLK_QUOTE, QL_2 },
+	{ MOD_SHIFT, SDLK_APOSTROPHE, QL_2 },
 	{ MOD_SHIFT, SDLK_2, QL_QUOTE },
 	{ MOD_NONE, SDLK_HASH, (SWAP_SHIFT | QL_3) },
 	{ MOD_SHIFT, SDLK_HASH, QL_POUND },
@@ -946,8 +933,8 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ MOD_SHIFT, 161, QLSH_2 }, // ¿
 	{ MOD_NONE, 186, (SWAP_SHIFT | SWAP_CNTRL | QL_Z) }, // º
 	{ MOD_SHIFT, 186, (SWAP_CNTRL | QL_Z) }, // º as no ª
-	{ MOD_NONE, SDLK_QUOTE, (SWAP_CNTRL | QL_LBRACKET) }, // '
-	{ MOD_SHIFT, SDLK_QUOTE, QLSH_COMMA }, // ?
+	{ MOD_NONE, SDLK_APOSTROPHE, (SWAP_CNTRL | QL_LBRACKET) }, // '
+	{ MOD_SHIFT, SDLK_APOSTROPHE, QLSH_COMMA }, // ?
 	{ MOD_NONE, SDLK_PLUS, (SWAP_SHIFT | QL_EQUAL) }, // +
 	{ MOD_SHIFT, SDLK_PLUS, QL_8 }, // *
 	{ MOD_NONE, SDL_DEADKEY_2, QL_LBRACKET }, // ´
@@ -968,8 +955,8 @@ static struct SDLQLMap_f sdlqlmap_ES[] = {
 	{ MOD_GRF, 231, (SWAP_CNTRL | QL_POUND) }, // }
 	{ MOD_GRF, SDL_DEADKEY_2, (SWAP_CNTRL | QL_EQUAL) }, // {
 	{ MOD_GRF, 186, (SWAP_CNTRL | QL_9) }, // backslash
-	{ MOD_GRF, SDLK_z, (SWAP_CNTRL | SWAP_SHIFT | QL_X) }, // «
-	{ MOD_GRF, SDLK_x, (SWAP_CNTRL | SWAP_SHIFT | QL_Y) }, // »
+	{ MOD_GRF, SDLK_Z, (SWAP_CNTRL | SWAP_SHIFT | QL_X) }, // «
+	{ MOD_GRF, SDLK_X, (SWAP_CNTRL | SWAP_SHIFT | QL_Y) }, // »
 	{ MOD_NONE, SDLK_KP_DIVIDE, (SWAP_SHIFT | QL_6) },
 	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
 	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
@@ -984,7 +971,7 @@ static struct SDLQLMap_f sdlqlmap_IT[] = {
 	{ MOD_SHIFT, SDLK_6, (QLSH_7) },
 	{ MOD_SHIFT, SDLK_3, (SWAP_SHIFT | QL_POUND) },
 	{ MOD_SHIFT, SDLK_2, QL_QUOTE },
-	{ MOD_SHIFT, SDLK_QUOTE, QL_SLASH },
+	{ MOD_SHIFT, SDLK_APOSTROPHE, QL_SLASH },
 	{ MOD_SHIFT, 0xec, (QLSH_6) },
 	{ MOD_GRF, 0x2b, QL_RBRACKET }, // ]
 	{ MOD_GRF, 0xe8, QL_LBRACKET }, // [
@@ -1031,8 +1018,8 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 						QL_RBRACKET },
 					      { SDLK_LEFTBRACKET, QL_LBRACKET },
 					      { SDLK_PERIOD, QL_PERIOD },
-					      { SDLK_BACKQUOTE, QL_POUND },
-					      { SDLK_QUOTE, QL_QUOTE },
+					      { SDLK_GRAVE, QL_POUND },
+					      { SDLK_APOSTROPHE, QL_QUOTE },
 					      { SDLK_BACKSLASH, QL_BACKSLASH },
 					      { SDLK_EQUALS, QL_EQUAL },
 					      { SDLK_SEMICOLON, QL_SEMICOLON },
@@ -1051,32 +1038,32 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_8, QL_8 },
 					      { SDLK_9, QL_9 },
 
-					      { SDLK_a, QL_A },
-					      { SDLK_b, QL_B },
-					      { SDLK_c, QL_C },
-					      { SDLK_d, QL_D },
-					      { SDLK_e, QL_E },
-					      { SDLK_f, QL_F },
-					      { SDLK_g, QL_G },
-					      { SDLK_h, QL_H },
-					      { SDLK_i, QL_I },
-					      { SDLK_j, QL_J },
-					      { SDLK_k, QL_K },
-					      { SDLK_l, QL_L },
-					      { SDLK_m, QL_M },
-					      { SDLK_n, QL_N },
-					      { SDLK_o, QL_O },
-					      { SDLK_p, QL_P },
-					      { SDLK_q, QL_Q },
-					      { SDLK_r, QL_R },
-					      { SDLK_s, QL_S },
-					      { SDLK_t, QL_T },
-					      { SDLK_u, QL_U },
-					      { SDLK_v, QL_V },
-					      { SDLK_w, QL_W },
-					      { SDLK_y, QL_Y },
-					      { SDLK_x, QL_X },
-					      { SDLK_z, QL_Z },
+					      { SDLK_A, QL_A },
+					      { SDLK_B, QL_B },
+					      { SDLK_C, QL_C },
+					      { SDLK_D, QL_D },
+					      { SDLK_E, QL_E },
+					      { SDLK_F, QL_F },
+					      { SDLK_G, QL_G },
+					      { SDLK_H, QL_H },
+					      { SDLK_I, QL_I },
+					      { SDLK_J, QL_J },
+					      { SDLK_K, QL_K },
+					      { SDLK_L, QL_L },
+					      { SDLK_M, QL_M },
+					      { SDLK_N, QL_N },
+					      { SDLK_O, QL_O },
+					      { SDLK_P, QL_P },
+					      { SDLK_Q, QL_Q },
+					      { SDLK_R, QL_R },
+					      { SDLK_S, QL_S },
+					      { SDLK_T, QL_T },
+					      { SDLK_U, QL_U },
+					      { SDLK_V, QL_V },
+					      { SDLK_W, QL_W },
+					      { SDLK_Y, QL_Y },
+					      { SDLK_X, QL_X },
+					      { SDLK_Z, QL_Z },
 					      /* Map keypad */
 					      { SDLK_KP_DIVIDE, QL_SLASH },
 					      { SDLK_KP_MINUS, QL_MINUS },
@@ -1094,100 +1081,100 @@ static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_KP_PERIOD, QL_PERIOD },
 					      { 0x0, 0x0 } };
 
-void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
+void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 {
 	int i = 0;
 	//printf("Key %8x Scan %8x P: %i SH: %d ALT: %d CTRL: %d GRF: %d\n",
-	//	keysym->sym, keysym->scancode, pressed,
+	//	sym, scancode, pressed,
 	// 	sdl_shiftstate, sdl_altstate, sdl_controlstate,
 	//	sdl_grfstate); fflush(stdout);
 
 	/* Handle key pad entries that require shift - with the US keyboard */
-	if ((keysym->sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
+	if ((sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
 		queueKey(1 << 2, QL_8, 0);
 		return;
 	}
-	if ((keysym->sym == SDLK_KP_PLUS) && pressed && !sdlqlmap) {
+	if ((sym == SDLK_KP_PLUS) && pressed && !sdlqlmap) {
 		queueKey(1 << 2, QL_EQUAL, 0);
 		return;
 	}
 
 	/* Convert keypad entries that depend on num lock not being set */
-	if (((SDL_GetModState() & KMOD_NUM) != (KMOD_NUM)) && pressed) {
-		switch (keysym->sym) {
+	if (((SDL_GetModState() & SDL_KMOD_NUM) != (SDL_KMOD_NUM)) && pressed) {
+		switch (sym) {
 		case SDLK_KP_1:
-			keysym->sym = SDLK_END;
+			sym = SDLK_END;
 			break;
 		case SDLK_KP_2:
-			keysym->sym = SDLK_DOWN;
+			sym = SDLK_DOWN;
 			break;
 		case SDLK_KP_3:
-			keysym->sym = SDLK_PAGEDOWN;
+			sym = SDLK_PAGEDOWN;
 			break;
 		case SDLK_KP_4:
-			keysym->sym = SDLK_LEFT;
+			sym = SDLK_LEFT;
 			break;
 		case SDLK_KP_5:
 			return;
 		case SDLK_KP_6:
-			keysym->sym = SDLK_RIGHT;
+			sym = SDLK_RIGHT;
 			break;
 		case SDLK_KP_7:
-			keysym->sym = SDLK_HOME;
+			sym = SDLK_HOME;
 			break;
 		case SDLK_KP_8:
-			keysym->sym = SDLK_UP;
+			sym = SDLK_UP;
 			break;
 		case SDLK_KP_9:
-			keysym->sym = SDLK_PAGEUP;
+			sym = SDLK_PAGEUP;
 			break;
 		case SDLK_KP_0:
-			keysym->sym = SDLK_INSERT;
+			sym = SDLK_INSERT;
 			break;
 		case SDLK_KP_PERIOD:
-			keysym->sym = SDLK_DELETE;
+			sym = SDLK_DELETE;
 			break;
 		}
 	}
 
 	/* Handle extended cursor keys */
 	/* backspace maps to control left */
-	if ((keysym->sym == SDLK_BACKSPACE) && pressed) {
+	if ((sym == SDLK_BACKSPACE) && pressed) {
 		queueKey(1 << 1, 49, 0);
 		return;
 	}
 	/* Delete maps to control right */
-	if ((keysym->sym == SDLK_DELETE) && pressed) {
+	if ((sym == SDLK_DELETE) && pressed) {
 		queueKey(1 << 1, 52, 0);
 		return;
 	}
 	/* Home maps to alt left */
-	if ((keysym->sym == SDLK_HOME) && pressed) {
+	if ((sym == SDLK_HOME) && pressed) {
 		queueKey(1 << 0, 49, 0);
 		return;
 	}
 	/* End maps to alt right */
-	if ((keysym->sym == SDLK_END) && pressed) {
+	if ((sym == SDLK_END) && pressed) {
 		queueKey(1 << 0, 52, 0);
 		return;
 	}
 	/* Insert maps to shift F4 */
-	if ((keysym->sym == SDLK_INSERT) && pressed) {
+	if ((sym == SDLK_INSERT) && pressed) {
 		queueKey(1 << 2, 56, 0);
 		return;
 	}
 	/* Page Up maps to shift down */
-	if ((keysym->sym == SDLK_PAGEUP) && pressed) {
+	if ((sym == SDLK_PAGEUP) && pressed) {
 		queueKey(1 << 2, 50, 0);
 		return;
 	}
 	/* Page Down maps to shift down */
-	if ((keysym->sym == SDLK_PAGEDOWN) && pressed) {
+	if ((sym == SDLK_PAGEDOWN) && pressed) {
 		queueKey(1 << 2, 55, 0);
 		return;
 	}
 
-	switch (keysym->sym) {
+	switch (sym) {
 	case SDLK_LSHIFT:
 	case SDLK_RSHIFT:
 		sdl_shiftstate = pressed;
@@ -1213,11 +1200,11 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 
 #ifndef __WIN32__
 	// Convert X11 dead keys
-	if (keysym->sym == 0x40000000) {
-		keysym->sym = keysym->scancode;
+	if (sym == 0x40000000) {
+		sym = scancode;
 		// Avoid spanish deadkey clash with keycode for 4
-		if ((keyboard == KEY_ES) && (keysym->sym == SDLK_4)) {
-			keysym->sym = SDL_DEADKEY_2;
+		if ((keyboard == KEY_ES) && (sym == SDLK_4)) {
+			sym = SDL_DEADKEY_2;
 		}
 	}
 #endif
@@ -1225,19 +1212,19 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	// Action Spanish deadkeys not processed in MGE ROM
 	if ((keyboard == KEY_ES) && (!sdl_grfstate) && (!sdl_controlstate)) {
 		if (pressed) {
-			if (((keysym->sym == SDL_DEADKEY_1) &&
+			if (((sym == SDL_DEADKEY_1) &&
 			     sdl_shiftstate) ||
-			    ((keysym->sym == SDL_DEADKEY_2) &&
+			    ((sym == SDL_DEADKEY_2) &&
 			     sdl_shiftstate)) {
-				dkey.id = keysym->sym;
-				dkey.action = (keysym->sym == SDL_DEADKEY_2) ?
+				dkey.id = sym;
+				dkey.action = (sym == SDL_DEADKEY_2) ?
 						      KEY_ACTION_DIA :
 						      KEY_ACTION_CIR;
 				dkey.ignore = true;
 				return;
 			}
 		} else {
-			if ((dkey.id == keysym->sym) && dkey.ignore) {
+			if ((dkey.id == sym) && dkey.ignore) {
 				dkey.id = 0;
 				dkey.ignore = false;
 				return;
@@ -1250,32 +1237,32 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 		if (pressed) {
 			int replace_mod;
 
-			if ((keysym->sym == SDLK_a) ||
-			    (keysym->sym == SDLK_e) ||
-			    (keysym->sym == SDLK_i) ||
-			    (keysym->sym == SDLK_o) ||
-			    (keysym->sym == SDLK_u)) {
+			if ((sym == SDLK_A) ||
+			    (sym == SDLK_E) ||
+			    (sym == SDLK_I) ||
+			    (sym == SDLK_O) ||
+			    (sym == SDLK_U)) {
 				// determine what key combination to send
 				if (dkey.action == KEY_ACTION_CIR) {
-					switch (keysym->sym) {
-					case SDLK_a:
+					switch (sym) {
+					case SDLK_A:
 						replace_mod = 0x02;
 						dkey.replace_code = QL_PERIOD;
 						break;
-					case SDLK_e:
+					case SDLK_E:
 						replace_mod = 0x06;
 						dkey.replace_code = QL_L;
 						break;
-					case SDLK_i:
+					case SDLK_I:
 						replace_mod = 0x06;
 						dkey.replace_code = QL_P;
 						break;
-					case SDLK_o:
+					case SDLK_O:
 						replace_mod = 0x06;
 						dkey.replace_code =
 							QL_SEMICOLON;
 						break;
-					case SDLK_u:
+					case SDLK_U:
 						replace_mod = 0x02;
 						dkey.replace_code =
 							QL_SEMICOLON;
@@ -1283,25 +1270,25 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 					}
 				} else if (dkey.action == KEY_ACTION_DIA) {
 					replace_mod = 0x06;
-					switch (keysym->sym) {
-					case SDLK_a:
+					switch (sym) {
+					case SDLK_A:
 						dkey.replace_code =
 							sdl_shiftstate ?
 								QL_SLASH :
 								QL_R;
 						break;
-					case SDLK_e:
+					case SDLK_E:
 						dkey.replace_code = QL_S;
 						break;
-					case SDLK_i:
+					case SDLK_I:
 						dkey.replace_code = QL_M;
 						break;
-					case SDLK_o:
+					case SDLK_O:
 						dkey.replace_code =
 							sdl_shiftstate ? QL_D :
 									 QL_4;
 						break;
-					case SDLK_u:
+					case SDLK_U:
 						if (!sdl_shiftstate)
 							replace_mod = 0x04;
 						dkey.replace_code =
@@ -1313,7 +1300,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 				}
 
 				// Need to detect the release of the translated key
-				dkey.id = keysym->sym;
+				dkey.id = sym;
 				dkey.ignore = false;
 			} else {
 				// Need to send base key
@@ -1339,7 +1326,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	}
 
 	// Check for releasing a translated dead key
-	if (!pressed && (dkey.id == keysym->sym) && !dkey.ignore) {
+	if (!pressed && (dkey.id == sym) && !dkey.ignore) {
 		SDLQLKeyrowChg(dkey.replace_code, pressed);
 		dkey.replace_code = 0;
 		dkey.id = 0;
@@ -1357,7 +1344,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 				  sdl_shiftstate << 2 | sdl_grfstate << 4;
 #endif
 			while (sdlqlmap[i].sdl_kc != 0) {
-				if ((keysym->sym == sdlqlmap[i].sdl_kc) &&
+				if ((sym == sdlqlmap[i].sdl_kc) &&
 				    ((sdlqlmap[i].mod == MOD_WILD) ||
 				     (mod == sdlqlmap[i].mod))) {
 					int code = sdlqlmap[i].code;
@@ -1389,7 +1376,7 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	int sdl_altcomstate = (sdl_altstate | sdl_grfstate) ? 1 : 0;
 
 	while (sdlqlmap_default[i].sdl_kc != 0) {
-		if (keysym->sym == sdlqlmap_default[i].sdl_kc) {
+		if (sym == sdlqlmap_default[i].sdl_kc) {
 			int mod = sdl_altcomstate | sdl_controlstate << 1 |
 				  sdl_shiftstate << 2;
 
@@ -1460,7 +1447,7 @@ static void QLSDLProcessMouse(int *qlx, int *qly, int x, int y)
 	*qly = 0;
 	float x_ratio, y_ratio;
 
-	if (SDL_GetWindowFlags(ql_window) & SDL_WINDOW_ALLOW_HIGHDPI) {
+	if (SDL_GetWindowFlags(ql_window) & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
 		x *= 2;
 		y *= 2;
 	}
@@ -1567,61 +1554,54 @@ void QLSDLProcessEvents(void)
 		}
 #endif
 	switch (event.type) {
-	case SDL_KEYDOWN:
-		QLSDProcessKey(&event.key.keysym, 1);
+	case SDL_EVENT_KEY_DOWN:
+		QLSDProcessKey(event.key.key, event.key.scancode, 1);
 		break;
-	case SDL_KEYUP:
-		QLSDProcessKey(&event.key.keysym, 0);
+	case SDL_EVENT_KEY_UP:
+		QLSDProcessKey(event.key.key, event.key.scancode, 0);
 		break;
 #ifndef SDL_JOYSTICK_DISABLED
-	case SDL_JOYAXISMOTION:
+	case SDL_EVENT_JOYSTICK_AXIS_MOTION:
 		QLProcessJoystickAxis(event.jaxis.which, event.jaxis.axis,
 				      event.jaxis.value);
 
 		break;
-	case SDL_JOYBUTTONDOWN:
+	case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
 		QLProcessJoystickButton(event.jbutton.which,
 					event.jbutton.button, 1);
 		break;
-	case SDL_JOYBUTTONUP:
+	case SDL_EVENT_JOYSTICK_BUTTON_UP:
 		QLProcessJoystickButton(event.jbutton.which,
 					event.jbutton.button, 0);
 		break;
 #endif
-	case SDL_QUIT:
+	case SDL_EVENT_QUIT:
 		return;
 		break;
-	case SDL_MOUSEMOTION:
-		QLProcessMouse(event.motion.x, event.motion.y);
+	case SDL_EVENT_MOUSE_MOTION:
+		QLProcessMouse((int)event.motion.x, (int)event.motion.y);
 		//inside=1;
 		break;
-	case SDL_MOUSEBUTTONDOWN:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		QLButton(event.button.button, 1);
 		break;
-	case SDL_MOUSEBUTTONUP:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
 		QLButton(event.button.button, 0);
 		break;
-	case SDL_WINDOWEVENT:
-		if (event.window.windowID == ql_windowid) {
-			switch (event.window.event) {
-			case SDL_WINDOWEVENT_ENTER:
-				SDL_ShowCursor(SDL_DISABLE);
-				break;
-			case SDL_WINDOWEVENT_LEAVE:
-				SDL_ShowCursor(SDL_ENABLE);
-				break;
-			case SDL_WINDOWEVENT_RESIZED:
-				QLSDLUpdateScreen();
-				break;
-			case SDL_WINDOWEVENT_SIZE_CHANGED:
-				break;
-			case SDL_WINDOWEVENT_EXPOSED:
-				QLSDLUpdateScreen();
-				break;
-			}
-		}
+	case SDL_EVENT_WINDOW_MOUSE_ENTER:
+		if (event.window.windowID == ql_windowid)
+			SDL_HideCursor();
 		break;
-	case SDL_USEREVENT:
+	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+		if (event.window.windowID == ql_windowid)
+			SDL_ShowCursor();
+		break;
+	case SDL_EVENT_WINDOW_RESIZED:
+	case SDL_EVENT_WINDOW_EXPOSED:
+		if (event.window.windowID == ql_windowid)
+			QLSDLUpdateScreen();
+		break;
+	case SDL_EVENT_USER:
 		switch (event.user.code) {
 		case USER_CODE_SCREENREFRESH:
 			QLSDLUpdateScreen();
@@ -1645,7 +1625,7 @@ void QLSDLExit(void)
 #ifndef SDL_JOYSTICK_DISABLED
 	for (int i = 0; i < 2; ++i) {
 		if (joy[i].sdl_id)
-			SDL_JoystickClose(joy[i].sdl_id);
+			SDL_CloseJoystick(joy[i].sdl_id);
 	}
 #endif
 
