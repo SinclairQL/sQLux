@@ -96,48 +96,49 @@ include_directories(
   args/src/
   inih/
   GPL2/
+  uqlx/
   ${SDL2_INCLUDE_DIRS}
   ${SDL2_GPU_INCLUDE_DIRS})
 
 add_executable(
   sqlux
-  Init.c
-  QDisk.c
-  QL_basext.c
-  QL_boot.c
-  QL_cconv.c
-  QL_config.c
-  QL_driver.c
-  QL_files.c
-  QL_hardware.c
-  QL_poll.c
-  QL_screen.c
-  QL_serial.c
-  QL_sound.c
-  QLip.c
-  QLserio.c
-  QLtraps.c
-  QVFS.c
+  uqlx/Init.c
+  uqlx/QDisk.c
+  uqlx/QL_basext.c
+  uqlx/QL_boot.c
+  uqlx/QL_cconv.c
+  uqlx/QL_config.c
+  uqlx/QL_driver.c
+  uqlx/QL_files.c
+  uqlx/QL_hardware.c
+  uqlx/QL_poll.c
+  uqlx/QL_screen.c
+  uqlx/QL_serial.c
+  uqlx/QL_sound.c
+  uqlx/QLip.c
+  uqlx/QLserio.c
+  uqlx/QLtraps.c
+  uqlx/QVFS.c
   src/SDL2screen.c
   src/GPUshaders.c
-  Xscreen.c
-  dummies.c
-  general.c
-  iexl_general.c
-  instructions_ao.c
-  instructions_pz.c
-  memaccess.c
-  pty.c
-  qmtrap.c
-  trace.c
-  unixstuff.c
-  util.c
-  uxfile.c
-  xc68.c
-  xcodes.c
-  xqlmouse.c
-  sqlux_bdi.c
-  mmodes.c
+  uqlx/Xscreen.c
+  uqlx/dummies.c
+  uqlx/general.c
+  uqlx/iexl_general.c
+  uqlx/instructions_ao.c
+  uqlx/instructions_pz.c
+  uqlx/memaccess.c
+  uqlx/pty.c
+  uqlx/qmtrap.c
+  uqlx/trace.c
+  uqlx/unixstuff.c
+  uqlx/util.c
+  uqlx/uxfile.c
+  uqlx/xc68.c
+  uqlx/xcodes.c
+  uqlx/xqlmouse.c
+  uqlx/sqlux_bdi.c
+  uqlx/mmodes.c
   ${CMAKE_CURRENT_BINARY_DIR}/version.c
   src/emulator_init.c
   src/sqlux_windows.c
