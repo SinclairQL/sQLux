@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-option(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
-option(GPL2_CODE "Set to enable GPL2 code inclusion" OFF)
 option(LTO "Use LTO in compile" OFF)
 
 project(sqlux C)
@@ -68,26 +66,9 @@ else()
   find_package(SDL2 REQUIRED)
 endif()
 
-if(SUPPORT_SHADERS)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(SDL2_GPU_INCLUDE_DIRS
-      "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/include")
-    set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu-MINGW/lib")
-    set(SDL2_GPU_LIBRARIES "-lSDL2_gpu_s -lopengl32")
-  elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(SDL2_GPU_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/include")
-    set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/lib")
-    set(SDL2_GPU_LIBRARIES "-lSDL2_gpu -framework OpenGL")
-  else()
-    set(SDL2_GPU_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/include")
-    set(SDL2_GPU_LIB_DIRS "-L${CMAKE_CURRENT_BINARY_DIR}/SDL_gpu/lib")
-    set(SDL2_GPU_LIBRARIES "-lSDL2_gpu -lGL -lm")
-  endif()
-else()
-  set(SDL2_GPU_LIBRARIES "-lm")
-  set(SDL2_GPU_INCLUDE_DIRS "")
-  set(SDL2_GPU_LIB_DIRS "")
-endif()
+set(SDL2_GPU_LIBRARIES "-lm")
+set(SDL2_GPU_INCLUDE_DIRS "")
+set(SDL2_GPU_LIB_DIRS "")
 
 include_directories(
   ${CMAKE_CURRENT_LIST_DIR}
@@ -120,7 +101,6 @@ add_executable(
   uqlx/QLtraps.c
   uqlx/QVFS.c
   src/SDL2screen.c
-  src/GPUshaders.c
   uqlx/Xscreen.c
   uqlx/dummies.c
   uqlx/general.c
@@ -164,20 +144,6 @@ if(GPL2_CODE)
   target_sources(sqlux PRIVATE GPL2/w5100.c GPL2/w5100_socket.c)
 endif()
 
-if(SUPPORT_SHADERS)
-  message("Enabling shader support")
-  target_compile_definitions(sqlux PUBLIC ENABLE_SHADERS)
-  set(INSTALL_LIBRARY "FALSE")
-  set(BUILD_DEMOS "FALSE")
-  set(BUILD_SHARED "FALSE")
-  set(BUILD_STATIC "TRUE")
-  set(DISABLE_GLES_1 "TRUE")
-  add_subdirectory(sdl-gpu)
-  target_compile_options(SDL_gpu PRIVATE "-w")
-  target_compile_options(SDL_gpu PRIVATE "-Wno-incompatible-pointer-types")
-  add_dependencies(sqlux SDL_gpu)
-endif()
-
 if(SDL2_LIBRARIES)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     target_link_libraries(
@@ -216,8 +182,5 @@ set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
 if(LTO)
   set_property(TARGET sqlux PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
-
-# Ensure that a bare cmake will always exclude shaders
-unset(SUPPORT_SHADERS CACHE)
 
 install(TARGETS sqlux DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/)

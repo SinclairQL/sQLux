@@ -2,7 +2,7 @@ TARGETS = build/sqlux build/compile_commands.json
 TARGETS_MINGW = build/sqlux.exe
 
 ALL : ${TARGETS} 
-	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=yes -DSUPPORT_SHADERS=yes -B build
+	cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=yes -B build
 	cmake --build build -j 8
 
 mingw32 : ${TARGETS_MINGW}

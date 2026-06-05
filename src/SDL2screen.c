@@ -4,7 +4,6 @@
  * SPDX: Zlib
  */
 
-#include "GPUshaders.h" // Needs to be before math.h
 #include <inttypes.h>
 #include <math.h>
 #include <SDL.h>
@@ -40,10 +39,9 @@ static char sdl_win_name[128];
 bool ql_fullscreen = false;
 double ql_screen_ratio = 1.0;
 
-extern volatile bool is_display_blank;		// Boolean to handle bit 1 of port $18063
+extern volatile bool is_display_blank; // Boolean to handle bit 1 of port $18063
 
 SDL_atomic_t doPoll;
-bool shaders_selected = false;
 
 SDL_sem *sem50Hz = NULL;
 
@@ -352,66 +350,65 @@ static int QLConvertWhichToIndex(Sint32 which);
 static int active_metronome = 1;
 extern int schedCount;
 
-int Pulse50Thread(void *ptr) {
-    Uint64 frequency = SDL_GetPerformanceFrequency();
-    Uint64 ticks_por_frame = frequency / 50; // Exactamente 20ms
-    Uint64 next_trigger = SDL_GetPerformanceCounter();
+int Pulse50Thread(void *ptr)
+{
+	Uint64 frequency = SDL_GetPerformanceFrequency();
+	Uint64 ticks_por_frame = frequency / 50; // Exactamente 20ms
+	Uint64 next_trigger = SDL_GetPerformanceCounter();
 
-    while (active_metronome) {
-        Uint64 Now = SDL_GetPerformanceCounter();
+	while (active_metronome) {
+		Uint64 Now = SDL_GetPerformanceCounter();
 
-        	// FRAME TRIGGER?
-        if (Now >= next_trigger) {
-            
-            SDL_AtomicSet(&doPoll, 1);
-            schedCount = 0;
+		// FRAME TRIGGER?
+		if (Now >= next_trigger) {
+			SDL_AtomicSet(&doPoll, 1);
+			schedCount = 0;
 
-            if (sem50Hz) {
-                if (!SDL_SemValue(sem50Hz)) {
-                    SDL_SemPost(sem50Hz);
-                }
-            }
+			if (sem50Hz) {
+				if (!SDL_SemValue(sem50Hz)) {
+					SDL_SemPost(sem50Hz);
+				}
+			}
 
-            // Screen Refresh
-            if (renderer_idle) {
-                SDL_Event event;
-                event.user.type = SDL_USEREVENT;
-                event.user.code = USER_CODE_SCREENREFRESH;
-                event.user.data1 = NULL;
-                event.user.data2 = NULL;
-                event.type = SDL_USEREVENT;
-                SDL_PushEvent(&event);
-            }
+			// Screen Refresh
+			if (renderer_idle) {
+				SDL_Event event;
+				event.user.type = SDL_USEREVENT;
+				event.user.code = USER_CODE_SCREENREFRESH;
+				event.user.data1 = NULL;
+				event.user.data2 = NULL;
+				event.type = SDL_USEREVENT;
+				SDL_PushEvent(&event);
+			}
 
 			// PREPARE NEXT FRAME (DRIFT CORRECTION)
 			// We add 20ms to the PREVIOUS target time.
 			// This automatically corrects 49Hz to a rock-solid 50Hz.
-            next_trigger += ticks_por_frame;
+			next_trigger += ticks_por_frame;
 
-            // Watchdog protection (reset if lag exceeds 1 sec)
-            if (Now > next_trigger + frequency) {
-                next_trigger = Now + ticks_por_frame;
-            }
-        }
+			// Watchdog protection (reset if lag exceeds 1 sec)
+			if (Now > next_trigger + frequency) {
+				next_trigger = Now + ticks_por_frame;
+			}
+		}
 
-        Now = SDL_GetPerformanceCounter();
-        if (Now < next_trigger) {
-            Uint64 remaining_ticks = next_trigger - Now;
-            double ms_remaining = ((double)remaining_ticks * 1000.0) / frequency;
+		Now = SDL_GetPerformanceCounter();
+		if (Now < next_trigger) {
+			Uint64 remaining_ticks = next_trigger - Now;
+			double ms_remaining =
+				((double)remaining_ticks * 1000.0) / frequency;
 
-            // If more than 1.5ms remain, sleep to save CPU cycles
-            if (ms_remaining > 1.5) {
-                SDL_Delay((Uint32)(ms_remaining - 1.0));
-            } else {
-                // If remaining time is very short, use busy-wait for maximum precision
-                SDL_Delay(0); 
-            }
-        }
-    }
-    return 0;
+			// If more than 1.5ms remain, sleep to save CPU cycles
+			if (ms_remaining > 1.5) {
+				SDL_Delay((Uint32)(ms_remaining - 1.0));
+			} else {
+				// If remaining time is very short, use busy-wait for maximum precision
+				SDL_Delay(0);
+			}
+		}
+	}
+	return 0;
 }
-
-
 
 void QLSDLScreen(void)
 {
@@ -420,7 +417,7 @@ void QLSDLScreen(void)
 	int i, w, h;
 	double ay;
 	const char *sysrom = emulatorOptionString("sysrom");
-	const char *win_size, *shader_str;
+	const char *win_size;
 
 	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
 
@@ -487,24 +484,8 @@ void QLSDLScreen(void)
 		sdl_window_mode = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
-	int shader = 0;
-#ifdef ENABLE_SHADERS
-	shader = emulatorOptionInt("shader");
-	if ((shader == 1) || (shader == 2)) {
-		shaders_selected = true;
-	}
-#endif
-
-	bool created = false;
-	if (shaders_selected) {
-		shader_str = emulatorOptionString("shader_file");
-		created = QLGPUCreateDisplay(w, h, (int)lrint(ay), &ql_windowid,
-					     sdl_win_name, sdl_window_mode,
-					     shader, shader_str);
-	} else {
-		created = QLSDLCreateDisplay(w, h, (int)lrint(ay), &ql_windowid,
-					     sdl_win_name, sdl_window_mode);
-	}
+	bool created = QLSDLCreateDisplay(w, h, (int)lrint(ay), &ql_windowid,
+					  sdl_win_name, sdl_window_mode);
 
 	if (!created) {
 		printf("Window creation failed\n");
@@ -709,16 +690,6 @@ static void QLSDLUpdatePixelBuffer()
 	}
 }
 
-// Needed for the shader code
-void QLSDLWritePixels(uint32_t *pixelPtr32)
-{
-	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
-	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
-
-	emulatorUpdatePixelBufferQL(pixelPtr32, emulatorScreenPtr,
-				    emulatorScreenPtrEnd);
-}
-
 void QLSDLRenderScreen(void)
 {
 	void *texture_buffer;
@@ -730,8 +701,8 @@ void QLSDLRenderScreen(void)
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
 	if (!is_display_blank) {
-		SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL,
-				 SDL_FLIP_NONE);
+		SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0,
+				 NULL, SDL_FLIP_NONE);
 	}
 
 	SDL_RenderPresent(ql_renderer);
@@ -743,24 +714,15 @@ void SDLQLFullScreen(void)
 
 	ql_fullscreen = !ql_fullscreen;
 
-	if (shaders_selected) {
-		QLGPUSetFullscreen();
-	} else {
-		SDL_SetWindowFullscreen(
-			ql_window,
-			ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-	}
+	SDL_SetWindowFullscreen(
+		ql_window, ql_fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 static void QLSDLUpdateScreen()
 {
 	renderer_idle = false;
-	if (shaders_selected) {
-		QLGPUUpdateDisplay();
-	} else {
-		QLSDLUpdatePixelBuffer();
-		QLSDLRenderScreen();
-	}
+	QLSDLUpdatePixelBuffer();
+	QLSDLRenderScreen();
 	renderer_idle = true;
 }
 
@@ -1532,10 +1494,7 @@ static void QLProcessMouse(int x, int y)
 {
 	int qlx = 0, qly = 0;
 
-	if (shaders_selected)
-		QLGPUProcessMouse(&qlx, &qly, x, y);
-	else
-		QLSDLProcessMouse(&qlx, &qly, x, y);
+	QLSDLProcessMouse(&qlx, &qly, x, y);
 
 	QLMovePointer(qlx, qly);
 }
@@ -1652,9 +1611,6 @@ void QLSDLProcessEvents(void)
 				SDL_ShowCursor(SDL_ENABLE);
 				break;
 			case SDL_WINDOWEVENT_RESIZED:
-				if (shaders_selected)
-					QLGPUSetSize(event.window.data1,
-						     event.window.data2);
 				QLSDLUpdateScreen();
 				break;
 			case SDL_WINDOWEVENT_SIZE_CHANGED:
@@ -1693,9 +1649,5 @@ void QLSDLExit(void)
 	}
 #endif
 
-
 	active_metronome = 0; // <-- Detiene el bucle del hilo suavemente
-	if (shaders_selected) {
-		QLGPUClean();
-	}
 }
