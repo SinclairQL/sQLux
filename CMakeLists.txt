@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.30)
 
-option(LTO "Use LTO in compile" OFF)
+include(FetchContent)
+include(CheckIPOSupported)
 
 project(sqlux C)
 
 message(STATUS "Using toolchain file: ${CMAKE_TOOLCHAIN_FILE}.")
 
-include(FetchContent)
 FetchContent_Declare(
   args
   GIT_REPOSITORY https://github.com/dmulholl/args.git
@@ -26,41 +26,61 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(inih)
 
-set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} -DLINUX -DUSE_IOSZ -DDO_GRAB \
-	-DNEWSERIAL -DSH_MEM -DXSCREEN \
-    -DEVM_SCR -D_GNU_SOURCE -DMOUSE -DQVFS -Wno-incompatible-pointer-types")
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+
+find_package(Git)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  find_package(SDL3)
+endif()
+
+add_compile_options(
+  -DLINUX
+  -DUSE_IOSZ
+  -DDO_GRAB
+  -DNEWSERIAL
+  -DSH_MEM
+  -DXSCREEN
+  -DEVM_SCR
+  -D_GNU_SOURCE
+  -DMOUSE
+  -DQVFS
+  -Wno-incompatible-pointer-types
+)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY"
+  add_compile_options(
+    -Wno-implicit-function-declaration
+    -DIPDEV
+    -DSERIAL
+    -DUX_WAIT
+    -DNEWPTY
   )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY")
+  add_compile_options(
+    -DIPDEV
+    -DSERIAL
+    -DUX_WAIT
+    -DNEWPTY
+  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -DIPDEV -DNO_LOCK -DNO_FORK -D_POSIX -mwindows")
+  add_compile_options(
+    -DIPDEV
+    -DNO_LOCK
+    -DNO_FORK
+    -D_POSIX
+    -mwindows
+  )
 endif()
 
+# Use address sanitizer in Debug mode
 if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -gstabs")
-  else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Og -ggdb -fsanitize=address")
-    set(CMAKE_EXE_LINKER_FLAGS
-      "${CMAKE_EXE_LINKER_FLAGS} -Ogdb -ggdb -fsanitize=address")
-  endif()
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
-else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
+  add_compile_options(-fsanitize=address)
 endif()
 
-find_package(Git)
 add_custom_target(
   SubmarineGitVersion
   COMMAND
@@ -68,26 +88,36 @@ add_custom_target(
   INPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/version.c.in -D
   OUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.c -D
   CHANGELOG_FILE=${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md -P
-  ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake)
+  ${CMAKE_CURRENT_SOURCE_DIR}/generate_version.cmake
+)
+
+add_custom_target(
+  GenerateDisk
+  COMMAND
+  qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win -fdd
+  COMMAND
+  qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win -w ${CMAKE_SOURCE_DIR}/examples/mdv1/BOOT
+)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  set(USE_FLAGS "-pthread -s USE_SDL=3 -s USE_PTHREADS=1")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 ${USE_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} -s MAXIMUM_MEMORY=1GB -s ALLOW_MEMORY_GROWTH=1 -s PTHREAD_POOL_SIZE=2 -lidbfs.js --preload-file ${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini --preload-file ${CMAKE_SOURCE_DIR}/roms/MIN198.rom@./roms/MIN198.rom --preload-file ${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom --preload-file default_win1.win"
+  add_compile_options(
+    -sUSE_SDL=3
   )
-  execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win
-    -fdd)
-  file(GLOB mdv1_files "${CMAKE_SOURCE_DIR}/mdv1/*")
-  execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win
-    -w ${mdv1_files})
+  add_link_options(
+    -sMAXIMUM_MEMORY=2GB
+    -sALLOW_MEMORY_GROWTH=1
+    -sPTHREAD_POOL_SIZE=10
+    -sUSE_SDL=3
+    -lidbfs.js
+    --preload-file=${CMAKE_SOURCE_DIR}/sqlux_wasm.ini@./sqlux.ini
+    --preload-file=${CMAKE_SOURCE_DIR}/roms/Minerva_1.98a1.bin@./roms/Minerva_1.98a1.bin
+    --preload-file=${CMAKE_SOURCE_DIR}/roms/TK232.rom@./roms/TK232.rom
+    --preload-file=default_win1.win@./local/win1.win
+  )
   configure_file(sqlux_wrapper_sample.html index.html COPYONLY)
-else()
-  find_package(SDL3 REQUIRED)
 endif()
 
 include_directories(
-  ${CMAKE_CURRENT_LIST_DIR}
   include/
   ${sds_SOURCE_DIR}/
   ${args_SOURCE_DIR}/src/
@@ -97,6 +127,16 @@ include_directories(
 
 add_executable(
   sqlux
+  ${CMAKE_CURRENT_BINARY_DIR}/version.c
+  ${args_SOURCE_DIR}/src/args.c
+  ${inih_SOURCE_DIR}/ini.c
+  ${sds_SOURCE_DIR}/sds.c
+  src/SDL3main.c
+  src/SDL3screen.c
+  src/emulator_init.c
+  src/emulator_options.c
+  src/sqlux_hexdump.c
+  src/sqlux_windows.c
   uqlx/Init.c
   uqlx/QDisk.c
   uqlx/QL_basext.c
@@ -114,7 +154,6 @@ add_executable(
   uqlx/QLserio.c
   uqlx/QLtraps.c
   uqlx/QVFS.c
-  src/SDL3screen.c
   uqlx/Xscreen.c
   uqlx/dummies.c
   uqlx/general.c
@@ -122,8 +161,10 @@ add_executable(
   uqlx/instructions_ao.c
   uqlx/instructions_pz.c
   uqlx/memaccess.c
+  uqlx/mmodes.c
   uqlx/pty.c
   uqlx/qmtrap.c
+  uqlx/sqlux_bdi.c
   uqlx/trace.c
   uqlx/unixstuff.c
   uqlx/util.c
@@ -131,60 +172,43 @@ add_executable(
   uqlx/xc68.c
   uqlx/xcodes.c
   uqlx/xqlmouse.c
-  uqlx/sqlux_bdi.c
-  uqlx/mmodes.c
-  ${CMAKE_CURRENT_BINARY_DIR}/version.c
-  src/emulator_init.c
-  src/sqlux_windows.c
-  src/sqlux_hexdump.c
-  src/SDL3main.c
-  src/emulator_options.c
-  ${sds_SOURCE_DIR}/sds.c
-  ${args_SOURCE_DIR}/src/args.c
-  ${inih_SOURCE_DIR}/ini.c)
+)
 
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c
   PROPERTIES GENERATED TRUE)
 
 add_dependencies(sqlux SubmarineGitVersion)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  add_dependencies(sqlux GenerateDisk)
+endif()
+
+if(ipo_supported)
+  # LTO breaks wasm build
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+    message(STATUS "IPO / LTO enabled")
+    set_property(TARGET sqlux PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  else()
+    message(STATUS "IPO / LTO disabled on Emscripten")
+  endif()
+else()
+  message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_sources(sqlux PRIVATE sQLuxLogo.rc)
 endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   target_sources(sqlux PRIVATE src/wasm_support.c)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(
-    sqlux
-    -Wl,-Bstatic
-    -L/usr/local/${TOOLCHAIN_PREFIX}/lib
-    -L.
-    -lmingw32
-    -lSDL3
-    -lm
-    -lwsock32
-    -lwinmm
-    -lsetupapi
-    -limm32
-    -lversion
-    -static-libgcc
-    -static-libstdc++)
+  target_link_libraries(sqlux SDL3::SDL3-static libssp.a libwsock32.a libwinpthread.a)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-  target_link_libraries(sqlux -lm)
-else()
-  target_link_libraries(sqlux SDL3::SDL3 -lm)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(sqlux -Wl,-Bstatic -lpthread -lssp -Wl,-Bdynamic)
+else ()
+  target_link_libraries(sqlux SDL3::SDL3 m)
 endif()
 
 set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
-
-if(LTO)
-  set_property(TARGET sqlux PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 install(TARGETS sqlux DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/)
