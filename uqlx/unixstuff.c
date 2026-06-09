@@ -97,7 +97,7 @@ void btrap3(void);
 extern void SchedulerCmd(void);
 extern void KbdCmd(void);
 
-extern void  ProcessInterrupts(void); 		// Included because it is now used here
+extern void ProcessInterrupts(void); // Included because it is now used here
 #ifndef XAW
 extern void process_events(void);
 #endif
@@ -355,68 +355,69 @@ void SetHome()
 #endif
 }
 
-int speed = 0;
+int uqlxSpeed = 0;
+static int loops_per_frame = 0;
 
-int QLRun(void *data)
+int QLRun()
 {
-    speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
-    
-    // Turbo/Speed variables
-    int loops_per_frame = 0;
+	// Turbo/Speed variables
 
-exec:
+	// Either in STOP state or time to sync frame (Normal Speed mode)
+	if (stopped || (sem50Hz && uqlxSpeed && loops_per_frame >= uqlxSpeed)) {
+		// Exactly when the SDL Timer triggers (50Hz stable).
+		if (sem50Hz) {
+			SDL_WaitSemaphore(sem50Hz);
 
-    // Either in STOP state or time to sync frame (Normal Speed mode)
-    if (stopped || (sem50Hz && speed && loops_per_frame >= speed)) {
-        
-        // Exactly when the SDL Timer triggers (50Hz stable).
-        if (sem50Hz) {
-            SDL_WaitSemaphore(sem50Hz);
-            
-            // Safety drain:
-            while (SDL_TryWaitSemaphore(sem50Hz)) {
-                // Consume accumulated ticks
-            }
-        } else {
-            // Fallback in case the semaphore is missing (should not happen)
-            SDL_Delay(20);
-        }
+			// Safety drain:
+			while (SDL_TryWaitSemaphore(sem50Hz)) {
+				// Consume accumulated ticks
+			}
+		} else {
+			// Fallback in case the semaphore is missing (should not happen)
+			SDL_Delay(20);
+		}
 
-        // Reset instruction counter
-        loops_per_frame = 0;
+		// Reset instruction counter
+		loops_per_frame = 0;
 
-        // IMPORTANT: This fixes the STOP bug.
-		// Upon exiting the Wait, we guarantee that interrupts are processed 
+		// IMPORTANT: This fixes the STOP bug.
+		// Upon exiting the Wait, we guarantee that interrupts are processed
 		// IMMEDIATELY, which will wake the QL from the 'stopped' state.
-			
-			dosignal();
-        	ProcessInterrupts();
-        	
-    }
-    // Normal execution
-    else {
-        if (!speed) {
-            // Turbo mode (w/o wait)
-            ExecuteChunk(3000); 
-        } else {
-            // Normal Mode
-            ExecuteChunk(300);
-            loops_per_frame++;
-        }
-    }
+
+		dosignal();
+		ProcessInterrupts();
+
+	}
+	// Normal execution
+	else {
+		if (!uqlxSpeed) {
+			// Turbo mode (w/o wait)
+			ExecuteChunk(3000);
+		} else {
+			// Normal Mode
+			ExecuteChunk(300);
+			loops_per_frame++;
+		}
+	}
 
 #ifdef UX_WAIT
-    if (run_reaper) qm_reaper();
+	if (run_reaper)
+		qm_reaper();
 #endif
 
 #ifdef VTIME
-    // Legacy internal timers
-    if ((qlttc--) <= 0) { qlttc = 3750; qltime++; }
-    if ((qitc--) < 0) { qitc = 3; doPoll = 1; poll_req++; }
+#error unused
+	// Legacy internal timers
+	if ((qlttc--) <= 0) {
+		qlttc = 3750;
+		qltime++;
+	}
+	if ((qitc--) < 0) {
+		qitc = 3;
+		doPoll = 1;
+		poll_req++;
+	}
 #endif
 
-    if (!QLdone)
-    	goto exec;
-
-    return 0;
+	return 0;
 }

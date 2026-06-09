@@ -684,7 +684,7 @@ bas_err EMU_speed()
 	if (bas_getln(&n) < 0)
 		return QERR_BP;
 
-	speed = n;
+	uqlxSpeed = n;
 
 	return 0;
 }

@@ -12,7 +12,7 @@
 
 int QLSDLScreen(void);
 void QLSDLRenderScreen(void);
-void QLSDLProcessEvents(void);
+int QLSDLProcessEvents(SDL_Event *event);
 void QLSDLExit(void);
 void QLSDLUpdateScreenWord(uint32_t, uint16_t);
 void QLSDLUpdateScreenLong(uint32_t, uint32_t);

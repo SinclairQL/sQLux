@@ -1489,85 +1489,73 @@ static void QLProcessJoystickButton(Sint32 which, Sint16 button, Sint16 pressed)
 }
 #endif
 
-void QLSDLProcessEvents(void)
+int QLSDLProcessEvents(SDL_Event *event)
 {
-	SDL_Event event;
 	int keypressed;
 	int w, h;
 
-#if __EMSCRIPTEN__
-	if (!SDL_PollEvent(&event)) {
-		return;
-	}
-#else
-	while (1) {
-		if (!SDL_PollEvent(&event)) {
-			continue;
-		}
-#endif
-	switch (event.type) {
+	switch (event->type) {
 	case SDL_EVENT_KEY_DOWN:
-		QLSDProcessKey(event.key.key, event.key.scancode, 1);
+		QLSDProcessKey(event->key.key, event->key.scancode, 1);
 		break;
 	case SDL_EVENT_KEY_UP:
-		QLSDProcessKey(event.key.key, event.key.scancode, 0);
+		QLSDProcessKey(event->key.key, event->key.scancode, 0);
 		break;
 #ifndef SDL_JOYSTICK_DISABLED
 	case SDL_EVENT_JOYSTICK_AXIS_MOTION:
-		QLProcessJoystickAxis(event.jaxis.which, event.jaxis.axis,
-				      event.jaxis.value);
+		QLProcessJoystickAxis(event->jaxis.which, event->jaxis.axis,
+				      event->jaxis.value);
 
 		break;
 	case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
-		QLProcessJoystickButton(event.jbutton.which,
-					event.jbutton.button, 1);
+		QLProcessJoystickButton(event->jbutton.which,
+					event->jbutton.button, 1);
 		break;
 	case SDL_EVENT_JOYSTICK_BUTTON_UP:
-		QLProcessJoystickButton(event.jbutton.which,
-					event.jbutton.button, 0);
+		QLProcessJoystickButton(event->jbutton.which,
+					event->jbutton.button, 0);
 		break;
 #endif
 	case SDL_EVENT_QUIT:
-		return;
+		return 0;
 		break;
 	case SDL_EVENT_MOUSE_MOTION:
-		QLProcessMouse((int)event.motion.x, (int)event.motion.y);
+		QLProcessMouse((int)event->motion.x, (int)event->motion.y);
 		//inside=1;
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-		QLButton(event.button.button, 1);
+		QLButton(event->button.button, 1);
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-		QLButton(event.button.button, 0);
+		QLButton(event->button.button, 0);
 		break;
 	case SDL_EVENT_WINDOW_MOUSE_ENTER:
-		if (event.window.windowID == ql_windowid)
+		if (event->window.windowID == ql_windowid)
 			SDL_HideCursor();
 		break;
 	case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-		if (event.window.windowID == ql_windowid)
+		if (event->window.windowID == ql_windowid)
 			SDL_ShowCursor();
 		break;
 	case SDL_EVENT_WINDOW_RESIZED:
 	case SDL_EVENT_WINDOW_EXPOSED:
-		if (event.window.windowID == ql_windowid)
+		if (event->window.windowID == ql_windowid)
 			QLSDLUpdateScreen();
 		break;
 	case SDL_EVENT_USER:
-		switch (event.user.code) {
+		switch (event->user.code) {
 		case USER_CODE_SCREENREFRESH:
 			QLSDLUpdateScreen();
 			break;
 		case USER_CODE_EMUEXIT:
-			return;
+			return 0;
 		}
 		break;
 	default:
 		break;
 	}
-#if !__EMSCRIPTEN__
-}
-#endif
+
+	return 1;
 }
 
 void QLSDLExit(void)
