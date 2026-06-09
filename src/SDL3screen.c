@@ -502,6 +502,10 @@ int QLSDLScreen(void)
 
 	QLSDLCreatePalette(ql_screen->format);
 	QLSDLCreateIcon(ql_window);
+	QLSDLInitJoystick();
+
+	SDL_SetAtomicInt(&doPoll, 0);
+	sem50Hz = SDL_CreateSemaphore(0);
 	SDL_CreateThread(Pulse50Thread, "MetronomoQL", NULL);
 
 	return 0;
