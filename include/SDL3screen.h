@@ -10,7 +10,7 @@
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 
-void QLSDLScreen(void);
+int QLSDLScreen(void);
 void QLSDLRenderScreen(void);
 void QLSDLProcessEvents(void);
 void QLSDLExit(void);
@@ -29,8 +29,7 @@ extern SDL_Semaphore *sem50Hz;
 extern bool ql_fullscreen;
 extern double ql_screen_ratio;
 
-
-#define USER_CODE_SCREENREFRESH     0
-#define USER_CODE_EMUEXIT           1
+#define USER_CODE_SCREENREFRESH 0
+#define USER_CODE_EMUEXIT 1
 
 #endif

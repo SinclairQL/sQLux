@@ -81,7 +81,11 @@ void emu_loop()
 #endif
 	if (boot_file_ready && !init_done) {
 		emulatorInit();
-		QLSDLScreen();
+		if (QLSDLScreen()) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+				     "failure to create screen");
+			exit(1);
+		}
 		initSound(emulatorOptionInt("sound"));
 		emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
 		init_done = 1;

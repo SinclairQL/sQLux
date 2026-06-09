@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "debug.h"
+#include "emulator_logging.h"
 #include "emulator_options.h"
 #include "QL_hardware.h"
 #include "QL68000.h"
@@ -317,6 +318,18 @@ static const struct {
 	"\000\000\377\000\000\000\377\000\000\000\377",
 };
 
+struct aspect {
+	int x;
+	int y;
+};
+
+const struct aspect aspects[] = {
+	{ 1024, 512 }, // mode 4 square pixels
+	{ 1024, 768 }, // approx aspect for QL with integer scaling
+	{ 1024, 694 }, // approx aspect for QL with non integer scaling
+	{ 1024, 1024 }, // mode 8 square pixels
+};
+
 #ifndef SDL_JOYSTICK_DISABLED
 typedef struct {
 	SDL_Joystick *sdl_id; // Assigned SDL handle
@@ -332,7 +345,8 @@ static joy_data joy[2] = { { NULL, -1, 0, 1 }, { NULL, -1, 0, 1 } };
 #endif
 
 static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
-			       const char *name, SDL_WindowFlags sdl_window_mode);
+			       const char *name,
+			       SDL_WindowFlags sdl_window_mode);
 static void QLSDLUpdateScreen();
 static void QLSDLUpdatePixelBuffer();
 
@@ -410,148 +424,87 @@ int Pulse50Thread(void *ptr)
 	return 0;
 }
 
-void QLSDLScreen(void)
+int QLSDLScreen(void)
 {
-	const SDL_DisplayMode *sdl_mode;
-	int disp_w, disp_h;
-	SDL_WindowFlags sdl_window_mode;
-	int i, w, h;
-	double ay;
 	const char *sysrom = emulatorOptionString("sysrom");
-	const char *win_size;
+	SDL_Rect emulatorDestRect;
+	int xRes, yRes;
 
-	snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
+	SDL_snprintf(sdl_win_name, 128, "sQLux - %s, %dK", sysrom, RTOP / 1024);
 
-	SDL_InitFlags flags = SDL_INIT_VIDEO;
-#ifndef SDL_JOYSTICK_DISABLED
-	flags |= SDL_INIT_JOYSTICK;
-#endif
-	if (!SDL_Init(flags)) {
-		printf("SDL_Init Error: %s\n", SDL_GetError());
-		exit(-1);
-	}
-
-	sdl_video_driver = SDL_GetCurrentVideoDriver();
-	sdl_mode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
-	disp_w = sdl_mode ? sdl_mode->w : 800;
-	disp_h = sdl_mode ? sdl_mode->h : 600;
-
-	if (V1)
-		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
-		       disp_w, disp_h);
-
-	/* Fix the aspect ratio to more like real hardware
-	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
 	int aspect = emulatorOptionInt("fixaspect");
-	if (aspect == 1) {
-		ql_screen_ratio = (3.0 / 2.0);
-	} else if (aspect == 2) {
-		ql_screen_ratio = 1.355;
-	} else if (aspect == 3) {
-		ql_screen_ratio = 2.0;
-	} else {
-		ql_screen_ratio = 1.0;
+	if (aspect > 3) {
+		SDL_LogError(EMU_LOG_SCREEN, "Invalid FIXASPECT %d", aspect);
+		return 1;
 	}
 
-	/* Ensure width and height are always initialised to sane values */
-	ay = (double)(qlscreen.yres * ql_screen_ratio);
-	w = qlscreen.xres;
-	h = (int)lrint(ay);
-
-	/* Initialize keyboard table (doesn't belong here, but was convenient...) */
-	setKeyboardLayout();
-
-	if (sdl_video_driver != NULL &&
-		    (strcmp(sdl_video_driver, "x11") == 0) ||
-	    (strcmp(sdl_video_driver, "cocoa") == 0) ||
-	    (strcmp(sdl_video_driver, "windows") == 0) ||
-	    (strcmp(sdl_video_driver, "emscripten") == 0) ||
-	    (strcmp(sdl_video_driver, "wayland") == 0) && disp_w >= 800 &&
-		    disp_h >= 600) {
-		sdl_window_mode = SDL_WINDOW_RESIZABLE;
-
-		win_size = emulatorOptionString("win_size");
-		if (!strcmp("2x", win_size)) {
-			w = qlscreen.xres * 2;
-			h = lrint(ay * 2.0);
-		} else if (!strcmp("3x", win_size)) {
-			w = qlscreen.xres * 3;
-			h = lrint(ay * 3.0);
-		} else if (!strcmp("max", win_size)) {
-			sdl_window_mode |= SDL_WINDOW_MAXIMIZED;
-		} else if (!strcmp("full", win_size)) {
-			sdl_window_mode |= SDL_WINDOW_FULLSCREEN;
-			ql_fullscreen = true;
+	if (qlscreen.xres > 512 || qlscreen.yres > 256) {
+		if (aspect != 0) {
+			SDL_LogWarn(
+				EMU_LOG_SCREEN,
+				"extended screen active fixaspect disabled");
 		}
+
+		aspect = 0;
+
+		xRes = qlscreen.xres;
+		yRes = qlscreen.yres;
 	} else {
-		sdl_window_mode = SDL_WINDOW_FULLSCREEN;
+		xRes = aspects[aspect].x;
+		yRes = aspects[aspect].y;
 	}
-
-	bool created = QLSDLCreateDisplay(w, h, (int)lrint(ay), &ql_windowid,
-					  sdl_win_name, sdl_window_mode);
-
-	if (!created) {
-		printf("Window creation failed\n");
-		exit(-1);
-	}
-
-	SDL_SetWindowKeyboardGrab(ql_window, true);
-	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "0");
-
-	QLSDLInitJoystick();
-
-	SDL_SetAtomicInt(&doPoll, 0);
-	sem50Hz = SDL_CreateSemaphore(0);
-
-	SDL_CreateThread(Pulse50Thread, "MetronomoQL", NULL);
-}
-
-static bool QLSDLCreateDisplay(int w, int h, int ly, uint32_t *id,
-			       const char *name, SDL_WindowFlags sdl_window_mode)
-{
-	ql_window = SDL_CreateWindow(name, w, h, sdl_window_mode);
-
-	if (ql_window == NULL) {
-		printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
-		return false;
-	}
-
-	QLSDLCreateIcon(ql_window);
-	ql_windowid = SDL_GetWindowID(ql_window);
-
-	ql_renderer = SDL_CreateRenderer(ql_window, NULL);
-	SDL_SetRenderVSync(ql_renderer, 1);
-
-	SDL_SetRenderLogicalPresentation(ql_renderer, qlscreen.xres, ly,
-					 SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 	dest_rect.x = dest_rect.y = 0;
-	dest_rect.w = qlscreen.xres;
-	dest_rect.h = ly;
+	dest_rect.w = xRes;
+	dest_rect.h = yRes;
+
+	ql_window = SDL_CreateWindow(sdl_win_name, xRes, yRes,
+				     SDL_WINDOW_RESIZABLE);
+
+	if (ql_window == NULL) {
+		SDL_LogError(EMU_LOG_SCREEN, "Failed to Create Window %s\n",
+			     SDL_GetError());
+		return 1;
+	}
+
+	ql_renderer = SDL_CreateRenderer(ql_window, NULL);
+
+	if (ql_renderer == NULL) {
+		SDL_LogError(EMU_LOG_SCREEN, "Failed to Create Renderer %s\n",
+			     SDL_GetError());
+		return 1;
+	}
+
+	SDL_SetRenderLogicalPresentation(ql_renderer, xRes, yRes,
+					 SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
+	SDL_RenderClear(ql_renderer);
+	SDL_RenderPresent(ql_renderer);
 
 	ql_screen = SDL_CreateSurface(qlscreen.xres, qlscreen.yres,
 				      SDL_PIXELFORMAT_RGBA32);
 
 	if (ql_screen == NULL) {
-		printf("Error Creating Surface\n");
-		return false;
+		SDL_LogError(EMU_LOG_SCREEN, "Failed to Create Screen %s\n",
+			     SDL_GetError());
+		return 1;
 	}
 
 	ql_texture = SDL_CreateTexture(ql_renderer, SDL_PIXELFORMAT_RGBA32,
 				       SDL_TEXTUREACCESS_STREAMING,
-				       ql_screen->w, ql_screen->h);
+				       qlscreen.xres, qlscreen.yres);
 
 	if (ql_texture == NULL) {
-		printf("Error Creating texture\n");
-		return false;
+		SDL_LogError(EMU_LOG_SCREEN, "Failed to Create Texture %s\n",
+			     SDL_GetError());
+		return 1;
 	}
 
-	SDL_SetTextureScaleMode(ql_texture, emulatorOptionInt("filter") ?
-						    SDL_SCALEMODE_LINEAR :
-						    SDL_SCALEMODE_NEAREST);
-
 	QLSDLCreatePalette(ql_screen->format);
-	return true;
+	QLSDLCreateIcon(ql_window);
+	SDL_CreateThread(Pulse50Thread, "MetronomoQL", NULL);
+
+	return 0;
 }
 
 void QLSDLCreateIcon(SDL_Window *window)
@@ -559,10 +512,10 @@ void QLSDLCreateIcon(SDL_Window *window)
 	SDL_Surface *icon;
 
 	/* The logo is stored as 32x32 RGBA bytes in memory order */
-	icon = SDL_CreateSurfaceFrom(sqluxlogo.width, sqluxlogo.height,
-				     SDL_PIXELFORMAT_RGBA32,
-				     (void *)sqluxlogo.pixel_data,
-				     sqluxlogo.bytes_per_pixel * sqluxlogo.width);
+	icon = SDL_CreateSurfaceFrom(
+		sqluxlogo.width, sqluxlogo.height, SDL_PIXELFORMAT_RGBA32,
+		(void *)sqluxlogo.pixel_data,
+		sqluxlogo.bytes_per_pixel * sqluxlogo.width);
 
 	SDL_SetWindowIcon(window, icon);
 	SDL_DestroySurface(icon);
@@ -570,19 +523,20 @@ void QLSDLCreateIcon(SDL_Window *window)
 
 void QLSDLCreatePalette(SDL_PixelFormat format)
 {
-	const SDL_PixelFormatDetails *details = SDL_GetPixelFormatDetails(format);
+	const SDL_PixelFormatDetails *details =
+		SDL_GetPixelFormatDetails(format);
 	int option = emulatorOptionInt("palette");
 	for (int i = 0; i < 16; i++) {
 		if (option == 2) {
-			SDLcolors[i] = SDL_MapRGB(details, NULL,
-						  QLcolors_gray[i].r,
-						  QLcolors_gray[i].g,
-						  QLcolors_gray[i].b);
+			SDLcolors[i] =
+				SDL_MapRGB(details, NULL, QLcolors_gray[i].r,
+					   QLcolors_gray[i].g,
+					   QLcolors_gray[i].b);
 		} else if (option == 1) {
-			SDLcolors[i] = SDL_MapRGB(details, NULL,
-						  QLcolors_unsat[i].r,
-						  QLcolors_unsat[i].g,
-						  QLcolors_unsat[i].b);
+			SDLcolors[i] =
+				SDL_MapRGB(details, NULL, QLcolors_unsat[i].r,
+					   QLcolors_unsat[i].g,
+					   QLcolors_unsat[i].b);
 		} else {
 			SDLcolors[i] = SDL_MapRGB(details, NULL, QLcolors[i].r,
 						  QLcolors[i].g, QLcolors[i].b);
@@ -699,7 +653,8 @@ void SDLQLFullScreen(void)
 {
 	ql_fullscreen = !ql_fullscreen;
 
-	SDL_SetWindowFullscreen(ql_window, ql_fullscreen);
+	SDL_SetWindowFullscreen(ql_window,
+				ql_fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
 }
 
 static void QLSDLUpdateScreen()
@@ -734,7 +689,8 @@ static void QLSDLOpenJoystick(int index, int which)
 
 				// Check for duplicate ids
 				if (QLConvertWhichToIndex(id) == -1) {
-					joy[index].sdl_id = SDL_OpenJoystick(id);
+					joy[index].sdl_id =
+						SDL_OpenJoystick(id);
 					if (joy[index].sdl_id == NULL) {
 						if (V1)
 							printf("Joystick %i initialisation failed\n",
@@ -1212,10 +1168,8 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 	// Action Spanish deadkeys not processed in MGE ROM
 	if ((keyboard == KEY_ES) && (!sdl_grfstate) && (!sdl_controlstate)) {
 		if (pressed) {
-			if (((sym == SDL_DEADKEY_1) &&
-			     sdl_shiftstate) ||
-			    ((sym == SDL_DEADKEY_2) &&
-			     sdl_shiftstate)) {
+			if (((sym == SDL_DEADKEY_1) && sdl_shiftstate) ||
+			    ((sym == SDL_DEADKEY_2) && sdl_shiftstate)) {
 				dkey.id = sym;
 				dkey.action = (sym == SDL_DEADKEY_2) ?
 						      KEY_ACTION_DIA :
@@ -1237,10 +1191,8 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 		if (pressed) {
 			int replace_mod;
 
-			if ((sym == SDLK_A) ||
-			    (sym == SDLK_E) ||
-			    (sym == SDLK_I) ||
-			    (sym == SDLK_O) ||
+			if ((sym == SDLK_A) || (sym == SDLK_E) ||
+			    (sym == SDLK_I) || (sym == SDLK_O) ||
 			    (sym == SDLK_U)) {
 				// determine what key combination to send
 				if (dkey.action == KEY_ACTION_CIR) {
