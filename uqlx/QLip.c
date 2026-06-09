@@ -34,7 +34,7 @@
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #endif
-#include <SDL_endian.h>
+#include <SDL3/SDL_endian.h>
 
 #include "QL_driver.h"
 #include "QSerial.h"
@@ -1057,7 +1057,7 @@ static int endianise(int optname, void *optval)
 		return -1;
 		break;
 	default:
-		*(uint32_t *)optval = SDL_SwapBE32(*(uint32_t *)optval);
+		*(uint32_t *)optval = SDL_Swap32BE(*(uint32_t *)optval);
 		break;
 	}
 	return 0;

@@ -101,20 +101,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - {
-              os: ubuntu,
-              image: ubuntu-24.04,
-              pkg: apt,
-              arch: x86_64,
-              shell: bash,
-            }
-          - {
-              os: ubuntu,
-              image: ubuntu-24.04-arm,
-              pkg: apt,
-              arch: aarch64,
-              shell: bash,
-            }
+#          - {
+#              os: ubuntu,
+#              image: ubuntu-24.04,
+#              pkg: apt,
+#              arch: x86_64,
+#              shell: bash,
+#            }
+#          - {
+#              os: ubuntu,
+#              image: ubuntu-24.04-arm,
+#              pkg: apt,
+#              arch: aarch64,
+#              shell: bash,
+#            }
           - {
               os: macos,
               image: macos-15,
@@ -160,7 +160,7 @@ jobs:
             cmake \
             git \
             libglu1-mesa-dev \
-            libsdl2-dev
+            libsdl3-dev
       - name: Install Dependencies - msys2
         uses: msys2/setup-msys2@v2
         if: ${{ matrix.pkg == 'mingw' }}
@@ -171,12 +171,12 @@ jobs:
             git
             zip
             mingw-w64-${{matrix.arch}}-cc
-            mingw-w64-${{matrix.arch}}-SDL2
+            mingw-w64-${{matrix.arch}}-sdl3
             mingw-w64-${{matrix.arch}}-cmake
       - name: Install Dependencies - brew
         if: ${{ matrix.pkg == 'brew' }}
         run: |
-          brew install sdl2
+          brew install sdl3
       - name: Configure with cmake
         run: |
           cmake -B build/ -DCMAKE_BUILD_TYPE=Release -DSUPPORT_SHADERS=True

@@ -1,6 +1,10 @@
 #include <ftw.h>
-#include <SDL.h>
+#include <SDL3/SDL_init.h>
+#define SDL_MAIN_USE_CALLBACKS 1
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -9,7 +13,7 @@
 #include "emulator_init.h"
 #include "emulator_options.h"
 #include "QL_sound.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "unixstuff.h"
 #include "Xscreen.h"
 
@@ -57,37 +61,34 @@ void CleanRAMDev()
 	}
 }
 
-void emu_shutdown()
+void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
-	QLdone = 1;
-
-	SDL_WaitThread(emuThread, NULL);
-
+	(void)appstate;
+	(void)result;
 	QLSDLExit();
 
 	CleanRAMDev();
+
+	SDL_Quit();
 }
 
-void emu_loop()
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 {
-	static int init_done = 0;
-	int boot_file_ready = 1;
+	(void)appstate;
 
-#if __EMSCRIPTEN__
-	if (!init_done) {
-		boot_file_ready = wasm_does_boot_file_exist();
+	if (QLSDLProcessEvents(event)) {
+		return SDL_APP_CONTINUE;
 	}
-#endif
-	if (boot_file_ready && !init_done) {
-		emulatorInit();
-		QLSDLScreen();
-		initSound(emulatorOptionInt("sound"));
-		emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
-		init_done = 1;
-	}
-	if (init_done) {
-		QLSDLProcessEvents();
-	}
+	return SDL_APP_SUCCESS;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate)
+{
+	(void)appstate;
+
+	QLRun();
+
+	return SDL_APP_CONTINUE;
 }
 
 #ifdef __WIN32__
@@ -104,7 +105,7 @@ static void reattach_console(void)
 }
 #endif
 
-int main(int argc, char *argv[])
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
 #if __EMSCRIPTEN__
 	wasm_init_storage();
@@ -137,13 +138,15 @@ int main(int argc, char *argv[])
 		ux_bname[len + 1] = 0;
 	}
 
-#if __EMSCRIPTEN__
-	emscripten_set_main_loop(emu_loop, -1, 1);
-#else
-	emu_loop();
-#endif
+	emulatorInit();
+	if (QLSDLScreen()) {
+		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+			     "failure to create screen");
+		exit(1);
+	}
+	initSound(emulatorOptionInt("sound"));
 
-	emu_shutdown();
+	uqlxSpeed = (int)(atof(emulatorOptionString("speed")) * 20.0);
 
-	return 0;
+	return SDL_APP_CONTINUE;
 }

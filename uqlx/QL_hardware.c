@@ -11,7 +11,7 @@
 #include "QL_sound.h"
 #include "QL_config.h"
 #include "QInstAddr.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "qmtrap.h"
 #include "unixstuff.h"
 #include "QL_sound.h"

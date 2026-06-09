@@ -1,4 +1,4 @@
-#include <SDL_endian.h>
+#include <SDL3/SDL_endian.h>
 #include <stdint.h>
 
 #ifndef QL68000_H
@@ -254,38 +254,38 @@ extern char * oldscr;
 
 static inline ruw16 q2hw(uw16 val)
 {
-  return SDL_SwapBE16(val);
+  return SDL_Swap16BE(val);
 }
 static inline ruw32 q2hl(uw32 val)
 {
-	return SDL_SwapBE32(val);
+	return SDL_Swap32BE(val);
 }
 static inline ruw16 h2qw(uw16 v)
 {
-	return SDL_SwapBE16(v);
+	return SDL_Swap16BE(v);
 }
 static inline ruw32 h2ql(uw32 v)
 {
-	return SDL_SwapBE32(v);
+	return SDL_Swap32BE(v);
 }
 
 static inline ruw16 _rw_(uw16 *s)
 {
-	return SDL_SwapBE16(*s);
+	return SDL_Swap16BE(*s);
 }
 static inline ruw32 _rl_(uw32 *s)
 {
-	return SDL_SwapBE32(*s);
+	return SDL_Swap32BE(*s);
 }
 
 static inline void _ww_(uw16 *d, uw16 v)
 {
-	*d = SDL_SwapBE16(v);
+	*d = SDL_Swap16BE(v);
 }
 
 static inline void _wl_(uw32 *d, uw32 v)
 {
-	*d = SDL_SwapBE32(v);
+	*d = SDL_Swap32BE(v);
 }
 
 #ifndef RW

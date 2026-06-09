@@ -35,7 +35,7 @@
 #include "QL_driver.h"
 
 #include "memaccess.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 
 #include "q-emulator.h"
 #include "qdos-file-header.h"
@@ -616,8 +616,8 @@ void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 
 		seekbase = GET_SEEKBASE(f);
 
-		h->f_length = SDL_SwapBE32((buf.st_size -seekbase) + 64);
-		h->f_update = SDL_SwapBE32(ux2qltime(buf.st_mtime));
+		h->f_length = SDL_Swap32BE((buf.st_size -seekbase) + 64);
+		h->f_update = SDL_Swap32BE(ux2qltime(buf.st_mtime));
 
 		if (buf.st_mode & S_IFDIR)
 			i = 255;
@@ -625,7 +625,7 @@ void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 			i = 0;
 		h->f_type = i;
 
-		if (i == 255 && ((j = SDL_SwapBE16(h->f_szname)) < 36)) {
+		if (i == 255 && ((j = SDL_Swap16BE(h->f_szname)) < 36)) {
 			h->f_name[j] = DIR_SEPARATOR;
 		}
 	}

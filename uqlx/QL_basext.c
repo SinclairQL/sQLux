@@ -28,7 +28,7 @@
 
 #include "unixstuff.h"
 #include "xcodes.h"
-#include "SDL2screen.h"
+#include "SDL3screen.h"
 #include "version.h"
 
 #if __EMSCRIPTEN__
@@ -684,7 +684,7 @@ bas_err EMU_speed()
 	if (bas_getln(&n) < 0)
 		return QERR_BP;
 
-	speed = n;
+	uqlxSpeed = n;
 
 	return 0;
 }
