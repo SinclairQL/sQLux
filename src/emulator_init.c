@@ -97,11 +97,14 @@ void emulatorInit()
 		exit(1);
 	}
 
-	memBase = (int32_t *)malloc(RTOP);
+	// Asignamos al menos 1 MB a memBase para que la zona $0C0000 quepa en la memoria del PC
+	size_t alloc_size = (RTOP < 0x00100000) ? 0x00100000 : RTOP;
+	memBase = (int32_t *)malloc(alloc_size);
 	if (memBase == NULL) {
 		fprintf(stderr, "sorry, not enough memory for a %dK QL\n",RTOP/1024);
 		exit(1);
 	}
+	memset(memBase, 0, alloc_size); // Limpiar memoria
 
 	if (EmulatorTable()) {
 		fprintf(stderr, "Failed to allocate instruction table\n");
@@ -115,6 +118,7 @@ void emulatorInit()
 	const char *romim = emulatorOptionString("romim");
 	const char *iorom1 = emulatorOptionString("iorom1");
 	const char *iorom2 = emulatorOptionString("iorom2");
+	const char *qsrom = emulatorOptionString("qsrom");
 
 	ret = emulatorLoadRom(romdir, sysrom, QL_ROM_BASE, QL_ROM_SIZE);
 	if (ret < 0) {
@@ -149,6 +153,17 @@ void emulatorInit()
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading iorom2 %s\n", iorom2);
 			exit(ret);
+		}
+	}
+
+	// Si se ha definido QSROM en sqlux.ini, se carga en $000C0000
+	if (strlen(qsrom)) {
+		ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
+		if (ret < 0) {
+			fprintf(stderr, "Error Loading qsrom %s\n", qsrom);
+			exit(ret);			
+		} else {
+			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $0C0000\n", qsrom);
 		}
 	}
 

@@ -19,6 +19,11 @@
 #include <time.h>
 
 #include "sqlux_debug.h"
+#include "QL_screen.h"
+#include "SDL2screen.h"
+
+extern int display_mode;
+extern volatile bool is_display_blank;
 
 volatile bool is_display_blank = false; // Display active by default (bit 1 set to 0)
 void debug(char *);
@@ -242,6 +247,15 @@ void ipc_write(uint8_t d)
 
 void WriteHWByte(aw32 addr, aw8 d)
 {
+    addr &= 0x0001FFFF;
+
+    // ZX8301: Registro de vídeo en $18063 (Modo 4/8 y conmutación $20000 / $28000)
+    if (addr == 0x18063) {
+        display_mode = (d & 8) ? 8 : 4;
+        qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
+        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
+        return;
+    }
 	/*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
 
 	switch (addr) {

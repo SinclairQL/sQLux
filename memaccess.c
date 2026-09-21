@@ -2,13 +2,13 @@
  * (c) UQLX - see COPYRIGHT
  */
 
-
 /* define memory access fns */
 #include "QL68000.h"
 #include "memaccess.h"
 #include "general.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
+#include "qsound.h"
 
 static int is_hw(uint32_t addr)
 {
@@ -20,17 +20,37 @@ static int is_hw(uint32_t addr)
 	return 0;
 }
 
+// Comprueba si la dirección pertenece al espacio de QSound (0xC0000 - 0xC3FFF)
+static inline int is_qsound(uint32_t addr)
+{
+	uint32_t a = addr & 0xFFFF;
+	return ((a & 0xF000) == 0x2000 || (a & 0xF000) == 0x3000) && ((addr & 0xFF0000) == 0x0C0000);
+}
+
 rw8 ReadByte(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
-		return 0;
+	/* 1. Enganche de lectura puertos QSound */
+	if (is_qsound(addr)) {
+		return qsound_read_byte(addr);
+	}
 
+	/* 2. Hardware interno (ZX8301 / ZX8302 IPC) */
 	if (is_hw(addr)) {
 		return ReadHWByte(addr);
 	}
 
+	/* 3. ZONA DE ROM DE EXPANSIÓN ($C0000 - $CFFFF): ¡Permitir lectura de la ROM! */
+	if (addr >= 0x000C0000 && addr < 0x00100000) {
+		return *((w8 *)memBase + addr);
+	}
+
+	/* 4. Fuera de RAM mapeada (zona vacía) */
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
+		return 0;
+
+	/* 5. RAM estándar y ROM del sistema ($000000) */
 	return *((w8 *)memBase + addr);
 }
 
@@ -38,12 +58,24 @@ rw16 ReadWord(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
-		return 0;
+	/* 1. Enganche de lectura QSound (Word) */
+	if (is_qsound(addr)) {
+		return ((rw16)qsound_read_byte(addr) << 8) | qsound_read_byte(addr + 1);
+	}
 
+	/* 2. Hardware interno */
 	if (is_hw(addr)) {
 		return ((w16)ReadHWWord(addr));
 	}
+
+	/* 3. ZONA DE ROM DE EXPANSIÓN ($C0000 - $CFFFF) */
+	if (addr >= 0x000C0000 && addr < 0x00100000) {
+		return (w16)RW((w16 *)((Ptr)memBase + addr));
+	}
+
+	/* 4. Fuera de RAM mapeada */
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
+		return 0;
 
 	return (w16)RW((w16 *)((Ptr)memBase + addr)); /* make sure it is signed */
 }
@@ -52,23 +84,50 @@ rw32 ReadLong(aw32 addr)
 {
 	addr &= ADDR_MASK;
 
-	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
-		return 0;
+	/* 1. Enganche de lectura QSound (Long) */
+	if (is_qsound(addr)) {
+		return ((rw32)ReadWord(addr) << 16) | (uint16_t)ReadWord(addr + 2);
+	}
 
+	/* 2. Hardware interno */
 	if (is_hw(addr)) {
 		return ((w32)ReadHWLong(addr));
 	}
 
-	return (w32)RL((Ptr)memBase + addr); /* make sure is is signed */
+	/* 3. ZONA DE ROM DE EXPANSIÓN ($C0000 - $CFFFF) */
+	if (addr >= 0x000C0000 && addr < 0x00100000) {
+		return (w32)RL((Ptr)memBase + addr);
+	}
+
+	/* 4. Fuera de RAM mapeada */
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
+		return 0;
+
+	return (w32)RL((Ptr)memBase + addr); /* make sure it is signed */
 }
 
-void WriteByte(aw32 addr,aw8 d)
+void WriteByte(aw32 addr, aw8 d)
 {
 	addr &= ADDR_MASK;
 
+	/* 1. Enganche de escritura QSound */
+	if (is_qsound(addr)) {
+		qsound_write_byte(addr, d);
+		return;
+	}
+
+	/* 2. Captura de $18063 */
+	if (addr == 0x00018063) {
+		WriteHWByte(addr, d);
+		*((w8 *)memBase + addr) = d;
+		return;
+	}
+
+	/* 3. Fuera de RAM */
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
+	/* 4. Hardware y RAM */
 	if (is_hw(addr)) {
 		WriteHWByte(addr, d);
 	} else if (addr >= QL_SCREEN_BASE) {
@@ -76,9 +135,16 @@ void WriteByte(aw32 addr,aw8 d)
 	}
 }
 
-void WriteWord(aw32 addr,aw16 d)
+void WriteWord(aw32 addr, aw16 d)
 {
 	addr &= ADDR_MASK;
+
+	/* Enganche de escritura QSound (Word) */
+	if (is_qsound(addr)) {
+		qsound_write_byte(addr, (uint8_t)(d >> 8));
+		qsound_write_byte(addr + 1, (uint8_t)d);
+		return;
+	}
 
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
@@ -90,11 +156,18 @@ void WriteWord(aw32 addr,aw16 d)
 	}
 }
 
-void WriteLong(aw32 addr,aw32 d)
+void WriteLong(aw32 addr, aw32 d)
 {
 	addr &= ADDR_MASK;
 
-	if ((addr >= RTOP) && (addr >=qlscreen.qm_hi))
+	/* Enganche de escritura QSound (Long) */
+	if (is_qsound(addr)) {
+		WriteWord(addr, (uint16_t)(d >> 16));
+		WriteWord(addr + 2, (uint16_t)d);
+		return;
+	}
+
+	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return;
 
 	if (is_hw(addr)) {
@@ -191,7 +264,6 @@ rw8 ModifyAtEA_b(ashort mode,ashort r)
 
 rw16 ModifyAtEA_w(ashort mode,ashort r)
 {
-	/*w16*/
 	shindex displ;
 	w32 addr = 0;
 
@@ -259,7 +331,6 @@ rw16 ModifyAtEA_w(ashort mode,ashort r)
 
 rw32 ModifyAtEA_l(ashort mode, ashort r)
 {
-	/*w16*/
 	shindex displ;
 	w32 addr = 0;
 

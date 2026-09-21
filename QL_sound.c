@@ -4,6 +4,8 @@
 #include "debug.h"
 #include "QL68000.h"
 #include "QL_sound.h"
+#include "qsound.h"
+#include "emulator_options.h"
 
 /*
  * Structures only used in this file
@@ -52,6 +54,7 @@ static SDL_AudioSpec have;
 static sound_data sound;
 static current_sound c_sound;
 
+
 /*
  * Local functions
  */
@@ -64,8 +67,8 @@ static void randomAdjust();
 static void fuzzAdjust();
 
 static int pitchToHalfSampleCount(int pitch);
-static void populateBuffer(int start, int samples, Sint8* buffer, int len);
-static void silenceBuffer(int start, Sint8* buffer, int len);
+static void populateBuffer(int start, int samples, Sint16* buffer, int len);
+static void silenceBuffer(int start, Sint16* buffer, int len);
 
 /*
  * Local definitions
@@ -73,11 +76,13 @@ static void silenceBuffer(int start, Sint8* buffer, int len);
 #define UNUSED(x) (void)(x)
 #define TICK_8049 22917		// Number of IPC ticks per second
 
-#define FREQUENCY 24000		// Requested sampling frequency
-#define SAMPLES 256		// Number of samples in a callback
+#define FREQUENCY 44100		// Requested sampling frequency
+#define SAMPLES 512		// Number of samples in a callback
 #define MAX_IPC_PARAMS 16 	// For the case where all 16 slots yield 8 bits
 
 void initSound(int volume) {
+
+
 	if ((volume != 0) && (!sound_enabled)) {
 		// Create the sound driver
 		if(SDL_Init(SDL_INIT_AUDIO)) {
@@ -89,7 +94,7 @@ void initSound(int volume) {
 
 		SDL_zero(want);
 		want.freq = FREQUENCY;
-		want.format = AUDIO_S8;
+		want.format = AUDIO_S16SYS;
 		want.channels = 1;
 		want.samples = SAMPLES;
 		want.callback = audioCallback;
@@ -102,7 +107,7 @@ void initSound(int volume) {
 			}
 			return;
 		}
-
+		printf(">>> [AUDIO] Frecuencia real SDL2: %d Hz (Samples: %d)\n", have.freq, have.samples);
 		sound.mutex = SDL_CreateMutex();
 
 		if (!sound.mutex) {
@@ -116,6 +121,13 @@ void initSound(int volume) {
 		sound.in_use = -1; 		// index in use by callback (-1 = none)
 		sound.last_written = -1;	// index last written by by BeepSound (-1 = None)
 		sound_enabled = true;
+
+		/* ---> INICIALIZAR QSOUND  <--- */
+
+		const int qsfreq = emulatorOptionInt("qsfreq");	
+   		qsound_init(qsfreq, have.freq, QSOUND_MODE_MONO);
+
+		SDL_PauseAudioDevice(QLSDLAudio, 0); // <--- (Audio siempre activo)
 	}
 	return;
 }
@@ -252,20 +264,25 @@ void KillSound() {
 void audioCallback(void* userdata, Uint8* stream, int len) {
 	UNUSED(userdata);
 
-	int written = 0;		// Total samples written this callback
+    /* 1. LIMPIAR EL BUFFER EN 16 BITS */
+    memset(stream, 0, len);
+	
+	Sint16* buffer = (Sint16*)stream;
+    int total_samples = len / sizeof(Sint16); // Muestras reales de 16 bits
+    
+    int written = 0;		// Total samples written this callback
 	int to_write = 0;		// Samples to write in next iteration
 
 	bool new_found = false;
 	SDL_LockMutex(sound.mutex);
 
 	if (c_sound.left < 0) {
-		// Used all of the buffer, so no longer in use
 		sound.in_use = -1;
 	}
 
 	if ((sound.last_written >=0) && (sound.last_written != sound.in_use)) {
 		sound.in_use = sound.last_written;
-		sound.last_written = -1;	// Have taken latest buffer
+		sound.last_written = -1;
 		new_found = true;
 	}
 
@@ -275,7 +292,7 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 		c_sound.current_pitch = (sound.beep[sound.in_use].grd_y < 0)
 					? sound.beep[sound.in_use].pitch_2
 					: sound.beep[sound.in_use].pitch;
-		c_sound.random = 0;  	// No randomness on first pitch
+		c_sound.random = 0;
 		c_sound.fuzz = 0;
 		c_sound.half_cycle = pitchToHalfSampleCount(c_sound.current_pitch);
 		c_sound.left = (sound.beep[sound.in_use].length * have.freq) / TICK_8049;
@@ -289,25 +306,21 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 	}
 
 	if ((c_sound.left < 0) || (sound.in_use == -1)){
-		SDL_PauseAudioDevice(QLSDLAudio, 1);
 		soundOn = false;
 	}
 	else {
 		do {
 			if (c_sound.pitch_left == 0) {
-				// Play one note forever
-				to_write = len - written;
+				to_write = total_samples - written;
 			}
-			else if (c_sound.pitch_left > (len - written)) {
-				// Can fill buffer with current note
-				to_write = len - written;
+			else if (c_sound.pitch_left > (total_samples - written)) {
+				to_write = total_samples - written;
 				c_sound.pitch_left -= to_write;
 				if (c_sound.left) {
 					c_sound.left -= to_write;
 				}
 			}
 			else {
-				// Need to change note or stop playing
 				to_write = c_sound.pitch_left;
 				if (c_sound.left) {
 					if (c_sound.left > c_sound.pitch_left) {
@@ -320,25 +333,26 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 				c_sound.pitch_left = -1;
 			}
 
-			populateBuffer(written, to_write, (Sint8*)stream, len);
+			populateBuffer(written, to_write, buffer, total_samples);
 			written += to_write;
 
-			if (written < len) {
-				// Reached the end of the pitch
-				// New pitch, or silence?
+			if (written < total_samples) {
 				if (c_sound.left >= 0) {
 					getNewPitch();
 					setPitchDuration();
 				}
 				else {
-					silenceBuffer(written, (Sint8*)stream, len);
-					written = len;
+					silenceBuffer(written, buffer, total_samples);
+					written = total_samples;
 				}
 			}
 		}
-		while (written < len);
+		while (written < total_samples);
 	}
+	/* ---> MEZCLAR EL AUDIO DE QSOUND EN 16 BITS <--- */
+    qsound_render_mix_s16((int16_t *)stream, total_samples);
 }
+
 
 static void getNewPitch() {
 	int change = sound.beep[sound.in_use].grd_y;
@@ -455,7 +469,7 @@ static int pitchToHalfSampleCount(int pitch)
 	return (int)((have.freq * b / TICK_8049) + 0.5f);
 }
 
-static void populateBuffer(int start, int samples, Sint8* buffer, int len)
+static void populateBuffer(int start, int samples, Sint16* buffer, int len)
 {
 	if (!c_sound.wave_state){
 		c_sound.wave_state = -1;
@@ -465,7 +479,8 @@ static void populateBuffer(int start, int samples, Sint8* buffer, int len)
 	int buffer_pos = start;
 
 	while (buffer_pos < (samples + start)) {
-		buffer[buffer_pos++] = audio_volume * c_sound.wave_state;
+		// Escalamos el volumen a 16 bits multiplicando por 256
+		buffer[buffer_pos++] = (Sint16)(audio_volume * 256 * c_sound.wave_state);
 		++c_sound.cycle_point;
 
 		if (c_sound.cycle_point >= (c_sound.half_cycle)) {
@@ -476,7 +491,7 @@ static void populateBuffer(int start, int samples, Sint8* buffer, int len)
 	}
 }
 
-static void silenceBuffer(int start, Sint8* buffer, int len)
+static void silenceBuffer(int start, Sint16* buffer, int len)
 {
 	int buffer_pos = start;
 	while (buffer_pos < len) {

@@ -698,7 +698,9 @@ static void QLSDLUpdatePixelBuffer()
 		SDL_LockSurface(ql_screen);
 	}
 
-	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
+	// Forzar banco fijo para el frame ($20000 o $28000)
+	uint32_t active_bank = (qlscreen.qm_lo == 0x00028000) ? 0x00028000 : 0x00020000;
+	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + active_bank;
 	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
 
 	emulatorUpdatePixelBufferQL(ql_screen->pixels, emulatorScreenPtr,

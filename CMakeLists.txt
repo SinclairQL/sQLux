@@ -114,6 +114,7 @@ add_executable(
   QL_screen.c
   QL_serial.c
   QL_sound.c
+  qsound.c
   QLip.c
   QLserio.c
   QLtraps.c
