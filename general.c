@@ -247,23 +247,17 @@ void ipc_write(uint8_t d)
 
 void WriteHWByte(aw32 addr, aw8 d)
 {
-    addr &= 0x0001FFFF;
-
-    // ZX8301: Registro de vídeo en $18063 (Modo 4/8 y conmutación $20000 / $28000)
-    if (addr == 0x18063) {
-        display_mode = (d & 8) ? 8 : 4;
-        qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
-        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
-        return;
-    }
 	/*printf("write HWreg at %x val=%x\n",addr-0x18000,d);*/
 
 	switch (addr) {
 	case 0x018063: /* Display control */
+        display_mode = (d & 8) ? 8 : 4;
+        qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
 				// Bit 1 a 1 = Disabled display (Blank)
 				// Bit 1 a 0 = Enabled display
-		is_display_blank = (d & 0x02) ? true : false;
-		SetDisplay(d, true);
+        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
+        is_display_blank = (d & 0x02) ? true : false;
+        SetDisplay(d, true);
 		break; // add for security
 	case 0x018000:
 	case 0x018001:
