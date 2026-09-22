@@ -253,11 +253,11 @@ void WriteHWByte(aw32 addr, aw8 d)
 	case 0x018063: /* Display control */
         display_mode = (d & 8) ? 8 : 4;
         qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
+        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
 				// Bit 1 a 1 = Disabled display (Blank)
 				// Bit 1 a 0 = Enabled display
-        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
-        is_display_blank = (d & 0x02) ? true : false;
-        SetDisplay(d, true);
+		is_display_blank = (d & 0x02) ? true : false;
+		SetDisplay(d, true);
 		break; // add for security
 	case 0x018000:
 	case 0x018001:

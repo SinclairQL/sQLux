@@ -229,6 +229,33 @@ IOROM2 = tk2_rom
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
+`QSROM`
+Specifies the QSound expansion ROM to be loaded at 0xC0000.
+
+```
+QSROM = qsound.rom
+```
+
+It is assumed that the ROM image can be found in the ROMDIR
+directory.
+
+`QSFREQ`
+The master clock frequency in Hz for the QSound (AY-3-8910 / YM2149) sound chip. Defaults to 750000 (750 kHz, matching physical Sinclair QL hardware).
+
+```
+QSFREQ = 750000
+```
+
+`QSSTEREO`
+Selects the stereo output mode for QSound:
+- `0`: Mono (channels A, B, and C are mixed equally to both Left and Right).
+- `1`: Stereo ABC (Channel A = Left, B = Center, C = Right). Default.
+- `2`: Stereo ACB (Channel A = Left, C = Center, B = Right).
+
+```
+QSSTEREO = 1
+```
+
 `NO_PATCH`
 disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.
 
@@ -376,7 +403,8 @@ and here is the example of an actual sqlux.ini file. You will find more recent v
 ```
 SYSROM = MIN198.rom
 ROMIM = TK232.rom
-RAMTOP = 4096
+QSROM = qsound.rom
+RAMTOP = 768
 PRINT = lpr
 CPU_HOG = 0
 FAST_STARTUP = 1
@@ -390,6 +418,8 @@ WIN_SIZE = max
 FILTER = 1
 FIXASPECT = 1
 SOUND = 2
+QSFREQ = 750000
+QSSTEREO = 1
 SPEED = 0.8
 KBD = GB
 ```
@@ -548,6 +578,13 @@ Pointer Environment is patched when activated to recognise the new screen parame
 
 Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel ratio. Length of screen buffer must always be truncated nearest 32K boundary, therefore some screen sizes may result in a certain waste of memory.
 
+## 5.4.1 Screen Switching (Double Buffering)
+
+sQLux provides full hardware emulation for real-time video screen switching between Screen 0 (`$20000`) and Screen 1 (`$28000`) via bit 7 of the ZX8301 control register (`$18063`).
+
+To prevent visual tearing and flicker, screen buffer transitions are synchronized with the ZX8301 vertical blanking (VBlank) interval (~2.63 ms / 41 scanlines between the frame interrupt at scanline 271 and the start of active display at scanline 0). This provides 100% flicker-free double buffering for demos, 3D graphics, and games.
+
+
 ## 5.5 Keyboard
 
 By default sQLux uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
@@ -571,6 +608,14 @@ Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL
 1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
 2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
 3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be easily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
+
+## 5.6.2 QSound (AY-3-8910 / YM2149)
+
+sQLux features full emulation of the QSound audio expansion card:
+- **I/O Decoding:** Supports both MC6821 PIA bus access (ports `$C2000`–`$C2003`) and direct AY register access (ports `$C3000`–`$C3003`).
+- **Sound Engine:** Accurate tone generators, 32-step logarithmic DAC volume curve, and a 17-bit LFSR pseudo-random noise generator.
+- **Stereo Panning:** Configurable via `QSSTEREO` (Mono, ABC, or ACB stereo panning).
+- **Filtering:** Single-pole analog low-pass filtering simulating the physical output stage.
 
 ## 5.7 Joystick
 

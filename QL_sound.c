@@ -95,7 +95,7 @@ void initSound(int volume) {
 		SDL_zero(want);
 		want.freq = FREQUENCY;
 		want.format = AUDIO_S16SYS;
-		want.channels = 1;
+		want.channels = 2; // Open SDL audio device in stereo
 		want.samples = SAMPLES;
 		want.callback = audioCallback;
 
@@ -107,7 +107,9 @@ void initSound(int volume) {
 			}
 			return;
 		}
-		printf(">>> [AUDIO] Frecuencia real SDL2: %d Hz (Samples: %d)\n", have.freq, have.samples);
+		if (V1) {
+			printf("Audio actual SDL2 frequency: %d Hz (Samples: %d)\n", have.freq, have.samples);
+		}
 		sound.mutex = SDL_CreateMutex();
 
 		if (!sound.mutex) {
@@ -122,12 +124,12 @@ void initSound(int volume) {
 		sound.last_written = -1;	// index last written by by BeepSound (-1 = None)
 		sound_enabled = true;
 
-		/* ---> INICIALIZAR QSOUND  <--- */
+		/* Initialize QSound */
+		const int qsfreq = emulatorOptionInt("qsfreq");
+		const int qsstereo = emulatorOptionInt("qsstereo");
+		qsound_init(qsfreq, have.freq, qsstereo);
 
-		const int qsfreq = emulatorOptionInt("qsfreq");	
-   		qsound_init(qsfreq, have.freq, QSOUND_MODE_MONO);
-
-		SDL_PauseAudioDevice(QLSDLAudio, 0); // <--- (Audio siempre activo)
+		SDL_PauseAudioDevice(QLSDLAudio, 0); // Keep audio device running
 	}
 	return;
 }
@@ -264,25 +266,27 @@ void KillSound() {
 void audioCallback(void* userdata, Uint8* stream, int len) {
 	UNUSED(userdata);
 
-    /* 1. LIMPIAR EL BUFFER EN 16 BITS */
-    memset(stream, 0, len);
+	/* Clear 16-bit audio buffer */
+	memset(stream, 0, len);
 	
 	Sint16* buffer = (Sint16*)stream;
-    int total_samples = len / sizeof(Sint16); // Muestras reales de 16 bits
+	// In stereo (16-bit x 2 channels = 4 bytes per frame), total time frames is:
+	int total_samples = len / (2 * sizeof(Sint16)); // 16-bit sample count
     
-    int written = 0;		// Total samples written this callback
+	int written = 0;		// Total samples written this callback
 	int to_write = 0;		// Samples to write in next iteration
 
 	bool new_found = false;
 	SDL_LockMutex(sound.mutex);
 
 	if (c_sound.left < 0) {
+		// Used all of the buffer, so no longer in use
 		sound.in_use = -1;
 	}
 
 	if ((sound.last_written >=0) && (sound.last_written != sound.in_use)) {
 		sound.in_use = sound.last_written;
-		sound.last_written = -1;
+		sound.last_written = -1;	// Have taken latest buffer
 		new_found = true;
 	}
 
@@ -292,7 +296,7 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 		c_sound.current_pitch = (sound.beep[sound.in_use].grd_y < 0)
 					? sound.beep[sound.in_use].pitch_2
 					: sound.beep[sound.in_use].pitch;
-		c_sound.random = 0;
+		c_sound.random = 0;  	// No randomness on first pitch
 		c_sound.fuzz = 0;
 		c_sound.half_cycle = pitchToHalfSampleCount(c_sound.current_pitch);
 		c_sound.left = (sound.beep[sound.in_use].length * have.freq) / TICK_8049;
@@ -311,9 +315,11 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 	else {
 		do {
 			if (c_sound.pitch_left == 0) {
+				// Play one note forever
 				to_write = total_samples - written;
 			}
 			else if (c_sound.pitch_left > (total_samples - written)) {
+				// Can fill buffer with current note
 				to_write = total_samples - written;
 				c_sound.pitch_left -= to_write;
 				if (c_sound.left) {
@@ -321,6 +327,7 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 				}
 			}
 			else {
+				// Need to change note or stop playing
 				to_write = c_sound.pitch_left;
 				if (c_sound.left) {
 					if (c_sound.left > c_sound.pitch_left) {
@@ -337,6 +344,8 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 			written += to_write;
 
 			if (written < total_samples) {
+				// Reached the end of the pitch
+				// New pitch, or silence?
 				if (c_sound.left >= 0) {
 					getNewPitch();
 					setPitchDuration();
@@ -349,8 +358,8 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 		}
 		while (written < total_samples);
 	}
-	/* ---> MEZCLAR EL AUDIO DE QSOUND EN 16 BITS <--- */
-    qsound_render_mix_s16((int16_t *)stream, total_samples);
+	/* Mix 16-bit QSound audio in stereo */
+	qsound_render_mix_s16((int16_t *)stream, total_samples);
 }
 
 
@@ -479,8 +488,11 @@ static void populateBuffer(int start, int samples, Sint16* buffer, int len)
 	int buffer_pos = start;
 
 	while (buffer_pos < (samples + start)) {
-		// Escalamos el volumen a 16 bits multiplicando por 256
-		buffer[buffer_pos++] = (Sint16)(audio_volume * 256 * c_sound.wave_state);
+		Sint16 val = (Sint16)(audio_volume * 256 * c_sound.wave_state);
+		// Write beeper sample to both channels (Left and Right)
+		buffer[buffer_pos * 2]     = val;
+		buffer[buffer_pos * 2 + 1] = val;
+		buffer_pos++;
 		++c_sound.cycle_point;
 
 		if (c_sound.cycle_point >= (c_sound.half_cycle)) {
@@ -495,7 +507,9 @@ static void silenceBuffer(int start, Sint16* buffer, int len)
 {
 	int buffer_pos = start;
 	while (buffer_pos < len) {
-		buffer[buffer_pos++] = 0;
+		buffer[buffer_pos * 2]     = 0;
+		buffer[buffer_pos * 2 + 1] = 0;
+		buffer_pos++;
 	}
 	c_sound.wave_state = 0;
 	c_sound.cycle_point = 0;

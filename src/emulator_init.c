@@ -97,14 +97,14 @@ void emulatorInit()
 		exit(1);
 	}
 
-	// Asignamos al menos 1 MB a memBase para que la zona $0C0000 quepa en la memoria del PC
+	// At least 1 MB is allocated to memBase to ensure the $0C0000 zone fits within the PC's memory
 	size_t alloc_size = (RTOP < 0x00100000) ? 0x00100000 : RTOP;
 	memBase = (int32_t *)malloc(alloc_size);
 	if (memBase == NULL) {
 		fprintf(stderr, "sorry, not enough memory for a %dK QL\n",RTOP/1024);
 		exit(1);
 	}
-	memset(memBase, 0, alloc_size); // Limpiar memoria
+	memset(memBase, 0, alloc_size); // Clean memory
 
 	if (EmulatorTable()) {
 		fprintf(stderr, "Failed to allocate instruction table\n");
@@ -156,7 +156,7 @@ void emulatorInit()
 		}
 	}
 
-	// Si se ha definido QSROM en sqlux.ini, se carga en $000C0000
+	// If QSROM is defined in sqlux.ini, it is loaded into $000C0000
 	if (strlen(qsrom)) {
 		ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
 		if (ret < 0) {

@@ -13,40 +13,42 @@ typedef struct {
     double sound_freq;
     int stereo_mode;
 
-    // Registros AY-3-8910 / AY-3-8912 (14 registros)
+    // AY-3-8910 / AY-3-8912 internal registers (14 active registers)
     uint8_t regs[14];
     uint8_t ay_addr;
 
-    // Puertos PIA 6821
+    // MC6821 PIA I/O ports
     uint8_t port_a;
     uint8_t port_b;
 
-    // Contadores de coma fija
+    // Fixed-point sample accumulator
     double tacts_per_sample;
     double tact_accum;
 
-    // Generadores de Tono A, B, C
+    // Tone generators (Channels A, B, C)
     int cnt_a, cnt_b, cnt_c;
     int bit_a, bit_b, bit_c;
 
-    // Generador de Ruido JT49 (17-bit LFSR estricto)
+    // JT49-style noise engine (strict 17-bit LFSR)
     int cnt_n;
     uint32_t seed;
     int bit_n;
 
-    // Generador de Envolvente
+    // Envelope generator
     int cnt_e;
     int env_step;
     int env_vol;
     int env_holding;
 
-    // Filtro analógico paso-bajo suave
-    double lpf_state;
+    // Single-pole analog low-pass filter
+    double lpf_l;
+    double lpf_r;
+
 } QSoundState;
 
 static QSoundState qs;
 
-// Tabla DAC logarítmica real (3dB por paso)
+// Realistic logarithmic DAC voltage table (~3dB attenuation per step)
 static const int16_t ayemu_dac_table[32] = {
     0,   0,   0,   0,   0,   1,   1,   1,
     1,   1,   1,   2,   2,   2,   3,   4,
@@ -56,16 +58,15 @@ static const int16_t ayemu_dac_table[32] = {
 
 extern char *emulatorOptionString(const char *name);
 
-// Buffer 8 KB para la ROM
+// 8 KB buffer for expansion ROM
 static uint8_t qsound_rom[8192];
 static int     qsound_rom_loaded = 0;
 static size_t  qsound_rom_size   = 0;
 
-
 void qsound_init(int clock_hz, int sample_rate, int stereo_mode) {
     memset(&qs, 0, sizeof(qs));
     qs.enabled = 1;
-    // 750 kHz real del Sinclair QL por defecto
+    // Default to Sinclair QL QSound clock (750 kHz)
     qs.chip_freq = (clock_hz > 0) ? (double)clock_hz : 750000.0;
     qs.sound_freq = (sample_rate > 0) ? (double)sample_rate : 44100.0;
     qs.stereo_mode = stereo_mode;
@@ -75,12 +76,13 @@ void qsound_init(int clock_hz, int sample_rate, int stereo_mode) {
 
 void qsound_reset(void) {
     memset(qs.regs, 0, sizeof(qs.regs));
-    qs.regs[7] = 0xFF; // Silencio
+    qs.regs[7] = 0xFF; // Silence by default (all tone and noise disabled)
     qs.ay_addr = 0;
     qs.port_a = 0;
     qs.port_b = 0;
     qs.tact_accum = 0;
-    qs.lpf_state = 0.0;
+    qs.lpf_l = 0.0;
+    qs.lpf_r = 0.0;
 
     qs.cnt_a = qs.cnt_b = qs.cnt_c = 0;
     qs.bit_a = qs.bit_b = qs.bit_c = 0;
@@ -113,7 +115,7 @@ int qsound_is_read_active(uint32_t addr) {
 static void ayemu_step_envelope(void) {
     if (qs.env_holding) return;
 
-    uint8_t shape = qs.regs[13] & 0x0F;
+    uint8_t shape  = qs.regs[13] & 0x0F;
     uint8_t attack = (shape & 0x04) ? 1 : 0;
     uint8_t alt    = (shape & 0x02) ? 1 : 0;
     uint8_t hold   = (shape & 0x01) ? 1 : 0;
@@ -159,13 +161,13 @@ static void ayemu_write_reg(uint8_t reg, uint8_t val) {
     }
 }
 
-// Decodificación de bus exacta para escrituras Byte y Word
+// Accurate bus decoding for both byte and word writes
 void qsound_write_byte(uint32_t addr, uint8_t val) {
     if (!qs.enabled) return;
 
     uint32_t a = addr & 0xFFFF;
 
-    // --- ACCESO DIRECTO (0xC3000 = Dirección, 0xC3001/0xC3002/0xC3003 = Dato) ---
+    // --- DIRECT ACCESS (0xC3000 = Register Index, 0xC3001..0xC3003 = Data) ---
     if ((a & 0xF000) == 0x3000) {
         if (a == 0x3000) {
             qs.ay_addr = val & 0x0F;
@@ -175,7 +177,7 @@ void qsound_write_byte(uint32_t addr, uint8_t val) {
         return;
     }
 
-    // --- ACCESO PIA 6821 (0xC2000/1 = Datos, 0xC2002/3 = Control BDIR/BC1) ---
+    // --- MC6821 PIA ACCESS (0xC2000/1 = Data, 0xC2002/3 = BDIR/BC1 Control) ---
     if ((a & 0xF000) == 0x2000) {
         if (a == 0x2000 || a == 0x2001) {
             qs.port_a = val;
@@ -199,12 +201,12 @@ uint8_t qsound_read_byte(uint32_t addr)
 
     uint32_t full_addr = addr & 0x00FFFFFF;
 
-    // 1. LECTURA SEGURA DE LA ROM ($0C0000 - $0C1FFF o hasta 16 KB)
+    // 1. Expansion ROM read ($0C0000 - $0C1FFF, up to 16 KB)
     if (qsound_rom_loaded && (full_addr >= 0x000C0000) && (full_addr < (0x000C0000 + qsound_rom_size))) {
         return qsound_rom[full_addr - 0x000C0000];
     }
 
-    // 2. PUERTOS DE HARDWARE ($C2000 y $C3000)
+    // 2. Hardware I/O ports ($C2000 and $C3000)
     uint32_t a = addr & 0xFFFF;
     if ((a & 0xF000) == 0x3000) {
         if (a != 0x3000) {
@@ -222,7 +224,7 @@ uint8_t qsound_read_byte(uint32_t addr)
 }
 
 // -----------------------------------------------------------------------------
-//              RENDERIZADOR     EN     16 BITS 
+//                          16-BIT AUDIO RENDERER
 // -----------------------------------------------------------------------------
 void qsound_render_mix_s16(int16_t *stream, int len) {
     if (!qs.enabled) return;
@@ -235,7 +237,7 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
         while (tacts > 0) {
             tacts--;
 
-            // 1. Tono Canal A
+            // 1. Channel A Tone Generator
             int tone_a = ((qs.regs[1] & 0x0F) << 8) | qs.regs[0];
             if (tone_a == 0) tone_a = 1;
             if (++qs.cnt_a >= tone_a) {
@@ -243,7 +245,7 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
                 qs.bit_a = !qs.bit_a;
             }
 
-            // 2. Tono Canal B
+            // 2. Channel B Tone Generator
             int tone_b = ((qs.regs[3] & 0x0F) << 8) | qs.regs[2];
             if (tone_b == 0) tone_b = 1;
             if (++qs.cnt_b >= tone_b) {
@@ -251,7 +253,7 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
                 qs.bit_b = !qs.bit_b;
             }
 
-            // 3. Tono Canal C
+            // 3. Channel C Tone Generator
             int tone_c = ((qs.regs[5] & 0x0F) << 8) | qs.regs[4];
             if (tone_c == 0) tone_c = 1;
             if (++qs.cnt_c >= tone_c) {
@@ -259,7 +261,7 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
                 qs.bit_c = !qs.bit_c;
             }
 
-            // 4. Ruido JT49 (LFSR 17-bit)
+            // 4. JT49 Noise Engine (17-bit LFSR)
             int noise_period = (qs.regs[6] & 0x1F) * 2;
             if (noise_period == 0) noise_period = 2;
             if (++qs.cnt_n >= noise_period) {
@@ -269,7 +271,7 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
                 qs.bit_n = qs.seed & 1;
             }
 
-            // 5. Envolvente
+            // 5. Envelope Generator
             int env_period = ((qs.regs[12] << 8) | qs.regs[11]) * 2;
             if (env_period == 0) env_period = 2;
             if (++qs.cnt_e >= env_period) {
@@ -280,35 +282,65 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
 
         uint8_t r7 = qs.regs[7];
         int out_a = 0, out_b = 0, out_c = 0;
-
-        // Canal A
+        
+        // Channel A Output
         if ((qs.bit_a || (r7 & 0x01)) && (qs.bit_n || (r7 & 0x08))) {
             int v = (qs.regs[8] & 0x10) ? qs.env_vol : (qs.regs[8] & 0x0F);
             if (v > 0) out_a = ayemu_dac_table[v * 2 + 1];
         }
 
-        // Canal B
+        // Channel B Output
         if ((qs.bit_b || (r7 & 0x02)) && (qs.bit_n || (r7 & 0x10))) {
             int v = (qs.regs[9] & 0x10) ? qs.env_vol : (qs.regs[9] & 0x0F);
             if (v > 0) out_b = ayemu_dac_table[v * 2 + 1];
         }
 
-        // Canal C
+        // Channel C Output
         if ((qs.bit_c || (r7 & 0x04)) && (qs.bit_n || (r7 & 0x20))) {
             int v = (qs.regs[10] & 0x10) ? qs.env_vol : (qs.regs[10] & 0x0F);
             if (v > 0) out_c = ayemu_dac_table[v * 2 + 1];
         }
 
-        // Señal escalada a 16 bits
-        double raw_signal = (double)(((out_a + out_b + out_c) / 2) * 256);
+        // -------------------------------------------------------------
+        // Stereo panning according to configured mode (ABC, ACB or Mono)
+        // -------------------------------------------------------------
+        double raw_l = 0.0;
+        double raw_r = 0.0;
 
-        // Filtro analógico suave (0.90)
-        qs.lpf_state += 0.90 * (raw_signal - qs.lpf_state);
+        switch (qs.stereo_mode) {
+        case QSOUND_MODE_STEREO_ABC:
+            // Channel A = Left, Channel B = Center (50/50), Channel C = Right
+            raw_l = (double)((out_a + (out_b / 2)) * 256);
+            raw_r = (double)((out_c + (out_b / 2)) * 256);
+            break;
 
-        int32_t mix = (int32_t)stream[i] + (int32_t)qs.lpf_state;
-        if (mix > 32767)  mix = 32767;
-        if (mix < -32768) mix = -32768;
+        case QSOUND_MODE_STEREO_ACB:
+            // Channel A = Left, Channel C = Center (50/50), Channel B = Right
+            raw_l = (double)((out_a + (out_c / 2)) * 256);
+            raw_r = (double)((out_b + (out_c / 2)) * 256);
+            break;
 
-        stream[i] = (int16_t)mix;
+        case QSOUND_MODE_MONO:
+        default:
+            // Mono mixdown: sum all channels equally
+            raw_l = raw_r = (double)(((out_a + out_b + out_c) / 2) * 256);
+            break;
+        }
+
+        // Apply smooth single-pole low-pass filter to both channels (alpha = 0.90)
+        qs.lpf_l += 0.90 * (raw_l - qs.lpf_l);
+        qs.lpf_r += 0.90 * (raw_r - qs.lpf_r);
+
+        // Mix Left channel (interleaved index i * 2)
+        int32_t mix_l = (int32_t)stream[i * 2] + (int32_t)qs.lpf_l;
+        if (mix_l > 32767)  mix_l = 32767;
+        if (mix_l < -32768) mix_l = -32768;
+        stream[i * 2] = (int16_t)mix_l;
+
+        // Mix Right channel (interleaved index i * 2 + 1)
+        int32_t mix_r = (int32_t)stream[i * 2 + 1] + (int32_t)qs.lpf_r;
+        if (mix_r > 32767)  mix_r = 32767;
+        if (mix_r < -32768) mix_r = -32768;
+        stream[i * 2 + 1] = (int16_t)mix_r;
     }
 }

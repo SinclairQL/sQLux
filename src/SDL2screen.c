@@ -354,8 +354,8 @@ extern int schedCount;
 
 int Pulse50Thread(void *ptr) {
     Uint64 frequency = SDL_GetPerformanceFrequency();
-    Uint64 ticks_por_frame = frequency / 50;                  // 20.00 ms (Frame completo)
-    Uint64 ticks_vblank = (ticks_por_frame * 41) / 312;       // Exactamente 2.628 ms (41 líneas de VBlank)
+    Uint64 ticks_por_frame = frequency / 50;                  // 20.00 ms (Full Frame)
+    Uint64 ticks_vblank = (ticks_por_frame * 41) / 312;       // 2.628 ms (VBlank 41 scanlines)
 
     Uint64 next_frame = SDL_GetPerformanceCounter();
     bool refresh_pending = false;
@@ -364,7 +364,7 @@ int Pulse50Thread(void *ptr) {
     while (active_metronome) {
         Uint64 Now = SDL_GetPerformanceCounter();
 
-        // 1. FLANCO DE VSYNC (Línea 271 de la ULA): Dispara interrupción a la CPU
+        // VSYNC EDGE (ULA Line 271): Triggers CPU interrupt
         if (Now >= next_frame) {
             SDL_AtomicSet(&doPoll, 1);
             schedCount = 0;
@@ -375,18 +375,18 @@ int Pulse50Thread(void *ptr) {
                 }
             }
 
-            // Programamos el refresco de pantalla para dentro de 2.6 ms (Inicio Línea 0)
+            // Set screen refresh timer to 2.6 ms (Start of Line 0)
             refresh_trigger = Now + ticks_vblank;
             refresh_pending = true;
 
-            // Siguiente frame a los 20ms exactos
+            // Next frame at 20ms
             next_frame += ticks_por_frame;
             if (Now > next_frame + frequency) {
                 next_frame = Now + ticks_por_frame;
             }
         }
 
-        // 2. INICIO DE LÍNEA ACTIVA (Línea 0): La CPU ya conmutó $18063 durante el VBlank
+        // START OF ACTIVE LINE (Line 0): The CPU already switched $18063 during VBlank
         if (refresh_pending && (Now >= refresh_trigger)) {
             refresh_pending = false;
 
@@ -401,7 +401,6 @@ int Pulse50Thread(void *ptr) {
             }
         }
 
-        // Dormir con precisión hasta el siguiente evento más próximo
         Now = SDL_GetPerformanceCounter();
         Uint64 target = refresh_pending ? refresh_trigger : next_frame;
 
@@ -409,15 +408,18 @@ int Pulse50Thread(void *ptr) {
             Uint64 remaining_ticks = target - Now;
             double ms_remaining = ((double)remaining_ticks * 1000.0) / frequency;
 
+            // If more than 1.2ms remain, sleep to save CPU cycles
             if (ms_remaining > 1.2) {
                 SDL_Delay((Uint32)(ms_remaining - 1.0));
             } else {
-                SDL_Delay(0); // Ceder tiempo sin perder precisión de microsegundos
+                // If remaining time is very short, use busy-wait for maximum precision
+                SDL_Delay(0); 
             }
         }
     }
     return 0;
 }
+
 
 
 void QLSDLScreen(void)
