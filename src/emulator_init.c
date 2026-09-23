@@ -28,46 +28,48 @@
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
 
-int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr, size_t size)
+int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
+		    size_t size)
 {
 	struct stat romStat;
 	int ret, romFile;
 	sds romPath;
 
 	if (romDir[0] == '~') {
-		romPath = sdscatprintf(sdsnew(""), "%s/%s/%s",
-			homedir, romDir + 1, romName);
+		romPath = sdscatprintf(sdsnew(""), "%s/%s/%s", homedir,
+				       romDir + 1, romName);
 	} else {
 		romPath = sdscatprintf(sdsnew(""), "%s/%s", romDir, romName);
 	}
 
 	ret = stat(romPath, &romStat);
 	if (ret < 0) {
-		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n",
-			__func__, strerror(errno), romPath);
+		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n", __func__,
+			strerror(errno), romPath);
 		return ret;
 	}
 
 	if (romStat.st_size > size) {
-		fprintf(stderr, "FUNC: %s ERR: Rom Size Error VAL: %zd != %jd\n",
+		fprintf(stderr,
+			"FUNC: %s ERR: Rom Size Error VAL: %zd != %jd\n",
 			__func__, size, (intmax_t)romStat.st_size);
 		return -1;
-	}
-	else if (romStat.st_size < size)
-		puts ("SQLX WARNING: ROM is not 48k");
+	} else if (romStat.st_size < size)
+		printf("SQLUX WARNING: ROM %s is not %dk", romName,
+		       size / 1024);
 
 	romFile = open(romPath, O_RDONLY);
 	if (romFile < 0) {
-		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n",
-			__func__, strerror(errno), romPath);
+		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n", __func__,
+			strerror(errno), romPath);
 		return -1;
 	}
-    	ret = read(romFile, (char *)memBase + addr, size);
+	ret = read(romFile, (char *)memBase + addr, size);
 	if (ret < 0) {
-		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n",
-			__func__, strerror(errno), romPath);
+		fprintf(stderr, "FUNC: %s ERR: %s VAL: %s\n", __func__,
+			strerror(errno), romPath);
 	}
-    	close(romFile);
+	close(romFile);
 
 	sdsfree(romPath);
 
@@ -93,7 +95,8 @@ void emulatorInit()
 	}
 
 	if (RTOP < (256 * 1024)) {
-		fprintf(stderr, "Sorry not enough ram defined for QDOS %dK\n", (RTOP / 1024) - 128);
+		fprintf(stderr, "Sorry not enough ram defined for QDOS %dK\n",
+			(RTOP / 1024) - 128);
 		exit(1);
 	}
 
@@ -101,7 +104,8 @@ void emulatorInit()
 	size_t alloc_size = (RTOP < 0x00100000) ? 0x00100000 : RTOP;
 	memBase = (int32_t *)malloc(alloc_size);
 	if (memBase == NULL) {
-		fprintf(stderr, "sorry, not enough memory for a %dK QL\n",RTOP/1024);
+		fprintf(stderr, "sorry, not enough memory for a %dK QL\n",
+			RTOP / 1024);
 		exit(1);
 	}
 	memset(memBase, 0, alloc_size); // Clean memory
@@ -127,13 +131,15 @@ void emulatorInit()
 	}
 
 	if (strlen(romport)) {
-		ret = emulatorLoadRom(romdir, romport, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+		ret = emulatorLoadRom(romdir, romport, QL_ROM_PORT_BASE,
+				      QL_ROM_PORT_SIZE);
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading romport %s\n", romport);
 			exit(ret);
 		}
 	} else if (strlen(romim)) {
-		ret = emulatorLoadRom(romdir, romim, QL_ROM_PORT_BASE, QL_ROM_PORT_SIZE);
+		ret = emulatorLoadRom(romdir, romim, QL_ROM_PORT_BASE,
+				      QL_ROM_PORT_SIZE);
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading romim %s\n", romim);
 			exit(ret);
@@ -141,7 +147,8 @@ void emulatorInit()
 	}
 
 	if (strlen(iorom1)) {
-		ret = emulatorLoadRom(romdir, iorom1, QL_ROM2_BASE, QL_ROM2_SIZE);
+		ret = emulatorLoadRom(romdir, iorom1, QL_ROM2_BASE,
+				      QL_ROM2_SIZE);
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading iorom1 %s\n", iorom1);
 			exit(ret);
@@ -149,7 +156,8 @@ void emulatorInit()
 	}
 
 	if (strlen(iorom2)) {
-		ret = emulatorLoadRom(romdir, iorom2, QL_ROM3_BASE, QL_ROM3_SIZE);
+		ret = emulatorLoadRom(romdir, iorom2, QL_ROM3_BASE,
+				      QL_ROM3_SIZE);
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading iorom2 %s\n", iorom2);
 			exit(ret);
@@ -161,9 +169,10 @@ void emulatorInit()
 		ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
 		if (ret < 0) {
 			fprintf(stderr, "Error Loading qsrom %s\n", qsrom);
-			exit(ret);			
+			exit(ret);
 		} else {
-			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $0C0000\n", qsrom);
+			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $0C0000\n",
+			       qsrom);
 		}
 	}
 
@@ -217,7 +226,8 @@ void emulatorInit()
 		printf("Emulation Speed: FULL\n");
 
 	if (V1 && (emulatorOptionInt("sound") > 0))
-		printf("sound enabled, volume %i.\n", emulatorOptionInt("sound"));
+		printf("sound enabled, volume %i.\n",
+		       emulatorOptionInt("sound"));
 
 	if (!isMinerva) {
 		qlux_table[IPC_CMD_CODE] = UseIPC; /* install pseudoops */
