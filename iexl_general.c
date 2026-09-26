@@ -12,6 +12,7 @@
 #include "unixstuff.h"
 #include "mdv.h"
 #include "cycles68k.h"
+#include "zx8301.h"
 
 void    (**qlux_table)(void);
 
@@ -20,6 +21,8 @@ int trace_rts=0;
 #endif
 
 int extInt=0;
+extern uint64_t ql_snapshot_at;
+extern void QLSDLSnapshotLine(void);
 
 #ifdef DEBUG
 #define TRR  {trace_rts=20;}
@@ -467,11 +470,19 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
       if (pc>tracelo) DoTrace();
 #endif
 
+      uint64_t t0 = ql_cycles;
       code = RW(pc++) & 0xffff;
       ql_cycles += cyc_table[code];
       if (cyc_kind[code])
         ql_cycles += cycles_extra((uw16)code);
+      if (zx_contention)
+        zx8301_insn(t0, (uint32_t)((Ptr)pc - (Ptr)memBase) - 2, cyc_pw[code]);
       qlux_table[code]();
+
+      if (ql_cycles >= ql_snapshot_at) {
+          ql_snapshot_at = UINT64_MAX;
+          QLSDLSnapshotLine();
+      }
 
       // The tape advances continuously, not only when the CPU accesses its
       // registers, so the gap edge raises its interrupt in time.

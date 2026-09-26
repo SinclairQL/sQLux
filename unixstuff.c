@@ -52,6 +52,7 @@
 #include "version.h"
 #include "Xscreen.h"
 #include "mdv.h"
+#include "zx8301.h"
 
 #define TIME_DIFF 283996800
 void GetDateTime(w32 *);
@@ -169,7 +170,7 @@ void dosignal()
 	}
 
 #ifndef xx_VTIME
-	FrameInt();
+	FrameInt();         // real vertical sync: 50 Hz PAL / 60 Hz NTSC
 #endif
 }
 
@@ -357,10 +358,10 @@ void SetHome()
 }
 
 /* ------------------------------------------------------------------------- */
-/*  Microdrive time keeps running while the CPU is stopped                   */
+/*  Emulated time keeps running while the CPU is stopped                     */
 /* ------------------------------------------------------------------------- */
 
-extern uint64_t ql_cycles;          // iexl_general.c
+extern uint64_t ql_cycles;
 
 // Time budget for the tape at unlimited speed while the CPU is stopped, in
 // cycles (one 50 Hz frame at 7.5 MHz).
@@ -370,25 +371,40 @@ extern uint64_t ql_cycles;          // iexl_general.c
 // (about 16 typical 68008 instructions).
 #define MDV_IDLE_STEP 400
 
-// While the CPU is stopped the tape keeps moving, as on the hardware. It
-// advances in steps of MDV_IDLE_STEP cycles until an interrupt wakes the CPU
-// or the budget is used up. Returns the number of cycles consumed.
+// While the CPU is stopped time keeps running, as on the hardware: with
+// SPEED > 0 the emulated clock advances through the rest of the frame, so
+// the tape keeps moving and the line by line screen capture follows the
+// beam; at unlimited speed it only advances while the tape is moving. It
+// returns as soon as an interrupt wakes the CPU or the budget is used up.
+// Returns the number of cycles consumed.
+extern uint64_t ql_snapshot_at;
+extern void QLSDLSnapshotLine(void);
+extern int speed;                 // defined below
+
 static long idle_advance(long budget)
 {
 	long used = 0;
 
-	if (!mdv_is_selected())
+	if (!speed && !mdv_is_selected())
 		return 0;
 
 	while (used < budget) {
 		uint64_t step = (uint64_t)(budget - used);
 
-		if (step > MDV_IDLE_STEP)
+		if (mdv_is_selected() && step > MDV_IDLE_STEP)
 			step = MDV_IDLE_STEP;
+		if (ql_snapshot_at > ql_cycles && ql_snapshot_at - ql_cycles < step)
+			step = ql_snapshot_at - ql_cycles;
+		if (step == 0)
+			step = 1;
 
 		ql_cycles += step;
 		used += (long)step;
 		mdv_sync();
+		if (ql_cycles >= ql_snapshot_at) {
+			ql_snapshot_at = UINT64_MAX;
+			QLSDLSnapshotLine();
+		}
 
 		if (pendingInterrupt == 7 || pendingInterrupt > iMask) {
 			ProcessInterrupts();      // services the IRQ and clears stopped
@@ -398,27 +414,25 @@ static long idle_advance(long budget)
 	return used;
 }
 
-// speed = SPEED * 20 units per 50 Hz frame; SPEED = 1 is the 7.5 MHz clock
-// of an original QL: 7500000 / 50 / 20 = 7500 cycles per unit.
-#define QL_CYCLES_PER_SPEED_UNIT 7500
-
 int speed = 0;
 
 int QLRun(void *data)
 {
     speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
 
-    // Frame budget in 68008 clock cycles actually consumed
-    // (SPEED = 1 -> 150000 cycles per frame = 7.5 MHz).
-    uint64_t frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;
+    // Frame budget in 68008 clock cycles actually consumed (SPEED = 1 ->
+    // 7.5 MHz: 150000 cycles per PAL frame, 125000 per NTSC frame).
+    // idle_advance also adds to ql_cycles, so time spent stopped is
+    // accounted for automatically.
+    uint64_t frame_budget = (uint64_t)speed * zx8301_speed_unit();
     uint64_t frame_start = ql_cycles;
 
 exec:
 
-    // The CPU is stopped: let the tape run for the rest of the frame. If a
-    // gap interrupt is raised meanwhile, the CPU wakes up immediately.
+    // The CPU is stopped: let time run for the rest of the frame. If an
+    // interrupt is raised meanwhile, the CPU wakes up immediately.
     if (stopped) {
-        frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;
+        frame_budget = (uint64_t)speed * zx8301_speed_unit();
         long budget = speed ? (long)frame_budget -
                               (long)(ql_cycles - frame_start)
                             : MDV_IDLE_TURBO_BUDGET;
@@ -429,14 +443,14 @@ exec:
     }
 
     // Either in STOP state or time to sync frame (Normal Speed mode)
-    frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;   // may be changed by emu_speed()
+    frame_budget = (uint64_t)speed * zx8301_speed_unit();   // may be changed by emu_speed()
     if (stopped || (sem50Hz && speed &&
                     ql_cycles - frame_start >= frame_budget)) {
 
         // Exactly when the SDL Timer triggers (50Hz stable).
         if (sem50Hz) {
             SDL_SemWait(sem50Hz);
-            
+
             // Safety drain:
             while (SDL_SemTryWait(sem50Hz) == 0) {
                 // Consume accumulated ticks
@@ -451,25 +465,23 @@ exec:
         if (speed) {
             uint64_t used = ql_cycles - frame_start;
             uint64_t carry = (used > frame_budget) ? used - frame_budget : 0;
-            if (carry > QL_CYCLES_PER_SPEED_UNIT) carry = QL_CYCLES_PER_SPEED_UNIT;
+            if (carry > zx8301_speed_unit()) carry = zx8301_speed_unit();
             frame_start = ql_cycles - carry;
         } else {
             frame_start = ql_cycles;
         }
 
         // IMPORTANT: This fixes the STOP bug.
-		// Upon exiting the Wait, we guarantee that interrupts are processed 
-		// IMMEDIATELY, which will wake the QL from the 'stopped' state.
-			
-			dosignal();
-        	ProcessInterrupts();
-        	
+        // Upon exiting the Wait, we guarantee that interrupts are processed
+        // IMMEDIATELY, which will wake the QL from the 'stopped' state.
+        dosignal();
+        ProcessInterrupts();
     }
     // Normal execution
     else {
         if (!speed) {
             // Turbo mode (w/o wait)
-            ExecuteChunk(3000); 
+            ExecuteChunk(3000);
         } else {
             // Normal Mode
             uint64_t before = ql_cycles;
@@ -477,7 +489,7 @@ exec:
             // If nothing was executed (e.g. odd PC), charge part of the
             // frame so that the loop does not spin without waiting.
             if (ql_cycles == before)
-                frame_start -= QL_CYCLES_PER_SPEED_UNIT;
+                frame_start -= zx8301_speed_unit();
         }
     }
 
@@ -492,7 +504,7 @@ exec:
 #endif
 
     if (!QLdone)
-    	goto exec;
+        goto exec;
 
     return 0;
 }

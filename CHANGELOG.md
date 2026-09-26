@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
 - `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
 - Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
+- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 36 lines after the frame interrupt, calibrated against demos on a real QL (`ZX8301_VSYNC_LINES` option)
+- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina
+- `NTSC` option: 60 Hz frame interrupt and 262 lines per frame
+- `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
 
 ### Changed
 - The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions

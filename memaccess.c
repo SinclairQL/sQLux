@@ -10,6 +10,11 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 #include "qsound.h"
+#include "zx8301.h"
+
+/* ZX8301 contention on the internal RAM (see zx8301.c) */
+#define ZX_CONTEND(addr, n, w) \
+	do { if (zx_contention && zx8301_is_ram(addr)) zx8301_ram((n), (w)); } while (0)
 
 static int is_hw(uint32_t addr)
 {
@@ -52,6 +57,7 @@ rw8 ReadByte(aw32 addr)
 		return 0;
 
 	// Standard RAM and system ROM ($000000)
+	ZX_CONTEND(addr, 1, 0);
 	return *((w8 *)memBase + addr);
 }
 
@@ -78,6 +84,7 @@ rw16 ReadWord(aw32 addr)
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return 0;
 
+	ZX_CONTEND(addr, 2, 0);
 	return (w16)RW((w16 *)((Ptr)memBase + addr)); /* make sure it is signed */
 }
 
@@ -100,6 +107,7 @@ rw32 ReadLong(aw32 addr)
 	if ((addr >= RTOP) && (addr >= qlscreen.qm_hi))
 		return 0;
 
+	ZX_CONTEND(addr, 4, 0);
 	return (w32)RL((Ptr)memBase + addr); /* make sure it is signed */
 }
 
@@ -124,6 +132,7 @@ void WriteByte(aw32 addr, aw8 d)
 	if (is_hw(addr)) {
 		WriteHWByte(addr, d);
 	} else if (addr >= QL_SCREEN_BASE) {
+		ZX_CONTEND(addr, 1, 1);
 		*((w8 *)memBase + addr) = d;
 	}
 }
@@ -144,6 +153,7 @@ void WriteWord(aw32 addr,aw16 d)
 	if (is_hw(addr)) {
 		WriteHWWord(addr, d);
 	} else if (addr >= QL_SCREEN_BASE) {
+		ZX_CONTEND(addr, 2, 1);
 		WW((Ptr)memBase + addr, d);
 	}
 }
@@ -165,6 +175,7 @@ void WriteLong(aw32 addr,aw32 d)
 		WriteHWWord(addr, d >> 16);
 		WriteHWWord(addr + 2, d);
 	} else if (addr >= QL_SCREEN_BASE) {
+		ZX_CONTEND(addr, 4, 1);
 		WL((Ptr)memBase + addr, d);
 	}
 }

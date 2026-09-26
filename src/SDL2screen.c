@@ -47,6 +47,138 @@ bool shaders_selected = false;
 
 SDL_sem *sem50Hz = NULL;
 
+/* =============================================================== */
+/*   LINE BY LINE SCREEN CAPTURE IN EMULATED TIME                  */
+/*                                                                 */
+/*   On a real QL line L is fetched when the beam reaches it. Here */
+/*   every line is copied when it starts, counting lines of 64 us  */
+/*   (480 cycles at SPEED = 1) from the vertical sync: see         */
+/*   zx8301_line_time(). One buffer is filled while the renderer   */
+/*   draws the other one.                                          */
+/* =============================================================== */
+
+// PAL/NTSC frame geometry: see zx8301.c
+#include "zx8301.h"
+#define QL_ACTIVE_LINES ZX_VISIBLE_LINES
+
+extern int display_mode;
+extern uint64_t ql_cycles;
+
+uint64_t ql_snapshot_at = UINT64_MAX;  // cycle at which to copy the next line
+
+static uint8_t *snap_buf[2] = { NULL, NULL };
+static uint32_t snap_buf_len = 0;
+static volatile int snap_front = -1;   // buffer drawn by the renderer (-1 = none)
+static int snap_back = 0;              // buffer being filled
+static int snap_line = 0;              // next line to copy
+static bool snap_active = false;       // a frame capture is in progress
+static uint64_t snap_base = 0;         // cycle of the frame interrupt
+static uint64_t snap_frame_len = 0;    // cycles per frame (0 = unlimited speed)
+static bool snapshot_blank = false;
+static int snapshot_mode = 4;
+
+static uint64_t snap_time_for_line(int line)
+{
+	// With larger resolutions the lines are spread over the 256 active ones.
+	unsigned vline = (unsigned)((uint64_t)line * QL_ACTIVE_LINES / qlscreen.yres);
+	return zx8301_line_time(snap_base, snap_frame_len, vline) + 1;
+}
+
+static bool snap_ensure_buffers(void)
+{
+	if (snap_buf_len == qlscreen.qm_len)
+		return true;
+
+	snap_front = -1;
+	free(snap_buf[0]);
+	free(snap_buf[1]);
+	snap_buf[0] = calloc(1, qlscreen.qm_len);
+	snap_buf[1] = calloc(1, qlscreen.qm_len);
+	if (!snap_buf[0] || !snap_buf[1]) {
+		free(snap_buf[0]);
+		free(snap_buf[1]);
+		snap_buf[0] = snap_buf[1] = NULL;
+		snap_buf_len = 0;
+		return false;
+	}
+	snap_buf_len = qlscreen.qm_len;
+	return true;
+}
+
+static void snap_copy_line(int line)
+{
+	uint32_t off = (uint32_t)line * qlscreen.linel;
+
+	if (off + qlscreen.linel > snap_buf_len)
+		return;
+	memcpy(snap_buf[snap_back] + off,
+	       (uint8_t *)memBase + qlscreen.qm_lo + off, qlscreen.linel);
+}
+
+static void snap_present(void)
+{
+	snapshot_blank = is_display_blank;
+	snapshot_mode = display_mode;
+	snap_front = snap_back;
+	snap_back ^= 1;
+	snap_active = false;
+
+	if (renderer_idle) {
+		SDL_Event event;
+		event.type = SDL_USEREVENT;
+		event.user.type = SDL_USEREVENT;
+		event.user.code = USER_CODE_SCREENREFRESH;
+		event.user.data1 = NULL;
+		event.user.data2 = NULL;
+		SDL_PushEvent(&event);
+	}
+}
+
+// Called from FrameInt (emulation thread): a new frame starts.
+void QLSDLFrameStart(uint64_t now, uint64_t frame_len)
+{
+	if (!snap_ensure_buffers()) {
+		ql_snapshot_at = UINT64_MAX;
+		return;
+	}
+
+	// If the previous frame was not completed (the CPU was stopped and
+	// time did not advance), copy the remaining lines: video memory does
+	// not change while the CPU is stopped.
+	if (snap_active) {
+		while (snap_line < qlscreen.yres)
+			snap_copy_line(snap_line++);
+		snap_present();
+	}
+
+	snap_line = 0;
+	snap_active = true;
+	snap_base = now;
+	snap_frame_len = frame_len;
+	ql_snapshot_at = snap_time_for_line(0);
+}
+
+// Called from ExecuteLoop when ql_cycles >= ql_snapshot_at.
+// Copies every line whose time has come.
+void QLSDLSnapshotLine(void)
+{
+	if (!snap_active) {
+		ql_snapshot_at = UINT64_MAX;
+		return;
+	}
+
+	while (snap_line < qlscreen.yres &&
+	       snap_time_for_line(snap_line) <= ql_cycles)
+		snap_copy_line(snap_line++);
+
+	if (snap_line >= qlscreen.yres) {
+		snap_present();
+		ql_snapshot_at = UINT64_MAX;
+	} else {
+		ql_snapshot_at = snap_time_for_line(snap_line);
+	}
+}
+
 typedef enum {
 	KEY_US,
 	KEY_GB,
@@ -354,12 +486,9 @@ extern int schedCount;
 
 int Pulse50Thread(void *ptr) {
     Uint64 frequency = SDL_GetPerformanceFrequency();
-    Uint64 ticks_por_frame = frequency / 50;                  // 20.00 ms (Full Frame)
-    Uint64 ticks_vblank = (ticks_por_frame * 41) / 312;       // 2.628 ms (VBlank 41 scanlines)
+    Uint64 ticks_por_frame = frequency / zx8301_hz();         // 20 ms PAL / 16.7 ms NTSC
 
     Uint64 next_frame = SDL_GetPerformanceCounter();
-    bool refresh_pending = false;
-    Uint64 refresh_trigger = 0;
 
     while (active_metronome) {
         Uint64 Now = SDL_GetPerformanceCounter();
@@ -375,10 +504,6 @@ int Pulse50Thread(void *ptr) {
                 }
             }
 
-            // Set screen refresh timer to 2.6 ms (Start of Line 0)
-            refresh_trigger = Now + ticks_vblank;
-            refresh_pending = true;
-
             // Next frame at 20ms
             next_frame += ticks_por_frame;
             if (Now > next_frame + frequency) {
@@ -386,23 +511,11 @@ int Pulse50Thread(void *ptr) {
             }
         }
 
-        // START OF ACTIVE LINE (Line 0): The CPU already switched $18063 during VBlank
-        if (refresh_pending && (Now >= refresh_trigger)) {
-            refresh_pending = false;
-
-            if (renderer_idle) {
-                SDL_Event event;
-                event.user.type = SDL_USEREVENT;
-                event.user.code = USER_CODE_SCREENREFRESH;
-                event.user.data1 = NULL;
-                event.user.data2 = NULL;
-                event.type = SDL_USEREVENT;
-                SDL_PushEvent(&event);
-            }
-        }
+        // The screen refresh is no longer triggered here: it is triggered
+        // by the line by line capture in emulated time (QLSDLSnapshotLine).
 
         Now = SDL_GetPerformanceCounter();
-        Uint64 target = refresh_pending ? refresh_trigger : next_frame;
+        Uint64 target = next_frame;
 
         if (Now < target) {
             Uint64 remaining_ticks = target - Now;
@@ -640,7 +753,7 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 		uint8_t t1 = *emulatorScreenPtr++;
 		uint8_t t2 = *emulatorScreenPtr++;
 
-		switch (display_mode) {
+		switch (snapshot_mode) {
 		case 8:
 			for (int i = 6; i > -2; i -= 2) {
 				uint8_t p1 = (t1 >> i) & 0x03;
@@ -703,12 +816,16 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 
 static void QLSDLUpdatePixelBuffer()
 {
+	int front = snap_front;
+	if (front < 0)
+		return;
+	uint8_t *emulatorScreenPtr = snap_buf[front];
+	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + snap_buf_len;
+
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_LockSurface(ql_screen);
 	}
 
-	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
-	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
 
 	emulatorUpdatePixelBufferQL(ql_screen->pixels, emulatorScreenPtr,
 				    emulatorScreenPtrEnd);
@@ -721,8 +838,11 @@ static void QLSDLUpdatePixelBuffer()
 // Needed for the shader code
 void QLSDLWritePixels(uint32_t *pixelPtr32)
 {
-	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
-	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
+	int front = snap_front;
+	if (front < 0)
+		return;
+	uint8_t *emulatorScreenPtr = snap_buf[front];
+	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + snap_buf_len;
 
 	emulatorUpdatePixelBufferQL(pixelPtr32, emulatorScreenPtr,
 				    emulatorScreenPtrEnd);
@@ -738,7 +858,7 @@ void QLSDLRenderScreen(void)
 	SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels,
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
-	if (!is_display_blank) {
+	if (!snapshot_blank) {
 		SDL_RenderCopyEx(ql_renderer, ql_texture, NULL, &dest_rect, 0, NULL,
 				 SDL_FLIP_NONE);
 	}

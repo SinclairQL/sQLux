@@ -22,6 +22,7 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 #include "mdv.h"
+#include "zx8301.h"
 
 extern int display_mode;
 extern volatile bool is_display_blank;
@@ -31,6 +32,8 @@ void debug(char *);
 void debug2(char *, long);
 
 extern void vmMarkScreen(uw32 /*addr*/);
+extern int speed;                              // unixstuff.c
+extern uint64_t ql_cycles;                     // iexl_general.c
 
 #ifdef DEBUG
 int trace_rts = 0;
@@ -157,6 +160,15 @@ void FrameInt(void)
 	extraFlag = true;
 	nInst2 = nInst;
 	nInst = 0;
+
+	// Real vertical sync (50 Hz PAL / 60 Hz NTSC): from here the beam
+	// position is counted in emulated cycles. At SPEED = 1 a frame lasts
+	// 7.5 MHz / hz cycles; at unlimited speed (speed = 0) the screen is
+	// copied at once.
+	extern void QLSDLFrameStart(uint64_t now, uint64_t frame_len);
+	uint64_t frame_cycles = speed ? (uint64_t)speed * zx8301_speed_unit() : 0;
+	zx8301_frame(ql_cycles, speed);
+	QLSDLFrameStart(ql_cycles, frame_cycles);
 }
 
 void ql_trigger_gap_interrupt(void) {

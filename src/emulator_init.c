@@ -26,6 +26,7 @@
 #include "xqlmouse.h"
 #include "mdv.h"
 #include "cycles68k.h"
+#include "zx8301.h"
 
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
@@ -189,6 +190,11 @@ void emulatorInit()
 	} else {
 		cycles_init(CYC_CPU_68008);
 	}
+	/* ZX8301 RAM contention: only with the original 68008 */
+	zx8301_init(emulatorOptionInt("zx8301_contention") &&
+		    emulatorOptionInt("cpu_timing") != 68000,
+		    emulatorOptionInt("ntsc"),
+		    emulatorOptionInt("zx8301_vsync_lines"));
 	mdv_init();
 
 	const char *mdv1_path = emulatorOptionString("mdv1");

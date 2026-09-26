@@ -366,15 +366,38 @@ KBD = DE
 `SPEED`
 Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 runs the CPU at the 7.5 MHz clock of an original QL, charging each instruction its real cycle cost (see `CPU_TIMING`). Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
 
+The frame interrupt always follows the real video signal: 50 Hz with PAL or 60 Hz with NTSC (see `NTSC`), whatever the speed. Within each frame the beam position is obtained by counting emulated clock cycles from the vertical sync, and the ZX8301 memory contention and the line by line screen capture follow it. The microdrive tape also follows the emulated clock, so at `SPEED = 2` it runs twice as fast.
+
 ```
 SPEED = 1.5
 ```
 
 `CPU_TIMING`
-Selects the instruction timing model used to count CPU cycles. `68008` (the default) is the original QL CPU, with its 8 bit data bus: every word access costs two bus cycles. `68000` uses the timings of a 68000 with a 16 bit bus, which executes the same code roughly 1.5 to 2 times faster at the same clock, and is useful for software written for faster QL compatible hardware. The rest of the machine keeps the timing of the original QL.
+Selects the instruction timing model used to count CPU cycles. `68008` (the default) is the original QL CPU, with its 8 bit data bus: every word access costs two bus cycles. `68000` uses the timings of a 68000 with a 16 bit bus, which executes the same code roughly 1.5 to 2 times faster at the same clock, and is useful for software written for faster QL compatible hardware. The rest of the machine (microdrive, frame interrupt, screen) keeps the timing of the original QL.
 
 ```
 CPU_TIMING = 68000
+```
+
+`ZX8301_CONTENTION`
+At `SPEED = 1`, emulates the wait states the ZX8301 inserts in CPU accesses to the internal 128K of RAM: during the visible lines it uses 32 of the 40 slots of 12 cycles of each line to read the screen, and 8 slots in the other lines to refresh the DRAM, and the CPU can only start a RAM access at the beginning of a busy slot. Writes always get at least one wait state. ROM, I/O and expansion RAM are not affected. At other speeds, or with `CPU_TIMING = 68000`, it is not applied, as on the MiSTer QL core. The timing follows the `ql_timing` module of the MiSTer QL core by Marcel Kilgus and Daniele Terdina. Enabled by default (1); set to 0 to disable.
+
+```
+ZX8301_CONTENTION = 0
+```
+
+`NTSC`
+Selects NTSC video timing: 60 Hz frame interrupt and 262 lines per frame. The default (0) is PAL: 50 Hz and 312 lines.
+
+```
+NTSC = 1
+```
+
+`ZX8301_VSYNC_LINES`
+Advanced: number of lines from the frame interrupt to the first visible line, used by the line by line screen capture and the memory contention. It also moves the part of the frame where the memory contention is heaviest, so it affects CPU timing too. The default (-1) is 36 lines for PAL, calibrated against demos that run on a real QL (all of them work between 35 and 37), and 4 for NTSC (not calibrated).
+
+```
+ZX8301_VSYNC_LINES = 36
 ```
 
 `SOUND`
