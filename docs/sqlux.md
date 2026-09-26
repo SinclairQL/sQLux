@@ -350,10 +350,17 @@ KBD = DE
 ```
 
 `SPEED`
-Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 approximates to the speed of an original QL. Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
+Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 runs the CPU at the 7.5 MHz clock of an original QL, charging each instruction its real cycle cost (see `CPU_TIMING`). Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
 
 ```
 SPEED = 1.5
+```
+
+`CPU_TIMING`
+Selects the instruction timing model used to count CPU cycles. `68008` (the default) is the original QL CPU, with its 8 bit data bus: every word access costs two bus cycles. `68000` uses the timings of a 68000 with a 16 bit bus, which executes the same code roughly 1.5 to 2 times faster at the same clock, and is useful for software written for faster QL compatible hardware. The rest of the machine keeps the timing of the original QL.
+
+```
+CPU_TIMING = 68000
 ```
 
 `SOUND`

@@ -115,6 +115,7 @@ add_executable(
   QL_serial.c
   QL_sound.c
   qsound.c
+  cycles68k.c
   QLip.c
   QLserio.c
   QLtraps.c

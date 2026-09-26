@@ -355,20 +355,30 @@ void SetHome()
 #endif
 }
 
+extern uint64_t ql_cycles;          // iexl_general.c
+
+// speed = SPEED * 20 units per 50 Hz frame; SPEED = 1 is the 7.5 MHz clock
+// of an original QL: 7500000 / 50 / 20 = 7500 cycles per unit.
+#define QL_CYCLES_PER_SPEED_UNIT 7500
+
 int speed = 0;
 
 int QLRun(void *data)
 {
     speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
-    
-    // Turbo/Speed variables
-    int loops_per_frame = 0;
+
+    // Frame budget in 68008 clock cycles actually consumed
+    // (SPEED = 1 -> 150000 cycles per frame = 7.5 MHz).
+    uint64_t frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;
+    uint64_t frame_start = ql_cycles;
 
 exec:
 
     // Either in STOP state or time to sync frame (Normal Speed mode)
-    if (stopped || (sem50Hz && speed && loops_per_frame >= speed)) {
-        
+    frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;   // may be changed by emu_speed()
+    if (stopped || (sem50Hz && speed &&
+                    ql_cycles - frame_start >= frame_budget)) {
+
         // Exactly when the SDL Timer triggers (50Hz stable).
         if (sem50Hz) {
             SDL_SemWait(sem50Hz);
@@ -382,8 +392,16 @@ exec:
             SDL_Delay(20);
         }
 
-        // Reset instruction counter
-        loops_per_frame = 0;
+        // New frame. The excess of the previous frame (the last chunk may
+        // overrun by a few instructions) is deducted from the next one.
+        if (speed) {
+            uint64_t used = ql_cycles - frame_start;
+            uint64_t carry = (used > frame_budget) ? used - frame_budget : 0;
+            if (carry > QL_CYCLES_PER_SPEED_UNIT) carry = QL_CYCLES_PER_SPEED_UNIT;
+            frame_start = ql_cycles - carry;
+        } else {
+            frame_start = ql_cycles;
+        }
 
         // IMPORTANT: This fixes the STOP bug.
 		// Upon exiting the Wait, we guarantee that interrupts are processed 
@@ -400,8 +418,12 @@ exec:
             ExecuteChunk(3000); 
         } else {
             // Normal Mode
+            uint64_t before = ql_cycles;
             ExecuteChunk(300);
-            loops_per_frame++;
+            // If nothing was executed (e.g. odd PC), charge part of the
+            // frame so that the loop does not spin without waiting.
+            if (ql_cycles == before)
+                frame_start -= QL_CYCLES_PER_SPEED_UNIT;
         }
     }
 

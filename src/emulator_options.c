@@ -78,6 +78,7 @@ struct emuOpts emuOptions[] = {
 {"skip_boot", "", "1 = skip f1/f2 screen, 0 = show f1/f2 screen", EMU_OPT_INT, 1, NULL},
 {"sound", "", "volume in range 1-8, 0 to disable", EMU_OPT_INT, 0, NULL},
 {"speed", "", "speed in factor of BBQL speed, 0.0 for full speed", EMU_OPT_CHAR, 0, "0.0"},
+{"cpu_timing", "", "CPU timing model: 68008 (original QL, default) or 68000 (16 bit bus)", EMU_OPT_INT, 68008, NULL},
 {"strict_lock", "", "enable strict file locking", EMU_OPT_INT, 0, NULL},
 {"sysrom", "", "system rom", EMU_OPT_CHAR, 0, "MIN198.rom"},
 {"win_size", "w", "window size 1x, 2x, 3x, max, full", EMU_OPT_CHAR, 0, "1x"},

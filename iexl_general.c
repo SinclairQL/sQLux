@@ -10,6 +10,7 @@
 #include "memaccess.h"
 #include "mmodes.h"
 #include "unixstuff.h"
+#include "cycles68k.h"
 
 void    (**qlux_table)(void);
 
@@ -83,6 +84,25 @@ gshort    code;
 int      nInst;
 #endif
 
+uint64_t ql_cycles = 0;            /* emulated 68008 clock cycles */
+
+/* Dynamic part of the cost: evaluated BEFORE the instruction is executed,
+ * while flags, registers and the extension word are still unchanged. */
+static unsigned cycles_extra(uw16 op)
+{
+  int cond = 0;
+  switch (cyc_kind[op]) {
+  case CYC_K_BCC:
+  case CYC_K_DBCC:
+  case CYC_K_SCC:
+    cond = ConditionTrue[(op >> 8) & 15]() ? 1 : 0;
+    break;
+  default:
+    break;
+  }
+  return cycles_dynamic(op, cond, (const int32_t *)reg, (uint16_t)RW(pc));
+}
+
 Cond    trace,supervisor,xflag,negative,zero,overflow,carry;    /*flags */
 char    iMask;                          /* SR interrupt mask */
 Cond    stopped;                        /* processor status */
@@ -140,6 +160,7 @@ void ProcessInterrupts(void)
 	  usp=(*m68k_sp);
 	  (*m68k_sp)=ssp;
 	}
+      ql_cycles += cyc_interrupt;
       ExceptionIn(24+pendingInterrupt);
       WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)memBase);
       (*m68k_sp)-=6;
@@ -443,7 +464,11 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
       if (pc>tracelo) DoTrace();
 #endif
 
-      qlux_table[code=RW(pc++)&0xffff]();
+      code = RW(pc++) & 0xffff;
+      ql_cycles += cyc_table[code];
+      if (cyc_kind[code])
+        ql_cycles += cycles_extra((uw16)code);
+      qlux_table[code]();
     }
 
   if (SDL_AtomicGet(&doPoll)) dosignal();

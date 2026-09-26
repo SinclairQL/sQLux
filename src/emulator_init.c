@@ -24,6 +24,7 @@
 #include "version.h"
 #include "xcodes.h"
 #include "xqlmouse.h"
+#include "cycles68k.h"
 
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
@@ -179,6 +180,14 @@ void emulatorInit()
 	init_uqlx_tz();
 
 	init_iso();
+
+	/* CPU timing model: 68008 (original QL) or 68000 */
+	if (emulatorOptionInt("cpu_timing") == 68000) {
+		cycles_init(CYC_CPU_68000);
+		printf("CPU timing: 68000 (16 bit bus)\n");
+	} else {
+		cycles_init(CYC_CPU_68008);
+	}
 
 	LoadMainRom(); /* patch QDOS ROM*/
 

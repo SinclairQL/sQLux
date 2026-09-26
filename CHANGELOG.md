@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Cycle counted CPU timing: every instruction charges its real 68008 cycle cost, and `SPEED = 1` is now the 7.5 MHz clock of an original QL
+- Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
+- `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
+- `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
+
+### Changed
+- The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions
+
 ### Fixed
 - The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
 - QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
