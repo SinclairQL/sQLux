@@ -256,6 +256,20 @@ Selects the stereo output mode for QSound:
 QSSTEREO = 1
 ```
 
+`MDV1` and `MDV2`
+Microdrive cartridge images (`.mdv`, 255 sectors of 686 bytes, as used by the MiSTer QL core). When at least one image is configured, the microdrives are emulated at bit level through the ZX8302 registers ($18020-$18023) and the original microdrive driver of the ROM is used, with the real tape timing: a full revolution of the tape loop takes about 8.3 seconds at `SPEED = 1`. The microdrives are then not mapped to host directories.
+
+```
+MDV1 = games.mdv
+```
+
+`MDV_REVERSE`
+Set to 1 for images whose sectors are stored in reverse order.
+
+```
+MDV_REVERSE = 1
+```
+
 `NO_PATCH`
 disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.
 

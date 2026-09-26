@@ -51,6 +51,7 @@
 #include "SDL2screen.h"
 #include "version.h"
 #include "Xscreen.h"
+#include "mdv.h"
 
 #define TIME_DIFF 283996800
 void GetDateTime(w32 *);
@@ -355,7 +356,47 @@ void SetHome()
 #endif
 }
 
+/* ------------------------------------------------------------------------- */
+/*  Microdrive time keeps running while the CPU is stopped                   */
+/* ------------------------------------------------------------------------- */
+
 extern uint64_t ql_cycles;          // iexl_general.c
+
+// Time budget for the tape at unlimited speed while the CPU is stopped, in
+// cycles (one 50 Hz frame at 7.5 MHz).
+#define MDV_IDLE_TURBO_BUDGET 150000
+
+// Step by which the tape advances while the CPU is stopped, in cycles
+// (about 16 typical 68008 instructions).
+#define MDV_IDLE_STEP 400
+
+// While the CPU is stopped the tape keeps moving, as on the hardware. It
+// advances in steps of MDV_IDLE_STEP cycles until an interrupt wakes the CPU
+// or the budget is used up. Returns the number of cycles consumed.
+static long idle_advance(long budget)
+{
+	long used = 0;
+
+	if (!mdv_is_selected())
+		return 0;
+
+	while (used < budget) {
+		uint64_t step = (uint64_t)(budget - used);
+
+		if (step > MDV_IDLE_STEP)
+			step = MDV_IDLE_STEP;
+
+		ql_cycles += step;
+		used += (long)step;
+		mdv_sync();
+
+		if (pendingInterrupt == 7 || pendingInterrupt > iMask) {
+			ProcessInterrupts();      // services the IRQ and clears stopped
+			break;
+		}
+	}
+	return used;
+}
 
 // speed = SPEED * 20 units per 50 Hz frame; SPEED = 1 is the 7.5 MHz clock
 // of an original QL: 7500000 / 50 / 20 = 7500 cycles per unit.
@@ -373,6 +414,19 @@ int QLRun(void *data)
     uint64_t frame_start = ql_cycles;
 
 exec:
+
+    // The CPU is stopped: let the tape run for the rest of the frame. If a
+    // gap interrupt is raised meanwhile, the CPU wakes up immediately.
+    if (stopped) {
+        frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;
+        long budget = speed ? (long)frame_budget -
+                              (long)(ql_cycles - frame_start)
+                            : MDV_IDLE_TURBO_BUDGET;
+        if (budget > 0)
+            idle_advance(budget);
+        if (!stopped)
+            goto exec;
+    }
 
     // Either in STOP state or time to sync frame (Normal Speed mode)
     frame_budget = (uint64_t)speed * QL_CYCLES_PER_SPEED_UNIT;   // may be changed by emu_speed()

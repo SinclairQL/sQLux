@@ -28,6 +28,7 @@
 #include "unixstuff.h"
 
 #include "util.h"
+#include "mdv.h"
 
 /*extern int schedCount;*/
 extern int inside;
@@ -370,7 +371,8 @@ void SchedulerCmd()
 	MouseTask();
 #endif
 
-	if (emulatorOptionInt("cpu_hog") == 0 && schedCount++ > min_idle) /* QDOS running idle */
+	if (emulatorOptionInt("cpu_hog") == 0 && !mdv_is_selected() &&
+	    schedCount++ > min_idle) /* QDOS running idle */
 	{
 		/*printf(".");fflush(stdout);*/
 		/*printf("schedCount %d\n",schedCount);*/

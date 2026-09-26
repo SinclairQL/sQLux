@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
 - `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
 - `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
+- Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
 
 ### Changed
 - The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions

@@ -43,6 +43,14 @@ uw32 orig_kbenc;
 
 int testMinervaVersion(char *ver);
 
+/* True if a .mdv image is configured (mdv1 or mdv2): the original ROM
+ * microdrive driver, which drives $18020-$18023, is then kept */
+static bool mdv_images_configured(void)
+{
+	return strlen(emulatorOptionString("mdv1")) ||
+	       strlen(emulatorOptionString("mdv2"));
+}
+
 bool LookFor(uint32_t *a, uint32_t w, int nMax)
 {
 	while (nMax-- > 0 && RL((Ptr)memBase + (*a)) != w)
@@ -230,18 +238,23 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			}
 		}
 
-		WW((((Ptr)memBase + 0x4000 +
-		     RW((uw16 *)((Ptr)memBase + 0x124)))),
-		   MDVR_CMD_CODE); /* read mdv sector */
-		WW((((Ptr)memBase + 0x4000 +
-		     RW((uw16 *)((Ptr)memBase + 0x126)))),
-		   MDVW_CMD_CODE); /* write mdv sector */
-		WW(((uw16 *)((Ptr)memBase + 0x4000 +
-			     RW((uw16 *)((Ptr)memBase + 0x128)))),
-		   MDVV_CMD_CODE); /* verify mdv sector */
-		WW(((uw16 *)((Ptr)memBase + 0x4000 +
-			     RW((uw16 *)((Ptr)memBase + 0x12a)))),
-		   MDVH_CMD_CODE); /* read mdv sector header */
+		// Only patch low-level sector drivers if no .mdv image is configured
+		// (mdv1 or mdv2).
+		// If an .mdv cartridge is present, preserve the original ROM 68008 code that reads $18020/$18022.
+		if (!mdv_images_configured()) {
+			WW((((Ptr)memBase + 0x4000 +
+			     RW((uw16 *)((Ptr)memBase + 0x124)))),
+			   MDVR_CMD_CODE); /* read mdv sector */
+			WW((((Ptr)memBase + 0x4000 +
+			     RW((uw16 *)((Ptr)memBase + 0x126)))),
+			   MDVW_CMD_CODE); /* write mdv sector */
+			WW(((uw16 *)((Ptr)memBase + 0x4000 +
+				     RW((uw16 *)((Ptr)memBase + 0x128)))),
+			   MDVV_CMD_CODE); /* verify mdv sector */
+			WW(((uw16 *)((Ptr)memBase + 0x4000 +
+				     RW((uw16 *)((Ptr)memBase + 0x12a)))),
+			   MDVH_CMD_CODE); /* read mdv sector header */
+		}
 
 		if (!isMinerva && emulatorOptionInt("fast_startup"))
 			WW(((uw16 *)((Ptr)memBase + RL(&memBase[1]))),
@@ -331,8 +344,10 @@ void InitROM(void)
 	ZeroKeyboardBuffer();
 #endif
 
-	/* delete old MDV drivers (for optical reasons) */
-	WriteLong(0x28048, 0);
+	/* delete old MDV drivers (for optical reasons) only if no physical .mdv is loaded */
+	if (!mdv_images_configured()) {
+		WriteLong(0x28048, 0);
+	}
 
 	InitFileDrivers();
 	InitDrivers();

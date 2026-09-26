@@ -24,6 +24,7 @@
 #include "version.h"
 #include "xcodes.h"
 #include "xqlmouse.h"
+#include "mdv.h"
 #include "cycles68k.h"
 
 // TODO: fixup iexl_general.h to not break stuff
@@ -187,6 +188,23 @@ void emulatorInit()
 		printf("CPU timing: 68000 (16 bit bus)\n");
 	} else {
 		cycles_init(CYC_CPU_68008);
+	}
+	mdv_init();
+
+	const char *mdv1_path = emulatorOptionString("mdv1");
+	if (strlen(mdv1_path)) {
+		mdv_load(0, mdv1_path);
+		if (emulatorOptionInt("mdv_reverse")) {
+			mdv_set_reverse(0, true);
+		}
+	}
+
+	const char *mdv2_path = emulatorOptionString("mdv2");
+	if (strlen(mdv2_path)) {
+		mdv_load(1, mdv2_path);
+		if (emulatorOptionInt("mdv_reverse")) {
+			mdv_set_reverse(1, true);
+		}
 	}
 
 	LoadMainRom(); /* patch QDOS ROM*/

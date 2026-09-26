@@ -10,6 +10,7 @@
 #include "memaccess.h"
 #include "mmodes.h"
 #include "unixstuff.h"
+#include "mdv.h"
 #include "cycles68k.h"
 
 void    (**qlux_table)(void);
@@ -84,6 +85,7 @@ gshort    code;
 int      nInst;
 #endif
 
+uint64_t ql_total_instructions = 0;
 uint64_t ql_cycles = 0;            /* emulated 68008 clock cycles */
 
 /* Dynamic part of the cost: evaluated BEFORE the instruction is executed,
@@ -459,6 +461,7 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
 {
   while(--nInst>=0)
     {
+      ql_total_instructions++; // Continuous monotonic instruction counter
 
 #ifdef TRACE
       if (pc>tracelo) DoTrace();
@@ -469,6 +472,10 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
       if (cyc_kind[code])
         ql_cycles += cycles_extra((uw16)code);
       qlux_table[code]();
+
+      // The tape advances continuously, not only when the CPU accesses its
+      // registers, so the gap edge raises its interrupt in time.
+      if ((ql_total_instructions & 15) == 0) mdv_sync();
     }
 
   if (SDL_AtomicGet(&doPoll)) dosignal();

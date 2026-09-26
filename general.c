@@ -21,6 +21,7 @@
 #include "sqlux_debug.h"
 #include "QL_screen.h"
 #include "SDL2screen.h"
+#include "mdv.h"
 
 extern int display_mode;
 extern volatile bool is_display_blank;
@@ -158,6 +159,19 @@ void FrameInt(void)
 	nInst = 0;
 }
 
+void ql_trigger_gap_interrupt(void) {
+    theInt |= 0x01;        // Bit 0: ZX8302 GAP interrupt pending
+    pendingInterrupt = 2;  // Level 2 interrupt for 68008 CPU
+    extraFlag = true;
+    // As in FrameInt: end the chunk after the current instruction but keep
+    // the remainder in nInst2, so that ExecuteLoop resumes it after
+    // ExceptionProcessing and no emulated time is lost.
+    if (nInst > 0) {
+        nInst2 = nInst;
+        nInst = 0;
+    }
+}
+
 void WriteInt(uint8_t d)
 {
 	// remove the mask bits
@@ -262,8 +276,6 @@ void WriteHWByte(aw32 addr, aw8 d)
 	case 0x018000:
 	case 0x018001:
 		/* ignore write to real-time clock registers */
-	case 0x018023:
-		/* ignore write to no reg */
 		break;
 	case 0x018002:
 		if (d != 16) {
@@ -278,13 +290,19 @@ void WriteHWByte(aw32 addr, aw8 d)
 		ipc_write(d);
 		break;
 	case 0x018020:
-		WriteMdvControl(d); /*TRR;*/
+		mdv_sync();
+		mdv_write_control(d);
 		break;
 	case 0x018021:
+		mdv_sync();
+		mdv_write_int(d);
 		WriteInt(d);
 		break;
 	case 0x018022:
 		debug2("Write to MDV/RS232 data >", d); /*TRR;*/
+		break;
+	case 0x018023:
+		/* ignore write to no reg */
 		break;
 	case 0x018100:
 		SQLUXBDISelect(d);
@@ -319,28 +337,28 @@ rw8 ReadHWByte(aw32 addr)
 	case 0x018002:
 	case 0x018003:
 		return res = ReadRTClock(addr);
-	case 0x018020:
-		debug("Read from MDV/RS232 status");
-		debug2("PC-2=", (Ptr)pc - (Ptr)memBase - 2);
-		//DEBUG_PRINT("020 read %x\n", m68k_get_reg(NULL, M68K_REG_PC));
+
+	case 0x018020: /* Read MDV / IPC status */
 		if (ipc_read) {
 			ret_byte = ipc_read & 0xff;
 			ipc_read >>= 8;
 			if (ipc_read == 0xa5) {
 				ipc_read = 0;
 			}
-			DEBUG_PRINT("020 ret_byte %x\n", ret_byte);
 			return ret_byte;
 		}
-		return 2;
-		break;
-	case 0x018021:
-		/*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)memBase-2);*/
-		res = IntRead();
-	case 0x018022: /*debug("Read from MDV track 1");*/
-		break;
-	case 0x018023: /*debug("Read from MDV track 2");*/
-		break;
+
+		mdv_sync();
+		return mdv_read_status();
+
+	case 0x018021: /* Interrupt status */
+		mdv_sync();
+		return mdv_read_int() | IntRead();
+
+	case 0x018022: /* MDV track 1 data */
+	case 0x018023: /* MDV track 2 data */
+		mdv_sync();
+		return mdv_read_data();
 	case 0x018102:
 		res = SQLUXBDIStatus();
 		break;

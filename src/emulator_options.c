@@ -69,6 +69,9 @@ struct emuOpts emuOptions[] = {
 {"qsrom", "", "rom in QSound expansion space (0xC0000 address)", EMU_OPT_CHAR, 0, NULL}, // <--- ¡ QSOUND !
 {"qsfreq", "", "QSound frequency in hz", EMU_OPT_INT, 0, NULL}, // <--- ¡ QSOUND !
 {"qsstereo", "", "QSound stereo mode: 0 = Mono, 1 = Stereo ABC, 2 = Stereo ACB", EMU_OPT_INT, 1, NULL},
+{"mdv1", "", "MDV1 cartridge image file (.mdv)", EMU_OPT_CHAR, 0, NULL},
+{"mdv2", "", "MDV2 cartridge image file (.mdv)", EMU_OPT_CHAR, 0, NULL},
+{"mdv_reverse", "", "Read MDV sectors in reverse order", EMU_OPT_INT, 0, NULL},
 {"ser1", "", "device for ser1", EMU_OPT_CHAR, 0, NULL},
 {"ser2", "", "device for ser2", EMU_OPT_CHAR, 0, NULL},
 {"ser3", "", "device for ser3", EMU_OPT_CHAR, 0, NULL},
