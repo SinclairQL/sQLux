@@ -1612,7 +1612,11 @@ void QLSDLProcessEvents(void)
 	}
 #else
 	while (1) {
-		if (!SDL_PollEvent(&event)) {
+		// Blocking wait: without events the thread sleeps instead of
+		// spinning (polling SDL_PollEvent kept a whole core busy). Key
+		// events and the refresh request (SDL_USEREVENT) wake it up at
+		// once; the timeout is only a safety net.
+		if (!SDL_WaitEventTimeout(&event, 10)) {
 			continue;
 		}
 #endif
