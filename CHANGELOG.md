@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Fixed
 - The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
+- QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
 
 ## 1.1.1 - 2025-03-12
 ### Changed

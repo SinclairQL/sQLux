@@ -1,6 +1,9 @@
 /*
  * qsound.c - QSound Emulation for Sinclair QL (sQLux)
  * Accurate Bus Decoding (Byte & Word writes) & JT49 Noise Engine
+ * Tone and noise generators follow jt49 by Jose Tejada: a null
+ * period mutes the generator (MUTE_NULL_PERIOD) and the noise output is
+ * the inverted LFSR bit.
  */
 
 #include "qsound.h"
@@ -33,6 +36,7 @@ typedef struct {
     int cnt_n;
     uint32_t seed;
     int bit_n;
+    int div_n;              // noise divider output (jt49_div)
 
     // Envelope generator
     int cnt_e;
@@ -88,8 +92,9 @@ void qsound_reset(void) {
     qs.bit_a = qs.bit_b = qs.bit_c = 0;
 
     qs.cnt_n = 0;
-    qs.seed = 0x10000;
-    qs.bit_n = 0;
+    qs.seed = 0;            // jt49 starts at 0 and leaves it via poly17_zero
+    qs.bit_n = 1;           // ~poly17[0]
+    qs.div_n = 0;
 
     qs.cnt_e = 0;
     qs.env_step = 0;
@@ -239,37 +244,47 @@ void qsound_render_mix_s16(int16_t *stream, int len) {
 
             // 1. Channel A Tone Generator
             int tone_a = ((qs.regs[1] & 0x0F) << 8) | qs.regs[0];
-            if (tone_a == 0) tone_a = 1;
-            if (++qs.cnt_a >= tone_a) {
+            if (tone_a == 0) {
+                qs.bit_a = 0;          // jt49 MUTE_NULL_PERIOD: a null period mutes the channel
+            } else if (++qs.cnt_a >= tone_a) {
                 qs.cnt_a = 0;
                 qs.bit_a = !qs.bit_a;
             }
 
             // 2. Channel B Tone Generator
             int tone_b = ((qs.regs[3] & 0x0F) << 8) | qs.regs[2];
-            if (tone_b == 0) tone_b = 1;
-            if (++qs.cnt_b >= tone_b) {
+            if (tone_b == 0) {
+                qs.bit_b = 0;          // jt49 MUTE_NULL_PERIOD: a null period mutes the channel
+            } else if (++qs.cnt_b >= tone_b) {
                 qs.cnt_b = 0;
                 qs.bit_b = !qs.bit_b;
             }
 
             // 3. Channel C Tone Generator
             int tone_c = ((qs.regs[5] & 0x0F) << 8) | qs.regs[4];
-            if (tone_c == 0) tone_c = 1;
-            if (++qs.cnt_c >= tone_c) {
+            if (tone_c == 0) {
+                qs.bit_c = 0;          // jt49 MUTE_NULL_PERIOD: a null period mutes the channel
+            } else if (++qs.cnt_c >= tone_c) {
                 qs.cnt_c = 0;
                 qs.bit_c = !qs.bit_c;
             }
 
-            // 4. JT49 Noise Engine (17-bit LFSR)
-            int noise_period = (qs.regs[6] & 0x1F) * 2;
-            if (noise_period == 0) noise_period = 2;
-            if (++qs.cnt_n >= noise_period) {
+            // 4. Noise: as jt49_noise + jt49_div (MUTE_NULL_PERIOD).
+            //    The divider toggles every NP steps and the LFSR shifts on
+            //    every rising edge (every 2*NP steps). With NP = 0 the
+            //    divider stays low and the noise does not advance.
+            int noise_period = qs.regs[6] & 0x1F;
+            if (noise_period == 0) {
+                qs.div_n = 0;
+            } else if (++qs.cnt_n >= noise_period) {
                 qs.cnt_n = 0;
-                uint32_t bit = ((qs.seed ^ (qs.seed >> 3)) & 1);
-                qs.seed = ((qs.seed >> 1) | (bit << 16)) & 0x1FFFF;
-                qs.bit_n = qs.seed & 1;
+                qs.div_n = !qs.div_n;
+                if (qs.div_n) {         // rising edge: shift the LFSR
+                    uint32_t in = (qs.seed ^ (qs.seed >> 3) ^ (qs.seed == 0)) & 1;
+                    qs.seed = (qs.seed >> 1) | (in << 16);
+                }
             }
+            qs.bit_n = !(qs.seed & 1);  // noise <= ~poly17[0]
 
             // 5. Envelope Generator
             int env_period = ((qs.regs[12] << 8) | qs.regs[11]) * 2;
