@@ -154,12 +154,14 @@ w8 ReadRTClock(w32 addr)
 
 void FrameInt(void)
 {
-	theInt = 8;
-	pendingInterrupt = 2;
-	*((uw8 *)memBase + 0x280a0l) = 16;
-	extraFlag = true;
-	nInst2 = nInst;
-	nInst = 0;
+	if ((theInt & 8) == 0) {
+		theInt |= 8;
+		pendingInterrupt = 2;
+		*((uw8 *)memBase + 0x280a0l) = 16;
+		extraFlag = true;
+		nInst2 = nInst;
+		nInst = 0;
+	}
 
 	// Real vertical sync (50 Hz PAL / 60 Hz NTSC): from here the beam
 	// position is counted in emulated cycles. At SPEED = 1 a frame lasts
