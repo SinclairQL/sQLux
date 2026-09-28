@@ -5,6 +5,7 @@
 #include "QL68000.h"
 #include "QL_sound.h"
 #include "qsound.h"
+#include "ipc.h"
 #include "emulator_options.h"
 
 /*
@@ -128,6 +129,7 @@ void initSound(int volume) {
 		const int qsfreq = emulatorOptionInt("qsfreq");
 		const int qsstereo = emulatorOptionInt("qsstereo");
 		qsound_init(qsfreq, have.freq, qsstereo);
+		ipc_lle_audio_init(have.freq);
 
 		SDL_PauseAudioDevice(QLSDLAudio, 0); // Keep audio device running
 	}
@@ -360,6 +362,8 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 	}
 	/* Mix 16-bit QSound audio in stereo */
 	qsound_render_mix_s16((int16_t *)stream, total_samples);
+	/* Speaker driven by the low level IPC */
+	ipc_lle_audio_mix((int16_t *)stream, total_samples);
 }
 
 

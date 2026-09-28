@@ -26,6 +26,7 @@
 #include "unix.h"
 
 #include "unixstuff.h"
+extern int qdos_idle_request;            /* unixstuff.c */
 
 #include "util.h"
 #include "mdv.h"
@@ -376,10 +377,17 @@ void SchedulerCmd()
 	{
 		/*printf(".");fflush(stdout);*/
 		/*printf("schedCount %d\n",schedCount);*/
-		SDL_Delay(20);
-		if (nInst > 5) {
-			nInst2 = nInst;
-			nInst = 5;
+		if (speed) {
+			/* QDOS is idle: QLRun runs the rest of the frame at once,
+			 * as for STOP, so emulated time keeps its pace */
+			qdos_idle_request = 1;
+			nInst = 0;      /* end the chunk: QLRun takes over */
+		} else {
+			SDL_Delay(20);
+			if (nInst > 5) {
+				nInst2 = nInst;
+				nInst = 5;
+			}
 		}
 	}
 	restore_regs(saved_regs);

@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina
 - `NTSC` option: 60 Hz frame interrupt and 262 lines per frame
 - `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
+- `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware: keyboard matrix scanning, speaker output and the serial link with the ZX8302
 
 ### Changed
 - The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions

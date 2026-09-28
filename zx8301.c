@@ -28,8 +28,14 @@
 
 /* ---- Contention parameters (ql_timing) ---- */
 #define ZX_CHUNK_CYCLES   12    /* cycles per chunk */
-#define ZX_CHUNKS_VIDEO   32    /* busy chunks in a visible line */
-#define ZX_CHUNKS_REFRESH 8     /* busy chunks in a non visible line */
+/* Busy chunks per line. Fitted to measurements on a real QL (timing tests
+ * T1-T3 without interrupts and T5 with the frame interrupt): the RAM is
+ * almost as busy on the border lines as on the visible ones. A copy loop
+ * loses the same share of time whichever part of the frame it runs in, so
+ * the frame interrupt, which runs during the top border, does not leave the
+ * rest of the program with the most contended lines. */
+#define ZX_CHUNKS_VIDEO   28    /* busy chunks in a visible line */
+#define ZX_CHUNKS_REFRESH 27    /* busy chunks in a non visible line */
 #define ZX_CPU_ACCESS     4     /* byte access without wait states */
 #define ZX_READ_DECIDE    2     /* cycle of the access at which the ZX8301 decides (read) */
 #define ZX_WRITE_DECIDE   3     /* ... and on a write (DS one cycle later) */
@@ -41,25 +47,26 @@
 /* Lines from the frame interrupt to the first visible line. Calibrated
  * against raster timed demos that run correctly on a real QL: all of them
  * work between 35 and 37, so the default is the centre of that range. */
-#define ZX_PAL_FIRST      36
+#define ZX_PAL_FIRST      41    /* lines from the frame interrupt to the first visible line: 6 of vertical sync + 35 of top border */
 #define ZX_PAL_LINE_CYC   480
 #define ZX_NTSC_LINES     262
 #define ZX_NTSC_FIRST     4
 #define ZX_NTSC_LINE_CYC  474
 /* Line and frame length in 10.5 MHz pixel clocks: a line lasts 64 us (PAL)
- * or 63.2 us (NTSC); a frame lasts the 20 ms or 16.67 ms of the host clock.
- * At SPEED = 1 a line is therefore exactly 480 cycles, not 1/312 of 20 ms
- * (480.77). */
+ * or 63.2 us (NTSC), and a frame is a whole number of lines: 312 x 64 us =
+ * 19.968 ms (50.08 Hz) or 262 x 63.2 us = 16.558 ms (60.39 Hz). At SPEED = 1
+ * a PAL frame is 149760 cycles of the 68008. */
 #define ZX_PAL_LINE_PX    672
-#define ZX_PAL_FRAME_PX   210000
+#define ZX_PAL_FRAME_PX   (ZX_PAL_LINES * ZX_PAL_LINE_PX)
 #define ZX_NTSC_LINE_PX   664
-#define ZX_NTSC_FRAME_PX  175000
+#define ZX_NTSC_FRAME_PX  (ZX_NTSC_LINES * ZX_NTSC_LINE_PX)
 
 #define ZX_SPEED_NATIVE   20    /* speed = SPEED * 20 -> SPEED = 1 */
 
 extern uint64_t ql_cycles;          /* iexl_general.c */
 
 int zx_contention = 0;
+uint64_t zx8301_wait_total = 0;          /* wait states added (HW_TRACE) */
 
 static int      zx_contention_cfg = 0;
 static unsigned zx_hz = 50;
@@ -98,7 +105,24 @@ void zx8301_init(int contention, int ntsc, int vsync_lines)
 unsigned zx8301_hz(void)            { return zx_hz; }
 unsigned zx8301_lines(void)         { return zx_nlines; }
 unsigned zx8301_first_visible(void) { return zx_first; }
-unsigned zx8301_speed_unit(void)    { return ZX_CPU_HZ / zx_hz / 20; }
+
+/* Pixel of the line at which the first word of the line is fetched (the
+ * following words every 8 pixels): writes by the CPU to a word of the line
+ * being scanned show in this frame only if they come before its fetch */
+const int zx8301_fetch_px = 0;
+
+uint64_t zx8301_px_cycles(uint64_t frame_len, uint64_t px)
+{
+	return frame_len * px / zx_frame_px;
+}
+unsigned zx8301_frame_cycles(void)  { return zx_nlines * zx_line_cyc; }
+unsigned zx8301_speed_unit(void)    { return zx8301_frame_cycles() / ZX_SPEED_NATIVE; }
+
+/* Cycles of the 68008 in one frame at a given speed (SPEED * 20) */
+uint64_t zx8301_frame_budget(int speed)
+{
+	return (uint64_t)speed * zx8301_frame_cycles() / ZX_SPEED_NATIVE;
+}
 
 uint64_t zx8301_line_time(uint64_t frame_start, uint64_t frame_len,
 			  unsigned vline)
@@ -168,6 +192,7 @@ void zx8301_insn(uint64_t t0, uint32_t pc_addr, unsigned prog_words)
 			zx_bus_t += ZX_CPU_ACCESS + w;
 		}
 		ql_cycles += total;
+		zx8301_wait_total += total;
 	}
 }
 
@@ -186,4 +211,5 @@ void zx8301_ram(unsigned bytes, int is_write)
 		zx_bus_t += ZX_CPU_ACCESS + w;
 	}
 	ql_cycles += total;
+	zx8301_wait_total += total;
 }

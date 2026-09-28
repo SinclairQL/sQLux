@@ -52,6 +52,7 @@
 #include "version.h"
 #include "Xscreen.h"
 #include "mdv.h"
+#include "ipc.h"
 #include "zx8301.h"
 
 #define TIME_DIFF 283996800
@@ -401,6 +402,7 @@ static long idle_advance(long budget)
 		ql_cycles += step;
 		used += (long)step;
 		mdv_sync();
+		ipc_lle_sync();
 		if (ql_cycles >= ql_snapshot_at) {
 			ql_snapshot_at = UINT64_MAX;
 			QLSDLSnapshotLine();
@@ -416,23 +418,56 @@ static long idle_advance(long budget)
 
 int speed = 0;
 
+/* Request from the keyboard (host thread), served by QLRun between two
+ * instructions: F10 toggles between the configured speed and unlimited
+ * speed. */
+extern uint64_t ql_frame_end;     // iexl_general.c
+extern void hw_trace_vsync_late(uint64_t late);   // general.c
+SDL_atomic_t speed_toggle_request;
+/* CPU_HOG = 0: QDOS is idle, run the rest of the frame at once (xqlmouse.c) */
+int qdos_idle_request = 0;
+
 int QLRun(void *data)
 {
     speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
+    int speed_cfg = speed ? speed : 20;   // speed restored by F10
 
     // Frame budget in 68008 clock cycles actually consumed (SPEED = 1 ->
-    // 7.5 MHz: 150000 cycles per PAL frame, 125000 per NTSC frame).
+    // 7.5 MHz: 149760 cycles per PAL frame, 124188 per NTSC frame).
     // idle_advance also adds to ql_cycles, so time spent stopped is
     // accounted for automatically.
-    uint64_t frame_budget = (uint64_t)speed * zx8301_speed_unit();
+    uint64_t frame_budget = zx8301_frame_budget(speed);
     uint64_t frame_start = ql_cycles;
 
 exec:
 
+    if (SDL_AtomicGet(&speed_toggle_request)) {
+        SDL_AtomicSet(&speed_toggle_request, 0);
+        speed = speed ? 0 : speed_cfg;
+        frame_start = ql_cycles;
+        if (speed)
+            printf("SPEED = %g\n", speed / 20.0);
+        else
+            printf("SPEED = 0 (unlimited)\n");
+        fflush(stdout);
+    }
+
+    // QDOS is idle (CPU_HOG = 0): the rest of the frame passes at once, as
+    // for STOP, instead of sleeping with the emulated time stopped.
+    if (qdos_idle_request) {
+        qdos_idle_request = 0;
+        if (speed) {
+            long budget = (long)zx8301_frame_budget(speed) -
+                          (long)(ql_cycles - frame_start);
+            if (budget > 0)
+                idle_advance(budget);
+        }
+    }
+
     // The CPU is stopped: let time run for the rest of the frame. If an
     // interrupt is raised meanwhile, the CPU wakes up immediately.
     if (stopped) {
-        frame_budget = (uint64_t)speed * zx8301_speed_unit();
+        frame_budget = zx8301_frame_budget(speed);
         long budget = speed ? (long)frame_budget -
                               (long)(ql_cycles - frame_start)
                             : MDV_IDLE_TURBO_BUDGET;
@@ -443,7 +478,7 @@ exec:
     }
 
     // Either in STOP state or time to sync frame (Normal Speed mode)
-    frame_budget = (uint64_t)speed * zx8301_speed_unit();   // may be changed by emu_speed()
+    frame_budget = zx8301_frame_budget(speed);   // may be changed by emu_speed()
     if (stopped || (sem50Hz && speed &&
                     ql_cycles - frame_start >= frame_budget)) {
 
@@ -465,6 +500,7 @@ exec:
         if (speed) {
             uint64_t used = ql_cycles - frame_start;
             uint64_t carry = (used > frame_budget) ? used - frame_budget : 0;
+            hw_trace_vsync_late(carry);
             if (carry > zx8301_speed_unit()) carry = zx8301_speed_unit();
             frame_start = ql_cycles - carry;
         } else {
@@ -481,10 +517,12 @@ exec:
     else {
         if (!speed) {
             // Turbo mode (w/o wait)
+            ql_frame_end = UINT64_MAX;
             ExecuteChunk(3000);
         } else {
-            // Normal Mode
+            // Normal Mode: the chunk stops at the end of the frame
             uint64_t before = ql_cycles;
+            ql_frame_end = frame_start + frame_budget;
             ExecuteChunk(300);
             // If nothing was executed (e.g. odd PC), charge part of the
             // frame so that the loop does not spin without waiting.

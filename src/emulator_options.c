@@ -72,6 +72,8 @@ struct emuOpts emuOptions[] = {
 {"mdv1", "", "MDV1 cartridge image file (.mdv)", EMU_OPT_CHAR, 0, NULL},
 {"mdv2", "", "MDV2 cartridge image file (.mdv)", EMU_OPT_CHAR, 0, NULL},
 {"mdv_reverse", "", "Read MDV sectors in reverse order", EMU_OPT_INT, 0, NULL},
+{"ipc_rom", "", "IPC firmware (Intel HEX) for the low level 8049 emulation", EMU_OPT_CHAR, 0, NULL},
+{"hw_trace", "", "1 = print hardware activity every second, 2 = also the IPC sound orders, 3 = also a supervisor mode profile (debugging aid)", EMU_OPT_INT, 0, NULL},
 {"ser1", "", "device for ser1", EMU_OPT_CHAR, 0, NULL},
 {"ser2", "", "device for ser2", EMU_OPT_CHAR, 0, NULL},
 {"ser3", "", "device for ser3", EMU_OPT_CHAR, 0, NULL},

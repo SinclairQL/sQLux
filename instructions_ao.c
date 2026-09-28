@@ -1029,9 +1029,46 @@ void chk(void)
 	}
 }
 
+/*
+ * CLR on a memory operand: the 68000 reads the operand before writing it,
+ * although it does not need its value. The read is performed here so that it
+ * pays its contention (and reads a hardware register if it points to one),
+ * as on a QL. The address is computed once, so (An)+ and -(An) move the
+ * pointer only once.
+ */
+static w32 clr_ea(short mode, short r, short size)
+{
+	w32 ea;
+
+	switch (mode) {
+	case 2:
+		ea = aReg[r];
+		break;
+	case 3:
+		ea = aReg[r];
+		aReg[r] += (size == 1 && r == 7) ? 2 : size;
+		break;
+	case 4:
+		aReg[r] -= (size == 1 && r == 7) ? 2 : size;
+		ea = aReg[r];
+		break;
+	default:
+		ea = ARCALL(GetEA, mode, r);
+		break;
+	}
+	return ea;
+}
+
 void clr_b(void)
 {
-	ARCALL(PutToEA_b, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 1);
+		ReadByte(ea);
+		WriteByte(ea, 0);
+	} else
+		ARCALL(PutToEA_b, mode, r, 0);
 	/*((void (*)(short,w8)REGP2)PutToEA_b[(code>>3)&7])(code&7,0);*/
 	/*PUT_TOEA_B((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
@@ -1040,7 +1077,15 @@ void clr_b(void)
 
 void clr_w(void)
 {
-	ARCALL(PutToEA_w, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 2);
+		ReadWord(ea);           /* raises the address error if odd */
+		if ((ea & 1) == 0)
+			WriteWord(ea, 0);
+	} else
+		ARCALL(PutToEA_w, mode, r, 0);
 	/*PUT_TOEA_W((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
 	zero = true;
@@ -1048,7 +1093,15 @@ void clr_w(void)
 
 void clr_l(void)
 {
-	ARCALL(PutToEA_l, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 4);
+		ReadLong(ea);           /* raises the address error if odd */
+		if ((ea & 1) == 0)
+			WriteLong(ea, 0);
+	} else
+		ARCALL(PutToEA_l, mode, r, 0);
 	/*PUT_TOEA_L((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
 	zero = true;
@@ -1935,6 +1988,8 @@ void movem_load_w(void)
 				ea += 2;
 			}
 		}
+		/* the 68000 reads one more word after the last register */
+		ReadWord(ea);
 		if (eaMode == 3)
 			aReg[eaReg] = ea;
 	}
@@ -1960,6 +2015,8 @@ void movem_load_l(void)
 				ea += 4;
 			}
 		}
+		/* the 68000 reads one more word after the last register */
+		ReadWord(ea);
 		if (eaMode == 3)
 			aReg[eaReg] = ea;
 	}
