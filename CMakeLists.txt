@@ -116,6 +116,8 @@ add_executable(
   QL_sound.c
   qsound.c
   mdv.c
+  mcs48.c
+  ipc.c
   cycles68k.c
   zx8301.c
   QLip.c

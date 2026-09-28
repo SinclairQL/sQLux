@@ -16,6 +16,13 @@
 #define ZX_CONTEND(addr, n, w) \
 	do { if (zx_contention && zx8301_is_ram(addr)) zx8301_ram((n), (w)); } while (0)
 
+/* Screen capture: the line the beam is scanning (SDL2screen.c) */
+extern uint32_t snap_hot_lo, snap_hot_hi;
+void QLSDLScreenWrite(uint32_t addr, unsigned n);
+#define SCREEN_WRITE(addr, n) \
+	do { if ((addr) < snap_hot_hi && (addr) + (n) > snap_hot_lo) \
+		QLSDLScreenWrite((addr), (n)); } while (0)
+
 static int is_hw(uint32_t addr)
 {
 	if ((addr >= QL_INTERNAL_IO_BASE) &&
@@ -134,6 +141,7 @@ void WriteByte(aw32 addr, aw8 d)
 	} else if (addr >= QL_SCREEN_BASE) {
 		ZX_CONTEND(addr, 1, 1);
 		*((w8 *)memBase + addr) = d;
+		SCREEN_WRITE(addr, 1);
 	}
 }
 
@@ -155,6 +163,7 @@ void WriteWord(aw32 addr,aw16 d)
 	} else if (addr >= QL_SCREEN_BASE) {
 		ZX_CONTEND(addr, 2, 1);
 		WW((Ptr)memBase + addr, d);
+		SCREEN_WRITE(addr, 2);
 	}
 }
 
@@ -177,6 +186,7 @@ void WriteLong(aw32 addr,aw32 d)
 	} else if (addr >= QL_SCREEN_BASE) {
 		ZX_CONTEND(addr, 4, 1);
 		WL((Ptr)memBase + addr, d);
+		SCREEN_WRITE(addr, 4);
 	}
 }
 

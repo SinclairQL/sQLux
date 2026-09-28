@@ -11,8 +11,12 @@
 #include "mmodes.h"
 #include "unixstuff.h"
 #include "mdv.h"
+#include "ipc.h"
 #include "cycles68k.h"
 #include "zx8301.h"
+extern unsigned hw_trace_irq_taken[8];   /* general.c, HW_TRACE */
+extern void ql_irq_accepted(int level);  /* general.c */
+extern void hw_trace_sample(void);       /* general.c, HW_TRACE >= 3 */
 
 void    (**qlux_table)(void);
 
@@ -166,13 +170,15 @@ void ProcessInterrupts(void)
 	  (*m68k_sp)=ssp;
 	}
       ql_cycles += cyc_interrupt;
+      hw_trace_irq_taken[pendingInterrupt & 7]++;
       ExceptionIn(24+pendingInterrupt);
       WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)memBase);
       (*m68k_sp)-=6;
       WriteWord(*m68k_sp,GetSR());
       SetPCX(24+pendingInterrupt);
       iMask=pendingInterrupt;
-      pendingInterrupt=0;
+      /* the request stays while its source is pending (level 2 and 5) */
+      ql_irq_accepted(iMask);
       supervisor=true;
       trace=false;
       stopped=false;
@@ -199,7 +205,11 @@ void REGP1 PutSR(aw16 sr)
   Cond oldSuper;
   oldSuper=supervisor;
   trace=(sr&0x8000)!=0;
-  extraFlag=doTrace || trace || exception!=0;
+  iMask=(char)(sr>>8)&7;
+  /* A pending interrupt is taken right after the instruction that lowers
+   * the mask (MOVE to SR, ANDI to SR, RTE), not at the end of the chunk */
+  extraFlag=doTrace || trace || exception!=0 || pendingInterrupt==7 ||
+    pendingInterrupt>iMask;
   if(extraFlag)
     {
       nInst2=nInst;
@@ -211,7 +221,6 @@ void REGP1 PutSR(aw16 sr)
   zero=(sr&0x0004)!=0;
   overflow=(sr&0x0002)!=0;
   carry=(sr&0x0001)!=0;
-  iMask=(char)(sr>>8)&7;
   if(oldSuper!=supervisor)
     {
       if(supervisor)
@@ -460,6 +469,11 @@ rw32 AREGP GetEA_mBad(ashort r)
   return 0;
 }
 
+/* Cycle at which the current frame ends (vertical sync), set by QLRun.
+ * Execution stops at the instruction that reaches it, so the frame interrupt
+ * is raised on time, as on a QL; UINT64_MAX at unlimited speed. */
+uint64_t ql_frame_end = UINT64_MAX;
+
 void ExecuteLoop(void)  /* fetch and dispatch loop */
 {
   while(--nInst>=0)
@@ -484,12 +498,28 @@ void ExecuteLoop(void)  /* fetch and dispatch loop */
           QLSDLSnapshotLine();
       }
 
+      // Vertical sync: stop here, QLRun raises the frame interrupt. A
+      // pending exception is still processed below, but no more
+      // instructions are executed in this frame.
+      if (ql_cycles >= ql_frame_end) {
+          nInst = 0;
+          nInst2 = 0;
+      }
+
       // The tape advances continuously, not only when the CPU accesses its
       // registers, so the gap edge raises its interrupt in time.
-      if ((ql_total_instructions & 15) == 0) mdv_sync();
+      if ((ql_total_instructions & 15) == 0) {
+        mdv_sync();
+        ipc_lle_sync();
+        hw_trace_sample();
+      }
     }
 
-  if (SDL_AtomicGet(&doPoll)) dosignal();
+  /* With a cycle budget (SPEED > 0) the frame is closed by QLRun when the
+   * 68008 has executed all its cycles; firing the frame interrupt here, when
+   * the host tick arrives, would cut the frame short. Only at unlimited speed
+   * is the host tick the time reference. */
+  if (!speed && SDL_AtomicGet(&doPoll)) dosignal();
 
   if(extraFlag)
     {

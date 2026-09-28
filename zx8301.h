@@ -31,10 +31,17 @@ void     zx8301_init(int contention, int ntsc, int vsync_lines);
 
 unsigned zx8301_hz(void);                  /* 50 or 60 */
 unsigned zx8301_lines(void);               /* lines per frame */
-unsigned zx8301_first_visible(void);       /* lines from VSYNC to line 0 */
+unsigned zx8301_first_visible(void);
+/* Pixel of each line at which the ZX8301 fetches the first word */
+extern const int zx8301_fetch_px;
+/* Cycles of a number of pixel clocks, for a frame of frame_len cycles */
+uint64_t zx8301_px_cycles(uint64_t frame_len, uint64_t px);       /* lines from VSYNC to line 0 */
 /* Cycles per speed unit: speed = SPEED * 20 units per frame, so SPEED = 1
  * gives ZX_CPU_HZ / hz cycles per frame (7.5 MHz). */
 unsigned zx8301_speed_unit(void);
+/* Frame length: native (whole lines at 7.5 MHz) and at a given speed */
+unsigned zx8301_frame_cycles(void);
+uint64_t zx8301_frame_budget(int speed);
 
 /* Cycle at which visible line vline (0..255) starts, in a frame that began
  * with the vertical sync at frame_start and lasts frame_len cycles (0 means

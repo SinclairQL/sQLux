@@ -31,6 +31,7 @@
 /*#include "ConfigDialog.h"*/
 #include "QFilesPriv.h"
 #include "xqlmouse.h"
+#include "ipc.h"
 #include "Xscreen.h"
 
 static short ramItem = -1;
@@ -228,7 +229,8 @@ int LoadMainRom(void) /* load and modify QL ROM */
 		if (!isMinerva) {
 			if (p)
 				p = PatchFind();
-			if (p) {
+			/* With the low level IPC the ROM talks to the 8049 itself */
+			if (p && !ipc_lle_active()) {
 				WW((((Ptr)memBase + IPC_CMD_ADDR)),
 				   IPC_CMD_CODE);
 				WW((((Ptr)memBase + IPCR_CMD_ADDR)),
@@ -414,7 +416,7 @@ void InitROM(void)
 
 	/* link in Minerva keyboard handling */
 #if 1
-	if (isMinerva) {
+	if (isMinerva && !ipc_lle_active()) {
 		reg[1] = 8;
 		reg[2] = 0;
 		QLtrap(1, 0x18, 200000);
