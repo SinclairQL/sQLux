@@ -408,10 +408,10 @@ NTSC = 1
 ```
 
 `ZX8301_VSYNC_LINES`
-Advanced: number of lines from the frame interrupt to the first visible line, used by the line by line screen capture and the memory contention. It also moves the part of the frame where the memory contention is heaviest, so it affects CPU timing too. The default (-1) is 36 lines for PAL, calibrated against demos that run on a real QL (all of them work between 35 and 37), and 4 for NTSC (not calibrated).
+Advanced: number of lines from the frame interrupt to the first visible line, used by the line by line screen capture and the memory contention. It also moves the part of the frame where the memory contention is heaviest, so it affects CPU timing too. The default (-1) is 41 lines for PAL, and 4 for NTSC (not calibrated).
 
 ```
-ZX8301_VSYNC_LINES = 36
+ZX8301_VSYNC_LINES = 41
 ```
 
 `SOUND`
