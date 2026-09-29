@@ -66,6 +66,10 @@
 extern uint64_t ql_cycles;          /* iexl_general.c */
 
 int zx_contention = 0;
+/* Speed of the 68008 (SPEED * 20; ZX_SPEED_NATIVE = a QL). The ZX8301 keeps
+ * its timing in real time: with a faster CPU each of its chunks lasts more
+ * CPU cycles, with a slower one fewer. */
+static int zx_speed = ZX_SPEED_NATIVE;
 uint64_t zx8301_wait_total = 0;          /* wait states added (HW_TRACE) */
 
 static int      zx_contention_cfg = 0;
@@ -136,7 +140,10 @@ void zx8301_frame(uint64_t now, int speed)
 {
 	zx_frame = now;
 	zx_line_t0 = zx_line_t1 = 0;    /* force the line to be recomputed */
-	zx_contention = zx_contention_cfg && speed == ZX_SPEED_NATIVE;
+	zx_speed = speed;
+	/* Contention at any speed except unlimited, where there is no real time
+	 * to follow */
+	zx_contention = zx_contention_cfg && speed > 0;
 }
 
 static void zx_locate_line(uint64_t c)
@@ -153,10 +160,40 @@ static void zx_locate_line(uint64_t c)
 			       : ZX_CHUNKS_REFRESH;
 }
 
+/* The same at another speed: the cycle is converted to cycles of a QL */
+static int zx_could_start_scaled(uint64_t c)
+{
+	uint64_t n0, line, pos;
+	unsigned busy;
+
+	if (c < zx_frame)
+		return 1;
+	n0 = (c - zx_frame) * ZX_SPEED_NATIVE / (uint64_t)zx_speed;
+	line = n0 / zx_line_cyc;
+	pos = n0 % zx_line_cyc;
+	busy = (line >= zx_first && line < zx_first + ZX_VISIBLE_LINES)
+		       ? ZX_CHUNKS_VIDEO
+		       : ZX_CHUNKS_REFRESH;
+	if (pos >= busy * ZX_CHUNK_CYCLES || (pos % ZX_CHUNK_CYCLES) == 0)
+		return 1;
+	/* Slower CPU: one of its cycles spans several cycles of a QL, and a
+	 * chunk may start inside it */
+	if (zx_speed < ZX_SPEED_NATIVE) {
+		uint64_t n1 = (c + 1 - zx_frame) * ZX_SPEED_NATIVE /
+			      (uint64_t)zx_speed;
+		if (n1 - n0 > ZX_CHUNK_CYCLES - pos % ZX_CHUNK_CYCLES)
+			return 1;
+	}
+	return 0;
+}
+
 /* Can the CPU start a RAM access at cycle c? (could_start) */
 static int zx_could_start(uint64_t c)
 {
 	uint32_t x;
+
+	if (zx_speed != ZX_SPEED_NATIVE)
+		return zx_could_start_scaled(c);
 
 	if (c < zx_line_t0 || c >= zx_line_t1 || c < zx_frame)
 		zx_locate_line(c);
@@ -172,7 +209,7 @@ static unsigned zx_wait(uint64_t t, int is_write)
 	uint64_t c = t + (is_write ? ZX_WRITE_DECIDE : ZX_READ_DECIDE);
 	unsigned wait = is_write ? 1 : 0;       /* late DS on writes */
 
-	while (!zx_could_start(c)) {            /* at most 11 iterations */
+	while (!zx_could_start(c)) {    /* at most one chunk */
 		c++;
 		wait++;
 	}
@@ -201,8 +238,10 @@ void zx8301_ram(unsigned bytes, int is_write)
 	unsigned i, total = 0;
 
 	/* Access outside an instruction (e.g. exception stacking) or a very
-	 * long instruction: resynchronise with the clock. */
-	if (zx_bus_t + 1024 < ql_cycles)
+	 * long instruction: resynchronise with the clock. ql_cycles already
+	 * includes the whole current instruction, so the bus is never ahead
+	 * of it. */
+	if (zx_bus_t + 1024 < ql_cycles || zx_bus_t > ql_cycles)
 		zx_bus_t = ql_cycles;
 
 	for (i = 0; i < bytes; i++) {
