@@ -33,11 +33,17 @@ static int is_hw(uint32_t addr)
 	return 0;
 }
 
+// QSound is only mapped when its ROM is loaded (QSROM) and the RAM does not
+// reach its address space (see emulator_init.c)
+int qsound_mapped = 0;
+
 // Check if address belongs to QSound space ($C0000 - $C3FFF)
 static inline int is_qsound(uint32_t addr)
 {
 	uint32_t a = addr & 0xFFFF;
-	return ((a & 0xF000) == 0x2000 || (a & 0xF000) == 0x3000) && ((addr & 0xFF0000) == 0x0C0000);
+	return qsound_mapped &&
+	       ((a & 0xF000) == 0x2000 || (a & 0xF000) == 0x3000) &&
+	       ((addr & 0xFF0000) == 0x0C0000);
 }
 
 rw8 ReadByte(aw32 addr)

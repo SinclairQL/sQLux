@@ -31,6 +31,7 @@
 
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
+extern int qsound_mapped; /* memaccess.c */
 
 int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
 		    size_t size)
@@ -168,13 +169,23 @@ void emulatorInit()
 		}
 	}
 
-	// If QSROM is defined in sqlux.ini, it is loaded into $000C0000
+	// If QSROM is defined in sqlux.ini, the QSound card is fitted: its ROM
+	// is loaded into $000C0000 and its registers are mapped at $0C2000 and
+	// $0C3000. Like the real card, it cannot be used with more than 768K of
+	// RAM, as the RAM would overlap its address space.
 	if (strlen(qsrom)) {
-		ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
-		if (ret < 0) {
-			fprintf(stderr, "Error Loading qsrom %s\n", qsrom);
-			exit(ret);
+		if (RTOP > 0x000C0000) {
+			fprintf(stderr,
+				"SQLUX WARNING: QSound disabled, its address space at $0C0000 overlaps the RAM (RAMTOP %dK, QSound needs 768K or less)\n",
+				RTOP / 1024);
 		} else {
+			ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
+			if (ret < 0) {
+				fprintf(stderr, "Error Loading qsrom %s\n",
+					qsrom);
+				exit(ret);
+			}
+			qsound_mapped = 1;
 			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $0C0000\n",
 			       qsrom);
 		}

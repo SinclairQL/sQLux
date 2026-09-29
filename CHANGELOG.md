@@ -102,3 +102,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `CLR` reads its operand before writing it, and `MOVEM` from memory reads one more word, as on a 68000, so both pay their memory contention
 - CPU writes to the screen line being scanned are shown in the same frame if the ZX8301 has not fetched those words yet
 - With `CPU_HOG = 0` the emulated time no longer stops while QDOS is idle
+- QSound is only mapped when `QSROM` is set, and it is disabled with a warning if the RAM overlaps its address space at $C0000: with more than 768K the RAM test of the JS ROM failed (white screen)
