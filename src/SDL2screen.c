@@ -77,6 +77,7 @@ static uint32_t snap_buf_len = 0;
  * reaches them, so a write by the CPU to a word not fetched yet still shows
  * in this frame (memaccess.c calls QLSDLScreenWrite). */
 uint32_t snap_hot_lo = 0, snap_hot_hi = 0;
+static uint32_t snap_hot_off = 0;       /* offset of the line in snap_buf */
 static int snap_hot_line = -1;
 static uint64_t snap_hot_t0 = 0;
 static uint8_t *snap_mode[2] = { NULL, NULL };
@@ -145,6 +146,7 @@ static void snap_copy_line(int line)
 	snap_hot_t0 = snap_time_for_line(line);
 	snap_hot_lo = qlscreen.qm_lo + off;
 	snap_hot_hi = snap_hot_lo + qlscreen.linel;
+	snap_hot_off = off;
 }
 
 /* The CPU wrote n bytes at addr, in the line the beam is scanning: the
@@ -165,8 +167,11 @@ void QLSDLScreenWrite(uint32_t addr, unsigned n)
 		word = (a - snap_hot_lo) >> 1;
 		fetch = snap_hot_t0 + zx8301_px_cycles(snap_frame_len,
 			(uint64_t)zx8301_fetch_px + 8 * word);
-		if (ql_cycles < fetch)
-			snap_buf[snap_back][a - qlscreen.qm_lo] =
+		/* relative to the line as it was copied: the screen base may have
+		 * changed since (double buffering, $18063 bit 7) */
+		if (ql_cycles < fetch &&
+		    snap_hot_off + (a - snap_hot_lo) < snap_buf_len)
+			snap_buf[snap_back][snap_hot_off + (a - snap_hot_lo)] =
 				*((uint8_t *)memBase + a);
 	}
 }

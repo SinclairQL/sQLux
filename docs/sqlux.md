@@ -394,7 +394,7 @@ CPU_TIMING = 68000
 ```
 
 `ZX8301_CONTENTION`
-At `SPEED = 1`, emulates the wait states the ZX8301 inserts in CPU accesses to the internal 128K of RAM: during the visible lines it uses 32 of the 40 slots of 12 cycles of each line to read the screen, and 8 slots in the other lines to refresh the DRAM, and the CPU can only start a RAM access at the beginning of a busy slot. Writes always get at least one wait state. ROM, I/O and expansion RAM are not affected. At other speeds, or with `CPU_TIMING = 68000`, it is not applied, as on the MiSTer QL core. The timing follows the `ql_timing` module of the MiSTer QL core by Marcel Kilgus and Daniele Terdina. Enabled by default (1); set to 0 to disable.
+Emulates the wait states the ZX8301 inserts in CPU accesses to the internal 128K of RAM. Each line is divided into 40 slots of 12 cycles, of which the ZX8301 uses 28 in the visible lines and 27 in the other lines (fitted to measurements on a real QL), and the CPU can only start a RAM access at the beginning of a busy slot. Writes always get at least one wait state. ROM, I/O and expansion RAM are not affected. The slots last the same real time at any speed, so at other speeds they last more or fewer cycles of the CPU. It is not applied at unlimited speed (`SPEED = 0`) or with `CPU_TIMING = 68000`. The slot mechanism follows the `ql_timing` module of the MiSTer QL core by Marcel Kilgus and Daniele Terdina. Enabled by default (1); set to 0 to disable.
 
 ```
 ZX8301_CONTENTION = 0
