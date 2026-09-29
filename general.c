@@ -476,7 +476,7 @@ void WriteHWByte(aw32 addr, aw8 d)
 		if (ipc_lle_active())
 			ipc_lle_write_comdata(d);
 		else
-			ipc_write(d);
+		ipc_write(d);
 		break;
 	case 0x018020:
 		mdv_sync();

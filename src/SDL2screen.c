@@ -823,8 +823,8 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 		uint8_t *lineEnd = emulatorScreenPtr + qlscreen.linel;
 		int mode = line_mode ? line_mode[line] : snapshot_mode;
 		bool blank = line_blank ? line_blank[line] != 0 : false;
-		uint32_t flashbg = 0;
-		int flashon = 0;
+	uint32_t flashbg = 0;
+	int flashon = 0;
 
 		if (lineEnd > emulatorScreenPtrEnd)
 			lineEnd = emulatorScreenPtrEnd;
@@ -841,56 +841,56 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 		}
 
 		while (emulatorScreenPtr < lineEnd) {
-			uint8_t t1 = *emulatorScreenPtr++;
-			uint8_t t2 = *emulatorScreenPtr++;
+		uint8_t t1 = *emulatorScreenPtr++;
+		uint8_t t2 = *emulatorScreenPtr++;
 
 			switch (mode) {
-			case 8:
-				for (int i = 6; i > -2; i -= 2) {
-					uint8_t p1 = (t1 >> i) & 0x03;
-					uint8_t p2 = (t2 >> i) & 0x03;
+		case 8:
+			for (int i = 6; i > -2; i -= 2) {
+				uint8_t p1 = (t1 >> i) & 0x03;
+				uint8_t p2 = (t2 >> i) & 0x03;
 
-					int color = ((p1 & 2) << 1) + ((p2 & 3));
-					int flashbit = (p1 & 1);
+				int color = ((p1 & 2) << 1) + ((p2 & 3));
+				int flashbit = (p1 & 1);
 
-					uint32_t x = SDLcolors[color];
+				uint32_t x = SDLcolors[color];
 
-					if ((curframe & BIT(5)) && flashon) {
-						x = flashbg;
-					}
+				if ((curframe & BIT(5)) && flashon) {
+					x = flashbg;
+				}
 
-					*pixelPtr32++ = x;
-					*pixelPtr32++ = x;
+				*pixelPtr32++ = x;
+				*pixelPtr32++ = x;
 
 					// flash happens after the pixel; it ends
 					// at the end of the line
-					if (flashbit) {
-						if (flashon == 0) {
-							flashbg = x;
-							flashon = 1;
-						} else {
-							flashon = 0;
-						}
+				if (flashbit) {
+					if (flashon == 0) {
+						flashbg = x;
+						flashon = 1;
+					} else {
+						flashon = 0;
 					}
 				}
-				break;
-			case 1:
-			case 4:
-			default:
-				for (int i = 7; i > -1; i--) {
-					uint8_t p1 = (t1 >> i) & 0x01;
-					uint8_t p2 = (t2 >> i) & 0x01;
-
-					int color = ((p1 & 1) << 2) + ((p2 & 1) << 1) +
-						    ((p1 & 1) & (p2 & 1));
-
-					uint32_t x = SDLcolors[color];
-
-					*pixelPtr32++ = x;
-				}
-				break;
 			}
+			break;
+		case 1:
+		case 4:
+			default:
+			for (int i = 7; i > -1; i--) {
+				uint8_t p1 = (t1 >> i) & 0x01;
+				uint8_t p2 = (t2 >> i) & 0x01;
+
+				int color = ((p1 & 1) << 2) + ((p2 & 1) << 1) +
+					    ((p1 & 1) & (p2 & 1));
+
+				uint32_t x = SDLcolors[color];
+
+				*pixelPtr32++ = x;
+			}
+			break;
 		}
+	}
 		line++;
 	}
 
@@ -1424,13 +1424,13 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	/* Handle key pad entries that require shift - with the US keyboard */
 	if ((keysym->sym == SDLK_KP_MULTIPLY) && !sdlqlmap) {
 		if (pressed)
-			queueKey(1 << 2, QL_8, 0);
+		queueKey(1 << 2, QL_8, 0);
 		SDLQLKeyEvent(1 << 2, QL_8, pressed, 0);
 		return;
 	}
 	if ((keysym->sym == SDLK_KP_PLUS) && !sdlqlmap) {
 		if (pressed)
-			queueKey(1 << 2, QL_EQUAL, 0);
+		queueKey(1 << 2, QL_EQUAL, 0);
 		SDLQLKeyEvent(1 << 2, QL_EQUAL, pressed, 0);
 		return;
 	}
@@ -1477,49 +1477,49 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 	/* backspace maps to control left */
 	if (keysym->sym == SDLK_BACKSPACE) {
 		if (pressed)
-			queueKey(1 << 1, 49, 0);
+		queueKey(1 << 1, 49, 0);
 		SDLQLKeyEvent(1 << 1, 49, pressed, 0);
 		return;
 	}
 	/* Delete maps to control right */
 	if (keysym->sym == SDLK_DELETE) {
 		if (pressed)
-			queueKey(1 << 1, 52, 0);
+		queueKey(1 << 1, 52, 0);
 		SDLQLKeyEvent(1 << 1, 52, pressed, 0);
 		return;
 	}
 	/* Home maps to alt left */
 	if (keysym->sym == SDLK_HOME) {
 		if (pressed)
-			queueKey(1 << 0, 49, 0);
+		queueKey(1 << 0, 49, 0);
 		SDLQLKeyEvent(1 << 0, 49, pressed, 0);
 		return;
 	}
 	/* End maps to alt right */
 	if (keysym->sym == SDLK_END) {
 		if (pressed)
-			queueKey(1 << 0, 52, 0);
+		queueKey(1 << 0, 52, 0);
 		SDLQLKeyEvent(1 << 0, 52, pressed, 0);
 		return;
 	}
 	/* Insert maps to shift F4 */
 	if (keysym->sym == SDLK_INSERT) {
 		if (pressed)
-			queueKey(1 << 2, 56, 0);
+		queueKey(1 << 2, 56, 0);
 		SDLQLKeyEvent(1 << 2, 56, pressed, 0);
 		return;
 	}
 	/* Page Up maps to shift down */
 	if (keysym->sym == SDLK_PAGEUP) {
 		if (pressed)
-			queueKey(1 << 2, 50, 0);
+		queueKey(1 << 2, 50, 0);
 		SDLQLKeyEvent(1 << 2, 50, pressed, 0);
 		return;
 	}
 	/* Page Down maps to shift down */
 	if (keysym->sym == SDLK_PAGEDOWN) {
 		if (pressed)
-			queueKey(1 << 2, 55, 0);
+		queueKey(1 << 2, 55, 0);
 		SDLQLKeyEvent(1 << 2, 55, pressed, 0);
 		return;
 	}
