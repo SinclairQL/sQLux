@@ -74,6 +74,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.0.5] - 2022-05-02
 
-[Unreleased]: https://github.com/SinclairQL/sQLux/
-[1.0.6]: https://github.com/SinclairQL/sQLux/compare/v1.0.5...v1.0.6
-[1.0.5]: https://github.com/SinclairQL/sQLux/releases/tag/v1.0.5
+## [Unreleased]
+### Added
+- Cycle counted CPU timing: every instruction charges its real 68008 cycle cost, and `SPEED = 1` is now the 7.5 MHz clock of an original QL
+- Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
+- `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
+- `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
+- Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
+- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 41 lines after the frame interrupt, 6 lines of vertical sync and 35 of top border (`ZX8301_VSYNC_LINES` option)
+- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, following the slot mechanism of the MiSTer QL core by Marcel Kilgus and Daniele Terdina, calibrated against a real QL (28 busy slots of 40 in the visible lines, 27 in the others). It applies at any speed except unlimited, scaled to the real time of the ZX8301
+- `NTSC` option: 262 lines per frame (60.39 Hz)
+- `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
+- `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware (Intel HEX or raw 2K binary): keyboard matrix scanning, speaker output, the serial link with the ZX8302 and BAUDx4, with its own 11 MHz clock, independent of `SPEED`
+- F10 toggles between the configured speed and unlimited speed
+- `HW_TRACE` option: hardware activity per second, to debug timing problems
+
+### Changed
+- The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions
+- A frame is a whole number of lines: 312 lines of 480 cycles (50.08 Hz) with PAL, 262 lines of 474 cycles (60.39 Hz) with NTSC
+- Interrupt lines are levels, as on the ZX8302: an interrupt stays pending until its bit in $18021 is cleared, and it is taken right after the instruction that lowers the mask
+- The display mode and blank bit are stored for each screen line, so mode changes in the middle of the screen are shown
+
+### Fixed
+- The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
+- QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
+- The frame interrupt is raised at the cycle of the vertical sync: it was raised up to one chunk of 300 instructions late, and frames could be cut short when the host was late
+- `CLR` reads its operand before writing it, and `MOVEM` from memory reads one more word, as on a 68000, so both pay their memory contention
+- CPU writes to the screen line being scanned are shown in the same frame if the ZX8301 has not fetched those words yet
+- With `CPU_HOG = 0` the emulated time no longer stops while QDOS is idle
