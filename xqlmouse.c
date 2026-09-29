@@ -383,12 +383,12 @@ void SchedulerCmd()
 			qdos_idle_request = 1;
 			nInst = 0;      /* end the chunk: QLRun takes over */
 		} else {
-			SDL_Delay(20);
-			if (nInst > 5) {
-				nInst2 = nInst;
-				nInst = 5;
-			}
+		SDL_Delay(20);
+		if (nInst > 5) {
+			nInst2 = nInst;
+			nInst = 5;
 		}
+	}
 	}
 	restore_regs(saved_regs);
 
