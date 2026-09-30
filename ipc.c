@@ -430,6 +430,14 @@ static volatile unsigned keyq_wr = 0, keyq_rd = 0;
 static uint8_t  matrix[8];               /* rows as read by the 8049 */
 static uint64_t key_next = 0;            /* earliest cycle for the next change */
 
+/* The firmware scans the keyboard periodically and misses a key held for
+ * less than about 20 ms. A real key is never that short, but a host may
+ * deliver a press and its release together (seen with sdl2-compat on
+ * Wayland), so every key stays in the matrix for at least this long. */
+#define IPC_KEY_MIN_HOLD_MS 40
+static uint64_t key_down_at[64];         /* when each key entered the matrix */
+static uint64_t last_down_at = 0;        /* the most recent press */
+
 /* Host time <-> IPC time, set on every vertical sync */
 static uint32_t ref_host_ms = 0;
 static uint64_t ref_units = 0;
@@ -468,6 +476,20 @@ static void key_apply(uint64_t now)
 		}
 		if (t < key_next)
 			t = key_next;
+		/* a release waits until the key has been held long enough, and
+		 * so does a modifier change, which releases the held keys (below) */
+		if (!keyq[rd].pressed) {
+			uint64_t held = key_down_at[code] +
+					(uint64_t)IPC_KEY_MIN_HOLD_MS * UNITS_PER_MS;
+			if (t < held)
+				t = held;
+		}
+		if (code <= 2) {
+			uint64_t held = last_down_at +
+					(uint64_t)IPC_KEY_MIN_HOLD_MS * UNITS_PER_MS;
+			if (t < held)
+				t = held;
+		}
 		if (now < t)
 			break;
 
@@ -485,9 +507,13 @@ static void key_apply(uint64_t now)
 			continue;
 		}
 
-		if (keyq[rd].pressed)
+		if (keyq[rd].pressed) {
+			/* held from now on: if the host delivered the change late,
+			 * its own time is already past */
 			matrix[row] |= bit;
-		else
+			key_down_at[code] = now;
+			last_down_at = now;
+		} else
 			matrix[row] &= (uint8_t)~bit;
 		keyq_rd = (rd + 1) & (KEYQ_LEN - 1);
 		key_next = t + (uint64_t)IPC_KEY_MIN_SPACING_MS * UNITS_PER_MS;
