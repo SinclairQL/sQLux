@@ -5,12 +5,13 @@
  *   The frame interrupt always follows the real video signal (50 Hz PAL,
  *   60 Hz NTSC), paced by the host clock (Pulse50Thread). On every vertical
  *   sync FrameInt calls zx8301_frame(); from then on the beam position is
- *   obtained by counting emulated cycles. At SPEED = 1 a frame lasts
- *   ZX_CPU_HZ / hz cycles (150000 for PAL).
+ *   obtained by counting emulated cycles. At SPEED = 1 a PAL frame lasts
+ *   149760 cycles.
  *
- * MEMORY CONTENTION (only at SPEED = 1, as on the MiSTer QL core)
- *   Follows the ql_timing module of the MiSTer QL core (Marcel Kilgus and
- *   Daniele Terdina), restricted to the internal RAM:
+ * MEMORY CONTENTION (at any speed except unlimited)
+ *   Follows the slot mechanism of the ql_timing module of the MiSTer QL
+ *   core (Marcel Kilgus and Daniele Terdina), for the internal RAM and the
+ *   reads of the peripheral registers (memaccess.c):
  *   - A line is made of 40 chunks of 12 cycles = 480 cycles (64 us).
  *   - During visible lines the ZX8301 uses 32 chunks (384 cycles) to fetch
  *     the screen; during the other lines it uses 8 chunks to refresh the
@@ -21,21 +22,18 @@
  *     asserted in S2 and the decision is in time for S4 (no wait state if
  *     the RAM is free); on a write DS is asserted one cycle later, so there
  *     is always at least one wait state.
- *   - ROM, I/O and expansion RAM are not affected.
+ *   - ROM, writes to the peripheral registers and expansion RAM are not
+ *     affected.
  */
 
 #include "zx8301.h"
 
 /* ---- Contention parameters (ql_timing) ---- */
 #define ZX_CHUNK_CYCLES   12    /* cycles per chunk */
-/* Busy chunks per line. Fitted to measurements on a real QL (timing tests
- * T1-T3 without interrupts and T5 with the frame interrupt): the RAM is
- * almost as busy on the border lines as on the visible ones. A copy loop
- * loses the same share of time whichever part of the frame it runs in, so
- * the frame interrupt, which runs during the top border, does not leave the
- * rest of the program with the most contended lines. */
-#define ZX_CHUNKS_VIDEO   28    /* busy chunks in a visible line */
-#define ZX_CHUNKS_REFRESH 27    /* busy chunks in a non visible line */
+/* Busy chunks per line, measured on a real QL by timing a copy loop line by
+ * line through the frame. */
+#define ZX_CHUNKS_VIDEO   32    /* busy chunks in a visible line */
+#define ZX_CHUNKS_REFRESH 8     /* busy chunks in a non visible line */
 #define ZX_CPU_ACCESS     4     /* byte access without wait states */
 #define ZX_READ_DECIDE    2     /* cycle of the access at which the ZX8301 decides (read) */
 #define ZX_WRITE_DECIDE   3     /* ... and on a write (DS one cycle later) */
@@ -44,10 +42,10 @@
 /* PAL: 256 + 15 + 6 + 35 = 312 lines; NTSC: 256 + 2 + 2 + 2 = 262 lines.
  * Lines last 64 us (PAL) and 63.2 us (NTSC). */
 #define ZX_PAL_LINES      312
-/* Lines from the frame interrupt to the first visible line. Calibrated
- * against raster timed demos that run correctly on a real QL: all of them
- * work between 35 and 37, so the default is the centre of that range. */
-#define ZX_PAL_FIRST      41    /* lines from the frame interrupt to the first visible line: 6 of vertical sync + 35 of top border */
+/* Lines from the frame interrupt to the first visible line, measured on a
+ * real QL with the same copy loop: the contention of the visible lines
+ * starts 32 lines after the interrupt and ends 256 lines later. */
+#define ZX_PAL_FIRST      32    /* lines from the frame interrupt to the first visible line */
 #define ZX_PAL_LINE_CYC   480
 #define ZX_NTSC_LINES     262
 #define ZX_NTSC_FIRST     4
