@@ -128,6 +128,7 @@ w32             RTOP;                           /* QL ram top address */
 short   exception;                      /* pending exception */
 w32             badAddress;                     /* bad address address */
 w16             readOrWrite;            /* bad address action */
+rw16            saved_sr;
 w32             dummy;                          /* free 4 bytes for who care */
 Ptr             dest;                           /* Mac address for
 read+write operations */
@@ -240,7 +241,8 @@ void REGP1 PutSR(aw16 sr)
 rw16 REGP1 BusErrorCode(aw16 dataOrCode)
 {
   if(supervisor) dataOrCode+=4;
-  return dataOrCode+readOrWrite+8;
+  if(badCodeAddress) dataOrCode+=8;
+  return (code&0xffe0)+dataOrCode+readOrWrite;
 }
 
 
@@ -261,6 +263,7 @@ void REGP1 SetPCX(int i)
 
   if(((char)(uintptr_t)pc&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -281,6 +284,7 @@ void SetPCB(w32 addr, int type)
 
   if(((char)addr&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -306,6 +310,7 @@ void REGP1 SetPC(w32 addr)
 
   if(((char)addr&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -412,8 +417,8 @@ void ExceptionProcessing()
 	}
       ExceptionIn(exception);
       (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)memBase);
-      WriteWord((*m68k_sp),GetSR());
+      WriteLong((*m68k_sp)+2,((uintptr_t)pc-(uintptr_t)memBase) - (exception==3? 2:0));
+      WriteWord((*m68k_sp),(exception==3)? saved_sr : GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
 	{
@@ -422,8 +427,13 @@ void ExceptionProcessing()
 	  WriteLong((*m68k_sp)+2,badAddress);
 	  WriteWord((*m68k_sp),BusErrorCode(badCodeAddress? 2:1));
 	  badCodeAddress=false;
-	  if(nInst) exception=0;
-	} else exception=0; /* allow interrupts */
+	  xflag = (saved_sr & 16) != 0;
+	  negative = (saved_sr & 8) != 0;
+	  zero = (saved_sr & 4) != 0;
+	  overflow = (saved_sr & 2) != 0;
+	  carry = (saved_sr & 1) != 0;
+	}
+      exception=0; /* allow interrupts */
       extraFlag=false;
       supervisor=true;
       trace=false;

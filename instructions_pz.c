@@ -27,6 +27,7 @@ void reset(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -114,6 +115,7 @@ void rte(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -148,6 +150,7 @@ void rts(void)
 	if ((((char)(uintptr_t)(pc = (uw16 *)((Ptr)memBase + (ReadLong(*m68k_sp) &
 							     ADDR_MASK)))) &
 	     1) != 0) {
+		saved_sr = GetSR();
 		exception = 3;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -172,10 +175,8 @@ void rts(void)
 void sbcd(void)
 {
 	w8 s, d, r;
-	w8 s2, d2, r2;
 	w8 *dx;
-	uw16 sbcd_lo, sbcd_hi, sbcd_res;
-	int bcd = 0;
+	uw8 dd, bc, corf, rr;
 
 	if ((code & 8) != 0) {
 		s = GetFromEA_b_m4();
@@ -186,28 +187,16 @@ void sbcd(void)
 		s = (w8)reg[code & 7];
 	}
 
-	sbcd_lo = (d & 0xF) - (s & 0xF) - (xflag ? 1 : 0);
-	sbcd_hi = (d & 0xF0) - (s & 0xF0);
+	dd = (uw8)d - (uw8)s - (xflag ? 1 : 0);
+	bc = ((~(uw8)d & (uw8)s) | (dd & ~(uw8)d) | (dd & (uw8)s)) & 0x88;
+	corf = bc - (bc >> 2);
+	rr = dd - corf;
 
-	sbcd_res = sbcd_hi + sbcd_lo;
-	if (sbcd_lo & 0xF0) {
-		sbcd_res -= 6;
-		bcd = 6;
-	};
-	if (((((uw16)d & 0xFF) - ((uw16)s & 0xFF) - (xflag ? 1 : 0)) & 0x100) >
-	    0xFF) {
-		sbcd_res -= 0x60;
-	}
-
-	r = sbcd_res;
-
-	xflag = carry = (((((uw16)d & 0xFF) - ((uw16)s & 0xFF) - bcd -
-			   (xflag ? 1 : 0)) &
-			  0x300) > 0xFF) ?
-				      1 :
-				      0;
-	zero = (zero ? 1 : 0) & (r ? 0 : 1);
-	negative = (r < 0) ? 1 : 0;
+	xflag = carry = (((bc | (~dd & rr)) & 0x80) != 0);
+	overflow = ((dd & ~rr & 0x80) != 0);
+	zero = zero && (rr == 0);
+	negative = (rr & 0x80) != 0;
+	r = (w8)rr;
 
 	if ((code & 8) != 0)
 		RewriteEA_b(r);
@@ -236,9 +225,9 @@ void sf(void)
 
 void stop(void)
 {
-	pc++;
 	if (supervisor) {
-		PutSR(RW(pc - 1));
+		uw16 new_sr = RW(pc++);
+		PutSR(new_sr);
 		if (exception == 0) /* to avoid mess with interrupts */
 		{
 			if (supervisor) {
@@ -249,6 +238,7 @@ void stop(void)
 				extraFlag = true;
 				nInst2 = nInst;
 				nInst = 0;
+				pc -= 2;
 			}
 		}
 	} else {
@@ -256,6 +246,7 @@ void stop(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -688,10 +679,11 @@ void tst_l(void)
 void unlk(void)
 {
 	register w32 *r;
+	w32 sp;
 	r = &(aReg[code & 7]);
-	(*m68k_sp) = *r;
-	*r = ReadLong(*m68k_sp);
-	(*m68k_sp) += 4;
+	sp = *r;
+	(*m68k_sp) = sp + 4;
+	*r = ReadLong(sp);
 }
 
 /* register shifts */
@@ -719,24 +711,25 @@ void asl_b_i(void)
 	short c;
 	uw8 mask;
 	d = ((w8 *)(&(reg[code & 7]))) + RBO;
-	if ((c = (code >> 9) & 7) != 0) {
-		carry = xflag = (*d & ((uw8)128 >> (c - 1))) != 0;
-		negative = *d < 0;
-		mask = 255 << (7 - c);
-		if (negative)
-			overflow = (mask & (uw8)(*d)) != mask;
-		else
-			overflow = (mask & (uw8)(*d)) != 0;
-		(*d) <<= c;
-		zero = *d == 0;
-		negative = *d < 0;
-	} else {
-		carry = xflag = (*d & 128) != 0;
+	c = (code >> 9) & 7;
+	if (c == 0)
+		c = 8;
+
+	carry = xflag = ((uw8)(*d) & (128 >> (c - 1))) != 0;
+	if (c == 8) {
+		/* every bit goes through bit 7 and a 0 ends there: V unless 0 */
 		overflow = *d != 0;
-		*d = 0;
-		zero = true;
-		negative = false;
+	} else {
+		mask = (uw8)(255 << (7 - c));
+		if (*d < 0)
+			overflow = ((uw8)(*d) & mask) != mask;
+		else
+			overflow = ((uw8)(*d) & mask) != 0;
 	}
+
+	*d = (w8)((uw8)(*d) << c);
+	zero = *d == 0;
+	negative = *d < 0;
 }
 
 void asr_w_i(void)
@@ -1646,7 +1639,7 @@ void roxr_b_r(void)
 	d = ((uw8 *)(&(reg[code & 7]))) + RBO;
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
 		if ((c %= 9) != 0) {
 			carry = ((*d) & ((uw8)1 << (c - 1))) != 0;
@@ -1671,7 +1664,7 @@ void roxl_b_r(void)
 	d = ((uw8 *)(&(reg[code & 7]))) + RBO;
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
 		if ((c %= 9) != 0) {
 			carry = ((*d) & ((uw8)128 >> (c - 1))) != 0;
@@ -1696,7 +1689,7 @@ void roxr_w_r(void)
 	d = (uw16 *)(((uw8 *)(&(reg[code & 7]))) + RWO);
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
 		if ((c %= 17) != 0) {
 			carry = ((*d) & ((uw16)1 << (c - 1))) != 0;
@@ -1721,7 +1714,7 @@ void roxl_w_r(void)
 	d = (uw16 *)(((uw8 *)(&(reg[code & 7]))) + RWO);
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
 		if ((c %= 17) != 0) {
 			carry = ((*d) & ((uw16)0x8000 >> (c - 1))) != 0;
@@ -1741,22 +1734,18 @@ void roxl_w_r(void)
 void roxr_l_r(void)
 {
 	uw32 *d;
-	uw32 temp;
 	short c;
+	uint64_t r;
 	d = (uw32 *)(&(reg[code & 7]));
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
+	c %= 33;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
-		if ((c %= 33) != 0) {
-			carry = ((*d) & ((uw32)1 << (c - 1))) != 0;
-			temp = (*d) << 1;
-			if (xflag)
-				temp |= 1;
-			(*d) = ((*d) >> c) | (temp << (32 - c));
-			xflag = carry;
-		} else
-			carry = xflag;
+		r = ((uint64_t)(xflag ? 1 : 0) << 32) | (uint64_t)*d;
+		r = (r >> c) | (r << (33 - c));
+		xflag = carry = (r >> 32) & 1;
+		*d = (uw32)r;
 	}
 	overflow = false;
 	negative = (*d & 0x80000000) != 0;
@@ -1766,22 +1755,18 @@ void roxr_l_r(void)
 void roxl_l_r(void)
 {
 	uw32 *d;
-	uw32 temp;
 	short c;
+	uint64_t r;
 	d = (uw32 *)(&(reg[code & 7]));
 	c = *((uw8 *)((Ptr)reg + ((code >> 7) & 28) + RBO)) & 63;
+	c %= 33;
 	if (c == 0)
-		carry = false;
+		carry = xflag;
 	else {
-		if ((c %= 33) != 0) {
-			carry = ((*d) & ((uw32)0x80000000 >> (c - 1))) != 0;
-			temp = (*d) >> 1;
-			if (xflag)
-				temp |= 0x80000000;
-			(*d) = ((*d) << c) | (temp >> (32 - c));
-			xflag = carry;
-		} else
-			carry = xflag;
+		r = ((uint64_t)(xflag ? 1 : 0) << 32) | (uint64_t)*d;
+		r = (r << c) | (r >> (33 - c));
+		xflag = carry = (r >> 32) & 1;
+		*d = (uw32)r;
 	}
 	overflow = false;
 	negative = (*d & 0x80000000) != 0;

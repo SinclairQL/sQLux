@@ -146,6 +146,7 @@ extern volatile w8      theInt;
 extern char             dispScreen;
 extern Cond             dispMode;
 extern Cond             badCodeAddress;
+extern rw16             saved_sr;        /* SR stacked by an address error */
 
 #define RM_SHIFT pageshift
 
