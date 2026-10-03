@@ -326,7 +326,6 @@ void FrameInt(void)
 	/* the frame interrupt is latched on the rising edge of VSYNC */
 	if ((theInt & 8) == 0) {
 		theInt |= 8;
-		*((uw8 *)memBase + 0x280a0l) = 16;
 		ql_update_ipl();
 	}
 
