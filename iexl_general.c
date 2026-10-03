@@ -417,7 +417,7 @@ void ExceptionProcessing()
 	}
       ExceptionIn(exception);
       (*m68k_sp)-=6;
-      WriteLong((*m68k_sp)+2,((uintptr_t)pc-(uintptr_t)memBase) - (exception==3? 2:0));
+      WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)memBase);
       WriteWord((*m68k_sp),(exception==3)? saved_sr : GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
