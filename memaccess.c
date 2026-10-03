@@ -30,6 +30,14 @@ static void address_error(aw32 addr, int is_write)
 #define ZX_CONTEND(addr, n, w) \
 	do { if (zx_contention && zx8301_is_ram(addr)) zx8301_ram((n), (w)); } while (0)
 
+/* Reads of the peripheral registers ($18000-$1BFFF) wait for the ZX8301 as
+ * the internal RAM does: on a real QL a loop reading $18021 is slower on
+ * the visible lines than on the border ones, by as much as a RAM access.
+ * Writes do not: with them the link with the IPC (writes to $18003) is
+ * slower than on a real QL. */
+#define ZX_CONTEND_IO(n, w) \
+	do { if (zx_contention) zx8301_ram((n), (w)); } while (0)
+
 /* Screen capture: the line the beam is scanning (SDL2screen.c) */
 extern uint32_t snap_hot_lo, snap_hot_hi;
 void QLSDLScreenWrite(uint32_t addr, unsigned n);
@@ -71,6 +79,7 @@ rw8 ReadByte(aw32 addr)
 
 	// Internal hardware (ZX8301 / ZX8302 IPC)
 	if (is_hw(addr)) {
+		ZX_CONTEND_IO(1, 0);
 		return ReadHWByte(addr);
 	}
 
@@ -104,6 +113,7 @@ rw16 ReadWord(aw32 addr)
 
 	// Internal hardware (ZX8301 / ZX8302 IPC)
 	if (is_hw(addr)) {
+		ZX_CONTEND_IO(2, 0);
 		return ((w16)ReadHWWord(addr));
 	}
 
@@ -134,6 +144,7 @@ rw32 ReadLong(aw32 addr)
 	}
 
 	if (is_hw(addr)) {
+		ZX_CONTEND_IO(4, 0);
 		return ((w32)ReadHWLong(addr));
 	}
 
