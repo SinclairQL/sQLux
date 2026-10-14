@@ -393,7 +393,11 @@ void emulatorInit()
 
 	InitialSetup();
 
-	if (isMinerva) {
+	/* Minerva tests the RAM unless it is entered through its warm start at
+	 * $186 with bit 0 of D1 set and the top of the RAM in the rest of D1,
+	 * which is what FAST_STARTUP asks for; the other ROMs are patched by
+	 * LoadMainRom(). */
+	if (isMinerva && emulatorOptionInt("fast_startup")) {
 		reg[1] = (RTOP & ~16383) | 1;
 		SetPC(0x186);
 	}

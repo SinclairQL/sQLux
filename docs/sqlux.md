@@ -185,7 +185,7 @@ CPU_HOG = 1
 ```
 
 `FAST_STARTUP`
-Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern. Has no effect with the Minerva ROM
+Set to 1 if you want to skip the usual RAM test (default), or set it to 0 if you want to enjoy the RAM test pattern. With Minerva, 1 enters it through its warm start, which skips the RAM test, and 0 lets it test the RAM as on a real QL
 
 ```
 FAST_STARTUP = 1
