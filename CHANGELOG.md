@@ -11,8 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
 - `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
 - Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
-- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 36 lines after the frame interrupt, calibrated against demos on a real QL (`ZX8301_VSYNC_LINES` option)
-- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina
+- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 32 lines after the frame interrupt, measured on a real QL (`ZX8301_VSYNC_LINES` option)
+- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina. The ZX8301 keeps 32 chunks of 12 cycles busy in a visible line and 8 in the others (DRAM refresh), measured on a real QL by timing a copy loop line by line through the frame. Reads of the peripheral registers wait for it too
 - `NTSC` option: 60 Hz frame interrupt and 262 lines per frame
 - `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
 - `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware: keyboard matrix scanning, speaker output and the serial link with the ZX8302
@@ -22,6 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
+- CPU: exact flags, checked against the 68000 tests: undocumented V flag of ABCD, SBCD and NBCD; undocumented Z, V and C of CHK; DIVS and DIVU on overflow and division by zero; ASL.b with a count of 8; ROXL and ROXR with a count of 0 and in .l; LINK A7 and UNLK A7
+- CPU: word and long accesses to odd addresses raise an address error, as on the 68000, and the PC stacked is the one after the instruction, so that QDOS goes on (the Quantum Leap demo froze at the end of its wipe effect). The rest of the exception frame is not exact yet
+- The frame interrupt no longer writes to $280A0, a QDOS system variable that is also on screen 1 (a 2 byte glitch in demos that draw on screen 1)
 - QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
 
 ## 1.1.1 - 2025-03-12

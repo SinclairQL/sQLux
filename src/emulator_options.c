@@ -86,7 +86,7 @@ struct emuOpts emuOptions[] = {
 {"cpu_timing", "", "CPU timing model: 68008 (original QL, default) or 68000 (16 bit bus)", EMU_OPT_INT, 68008, NULL},
 {"zx8301_contention", "", "Emulate ZX8301 video RAM contention at SPEED 1 (1 = on, 0 = off)", EMU_OPT_INT, 1, NULL},
 {"ntsc", "", "NTSC video timing: 60 Hz, 262 lines (1) instead of PAL 50 Hz, 312 lines (0)", EMU_OPT_INT, 0, NULL},
-{"zx8301_vsync_lines", "", "Lines from the frame interrupt to the first visible line (-1 = default: 36 PAL, 4 NTSC)", EMU_OPT_INT, -1, NULL},
+{"zx8301_vsync_lines", "", "Lines from the frame interrupt to the first visible line (-1 = default: 32 PAL, 4 NTSC)", EMU_OPT_INT, -1, NULL},
 {"strict_lock", "", "enable strict file locking", EMU_OPT_INT, 0, NULL},
 {"sysrom", "", "system rom", EMU_OPT_CHAR, 0, "MIN198.rom"},
 {"win_size", "w", "window size 1x, 2x, 3x, max, full", EMU_OPT_CHAR, 0, "1x"},
