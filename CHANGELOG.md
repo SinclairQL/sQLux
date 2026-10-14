@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions
 - The emulator waits for the host clock at the end of the last visible line instead of at the frame interrupt, so the keys pressed while it waits are seen in the next frame interrupt: one frame less of input lag (from a key press to the picture, 9.4 ms on average instead of 14.7 ms). The speed of the QL does not change
 - `IPC_ROM`: the keyboard matrix holds the keys really held, and changes that reach the 8049 together are kept 10 ms apart, so that fast typing does not lose keys that a QL would accept
+- `IPC_ROM`: SHIFT, CTRL and ALT follow the physical keys while another key is held (a game can read them together with a direction); only a symbol that the host keymap translates to a QL key with other modifiers changes them
 
 ### Fixed
 - The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
