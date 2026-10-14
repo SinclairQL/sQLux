@@ -422,6 +422,11 @@ int speed = 0;
  * instructions: F10 toggles between the configured speed and unlimited
  * speed. */
 extern uint64_t ql_frame_end;     // iexl_general.c
+/* Cycle at which the current frame begins. The 68008 only stops between two
+ * instructions, so the frame interrupt is raised a few cycles later, but the
+ * ZX8301 (its lines, its chunks and the beam) starts the frame at this exact
+ * cycle: on a QL they never move with respect to the clock of the CPU. */
+uint64_t ql_frame_origin = 0;
 extern void hw_trace_vsync_late(uint64_t late);   // general.c
 SDL_atomic_t speed_toggle_request;
 /* CPU_HOG = 0: QDOS is idle, run the rest of the frame at once (xqlmouse.c) */
@@ -506,6 +511,7 @@ exec:
         } else {
             frame_start = ql_cycles;
         }
+        ql_frame_origin = frame_start;
 
         // IMPORTANT: This fixes the STOP bug.
         // Upon exiting the Wait, we guarantee that interrupts are processed
