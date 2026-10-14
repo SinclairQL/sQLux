@@ -47,6 +47,7 @@ bool shaders_selected = false;
 
 SDL_sem *sem50Hz = NULL;
 extern SDL_atomic_t speed_toggle_request;   // unixstuff.c (F10)
+extern void emulatorRequestReset(void);     // unixstuff.c (F12)
 
 /* =============================================================== */
 /*   LINE BY LINE SCREEN CAPTURE IN EMULATED TIME                  */
@@ -1568,6 +1569,14 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 		if (pressed)
 			SDL_AtomicSet(&speed_toggle_request, 1);
 		return;
+	case SDLK_F12: {        /* reset the QL (once per press) */
+		static int f12_down = 0;
+
+		if (pressed && !f12_down)
+			emulatorRequestReset();
+		f12_down = pressed;
+		return;
+	}
 	}
 
 #ifndef __WIN32__

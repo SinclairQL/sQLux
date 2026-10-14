@@ -225,6 +225,32 @@ void TestCloseDevs()
 				}
 }
 
+/*
+ * Reset of the QL: write the sectors that are still in the buffers and close
+ * every disk image. The files that the QL had open in them are gone with its
+ * memory; the image is opened again when the QL next uses the drive.
+ */
+void QDiskReset(void)
+{
+	int i, k;
+
+	for (i = 0; i < MAXDEV; i++)
+		for (k = 0; k < 8; k++)
+			if ((qdevs[i].Where[k] == 1) &&
+			    (curr_flpfcb = qdevs[i].flpp[k])) {
+				if (curr_flpfcb->isValid &&
+				    curr_flpfcb->buffer != nil)
+					FlushSectors();
+				close(curr_flpfcb->refNum);
+				free(curr_flpfcb->buffer);
+				free(curr_flpfcb->si);
+				free(curr_flpfcb);
+
+				qdevs[i].flpp[k] = NULL;
+			}
+	curr_flpfcb = NULL;
+}
+
 /* routines initialization */
 
 static void InitDiskTables()

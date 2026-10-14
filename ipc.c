@@ -640,6 +640,24 @@ int ipc_lle_active(void)
 	return lle_active;
 }
 
+/* Reset of the QL: the reset line of the 8049 is the one of the 68008. The
+ * firmware starts again; the RAM of the 8049 keeps its contents, its ports
+ * float high (speaker silent, interrupt lines released) and the keys that
+ * are held down stay in the matrix, as on a QL. The clock of the IPC does not
+ * stop. */
+void ipc_lle_reset(void)
+{
+	if (!lle_active)
+		return;
+	ipc_lle_sync();
+	mcs48_reset(&ipc);
+	comdata_reg = 0x0f;
+	ipc_busy = 0;
+	comdata_to_cpu = 1;
+	pr_state = 0;
+	pr_prev_sent = -1;
+}
+
 static void run_until(uint64_t target)
 {
 	if (target > ipc_units + MAX_CATCHUP_UNITS)

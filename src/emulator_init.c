@@ -52,6 +52,37 @@ static sds emulatorRomPath(const char *romDir, const char *romName)
 	return sdscatprintf(sdsnew(""), "%s/%s", romDir, romName);
 }
 
+void ResetDrivers(void); /* QL_driver.c */
+void ResetFileDrivers(void); /* QL_files.c */
+void ql_hw_reset(void); /* general.c */
+void qsound_reset(void); /* qsound.c */
+void KillSound(void); /* QL_sound.c */
+void MouseReset(void); /* xqlmouse.c */
+
+/* The ROMs as they were loaded, before LoadMainRom() patches them: the
+ * first 128K of the address space (system ROM, ROM port and I/O area) and
+ * the QSound ROM. A reset puts them back, as the patches are replaced by the
+ * original code once they have done their job, and some of them save the
+ * code they replace. */
+#define ROM_IMAGE_SIZE 0x20000
+#define QSROM_SIZE 8192
+static uint8_t *rom_image = NULL;
+static uint8_t *qsrom_image = NULL;
+
+/* The 68008 leaves reset. Minerva tests the RAM unless it is entered through
+ * its warm start at $186 with bit 0 of D1 set and the top of the RAM in the
+ * rest of D1, which is what FAST_STARTUP asks for; the other ROMs are
+ * patched by LoadMainRom(). */
+static void emulatorStartCPU(void)
+{
+	InitialSetup();
+
+	if (isMinerva && emulatorOptionInt("fast_startup")) {
+		reg[1] = (RTOP & ~16383) | 1;
+		SetPC(0x186);
+	}
+}
+
 int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
 		    size_t size)
 {
@@ -256,6 +287,11 @@ void emulatorInit()
 		}
 	}
 
+	/* keep the ROMs as loaded, for emulatorReset() */
+	rom_image = malloc(ROM_IMAGE_SIZE);
+	if (rom_image)
+		memcpy(rom_image, memBase, ROM_IMAGE_SIZE);
+
 	LoadMainRom(); /* patch QDOS ROM*/
 
 	/* Minerva cannot handle more than 16M of memory... */
@@ -312,6 +348,10 @@ void emulatorInit()
 			}
 			qsound_base = base;
 			qsound_mapped = 1;
+			qsrom_image = malloc(QSROM_SIZE);
+			if (qsrom_image)
+				memcpy(qsrom_image, (char *)memBase + base,
+				       QSROM_SIZE);
 			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $%06X\n",
 			       qsrom, base);
 		}
@@ -391,16 +431,62 @@ void emulatorInit()
 	if (emulatorOptionInt("skip_boot"))
 		qlux_table[0x4e43] = btrap3;
 
-	InitialSetup();
-
-	/* Minerva tests the RAM unless it is entered through its warm start at
-	 * $186 with bit 0 of D1 set and the top of the RAM in the rest of D1,
-	 * which is what FAST_STARTUP asks for; the other ROMs are patched by
-	 * LoadMainRom(). */
-	if (isMinerva && emulatorOptionInt("fast_startup")) {
-		reg[1] = (RTOP & ~16383) | 1;
-		SetPC(0x186);
-	}
+	emulatorStartCPU();
 
 	QLdone = 0;
+}
+
+/*
+ * Reset of the QL, as with the button of the real machine. It runs in the
+ * emulation thread, between two instructions (see QLRun): the 68008 and the
+ * 8049 start again, the ZX8302 drops its pending interrupts and the ROM
+ * boots. The RAM keeps its contents until the ROM tests or clears it, the
+ * ZX8301 goes on with its frame and the microdrive tapes keep turning.
+ *
+ * The host side of the emulator starts again as well: the files and channels
+ * that the QL had open are closed, the ROMs are put back as they were loaded
+ * and patched again, so that the ROM calls InitROM() once more and the
+ * device drivers and the BASIC extensions are linked into the new system.
+ */
+void emulatorReset(void)
+{
+	/* while the memory of the QL still describes what it had open */
+	ResetDrivers();
+	ResetFileDrivers();
+
+	if (rom_image)
+		memcpy(memBase, rom_image, ROM_IMAGE_SIZE);
+	if (qsrom_image)
+		memcpy((char *)memBase + qsound_base, qsrom_image, QSROM_SIZE);
+	LoadMainRom();
+
+	/* btrap3() replaces itself once the F1/F2 question is answered */
+	if (emulatorOptionInt("skip_boot"))
+		qlux_table[0x4e43] = btrap3;
+
+	/* the ROM finds the system variables again (Minerva moves them with a
+	 * second screen) */
+	ql_sysvars = 0x28000;
+
+	ql_hw_reset();
+	MouseReset();
+	/* the latches of the QIMI and the PIA of the THOR mouse are cleared
+	 * by the reset line: no step or interrupt pending until the driver
+	 * enables them again */
+	if (qimi_mapped)
+		qimi_init();
+	if (thor_mapped)
+		thor_init();
+	if (qsound_mapped || qliont_ay_mapped)
+		qsound_reset();
+	if (!ipc_lle_active())
+		KillSound();
+
+	/* The warm start of Minerva skips the RAM test and expects the RAM
+	 * as the test leaves it; FastStartup() does the same for the other
+	 * ROMs. */
+	if (isMinerva && emulatorOptionInt("fast_startup"))
+		memset((char *)memBase + 131072, 0, RTOP - 131072);
+
+	emulatorStartCPU();
 }

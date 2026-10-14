@@ -116,6 +116,18 @@ w32 getSCRdriver()
 			4); /* :HIER: abs. sysref raus */
 }
 
+/* Reset of the QL: the pointer environment that was found is gone with the
+ * memory of the QL, and the mouse must not be written into it any more. It
+ * is looked for again once the ROM has started (SchedInit). */
+void MouseReset(void)
+{
+#ifdef MOUSE
+	HasPTR = 0;
+	ptrscrdrv = 0;
+	iscrdrv = 0;
+#endif
+}
+
 /* link in scheduler task */
 void SchedInit()
 {

@@ -682,6 +682,70 @@ void CloseAllMdvFiles(short drive, int filesys)
 	qdevs[filesys].OpenFiles[drive] = 0;
 }
 
+/*
+ * Reset of the QL: close on the host every file that the QL left open on the
+ * directory devices (WIN, FLP, MDV...), write what the disk images still
+ * hold in their buffers and forget where the drivers were linked, so that
+ * InitFileDrivers() can link them again when the ROM starts.
+ *
+ * The lists of open files run through the channel blocks, in the memory of
+ * the QL, which may hold anything at this point (a reset often follows a
+ * crash): every block is checked before it is used, and the walk stops at
+ * the first one that is not what it should be.
+ */
+extern void QDiskReset(void); /* QDisk.c */
+
+void ResetFileDrivers(void)
+{
+	int fs, dr, n;
+	struct mdvFile *f;
+	struct HF_FCB *fcb, *nfcb;
+
+	for (fs = 0; fs < MAXDEV; fs++) {
+		if (!qdevs[fs].qname)
+			continue;
+		for (dr = 0; dr < 8; dr++) {
+			f = qdevs[fs].FileList[dr];
+			for (n = 0; f != nil && n < 4096; n++) {
+				uintptr_t off = (uintptr_t)f - (uintptr_t)memBase;
+				int isdisk;
+
+				if ((off & 1) || off < 131072 ||
+				    off > (uintptr_t)RTOP - mdvFile_len ||
+				    GET_ID(f) != MDV_ID)
+					break;
+				isdisk = GET_ISDISK(f);
+				/* files in disk images are closed with the
+				 * image, by QDiskReset() */
+				if (GET_OPEN(f) && (isdisk == 0 || isdisk == 2)) {
+					/* the block of a host file is in the
+					 * list kept on the host side */
+					for (fcb = qdevs[fs].fcbList[dr]; fcb;
+					     fcb = fcb->next)
+						if (fcb == GET_FCB(f))
+							break;
+					if (fcb)
+						FSClose(GET_HFILE(f));
+				}
+				SET_OPEN(f, false);
+				SET_ID(f, 0);
+				f = GET_NEXT(f);
+			}
+			for (fcb = qdevs[fs].fcbList[dr]; fcb; fcb = nfcb) {
+				nfcb = fcb->next;
+				free(fcb);
+			}
+			qdevs[fs].FileList[dr] = nil;
+			qdevs[fs].fcbList[dr] = nil;
+			qdevs[fs].OpenFiles[dr] = 0;
+		}
+		qdevs[fs].ref = 0;
+	}
+
+	QDiskReset();
+	StopMotor();
+}
+
 void CloseAllFiles(void)
 {
 #if 0

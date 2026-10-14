@@ -254,6 +254,16 @@ void add_bas_proc(char *name, bas_err (*command)())
 
 void init_bas_exts()
 {
+	/* The list is built again each time the QL starts: after a reset the
+	 * entries of the previous run point into memory that the QL has
+	 * cleared */
+	while (ext_list) {
+		struct BAS_PFENTRY *next = ext_list->link;
+
+		free(ext_list);
+		ext_list = next;
+	}
+
 	add_bas_proc(BN_KILL_UQLX, Kill_UQLX);
 #if 0
   add_bas_proc(BN_MAKEDIR,MakeDir);
