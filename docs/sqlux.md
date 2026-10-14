@@ -1112,3 +1112,4 @@ An alias for UQLX_RELEASE$ returns the release string.
 
 - F10 toggles between the configured `SPEED` and unlimited speed (`SPEED = 0`).
 - F11 toggles full screen.
+- F12 resets the QL, as the reset button of the real machine. The files and channels that the QL had open are closed and the ROM boots again.

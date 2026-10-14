@@ -429,6 +429,15 @@ extern uint64_t ql_frame_end;     // iexl_general.c
 uint64_t ql_frame_origin = 0;
 extern void hw_trace_vsync_late(uint64_t late);   // general.c
 SDL_atomic_t speed_toggle_request;
+/* F12 resets the QL: also asked from the host thread and served by QLRunStep
+ * between two instructions, when no ROM call of the emulator is running */
+SDL_atomic_t reset_request;
+extern void emulatorReset(void);  // src/emulator_init.c
+
+void emulatorRequestReset(void)
+{
+    SDL_AtomicSet(&reset_request, 1);
+}
 /* CPU_HOG = 0: QDOS is idle, run the rest of the frame at once (xqlmouse.c) */
 int qdos_idle_request = 0;
 
@@ -466,6 +475,13 @@ void QLRunInit(void)
 
 int QLRunStep(void)
 {
+    if (SDL_AtomicGet(&reset_request)) {
+        SDL_AtomicSet(&reset_request, 0);
+        emulatorReset();
+        printf("QL reset\n");
+        fflush(stdout);
+    }
+
     if (SDL_AtomicGet(&speed_toggle_request)) {
         SDL_AtomicSet(&speed_toggle_request, 0);
         speed = speed ? 0 : speed_cfg;

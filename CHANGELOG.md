@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina. The ZX8301 keeps 32 chunks of 12 cycles busy in a visible line and 8 in the others (DRAM refresh), measured on a real QL by timing a copy loop line by line through the frame. Reads of the peripheral registers wait for it too
 - `NTSC` option: 60 Hz frame interrupt and 262 lines per frame
 - `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
+- F12 resets the QL: the 68008 and the IPC start again and the ROM boots, with the files and channels of the emulator's devices closed and its drivers and BASIC extensions linked again
 - `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware: keyboard matrix scanning, speaker output and the serial link with the ZX8302
 
 ### Changed
