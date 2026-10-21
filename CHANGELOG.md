@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - CPU: word and long accesses to odd addresses raise an address error, as on the 68000, and the PC stacked is the one after the instruction, so that QDOS goes on (the Quantum Leap demo froze at the end of its wipe effect). The rest of the exception frame is not exact yet
 - The frame interrupt no longer writes to $280A0, a QDOS system variable that is also on screen 1 (a 2 byte glitch in demos that draw on screen 1)
 - QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
+- Microdrives: an empty drive, or none selected, keeps the GAP line of the ZX8302 high, and the gap interrupt is raised by the rising edge of GAP and its mask bit, as in zx8302.v. QDOS can tell that a drive is empty: a program that looked into an empty `mdv2_` (La Abadia del Crimen) hung waiting for a gap
 
 ## 1.1.1 - 2025-03-12
 ### Changed
