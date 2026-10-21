@@ -103,7 +103,7 @@ int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
 			__func__, size, (intmax_t)romStat.st_size);
 		return -1;
 	} else if (romStat.st_size < size)
-		printf("SQLUX WARNING: ROM %s is not %dk", romName,
+		printf("SQLUX WARNING: ROM %s is not %zuk\n", romName,
 		       size / 1024);
 
 	romFile = open(romPath, O_RDONLY);

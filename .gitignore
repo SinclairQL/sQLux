@@ -25,3 +25,7 @@ build*
 
 # sqlux.ini so testing versions dont sneak back in
 sqlux.ini
+
+# macOS universal builds and locally built dependencies
+build-*/
+deps/
