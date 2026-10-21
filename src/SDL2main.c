@@ -12,6 +12,7 @@
 #include "SDL2screen.h"
 #include "unixstuff.h"
 #include "Xscreen.h"
+#include "macos_support.h"
 
 #if __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -114,6 +115,11 @@ int main(int argc, char *argv[])
 	if (!getenv("SQLUX_WIN_DISABLE_CONSOLE_OUTPUT")) {
 		reattach_console();
 	}
+#endif
+
+#ifdef __APPLE__
+	// Use the per-user data directory when launched from the app bundle
+	macosPrepareEnvironment(argc, argv);
 #endif
 
 	// set the homedir for the OS first

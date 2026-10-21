@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 3.10)
 option(SUPPORT_SHADERS "Set to true to enable shader support" OFF)
 option(GPL2_CODE "Set to enable GPL2 code inclusion" OFF)
 option(LTO "Use LTO in compile" OFF)
+option(MACOS_APP_BUNDLE "Build a macOS sQLux.app bundle" OFF)
+
+if(APPLE)
+  # Must be set before project(). arm64 requires macOS 11 or later anyway.
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
+    "Minimum macOS version")
+endif()
 
 project(sqlux C)
 
@@ -15,7 +22,7 @@ set(CMAKE_C_FLAGS
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY"
+    "${CMAKE_C_FLAGS} -DIPDEV -DSERIAL -DUX_WAIT -DNEWPTY"
   )
 endif()
 
@@ -154,6 +161,7 @@ add_executable(
   src/sqlux_hexdump.c
   src/SDL2main.c
   src/emulator_options.c
+  src/macos_support.c
   sds/sds.c
   args/src/args.c
   inih/ini.c)
@@ -220,7 +228,64 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(sqlux -Wl,-Bstatic -lpthread -lssp -Wl,-Bdynamic)
 endif()
 
-set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
+if(APPLE)
+  # Keep build machine paths out of the binary
+  target_compile_options(sqlux PRIVATE
+    "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}/=")
+
+  # The Apple linker no longer supports -s
+  set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE
+    "-Wl,-dead_strip -Wl,-x")
+else()
+  set_target_properties(sqlux PROPERTIES LINK_FLAGS_RELEASE -s)
+endif()
+
+if(APPLE AND MACOS_APP_BUNDLE)
+  file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md SQLUX_RELEASE_LINE
+    REGEX "^## \\[[0-9]+\\.[0-9]+\\.[0-9]+\\]" LIMIT_COUNT 1)
+  string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" SQLUX_BUNDLE_VERSION
+    "${SQLUX_RELEASE_LINE}")
+  if(NOT SQLUX_BUNDLE_VERSION)
+    set(SQLUX_BUNDLE_VERSION "0.0.0")
+  endif()
+
+  # Defaults copied to ~/Library/Application Support/sQLux on first launch
+  set(SQLUX_BUNDLE_RESOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/macos/sQLux.icns
+    ${CMAKE_CURRENT_SOURCE_DIR}/examples/sqlux.ini)
+  target_sources(sqlux PRIVATE ${SQLUX_BUNDLE_RESOURCES})
+  set_source_files_properties(${SQLUX_BUNDLE_RESOURCES} PROPERTIES
+    MACOSX_PACKAGE_LOCATION Resources)
+  set(SQLUX_RESOURCES_DIR $<TARGET_BUNDLE_CONTENT_DIR:sqlux>/Resources)
+  foreach(dir roms examples/mdv1 examples/mdv2 examples/mdv3 shaders)
+    get_filename_component(name ${dir} NAME)
+    add_custom_command(TARGET sqlux POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/${dir} ${SQLUX_RESOURCES_DIR}/${name}
+      VERBATIM)
+  endforeach()
+
+  set_target_properties(sqlux PROPERTIES
+    MACOSX_BUNDLE TRUE
+    OUTPUT_NAME sQLux
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist.in
+    MACOSX_BUNDLE_EXECUTABLE_NAME sQLux
+    MACOSX_BUNDLE_BUNDLE_NAME sQLux
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.sinclairql.sqlux
+    MACOSX_BUNDLE_ICON_FILE sQLux.icns
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${SQLUX_BUNDLE_VERSION}
+    MACOSX_BUNDLE_BUNDLE_VERSION ${SQLUX_BUNDLE_VERSION}
+    MACOSX_BUNDLE_COPYRIGHT "sQLux contributors, see COPYRIGHT")
+
+  # Ad-hoc sign the whole bundle so that it runs on Apple Silicon and
+  # Gatekeeper sees a consistent seal. Override SQLUX_CODESIGN_IDENTITY with
+  # a Developer ID for distribution.
+  set(SQLUX_CODESIGN_IDENTITY "-" CACHE STRING "codesign identity")
+  add_custom_command(TARGET sqlux POST_BUILD
+    COMMAND codesign --force --deep --options runtime --timestamp=none
+      --sign "${SQLUX_CODESIGN_IDENTITY}" $<TARGET_BUNDLE_DIR:sqlux>
+    VERBATIM)
+endif()
 
 if(LTO)
   set_property(TARGET sqlux PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -229,4 +294,8 @@ endif()
 # Ensure that a bare cmake will always exclude shaders
 unset(SUPPORT_SHADERS CACHE)
 
-install(TARGETS sqlux DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/)
+if(APPLE AND MACOS_APP_BUNDLE)
+  install(TARGETS sqlux BUNDLE DESTINATION ${CMAKE_INSTALL_PREFIX})
+else()
+  install(TARGETS sqlux DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/)
+endif()

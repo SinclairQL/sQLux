@@ -114,6 +114,40 @@ sQLux has switched to using cmake as its build system
     ./build/sqlux --help
     ```
 
+## Building a universal macOS app
+
+This builds `sQLux.app`, a single bundle that runs natively on both Apple
+Silicon and Intel Macs (macOS 11 or later). SDL2 is built from source as a
+universal static library, so the app has no Homebrew runtime dependencies.
+
+1. Install the build tools
+
+    ```sh
+    brew install cmake ninja
+    ```
+
+2. Build
+
+    ```sh
+    make macos
+    # check that both architectures are present
+    lipo -info build-macos/sQLux.app/Contents/MacOS/sQLux
+    ```
+
+3. Run it from the Finder, or with `open build-macos/sQLux.app`
+
+When started from the app bundle without a `sqlux.ini` in the working
+directory, sQLux uses `~/Library/Application Support/sQLux`. On first launch
+that directory is populated with the default `sqlux.ini`, ROMs, microdrive
+directories and shaders shipped in the bundle; files already there are never
+overwritten. Edit `sqlux.ini` there to change the configuration. Passing
+`-f`/`--config` keeps the usual behaviour.
+
+The bundle is ad-hoc signed. To sign for distribution, add
+`-DSQLUX_CODESIGN_IDENTITY="Developer ID Application: ..."` to the cmake
+configure step, then notarize the app. Shader support can be added with
+`-DSUPPORT_SHADERS=ON`.
+
 ## Building MinGW on Linux
 
 Instructions based on debian/ubuntu distro, for other distros you will have to modify as appropriate
