@@ -61,7 +61,7 @@ struct emuOpts emuOptions[] = {
 	  EMU_OPT_CHAR, 0, NULL },
 	{ "joy1", "", "1-8 SDL2 joystick index", EMU_OPT_INT, 0, NULL },
 	{ "joy2", "", "1-8 SDL2 joystick index", EMU_OPT_INT, 0, NULL },
-	{ "kbd", "", "keyboard language DE, GB, ES, IT, US", EMU_OPT_CHAR, 0,
+	{ "kbd", "", "keyboard language DE, GB, ES, IT, PT, US", EMU_OPT_CHAR, 0,
 	  "US" },
 	{ "no_patch", "n", "disable patching the rom", EMU_OPT_INT, 0, NULL },
 	{ "palette", "",
