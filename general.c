@@ -334,10 +334,21 @@ void FrameInt(void)
 	// 7.5 MHz / hz cycles; at unlimited speed (speed = 0) the screen is
 	// copied at once.
 	extern void QLSDLFrameStart(uint64_t now, uint64_t frame_len);
+	extern uint64_t ql_frame_origin;        // unixstuff.c
 	uint64_t frame_cycles = speed ? zx8301_frame_budget(speed) : 0;
-	zx8301_frame(ql_cycles, speed);
+	// The frame of the ZX8301 begins at its exact cycle, not at the end
+	// of the instruction that was running (up to a hundred cycles or so
+	// later, and different in every frame): otherwise its lines and its
+	// chunks would move a little in every frame with respect to the CPU,
+	// which on a QL they never do. Only the interrupt waits for the end
+	// of the instruction.
+	uint64_t origin = ql_cycles;
+	if (speed && ql_frame_origin <= ql_cycles &&
+	    ql_cycles - ql_frame_origin <= zx8301_speed_unit())
+		origin = ql_frame_origin;
+	zx8301_frame(origin, speed);
 	ipc_lle_frame(frame_cycles, zx8301_frame_cycles());
-	QLSDLFrameStart(ql_cycles, frame_cycles);
+	QLSDLFrameStart(origin, frame_cycles);
 }
 
 void ql_trigger_gap_interrupt(void) {
