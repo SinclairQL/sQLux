@@ -432,21 +432,40 @@ SDL_atomic_t speed_toggle_request;
 /* CPU_HOG = 0: QDOS is idle, run the rest of the frame at once (xqlmouse.c) */
 int qdos_idle_request = 0;
 
-int QLRun(void *data)
+/*
+ * The emulation loop, split so that a host which cannot block (a browser,
+ * through the SDL callbacks) can drive it as well as the emulator thread:
+ *
+ *   QLRunInit()  once, before the first step;
+ *   QLRunStep()  runs the emulation for a while and returns 1 when it has
+ *                to wait for the next tick of the host clock (Pulse50Thread,
+ *                50.08 Hz), 0 when it can be called again at once;
+ *   QLRunTick()  once that tick has arrived.
+ *
+ * QLRun() is the emulator thread: it blocks on the tick between the two.
+ */
+static int speed_cfg;           // speed restored by F10
+// Frame budget in 68008 clock cycles actually consumed (SPEED = 1 ->
+// 7.5 MHz: 149760 cycles per PAL frame, 124188 per NTSC frame).
+// idle_advance also adds to ql_cycles, so time spent stopped is
+// accounted for automatically.
+static uint64_t frame_budget;
+static uint64_t frame_start;
+static bool synced;             // the host tick of this frame has been waited
+static enum { TICK_NONE, TICK_SYNC, TICK_UNLIMITED } tick_wanted = TICK_NONE;
+
+void QLRunInit(void)
 {
     speed = (int)(atof(emulatorOptionString("speed")) * 20.0);
-    int speed_cfg = speed ? speed : 20;   // speed restored by F10
+    speed_cfg = speed ? speed : 20;
+    frame_budget = zx8301_frame_budget(speed);
+    frame_start = ql_cycles;
+    synced = false;
+    tick_wanted = TICK_NONE;
+}
 
-    // Frame budget in 68008 clock cycles actually consumed (SPEED = 1 ->
-    // 7.5 MHz: 149760 cycles per PAL frame, 124188 per NTSC frame).
-    // idle_advance also adds to ql_cycles, so time spent stopped is
-    // accounted for automatically.
-    uint64_t frame_budget = zx8301_frame_budget(speed);
-    uint64_t frame_start = ql_cycles;
-    bool synced = false;        // the host tick of this frame has been waited
-
-exec:
-
+int QLRunStep(void)
+{
     if (SDL_AtomicGet(&speed_toggle_request)) {
         SDL_AtomicSet(&speed_toggle_request, 0);
         speed = speed ? 0 : speed_cfg;
@@ -493,19 +512,15 @@ exec:
         if (budget > 0)
             idle_advance(budget);
         if (!stopped)
-            goto exec;
+            return 0;
     }
 
     if (speed && sem50Hz) {
         uint64_t elapsed = ql_cycles - frame_start;
 
         if (!synced && elapsed >= sync_point) {
-            // The picture is complete: wait for the host tick (50 Hz stable)
-            SDL_SemWait(sem50Hz);
-            while (SDL_SemTryWait(sem50Hz) == 0) {
-                // Consume accumulated ticks
-            }
-            synced = true;
+            // The picture is complete: wait for the host tick
+            tick_wanted = TICK_SYNC;
         } else if (elapsed >= frame_budget) {
             // New frame. The excess of the previous frame (the last chunk
             // may overrun by a few instructions) is deducted from the next
@@ -534,23 +549,7 @@ exec:
     }
     // Unlimited speed: the host tick is the frame
     else if (stopped) {
-        if (sem50Hz) {
-            SDL_SemWait(sem50Hz);
-            while (SDL_SemTryWait(sem50Hz) == 0) {
-                // Consume accumulated ticks
-            }
-        } else {
-            // Fallback in case the semaphore is missing (should not happen)
-            SDL_Delay(20);
-        }
-        frame_start = ql_cycles;
-        ql_frame_origin = frame_start;
-        synced = false;
-
-        // Upon exiting the Wait, interrupts are processed IMMEDIATELY,
-        // which wakes the QL from the 'stopped' state.
-        dosignal();
-        ProcessInterrupts();
+        tick_wanted = TICK_UNLIMITED;
     } else {
         // Turbo mode (w/o wait)
         ql_frame_end = UINT64_MAX;
@@ -567,8 +566,51 @@ exec:
     if ((qitc--) < 0) { qitc = 3; doPoll = 1; poll_req++; }
 #endif
 
-    if (!QLdone)
-        goto exec;
+    return tick_wanted != TICK_NONE;
+}
+
+void QLRunTick(void)
+{
+    switch (tick_wanted) {
+    case TICK_SYNC:
+        synced = true;
+        break;
+    case TICK_UNLIMITED:
+        frame_start = ql_cycles;
+        ql_frame_origin = frame_start;
+        synced = false;
+
+        // Upon exiting the Wait, interrupts are processed IMMEDIATELY,
+        // which wakes the QL from the 'stopped' state.
+        dosignal();
+        ProcessInterrupts();
+        break;
+    case TICK_NONE:
+        break;
+    }
+    tick_wanted = TICK_NONE;
+}
+
+int QLRun(void *data)
+{
+    QLRunInit();
+
+    while (!QLdone) {
+        if (QLRunStep()) {
+            // Exactly when the SDL Timer triggers (50Hz stable).
+            if (sem50Hz) {
+                SDL_SemWait(sem50Hz);
+                while (SDL_SemTryWait(sem50Hz) == 0) {
+                    // Consume accumulated ticks
+                }
+            } else {
+                // Fallback in case the semaphore is missing (should not
+                // happen)
+                SDL_Delay(20);
+            }
+            QLRunTick();
+        }
+    }
 
     return 0;
 }
