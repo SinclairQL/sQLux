@@ -608,6 +608,18 @@ void MdvOpen(void)
 		key = ReadByte(*aReg + 0x1c);
 
 		reg[0] = mdv_doopen(f, filesys, drive, key, aReg[1]);
+		/*
+		 * The OS returns from a failed open with A2 pointing at the
+		 * device driver block. TK2 trusts A2 to be the pointer it
+		 * had before the trap and, for DELETE, tests the word it points
+		 * to to end the list of alternative names. That is the high
+		 * word of the next driver here, never zero, so DELETE of a
+		 * missing file looped for ever. Give the OS a pointer to a zero
+		 * word (the high word of the initial PC in the vector table)
+		 * to be restored in A2.
+		 */
+		if (reg[0] < 0 && key < 0)
+			WriteLong(aReg[7] + 12, 4);
 	}
 noBlock:
 	rts();

@@ -75,12 +75,41 @@ void qaddpath(char *mount, char *name, int maxnlen)
 		return (void)addpath(mount, name, maxnlen);
 	strncat(mount, name, maxnlen - strlen(mount));
 }
+/* Remove a file, or a directory with no files in it. The ".-UQLX-" header
+ * file does not count as a file. */
 static int qunlinkfile(char *mount, char *name, int maxnlen)
 {
 	int res, q = strlen(mount);
+	struct stat st;
+
 	qaddpath(mount, name, maxnlen);
 
-	res = unlink(mount);
+	if (stat(mount, &st) == 0 && S_ISDIR(st.st_mode)) {
+		DIR *dirp = opendir(mount);
+		struct dirent *dp;
+		int empty = 1;
+
+		while (dirp && (dp = readdir(dirp)))
+			if (strcmp(dp->d_name, ".") && strcmp(dp->d_name, "..") &&
+			    strcmp(dp->d_name, ".-UQLX-"))
+				empty = 0;
+		if (dirp)
+			closedir(dirp);
+
+		if (!empty) {
+			errno = ENOTEMPTY;
+			res = -1;
+		} else {
+			char hdr[4300];
+
+			strncpy(hdr, mount, sizeof(hdr) - 16);
+			hdr[sizeof(hdr) - 16] = 0;
+			qaddpath(hdr, ".-UQLX-", sizeof(hdr) - 1);
+			unlink(hdr);
+			res = rmdir(mount);
+		}
+	} else
+		res = unlink(mount);
 
 	mount[q] = 0;
 	return res;
@@ -843,7 +872,11 @@ int HDelete(int drive, int dir, unsigned char *name, struct mdvFile *f,
 		return -7;
 
 	/*printf("calling HDelete %s\n",name+2);*/
-	qunlinkfile(mount, mname, 400);
+	if (qunlinkfile(mount, mname, 400)) {
+		if (errno == ENOTEMPTY || errno == EEXIST)
+			return QERR_IU; /* directory with files in it */
+		return qmaperr();
+	}
 
 	return 0;
 }

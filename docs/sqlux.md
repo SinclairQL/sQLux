@@ -751,6 +751,8 @@ dd if=/dev/fd0 of=DiskImagename
 
 On Linux anything works, unless you have a very special floppy use `/dev/fd0` as filename.
 
+Sub-directories work on both, with TK2 or any level 2 driver loaded: `MAKE_DIR`, `RENAME` (a file or a directory can be moved to another directory by giving the new complete name), `DELETE` (only empty directories) and `DIR dev_dir_`. As in all QDOS level 2 file systems the entries of a directory hold the complete name, `dir_file`, so the name of a file including its path is limited to 36 characters. Formatting a medium is not supported, use an existing image.
+
 # 7 Other Devices
 
 Here is a description of the `TCP/IP`,`pty`,`ser` and `prt` devices.

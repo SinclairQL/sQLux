@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 ### Added
+- Sub-directories on the native disk images (`.img`, QL5A/QL5B) and on QXL.WIN files (`.win`) with TK2 or any level 2 driver: `MAKE_DIR` (FS.MKDIR), `RENAME` (FS.RENAME, also moving a file or a directory with its contents to another directory), and `DELETE` of empty directories. Files can be created in nested directories of floppies, which only worked in the root before, and the floppy file numbers are kept in the directory entry like a level 2 system does
 - Cycle counted CPU timing: every instruction charges its real 68008 cycle cost, and `SPEED = 1` is now the 7.5 MHz clock of an original QL
 - Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
 - `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
@@ -24,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `IPC_ROM`: SHIFT, CTRL and ALT follow the physical keys while another key is held (a game can read them together with a direction); only a symbol that the host keymap translates to a QL key with other modifiers changes them
 
 ### Fixed
+- QXL.WIN: a file created in a directory that already existed (made by a real QL) was put in the root, and was not found afterwards when it came after the directory in the root
+- With TK2, `DELETE` of a file that does not exist hung the emulator: TK2 reads A2 after the failed trap and the OS left there the pointer to the device driver, whose first word is never zero. A2 now comes back pointing at a zero word
+- Host directories (`DEVICE` without `qdos-fs`): `DELETE` removes empty directories and reports a directory with files in it as in use instead of ignoring the error
 - The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
 - CPU: exact flags, checked against the 68000 tests: undocumented V flag of ABCD, SBCD and NBCD; undocumented Z, V and C of CHK; DIVS and DIVU on overflow and division by zero; ASL.b with a count of 8; ROXL and ROXR with a count of 0 and in .l; LINK A7 and UNLK A7
 - CPU: word and long accesses to odd addresses raise an address error, as on the 68000, and the PC stacked is the one after the instruction, so that QDOS goes on (the Quantum Leap demo froze at the end of its wipe effect). The rest of the exception frame is not exact yet

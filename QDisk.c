@@ -16,6 +16,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+#include <ctype.h>
 
 #include "QDisk.h"
 #include "QFilesPriv.h"
@@ -771,7 +773,7 @@ static int FileBlockSector(FileNum fileNum, int sector)
 		((sector / QDH_SPB(curr_flpfcb->qdh)) & 0x0fff);
 	w = -1;
 	for (i = 0; i < n; i++) {
-		if ((RL((w32 *)p) >> 8) == value) {
+		if (((uw32)RL((w32 *)p) >> 8) == value) {
 			w = i << 1;
 			break;
 		} else if ((RL((w32 *)(p + 2)) & 0x00ffffff) == value) {
@@ -954,7 +956,7 @@ static OSErr KillFile(FileNum fileNum)
 		    1;
 		p = (uw8 *)(curr_flpfcb->buffer + 96);
 		for (i = 0; i < n; i++) {
-			if ((RW((w16 *)p) >> 4) == fileNum.file) {
+			if (((p[0] << 4) | (p[1] >> 4)) == fileNum.file) {
 				*p = 0xfd;
 				QDH_SET_FREE(curr_flpfcb->qdh,
 					     QDH_FREE(curr_flpfcb->qdh) +
@@ -991,7 +993,7 @@ OSErr KillFileTail(FileNum fileNum, int nBlock)
 
 	p = (uw8 *)(curr_flpfcb->buffer + 96);
 	for (i = 0; i < n; i++) {
-		if ((RW((w16 *)p) >> 4) == fileNum.file) {
+		if (((p[0] << 4) | (p[1] >> 4)) == fileNum.file) {
 			if (((w16)p[2] | (((w16)p[1] & 15) << 8)) >= nBlock) {
 				*p = 0xfd;
 				QDH_SET_FREE(curr_flpfcb->qdh,
@@ -1079,120 +1081,172 @@ void RewriteHeader(void)
 	}
 }
 
-/* should return type FileNumber ...*/
-static FileNum Sub_FileNumber(uw8 *name, FileNum DirFn, int DirLen, int isdir,
-			      int *nlen)
+/* ---- directory handling ----
+ *
+ * A QDOS level 2 directory is a file of type 255 holding 64 byte entries
+ * (the first one is a header). The entries of a sub directory keep the
+ * complete name, "dir_file", so a file lives in the deepest existing
+ * directory whose name followed by '_' is a prefix of the file name.
+ * The same layout is used by the QL5A/5B floppies and QLWA (QXL.WIN).
+ */
+
+#define MAX_QNAME 36
+
+static int qc_up(int c)
+{
+	return (c >= 'a' && c <= 'z') ? c - 32 : c;
+}
+
+/* case insensitive compare of the first n characters of two QDOS names */
+static int qn_prefix_eq(const uw8 *a, const uw8 *b, int n)
+{
+	while (n-- > 0)
+		if (qc_up(*a++) != qc_up(*b++))
+			return 0;
+	return 1;
+}
+
+/* a pointer returned by DirEntry is only good until the next sector access */
+static struct fileHeader *DirEntry(FileNum dirFn, int i)
+{
+	Ptr p = GetFileSector(dirFn, i >> 3);
+
+	if (p == nil)
+		return nil;
+	return (struct fileHeader *)(p + ((i & 7) << 6));
+}
+
+/*
+ * File number of the entry i of directory DIRFN. The QLWA entries hold the
+ * first cluster. On QL5A/QL5B floppies (as qltools and a CST Thor do) the
+ * entry holds the number used in the FAT plus one. In the root directory
+ * that number is the entry number, so it is used directly: disks written
+ * before directories were supported hold 0. A file in a sub directory is
+ * numbered $800 plus its first cluster.
+ */
+static int EntryFileNum(FileNum dirFn, struct fileHeader *h, int i)
+{
+	int n = (uw16)QWDE_FNUM(h);
+	FileNum t;
+
+	if (curr_flpfcb->DiskType == qlwa)
+		return n;
+	if (dirFn.file == 0 || n == 0)
+		return i;
+	/* sQLux once wrote the number without the one added: take it when
+	 * only that one has blocks */
+	t.dir = dirFn.file;
+	t.entrynum = i;
+	t.file = n - 1;
+	if (FileBlockSector(t, 0) < 0) {
+		t.file = n;
+		if (FileBlockSector(t, 0) >= 0) {
+			gError = 0;
+			return n;
+		}
+	}
+	gError = 0;
+	return n - 1;
+}
+
+/* number of entries (header included) of a directory file */
+static int DirEntries(FileNum dirFn)
 {
 	struct fileHeader *h;
-	uw32 *z;
-	uw16 i, j, n, l;
-	uw8 *p1, *p2;
-	Ptr p;
-	Cond free;
-	FileNum res;
+
+	if (dirFn.file == root_fn().file)
+		return root_flen() / 64;
+	h = GetFileHeader(dirFn);
+	return h ? GET_FLEN(h) / 64 : 0;
+}
+
+/*
+ * Look NAME up in directory DIRFN. With isdir the result is the directory
+ * to be opened, or the one that would hold the file, and entrynum is -1
+ * when there is no directory in the path, else the file is wanted.
+ * Not found is file 0, entrynum -1.
+ */
+static FileNum DirScan(uw8 *name, FileNum DirFn, int isdir, int *nlen)
+{
+	FileNum res, best;
+	struct fileHeader *h;
+	int i, n, l, el, bestlen = 0;
 
 	res.file = 0;
 	res.entrynum = -1;
 	res.dir = DirFn.file;
+	best = res;
 
-	/*printf("Sub_FileNumber %s, DirFileNumber %d DirLen %d\n",name,DirFn,DirLen);*/
-
-	p = GetFileSector(DirFn, 0);
-	/*  write(1,p,512); */
-
-	if (p == nil)
-		return res;
-	h = (struct fileHeader *)(p + 64);
 	l = (uw16)RW((uw16 *)name);
-	/*  printf("FileNumber: name %s, len %d\n",name+2,l);*/
+	if (l > MAX_QNAME)
+		l = MAX_QNAME;
+	n = DirEntries(DirFn);
 
-	if (l > 36)
-		l = 36;
-	n = DirLen;
-	/*printf("FileNumber: num of directory entries : %d\n",n);*/
 	for (i = 1; i < n; i++) {
-		if ((i & 7) == 0) {
-			h = (struct fileHeader *)(p = GetFileSector(DirFn,
-								    i >> 3));
-			if (p == nil)
+		h = DirEntry(DirFn, i);
+		if (h == nil)
+			break;
+		if (RL((uw32 *)h) == 0) /* free entry */
+			continue;
+		el = (uw16)RW((uw16 *)REF_FNAME(h));
+		if (el == 0 || el > l)
+			continue;
+		if (!qn_prefix_eq(name + 2, (uw8 *)REF_FNAME(h) + 2, el))
+			continue;
+
+		if (GET_FTYP(h) == 255) {
+			/* "dir_" opens the directory, FS2 semantics */
+			if (el == l - 1 && name[2 + el] == '_') {
+				*nlen = el;
+				res.entrynum = i;
+				res.file = EntryFileNum(DirFn, h, i);
 				return res;
-		}
-		z = (uw32 *)h;
-		j = 16;
-		free = (RL(z) == 0);
+			}
+			if (el < l && name[2 + el] == '_') {
+				FileNum sub, r;
 
-		if (!free /* skip free entries */
-		    /* directories only if so requested */
-		    && (!isdir || (GET_FTYP(h) == 255))) {
-			/* printf("entry at %d, name %s, len %d\n",h,REF_FNAME(h)+2,RW((Ptr)REF_FNAME(h)));*/
-			if ((uw16)RW((uw16 *)(REF_FNAME(h))) <= l) {
-				/*printf("length matches \n");*/
-				p1 = name + 2;
-				p2 = (uw8 *)REF_FNAME(h) + 2;
-				for (j = 0; j < l; j++)
-					if ((*p1++ & 223) != (*p2++ & 223))
-						break;
-				*nlen = j; /* guess real *** name length */
-				if ((l == j &&
-				     l > 0) || /* exact name match or ...*/
-				    /* dangerously brain damaged FS2 semantics */
-				    /* - this opens a direcotry through normal open */
-				    (j == l - 1 && l > 0 &&
-				     GET_FTYP(h) == 255 && *(--p1) == '_')) {
-					res.entrynum = i;
-					if (curr_flpfcb->DiskType == qlwa)
-						res.file = QWDE_FNUM(h);
-					else
-						res.file = i;
-					return res;
+				sub.dir = DirFn.file;
+				sub.entrynum = i;
+				sub.file = EntryFileNum(DirFn, h, i);
+				r = DirScan(name, sub, isdir, nlen);
+				if (r.entrynum > -1)
+					return r;
+				if (el > bestlen) { /* deepest prefix directory */
+					best = sub;
+					bestlen = el;
 				}
-				/* next try search in subdir */
-				if (j > 0 && *(name + 2 + j) == '_' &&
-				    j == RW(REF_FNAME(h)) &&
-				    GET_FTYP(h) == 255) {
-					FileNum subDirFn;
-
-					subDirFn.dir = DirFn.file;
-					subDirFn.file = QWDE_FNUM(h);
-					subDirFn.entrynum = i;
-
-					/* see qflen WARNING */
-					res = Sub_FileNumber(name, subDirFn,
-							     qfLen(subDirFn),
-							     isdir, nlen);
-					if (res.entrynum > -1) /* found */
-						return res;
-					if (isdir)
-						return subDirFn;
-					else
-						return res;
-				}
+				continue;
 			}
 		}
-		h = (struct fileHeader *)(64 + (uintptr_t)h);
+		if (el == l && (!isdir || GET_FTYP(h) == 255)) {
+			*nlen = el;
+			res.entrynum = i;
+			res.file = EntryFileNum(DirFn, h, i);
+			return res;
+		}
 	}
-	if (isdir) {
-		*nlen = 0;
-		return root_fn();
+	if (isdir && bestlen > 0) {
+		*nlen = bestlen;
+		return best;
 	}
-
 	return res;
 }
 
 /* scan directory looking for file name. Returns file number or zero if not found or -1 if error */
 FileNum FileNumber(uw8 *name, int isdir, int *nlen)
 {
-	FileNum DirFn;
-	int DirLen;
-	/*FileNum fn;*/
+	FileNum res;
 
-	DirFn = root_fn();
-	DirLen = root_flen() / 64;
-
+	*nlen = 0;
 	if (isdir && RW(name) == 0)
-		return DirFn;
-	else
-		return Sub_FileNumber(name, DirFn, DirLen, isdir, nlen);
+		return root_fn();
+
+	res = DirScan(name, root_fn(), isdir, nlen);
+	if (isdir && res.entrynum < 0) {
+		*nlen = 0;
+		return root_fn();
+	}
+	return res;
 }
 
 int QDiskOpenDir(struct mdvFile *f)
@@ -1210,253 +1264,233 @@ int QDiskOpenDir(struct mdvFile *f)
 
 			/*printf("opendir %s\n",NAME_REF(f)+2);*/
 
-#if 0
-   fn=root_fn();
-   SET_FNUMBER(f,fn);
-#else
 	SET_FNUMBER(f, FileNumber((uw8 *)NAME_REF(f), 1, &nlen));
-#endif
 	WW(NAME_REF(f), nlen);
 	SET_REF(f, (unsigned)-1);
 	(curr_flpfcb->file_count)++;
 	return 0;
 }
 
-static OSErr QLWA_CreateNewFile(struct mdvFile *f)
+/* store the file number in entry SLOT of directory DIRFN, see EntryFileNum */
+static void SetEntryFileNum(FileNum dirFn, struct fileHeader *h, int slot,
+			    int fnum)
+{
+	if (!is_qlwa())
+		fnum = (dirFn.file == 0 ? slot : fnum) + 1;
+	QWDE_SETFNUM(h, fnum);
+}
+
+/* floppy: file numbers that have a block in the FAT */
+static uw8 flp_used[0x1000];
+
+static void FloppyUsedNums(void)
+{
+	uw8 *p = (uw8 *)(curr_flpfcb->buffer + 96);
+	int i, n;
+
+	n = (QDH_TOTAL(curr_flpfcb->qdh) / QDH_SPB(curr_flpfcb->qdh)) >> 1;
+	memset(flp_used, 0, sizeof(flp_used));
+	for (i = 0; i < n; i++, p += 6) {
+		if (p[0] != 0xfd)
+			flp_used[((int)p[0] << 4) | (p[1] >> 4)] = 1;
+		if (p[3] != 0xfd)
+			flp_used[((int)p[3] << 4) | (p[4] >> 4)] = 1;
+	}
+}
+
+/* floppy: give the blocks of file OLDF to file NEWF */
+static void RenumberFloppyFile(int oldf, int newf)
+{
+	uw8 *p = (uw8 *)(curr_flpfcb->buffer + 96);
+	int i, n;
+
+	n = (QDH_TOTAL(curr_flpfcb->qdh) / QDH_SPB(curr_flpfcb->qdh)) >> 1;
+	for (i = 0; i < n; i++, p += 6) {
+		if (p[0] != 0xfd && (((int)p[0] << 4) | (p[1] >> 4)) == oldf) {
+			p[0] = (uw8)(newf >> 4);
+			p[1] = (uw8)((newf << 4) | (p[1] & 0x0f));
+			curr_flpfcb->si[((i * 6) + 96) >> 9].changed = true;
+			curr_flpfcb->si[((i * 6) + 97) >> 9].changed = true;
+		}
+		if (p[3] != 0xfd && (((int)p[3] << 4) | (p[4] >> 4)) == oldf) {
+			p[3] = (uw8)(newf >> 4);
+			p[4] = (uw8)((newf << 4) | (p[4] & 0x0f));
+			curr_flpfcb->si[((i * 6) + 99) >> 9].changed = true;
+			curr_flpfcb->si[((i * 6) + 100) >> 9].changed = true;
+		}
+	}
+	curr_flpfcb->si->changed = true;
+}
+
+/*
+ * floppy: file number for a new file in a sub directory, $800 plus the
+ * cluster that GetFreeBlock will give to its block 0 (the first free one)
+ */
+static int NewFloppyFileNum(void)
+{
+	uw8 *p = (uw8 *)(curr_flpfcb->buffer + 96);
+	int i, n;
+
+	n = (QDH_TOTAL(curr_flpfcb->qdh) / QDH_SPB(curr_flpfcb->qdh)) >> 1;
+	for (i = 0; i < n; i++, p += 6) {
+		if (p[0] == 0xfd)
+			return 0x800 + (i << 1);
+		if (p[3] == 0xfd)
+			return 0x800 + (i << 1) + 1;
+	}
+	return -1;
+}
+
+/*
+ * Find a free entry in directory DIRFN, making the directory longer when
+ * there is none. The entry is returned cleared in *slot.
+ */
+static OSErr AllocDirEntry(FileNum dirFn, int *slot)
 {
 	uw32 *z;
-	uw16 i, j, n, l;
+	uw16 j;
+	int i, n, blockEntries;
 	Ptr p;
-	struct fileHeader *h;
-	Cond free;
-	int blockEntries;
-	long time;
-	FileNum fn0, fe;
-	int dummy;
+	struct fileHeader *hh;
+	/* the entry number is the file number: it must not be in the FAT */
+	int flproot = !is_qlwa() && dirFn.file == 0;
 
-	if (!curr_flpfcb || curr_flpfcb->buffer == nil || !curr_flpfcb->isValid)
-		QFOpenDisk(f);
-
-#if 0
-  fn0=root_fn();
-#else
-	fn0 = FileNumber((uw8 *)NAME_REF(f), 1, &dummy);
-#endif
-
-	if (QWA_FC(curr_flpfcb->qdh) < 1)
-		return QERR_DF;
-
-	blockEntries = QWA_SPC(curr_flpfcb->qdh) << 3; /* SPC*512/64 */
+	if (flproot)
+		FloppyUsedNums();
+	n = DirEntries(dirFn);
 	gError = 0;
-
-	n = 1 + (qfLen(fn0) >> 6); /* see warning */
-
-	p = GetFileSector(fn0, 0);
-	if (p == nil)
-		return gError;
-
-	z = (uw32 *)(p + 64);
-	//for(i=1; i<n; i++,(char*)z+=64)
-	for (i = 1; i < n; i++, z += 16) {
-		if ((i & 7) == 0) /* get new sector of directory ... */
-		{
-			p = GetFileSector(fn0, i >> 3);
-			if (p == nil)
-				return gError;
-			z = (uw32 *)p;
+	for (i = 1; i < n; i++) {
+		hh = DirEntry(dirFn, i);
+		if (hh == nil)
+			return gError;
+		if (RL((uw32 *)hh) == 0 && !(flproot && flp_used[i])) {
+			z = (uw32 *)hh;
+			for (j = 0; j < 16; j++)
+				WL(z++, 0);
+			PutSector((Ptr)hh);
+			*slot = i;
+			return 0;
 		}
-		free = (RL(z) == 0);
-		/*for(j=0;j<16;j++) if(RL(z++)!=0) free=false;*/
-		if (free)
-			goto slotFound;
 	}
 
-	if ((n % blockEntries) == 0) /* search ended on cluster boundary ?*/
-	{
-		if (QWA_FC(curr_flpfcb->qdh) < 2 /**QWA_SPC(curr_flpfcb->qdh)*/)
+	if (flproot && flp_used[n])
+		return QERR_DF;
+
+	blockEntries = sect_per_cluster() << 3; /* SPC*512/64 */
+	if ((n % blockEntries) == 0) { /* search ended on cluster boundary ?*/
+		if (is_qlwa() ? QWA_FC(curr_flpfcb->qdh) < 2 :
+				      QDH_FREE(curr_flpfcb->qdh) <
+					      2 * QDH_SPB(curr_flpfcb->qdh))
 			return QERR_DF;
-		p = GetFreeBlock(fn0,
-				 n / blockEntries); /* alloc new cluster !!! */
+		p = GetFreeBlock(dirFn, n / blockEntries); /* alloc new cluster */
 		if (p == nil)
 			return gError;
 		z = (uw32 *)p;
 		for (j = 0; j < 128; j++)
 			WL(z++, 0);
-	} else /* make sure p is the last sector of directory file */
-	{
-		p = GetFileSector(fn0, n >> 3);
+	} else { /* make sure p is the last sector of directory file */
+		p = GetFileSector(dirFn, n >> 3);
 		if (p == nil)
 			return gError;
+		/* a new sector is cleared whole: nothing old after the end */
 		z = (uw32 *)(p + ((n & 7) << 6));
-		for (j = 0; j < 16; j++)
+		for (j = 0; j < ((n & 7) ? 16 : 128); j++)
 			WL(z++, 0);
 	}
-	if (fn0.dir == 0)
-		QWA_SETRLEN(curr_flpfcb->qdh, (n + 1) << 6);
-	else {
-		struct fileHeader *hh;
-
-		hh = GetFileHeader(fn0);
-		if (hh != nil) {
-			SET_FLEN(hh, ((n + 1) << 6));
-			RewriteHeader();
-		} else
-			return gError;
-	}
-
-	i = n;
 	PutSector(p); /* mark as changed */
 	curr_flpfcb->si->changed = true;
-slotFound:
-	fe.dir = fn0.file;
-	fe.entrynum = i;
 
-	p = QLWA_GetFreeBlock0(&fe); /* alloc cluster#0 of file */
-
-	SET_FNUMBER(f, fe);
-
-	if (p == nil)
-		goto errore;
-
-	z = (uw32 *)p;
-	for (j = 0; j < 16; j++)
-		WL(z++, 0); /* write header copy ???? */
-	PutSector(p);
-
-	p = GetFileSector(fn0, i >> 3); /* get sector containing direntry */
-	if (p == nil)
-		goto errore;
-
-	h = (struct fileHeader *)(p +
-				  ((i & 7) << 6)); /* setup direcory entry */
-
-	for (i = 0; i < 16; i++)
-		WL((char *)h + i * 4, 0);
-	SET_FLEN(h, 64);
-	l = (uw16)RW((uw16 *)NAME_REF(f)) + 2;
-	if (l > 36)
-		l = 36;
-	BlockMoveData(NAME_REF(f), REF_FNAME(h),
-		      (uw16)RW((uw16 *)NAME_REF(f)) + 2);
-	time = ReadQlClock();
-	SET_FDTBAC(h, time);
-	SET_FDUPDT(h, time);
-	SET_REF(f, (unsigned)time);
-	QWDE_SETFNUM(h, fe.file);
-
-	PutSector(p); /* and write back directory */
-errore:
-#if 0 /* currently a flush is too expensive, delay it */
-  /*WriteBlock0();*/                  /* .... FAT */
-  FlushSectors();                   /* flush all sectors */
-  /*  if(gError==0) FlushFile(fe);*/
-#endif
-	return gError;
+	if (dirFn.file == root_fn().file) {
+		if (is_qlwa())
+			QWA_SETRLEN(curr_flpfcb->qdh, (n + 1) << 6);
+		else {
+			QDH_SET_DIREOFBL(curr_flpfcb->qdh, n >> 3);
+			QDH_SET_DIREOFBY(curr_flpfcb->qdh, ((n & 7) + 1) << 6);
+		}
+	} else {
+		hh = GetFileHeader(dirFn);
+		if (hh == nil)
+			return gError;
+		SET_FLEN(hh, ((n + 1) << 6));
+		RewriteHeader();
+	}
+	*slot = n;
+	return 0;
 }
 
 static OSErr CreateNewFile(struct mdvFile *f)
 {
-	uw32 *z;
-	uw16 i, j, n, l;
 	Ptr p;
 	struct fileHeader *h;
-	Cond free;
-	int blockEntries;
 	long time;
 	FileNum fn0, fe;
+	int dummy, slot, l;
+	OSErr e;
 
 	if (!curr_flpfcb || curr_flpfcb->buffer == nil || !curr_flpfcb->isValid)
 		QFOpenDisk(f);
 
-	if (curr_flpfcb->DiskType == qlwa)
-		return QLWA_CreateNewFile(f);
+	l = (uw16)RW((uw16 *)NAME_REF(f));
+	if (l > MAX_QNAME)
+		return QERR_BN;
 
-	fn0 = root_fn();
-
-	if (QDH_FREE(curr_flpfcb->qdh) < 1)
+	if (is_qlwa() ? QWA_FC(curr_flpfcb->qdh) < 1 :
+			      QDH_FREE(curr_flpfcb->qdh) < 1)
 		return QERR_DF;
-	blockEntries = QDH_SPB(curr_flpfcb->qdh) << 3;
+
+	fn0 = FileNumber((uw8 *)NAME_REF(f), 1, &dummy);
 	gError = 0;
-	p = GetFileSector(fn0, 0);
-	if (p == nil)
-		return gError;
-	n = (QDH_DIREOFBL(curr_flpfcb->qdh) << 3) +
-	    (QDH_DIREOFBY(curr_flpfcb->qdh) >> 6);
-	z = (uw32 *)(p + 64);
-	for (i = 1; i < n; i++) {
-		if ((i & 7) == 0) /* get new sector of directory ... */
-		{
-			p = GetFileSector(fn0, i >> 3);
-			if (p == nil)
-				return gError;
-			z = (uw32 *)p;
-		}
-		free = true;
-		for (j = 0; j < 16; j++)
-			if (RL(z++) != 0)
-				free = false;
-		if (free)
-			goto slotFound;
+	e = AllocDirEntry(fn0, &slot);
+	if (e)
+		return e;
+
+	fe.dir = fn0.file;
+	fe.entrynum = slot;
+	SET_FNUMBER(f, fe);
+
+	if (is_qlwa()) {
+		p = QLWA_GetFreeBlock0(&fe); /* alloc cluster#0 of file */
+	} else {
+		/* in the root the entry number is the file number */
+		fe.file = fn0.file == 0 ? slot : NewFloppyFileNum();
+		if (fe.file < 0) {
+			gError = QERR_DF;
+			p = nil;
+		} else
+			p = GetFreeBlock(fe, 0); /* alloc cluster#0 of file */
 	}
-	if ((n % blockEntries) == 0) /* search ended on cluster boundary ?*/
+	SET_FNUMBER(f, fe);
+
+	if (p == nil)
+		goto errore;
+
 	{
-		if (QDH_FREE(curr_flpfcb->qdh) < 2)
-			return QERR_DF;
-		p = GetFreeBlock(fn0,
-				 n / blockEntries); /* alloc new cluster !!! */
-		if (p == nil)
-			return gError;
-		z = (uw32 *)p;
+		uw32 *z = (uw32 *)p;
+		int j;
+
+		/* header copy, and no old data after it if it becomes a
+		 * directory */
 		for (j = 0; j < 128; j++)
 			WL(z++, 0);
-	} else /* make sure p is the last sector of directory file */
-	{
-		p = GetFileSector(fn0, n >> 3);
-		if (p == nil)
-			return gError;
-		z = (uw32 *)(p + ((n & 7) << 6));
-		for (j = 0; j < 16; j++)
-			WL(z++, 0);
 	}
-	QDH_SET_DIREOFBL(curr_flpfcb->qdh, n >> 3);
-	QDH_SET_DIREOFBY(curr_flpfcb->qdh, ((n & 7) + 1) << 6);
-	i = n;
-	PutSector(p); /* mark as changed */
-	curr_flpfcb->si->changed = true;
-slotFound:
-	fe.dir = 0;
-	fe.file = i;
-	fe.entrynum = i;
-
-	SET_FNUMBER(f, fe);
-	p = GetFreeBlock(fe, 0); /* alloc cluster#0 of file */
-	if (p == nil)
-		goto errore;
-	z = (uw32 *)p;
-	for (j = 0; j < 16; j++)
-		WL(z++, 0); /* write header copy ???? */
 	PutSector(p);
-	p = GetFileSector(fn0, i >> 3); /* get sector containing direntry */
-	if (p == nil)
+
+	h = DirEntry(fn0, slot); /* sector containing direntry */
+	if (h == nil)
 		goto errore;
-	h = (struct fileHeader *)(p +
-				  ((i & 7) << 6)); /* setup direcory entry */
+
 	SET_FLEN(h, 64);
-	l = (uw16)RW((uw16 *)NAME_REF(f)) + 2;
-	if (l > 38)
-		l = 38;
-	BlockMoveData(NAME_REF(f), REF_FNAME(h),
-		      (uw16)RW((uw16 *)NAME_REF(f)) + 2);
+	BlockMoveData(NAME_REF(f), REF_FNAME(h), l + 2);
 	time = ReadQlClock();
 	SET_FDTBAC(h, time);
 	SET_FDUPDT(h, time);
 	SET_REF(f, (unsigned)time);
-	PutSector(p); /* and write back directory */
+	SetEntryFileNum(fn0, h, slot, fe.file);
+
+	PutSector((Ptr)h); /* write back directory */
 errore:
-	/*WriteBlock0();*/ /* .... FAT */
-	/* not so expensive like for QLWA files so don't delay.. */
-	FlushSectors(); /* flush all sectors */
-	/*if(gError==0) FlushFile(fe);*/
+	if (!is_qlwa())
+		FlushSectors(); /* not so expensive like for QLWA, don't delay */
 	return gError;
 }
 
@@ -1626,6 +1660,182 @@ static OSErr QRead(struct mdvFile *f, Ptr p, uw32 *n, Cond lf, w32 *an)
 	return e;
 }
 
+/* true when a directory has no entries */
+static int DirIsEmpty(FileNum dirFn)
+{
+	struct fileHeader *h;
+	int i, n = DirEntries(dirFn);
+
+	for (i = 1; i < n; i++) {
+		h = DirEntry(dirFn, i);
+		if (h == nil || RL((uw32 *)h) != 0)
+			return 0;
+	}
+	return 1;
+}
+
+static void SetEntryName(struct fileHeader *h, const uw8 *qname)
+{
+	int l = (uw16)RW((uw16 *)qname);
+
+	memset(REF_FNAME(h) + 2, 0, MAX_QNAME);
+	WW(REF_FNAME(h), l);
+	BlockMoveData((void *)(qname + 2), REF_FNAME(h) + 2, l);
+}
+
+/*
+ * Replace the prefix OLDN by NEWN in the names of everything below a
+ * directory, since the entries hold the complete name. With apply false
+ * only checks that the new names are not too long.
+ */
+static OSErr RenameTree(FileNum dirFn, const uw8 *oldn, int oldl,
+			const uw8 *newn, int newl, int apply)
+{
+	struct fileHeader *h;
+	FileNum sub;
+	uw8 nm[2 + MAX_QNAME];
+	int i, n, el, nl;
+	OSErr e;
+
+	n = DirEntries(dirFn);
+	for (i = 1; i < n; i++) {
+		h = DirEntry(dirFn, i);
+		if (h == nil)
+			return gError;
+		if (RL((uw32 *)h) == 0)
+			continue;
+		el = (uw16)RW((uw16 *)REF_FNAME(h));
+		if (el <= oldl || el > MAX_QNAME ||
+		    ((uw8 *)REF_FNAME(h))[2 + oldl] != '_' ||
+		    !qn_prefix_eq((uw8 *)REF_FNAME(h) + 2, oldn, oldl))
+			continue;
+		nl = el - oldl + newl;
+		if (nl > MAX_QNAME)
+			return QERR_BN;
+		sub.dir = dirFn.file;
+		sub.entrynum = i;
+		sub.file = EntryFileNum(dirFn, h, i);
+		if (apply) {
+			WW(nm, nl);
+			BlockMoveData((void *)newn, nm + 2, newl);
+			BlockMoveData((uw8 *)REF_FNAME(h) + 2 + oldl, nm + 2 + newl,
+				      el - oldl);
+			SetEntryName(h, nm);
+			PutSector((Ptr)h);
+		}
+		if (GET_FTYP(h) == 255) {
+			e = RenameTree(sub, oldn, oldl, newn, newl, apply);
+			if (e)
+				return e;
+		}
+	}
+	return 0;
+}
+
+/* FS.RENAME: the new name is at A1, in the same directory or another one */
+static OSErr QDiskRename(struct mdvFile *f)
+{
+	FileNum fn = GET_FNUMBER(f), nd, ex;
+	struct fileHeader *h;
+	uw8 oldn[2 + MAX_QNAME], newn[2 + MAX_QNAME];
+	uw8 hdr[64];
+	const char *qln = (char *)memBase + aReg[1] + 2;
+	const char *qname = qdevs[GET_FILESYS(f)].qname;
+	int qlen = (uw16)RW((Ptr)memBase + aReg[1]);
+	int dnlen = strlen(qname);
+	int ol, isdirf, dummy, slot;
+	OSErr e;
+
+	/* the device is assumed to be the same, drop it from the new name */
+	if (qlen > dnlen + 1 && qln[dnlen + 1] == '_' && isdigit(qln[dnlen]) &&
+	    !strncasecmp(qln, qname, dnlen)) {
+		qln += dnlen + 2;
+		qlen -= dnlen + 2;
+	}
+	if (qlen <= 0 || qlen > MAX_QNAME)
+		return QERR_BN;
+	WW(newn, qlen);
+	BlockMoveData((void *)qln, newn + 2, qlen);
+
+	h = GetFileHeader(fn);
+	if (h == nil)
+		return gError ? gError : QERR_BM;
+	BlockMoveData(h, hdr, 64);
+	isdirf = hdr[5] == 255;
+	ol = (uw16)RW((uw16 *)(hdr + 14));
+	if (ol > MAX_QNAME)
+		ol = MAX_QNAME;
+	WW(oldn, ol);
+	BlockMoveData(hdr + 16, oldn + 2, ol);
+
+	ex = FileNumber(newn, 0, &dummy);
+	if (ex.file > 0 && ex.file != fn.file)
+		return QERR_EX;
+	if (isdirf && qlen > ol && newn[2 + ol] == '_' &&
+	    qn_prefix_eq(newn + 2, oldn + 2, ol))
+		return QERR_BP; /* a directory cannot go into itself */
+
+	if (isdirf && (e = RenameTree(fn, oldn + 2, ol, newn + 2, qlen, 0)))
+		return e;
+
+	nd = FileNumber(newn, 1, &dummy);
+	if (nd.file == fn.dir) { /* stays where it is, only the name changes */
+		h = GetFileHeader(fn);
+		if (h == nil)
+			return gError ? gError : QERR_BM;
+		SetEntryName(h, newn);
+		RewriteHeader();
+	} else { /* moved to another directory */
+		e = AllocDirEntry(nd, &slot);
+		if (e)
+			return e;
+		h = DirEntry(nd, slot);
+		if (h == nil)
+			return gError;
+		BlockMoveData(hdr, h, 64);
+		SetEntryName(h, newn);
+		PutSector((Ptr)h);
+
+		h = GetFileHeader(fn);
+		if (h == nil)
+			return gError ? gError : QERR_BM;
+		memset(h, 0, 64);
+		RewriteHeader();
+
+		if (!is_qlwa()) {
+			/* the file number follows the directory, see EntryFileNum */
+			int nf = fn.file;
+
+			if (nd.file == 0)
+				nf = slot;
+			else if (fn.dir == 0)
+				nf = 0x800 + FileBlockSector(fn, 0) /
+						     QDH_SPB(curr_flpfcb->qdh);
+
+			if (nf != fn.file) {
+				RenumberFloppyFile(fn.file, nf);
+				fn.file = nf;
+			}
+			h = DirEntry(nd, slot);
+			if (h == nil)
+				return gError;
+			SetEntryFileNum(nd, h, slot, fn.file);
+			PutSector((Ptr)h);
+		}
+		fn.dir = nd.file;
+		fn.entrynum = slot;
+		SET_FNUMBER(f, fn);
+	}
+
+	if (isdirf && (e = RenameTree(fn, oldn + 2, ol, newn + 2, qlen, 1)))
+		return e;
+
+	WW(NAME_REF(f), qlen);
+	BlockMoveData(newn + 2, NAME_REF(f) + 2, qlen);
+	FlushSectors();
+	return 0;
+}
+
 /*#define TEST*/
 
 OSErr QDiskIO(struct mdvFile *f, short op)
@@ -1660,7 +1870,7 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 	}
 
 	if (op == 5 || (op == 7 && (uw16)reg[2] > 0) || op == 0x49 ||
-	    op == 0x46) {
+	    op == 0x46 || op == 74 || op == 77) {
 		if (curr_flpfcb->readonly || GET_KEY(f) == Q_DIR ||
 		    GET_KEY(f) == Q_RDONLY) {
 			*reg = QERR_RO;
@@ -1895,9 +2105,22 @@ OSErr QDiskIO(struct mdvFile *f, short op)
 		}
 		*reg = 0;
 		break;
-	case 74:
-	case 77:
-		*reg = -15;
+	case 74: /* FS.RENAME : a1 = new name */
+		*reg = QDiskRename(f);
+		break;
+	case 77: /* FS.MKDIR : turn the new, empty file into a directory */
+		if (GET_EOF(f) > 64) {
+			*reg = QERR_BP;
+			break;
+		}
+		h = GetFileHeader(GET_FNUMBER(f));
+		if (h == nil) {
+			*reg = gError ? gError : QERR_BM;
+			break;
+		}
+		SET_FTYP(h, 255);
+		RewriteHeader();
+		FlushSectors();
 		break;
 	case 78:
 		/*  FS.VERS : read/write file version  */
@@ -1997,25 +2220,14 @@ OSErr QDiskDelete(
 			err = QERR_IU;
 		} else {
 			z = (uw32 *)GetFileHeader(fileNum);
-			if (z) {
-				/* currently directories can't be deleted, would require
-	     * check fn!=root_fn & scanning dir conts for valid entries */
-				if (GET_FTYP(z) == 255 /*&& RL(z)>64*/) {
-					err = QERR_IU;
-				} else {
-					for (i = 0; i < 16; i++)
-						WL(z++, 0);
-					RewriteHeader();
-					gError = KillFile(fileNum);
-#if 1
-					FlushSectors();
-#else
-					WriteBlock0(); /* .... FAT */
-					FlushFile(
-						root_fn()); /* flush all sectors */
-					FlushFile(fileNum);
-#endif
-				}
+			if (z && GET_FTYP(z) == 255 && !DirIsEmpty(fileNum)) {
+				err = QERR_IU; /* only empty directories can go */
+			} else if (z && (z = (uw32 *)GetFileHeader(fileNum))) {
+				for (i = 0; i < 16; i++)
+					WL(z++, 0);
+				RewriteHeader();
+				gError = KillFile(fileNum);
+				FlushSectors();
 			}
 		}
 	} else {
