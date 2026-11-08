@@ -15,6 +15,7 @@
 #include "memaccess.h"
 #include "QInstAddr.h"
 #include "QL68000.h"
+#include "qsound.h"
 #include "QLtraps.h"
 #include "QL_config.h"
 #include "QL_cconv.h"
@@ -37,6 +38,10 @@
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
 extern int qsound_mapped; /* memaccess.c */
+extern int qliont_ay_mapped; /* memaccess.c */
+extern uint32_t qsound_base; /* memaccess.c */
+extern uint32_t mem_limit; /* memaccess.c */
+extern uint32_t mem_limit_for(uint32_t rtop); /* memaccess.c */
 
 int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
 		    size_t size)
@@ -111,7 +116,9 @@ void emulatorInit()
 	}
 
 	// At least 1 MB is allocated to memBase to ensure the $0C0000 zone fits within the PC's memory
-	size_t alloc_size = (RTOP < 0x00100000) ? 0x00100000 : RTOP;
+	// Memory reserved above RTOP for the expansions, see mem_limit_for()
+	mem_limit = mem_limit_for(RTOP);
+	size_t alloc_size = mem_limit;
 	memBase = (int32_t *)malloc(alloc_size);
 	if (memBase == NULL) {
 		fprintf(stderr, "sorry, not enough memory for a %dK QL\n",
@@ -207,28 +214,6 @@ void emulatorInit()
 		}
 	}
 
-	// If QSROM is defined in sqlux.ini, the QSound card is fitted: its ROM
-	// is loaded into $000C0000 and its registers are mapped at $0C2000 and
-	// $0C3000. Like the real card, it cannot be used with more than 768K of
-	// RAM, as the RAM would overlap its address space.
-	if (strlen(qsrom)) {
-		if (RTOP > 0x000C0000) {
-			fprintf(stderr,
-				"SQLUX WARNING: QSound disabled, its address space at $0C0000 overlaps the RAM (RAMTOP %dK, QSound needs 768K or less)\n",
-				RTOP / 1024);
-		} else {
-			ret = emulatorLoadRom(romdir, qsrom, 0x000C0000, 8192);
-			if (ret < 0) {
-				fprintf(stderr, "Error Loading qsrom %s\n",
-					qsrom);
-				exit(ret);
-			}
-			qsound_mapped = 1;
-			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $0C0000\n",
-			       qsrom);
-		}
-	}
-
 	init_uqlx_tz();
 
 	init_iso();
@@ -274,6 +259,58 @@ void emulatorInit()
 	/* ...everything else not more than 4M */
 	if (!isMinerva && RTOP > 4096 * 1024)
 		RTOP = 4096 * 1024;
+	mem_limit = mem_limit_for(RTOP);
+
+	// If QSROM is defined in sqlux.ini, the QSound card is fitted: a 16K
+	// block with the 8K ROM followed by the registers ($2000 and $3000
+	// from its base). With RAM up to $0C0000 it sits at $0C0000. With more
+	// RAM it goes in the first free 16K block between RTOP and mem_limit
+	// (the reserved area above the RAM), and the card is disabled if there
+	// is none.
+	if (emulatorOptionInt("qliont_ay")) {
+		// Same chip as QSound, without ROM, at $80002A/$800028
+		if (RTOP > QLIONT_AY_BASE) {
+			fprintf(stderr,
+				"SQLUX WARNING: QLIONT_AY disabled, its address $%06X overlaps the RAM (RAMTOP %dK)\n",
+				QLIONT_AY_BASE, RTOP / 1024);
+		} else {
+			qliont_ay_mapped = 1;
+			printf(">>> [QLIONT_AY] AY-3-8910 at $80002A (control) and $800028 (data)\n");
+			if (strlen(qsrom))
+				fprintf(stderr,
+					"SQLUX WARNING: QLIONT_AY and QSROM are mutually exclusive, QSROM disabled (QLIONT_AY has preference)\n");
+		}
+	}
+	if (strlen(qsrom) && !qliont_ay_mapped) {
+		uint32_t base = 0x000C0000;
+		int ok = 1;
+
+		if (RTOP > 0x000C0000) {
+			base = (RTOP + 0x3FFF) & ~0x3FFFu;
+			if (base + 0x4000 > mem_limit) {
+				fprintf(stderr,
+					"SQLUX WARNING: QSound disabled, no free 16K block between RAMTOP %dK and the end of the reserved memory (%dK)\n",
+					RTOP / 1024, mem_limit / 1024);
+				ok = 0;
+			} else {
+				fprintf(stderr,
+					"SQLUX WARNING: QSound moved to address $%06X, as the RAM (RAMTOP %dK) overlaps $0C0000\n",
+					base, RTOP / 1024);
+			}
+		}
+		if (ok) {
+			ret = emulatorLoadRom(romdir, qsrom, base, 8192);
+			if (ret < 0) {
+				fprintf(stderr, "Error Loading qsrom %s\n",
+					qsrom);
+				exit(ret);
+			}
+			qsound_base = base;
+			qsound_mapped = 1;
+			printf(">>> [QSOUND] Loading QSound ROM '%s' allocate at $%06X\n",
+			       qsrom, base);
+		}
+	}
 
 	if (isMinerva) {
 		qlscreen.xres = qlscreen.xres & (~(7));

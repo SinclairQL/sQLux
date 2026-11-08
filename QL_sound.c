@@ -5,6 +5,7 @@
 #include "QL68000.h"
 #include "QL_sound.h"
 #include "qsound.h"
+extern int qliont_ay_mapped; /* memaccess.c */
 #include "ipc.h"
 #include "emulator_options.h"
 
@@ -126,7 +127,9 @@ void initSound(int volume) {
 		sound_enabled = true;
 
 		/* Initialize QSound */
-		const int qsfreq = emulatorOptionInt("qsfreq");
+		int qsfreq = emulatorOptionInt("qsfreq");
+		if (qliont_ay_mapped && qsfreq <= 0)
+			qsfreq = QLIONT_AY_CLOCK;
 		const int qsstereo = emulatorOptionInt("qsstereo");
 		qsound_init(qsfreq, have.freq, qsstereo);
 		ipc_lle_audio_init(have.freq);
