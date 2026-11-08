@@ -62,11 +62,6 @@ static const int16_t ayemu_dac_table[32] = {
 
 extern char *emulatorOptionString(const char *name);
 
-// 8 KB buffer for expansion ROM
-static uint8_t qsound_rom[8192];
-static int     qsound_rom_loaded = 0;
-static size_t  qsound_rom_size   = 0;
-
 void qsound_init(int clock_hz, int sample_rate, int stereo_mode) {
     memset(&qs, 0, sizeof(qs));
     qs.enabled = 1;
@@ -204,14 +199,8 @@ uint8_t qsound_read_byte(uint32_t addr)
 {
     if (!qs.enabled) return 0xFF;
 
-    uint32_t full_addr = addr & 0x00FFFFFF;
-
-    // 1. Expansion ROM read ($0C0000 - $0C1FFF, up to 16 KB)
-    if (qsound_rom_loaded && (full_addr >= 0x000C0000) && (full_addr < (0x000C0000 + qsound_rom_size))) {
-        return qsound_rom[full_addr - 0x000C0000];
-    }
-
-    // 2. Hardware I/O ports ($C2000 and $C3000)
+    // Hardware I/O ports (offsets $2000 and $3000 from the QSound base).
+    // The expansion ROM is plain memory and is not handled here.
     uint32_t a = addr & 0xFFFF;
     if ((a & 0xF000) == 0x3000) {
         if (a != 0x3000) {
@@ -226,6 +215,22 @@ uint8_t qsound_read_byte(uint32_t addr)
         }
     }
     return 0xFF;
+}
+
+// QLIONT AY: the control register selects the AY register, the data register
+// reads and writes it. Only the even addresses ($80002A and $800028) decode.
+void qliont_ay_write_byte(uint32_t off, uint8_t val) {
+    if (!qs.enabled) return;
+    if (off == 2) {
+        qs.ay_addr = val & 0x0F;
+    } else if (off == 0) {
+        ayemu_write_reg(qs.ay_addr, val);
+    }
+}
+
+uint8_t qliont_ay_read_byte(uint32_t off) {
+    if (!qs.enabled || off != 0) return 0xFF;
+    return (qs.ay_addr < 14) ? qs.regs[qs.ay_addr] : 0xFF;
 }
 
 // -----------------------------------------------------------------------------

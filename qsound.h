@@ -31,6 +31,13 @@ int     qsound_is_read_active(uint32_t addr);
 void    qsound_write_byte(uint32_t addr, uint8_t val);
 uint8_t qsound_read_byte(uint32_t addr);
 
+// QLIONT AY: same chip, control register at offset 2 and data at offset 0
+// from QLIONT_AY_BASE
+#define QLIONT_AY_BASE    0x00800028
+#define QLIONT_AY_CLOCK   2500000
+void    qliont_ay_write_byte(uint32_t off, uint8_t val);
+uint8_t qliont_ay_read_byte(uint32_t off);
+
 // 16-bit signed audio rendering and mixing
 void    qsound_render_mix_s16(int16_t *stream, int len);
 

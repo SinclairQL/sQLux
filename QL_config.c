@@ -24,7 +24,7 @@
 
 /*#include "QTimer.h"
 #include "QColor.h"
-#include "QSound.h"
+#include "qsound.h"
 #include "QDisk.h"
 #include "QSerial.h" */
 #include <string.h>

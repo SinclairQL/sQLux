@@ -282,7 +282,7 @@ It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
 `QSROM`
-Specifies the QSound expansion ROM to be loaded at 0xC0000.
+Specifies the QSound expansion ROM to be loaded at 0xC0000. If RAMTOP is above 768K, it is placed in the first free 16K block (8K ROM + I/O) between RAMTOP and the end of the memory reserved above it (RAMTOP + 256K, never crossing a 1M, 2M, 4M, 8M or 16M boundary), with a warning; if there is none (e.g. RAMTOP of 2048K or 4096K), QSound is disabled.
 
 ```
 QSROM = qsound.rom
@@ -306,6 +306,13 @@ Selects the stereo output mode for QSound:
 
 ```
 QSSTEREO = 1
+```
+
+`QLIONT_AY`
+Fits the QLIONT AY-3-8910 sound chip when set to 1 (default 0). It is the QSound chip emulation without ROM: the control register (selects the AY register) is at $80002A and the data register (reads and writes it) at $800028. Unless `QSFREQ` is set, the chip clock is 2500000 Hz. `QSSTEREO` applies as in QSound. It is mutually exclusive with `QSROM` (QLIONT_AY has preference, with a warning), and it is disabled with a warning if the RAM reaches $800028. Like QSound, it needs the audio to be enabled (`SOUND`).
+
+```
+QLIONT_AY = 1
 ```
 
 `MDV1` and `MDV2`
@@ -726,6 +733,8 @@ sQLux features full emulation of the QSound audio expansion card:
 - **Sound Engine:** Accurate tone generators, 32-step logarithmic DAC volume curve, and a 17-bit LFSR pseudo-random noise generator.
 - **Stereo Panning:** Configurable via `QSSTEREO` (Mono, ABC, or ACB stereo panning).
 - **Filtering:** Single-pole analog low-pass filtering simulating the physical output stage.
+
+The same chip is also available as the QLIONT AY (`QLIONT_AY = 1`), without ROM, at `$80002A` (control) and `$800028` (data).
 
 ## 5.7 Joystick
 
