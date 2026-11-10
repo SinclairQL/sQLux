@@ -76,12 +76,19 @@ bool QLGPUCreateDisplay(int w , int h, int ly, uint32_t* id,
 		CreatePalette();
 
 		// Configure the shaders
-		char* prepend = NULL;
+		// bits 0-1 shape (1 flat, 2 curved, 0 colour only), bits 6-7 colour
+		char prepend[96] = "";
+		int shape = shader_type & 3;
+		int colour = (shader_type >> 6) & 3;
 
-		if (shader_type == 2) {
-			prepend = "#define CURVATURE\n";
+		if (shape == 2) {
+			strcat(prepend, "#define CURVATURE\n");
 			curve = true;
+		} else if (shape == 0 && colour) {
+			strcat(prepend, "#define COLOR_ONLY\n");
 		}
+		if (colour)
+			sprintf(prepend + strlen(prepend), "#define MONO_MODE %d\n", colour);
 
 		ret = LoadShaderProgram(&shader_block, &shader,
 					shader_path, prepend,

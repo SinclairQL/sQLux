@@ -3,7 +3,7 @@
 
     Copyright (C) 2015-2016 davej
 	Modified 2022 for sQLux
-	Modified for colour modes / Trinitron / colour-only (see below)
+	Modified for colour modes / colour-only (see below)
 
     This program is free software; you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -32,12 +32,11 @@ Extra modes (selected by defines that sQLux can prepend before compiling):
 
     CURVATURE   barrel distortion (already used by sQLux for SHADER = 2)
     MONO_MODE   0 = normal colour (default), 1 = grey, 2 = amber, 3 = green
-    MASK_TYPE   1 = standard mask (default), 2 = Trinitron
+    MASK_TYPE   0 = none, 1 = standard mask (default), 2 = Trinitron (set in this file)
     COLOR_ONLY  colour change only: no scanlines, no mask, no curvature
 
 Suggested SHADER value layout:
     bits 0-1    shape: 1 = flat, 2 = curved (0 = off, or COLOR_ONLY if colour set)
-    bit  5 (+32) Trinitron mask instead of the standard one
     bits 6-7    colour: 64 = grey, 128 = amber, 192 = green
 
 */
