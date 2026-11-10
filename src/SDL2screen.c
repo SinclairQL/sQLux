@@ -685,7 +685,7 @@ void QLSDLScreen(void)
 	int shader = 0;
 #ifdef ENABLE_SHADERS
 	shader = emulatorOptionInt("shader");
-	if ((shader == 1) || (shader == 2)) {
+	if (shader != 0) {
 		shaders_selected = true;
 	}
 #endif

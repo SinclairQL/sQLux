@@ -37,14 +37,21 @@ cmake.exe -G "MinGW Makefiles" -DSUPPORT_SHADERS=TRUE ..
 mingw32-make
 ```
 # Shader parameters in sqlux.ini
-`SHADER`  Selects shader support. 0 disables shaders. 1 enables a "flat" shader. 2 enables a shader including emulated barrel distortion. Disabled by default.
+`SHADER`  Selects shader support. 0 disables shaders (default). The value is a bit field:
+
+| Bits | Meaning |
+|---|---|
+| 0-1 | Shape: 1 = "flat" shader, 2 = shader including emulated barrel distortion, 0 = colour change only (no scanlines, mask or curvature) |
+| 6-7 | Colour: 0 = normal, 64 = grey, 128 = amber, 192 = green |
+
+For example, 66 is a curved shader with a grey display. The shadow mask type is set with `MASK_TYPE` in the shader file.
 
 ```
 SHADER = 2
 ```
 
 `SHADER_FILE`
-The path to the GPU shader (written in OpenGL Shading Language) that is loaded when `SHADER` is set to 1 or 2.
+The path to the GPU shader (written in OpenGL Shading Language) that is loaded when `SHADER` is not 0.
 
 ```
 SHADER_FILE = ../shaders/crt-pi.glsl
