@@ -3,6 +3,7 @@
 
     Copyright (C) 2015-2016 davej
 	Modified 2022 for sQLux
+	Modified for colour modes / Trinitron / colour-only (see below)
 
     This program is free software; you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -26,7 +27,35 @@ BLOOM_FACTOR controls the increase in width for bright scanlines.
 
 MASK_TYPE defines what, if any, shadow mask to use. MASK_BRIGHTNESS defines how much the mask type darkens the screen.
 
+
+Extra modes (selected by defines that sQLux can prepend before compiling):
+
+    CURVATURE   barrel distortion (already used by sQLux for SHADER = 2)
+    MONO_MODE   0 = normal colour (default), 1 = grey, 2 = amber, 3 = green
+    MASK_TYPE   1 = standard mask (default), 2 = Trinitron
+    COLOR_ONLY  colour change only: no scanlines, no mask, no curvature
+
+Suggested SHADER value layout:
+    bits 0-1    shape: 1 = flat, 2 = curved (0 = off, or COLOR_ONLY if colour set)
+    bit  5 (+32) Trinitron mask instead of the standard one
+    bits 6-7    colour: 64 = grey, 128 = amber, 192 = green
+
 */
+
+#ifndef MONO_MODE
+#define MONO_MODE 0
+#endif
+
+// MASK_TYPE: 0 = none, 1 = green/magenta, 2 = trinitron(ish)
+#ifndef MASK_TYPE
+#define MASK_TYPE 1
+#endif
+
+#ifdef COLOR_ONLY
+#undef MASK_TYPE
+#define MASK_TYPE 0
+#undef CURVATURE
+#endif
 
 // Haven't put these as parameters as it would slow the code down.
 #define SCANLINES
@@ -34,8 +63,6 @@ MASK_TYPE defines what, if any, shadow mask to use. MASK_BRIGHTNESS defines how 
 #define GAMMA
 //#define FAKE_GAMMA
 //#define SHARPER
-// MASK_TYPE: 0 = none, 1 = green/magenta, 2 = trinitron(ish)
-#define MASK_TYPE 1
 
 
 #ifdef GL_ES
@@ -96,6 +123,23 @@ uniform sampler2D tex;
 SHADER_IN vec2 TEX0;
 SHADER_IN float filterWidth;
 
+// Luminance + phosphor tint
+vec3 mono(vec3 c)
+{
+#if MONO_MODE == 0
+	return c;
+#else
+	float l = dot(c, vec3(0.299, 0.587, 0.114));
+#if MONO_MODE == 1
+	return vec3(l);
+#elif MONO_MODE == 2
+	return l * vec3(1.00, 0.69, 0.00);
+#else
+	return l * vec3(0.20, 1.00, 0.30);
+#endif
+#endif
+}
+
 #if defined(CURVATURE)
 vec2 Distort(vec2 coord)
 {
@@ -135,6 +179,11 @@ float CalcScanLine(float dy)
 
 void main()
 {
+#if defined(COLOR_ONLY)
+	// Colour change only: no scanlines, mask or curvature
+	fragColor = vec4(mono(TEXTURE_2D(tex, TEX0).rgb), 1.0);
+	return;
+#endif
 #if defined(CURVATURE)
 	vec2 texcoord = Distort(TEX0);
 	if (texcoord.x < 0.0)
@@ -195,6 +244,9 @@ void main()
 #endif
 #endif
 #endif
+
+		colour = mono(colour);
+
 #if MASK_TYPE == 0
 		fragColor = vec4(colour, 1.0);
 #else
