@@ -40,6 +40,8 @@ extern int do_update;
 static Cond qemlPatch = false;
 
 int isMinerva = 0;
+/* Minerva moves the sysvars when the screens are doubled (F3 at boot) */
+uw32 ql_sysvars = 0x28000;
 uw32 orig_kbenc;
 
 int testMinervaVersion(char *ver);
@@ -310,6 +312,17 @@ void restore_regs(void *p)
 
 extern int tracetrap;
 
+/* Minerva soft reset (F1-F4 at the boot menu, or CALL 390): the ROM scan runs
+ * again with memory wiped, so hook it once more */
+void RearmRomInit(void)
+{
+	if (!isMinerva || !qemlPatch)
+		return;
+	if (RW((Ptr)memBase + ROMINIT_CMD_ADDR) == ROMINIT_CMD_CODE)
+		return;
+	WW((Ptr)memBase + ROMINIT_CMD_ADDR, ROMINIT_CMD_CODE);
+}
+
 void InitROM(void)
 {
 	w32 saved_regs[16];
@@ -330,6 +343,10 @@ void InitROM(void)
 
 	save_regs(saved_regs);
 
+	/* A6 is not the sysvars here, MT.INF returns them in A0 */
+	QLtrap(1, 0, 20000l);
+	ql_sysvars = aReg[0];
+
 	do_update = 1; /* flip in screen RAM */
 
 #ifdef OLD_PATCH
@@ -348,7 +365,7 @@ void InitROM(void)
 
 	/* delete old MDV drivers (for optical reasons) only if no physical .mdv is loaded */
 	if (!mdv_images_configured()) {
-		WriteLong(0x28048, 0);
+		WriteLong(ql_sysvars + 0x48, 0);
 	}
 
 	InitFileDrivers();
@@ -403,9 +420,9 @@ void InitROM(void)
 	if (reg[0] == 0) {
 		if (V3)
 			printf("Initialising TK2 device defaults\n");
-		WriteLong(0x28070 + 0x3c, aReg[0]);
-		WriteLong(0x28070 + 0x40, 32 + aReg[0]);
-		WriteLong(0x28070 + 0x44, 64 + aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x3c, aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x40, 32 + aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x44, 64 + aReg[0]);
 		WriteWord(aReg[0], strlen(DATAD));
 		strcpy((char *)((Ptr)memBase + aReg[0] + 2), DATAD);
 		WriteWord(aReg[0] + 32, strlen(PROGD));

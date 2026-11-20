@@ -112,7 +112,7 @@ void print_mousepos()
 
 w32 getSCRdriver()
 {
-	return ReadLong(ReadLong(ReadLong(0x28078)) +
+	return ReadLong(ReadLong(ReadLong(ql_sysvars + 0x78)) +
 			4); /* :HIER: abs. sysref raus */
 }
 

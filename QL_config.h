@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 void InitROM(void);
+void RearmRomInit(void);
 int EmulatorTable(void);
 void save_regs(void *p);
 void restore_regs(void *p);

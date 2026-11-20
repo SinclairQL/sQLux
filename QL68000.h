@@ -160,6 +160,7 @@ extern w32  displayFrom;
 extern w32  displayTo;
 
 extern int isMinerva;
+extern uw32 ql_sysvars; /* base of the QDOS system variables, from MT.INF */
 
 #ifndef vml
 #define vml static
