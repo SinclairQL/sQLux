@@ -140,13 +140,13 @@ void set_rtc_emu()
 /* NOTE(TF): Apparently not used anywhere in the code!   */
 uw16 sysvar_w(uw32 a)
 {
-	return RW((Ptr)memBase + 0x28000 + a);
+	return RW((Ptr)memBase + ql_sysvars + a);
 }
 
 /* Read a system variable (long) from QDOS memory        */
 uw32 sysvar_l(uw32 a)
 {
-	return RL((Ptr)memBase + 0x28000 + a);
+	return RL((Ptr)memBase + ql_sysvars + a);
 }
 
 #ifdef SHOWINTS

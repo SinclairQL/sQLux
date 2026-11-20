@@ -867,7 +867,7 @@ void MdvFormat(void)
 				/* set header flag, sector and random number */
 				mdvHeaders[drive * 14] = 0xff;
 				mdvHeaders[drive * 14 + 1] = 0;
-				a6 = 0x28000;
+				a6 = ql_sysvars;
 				mdvHeaders[drive * 14 + 12] =
 					*((uw8 *)memBase + a6 + 0x2e);
 				mdvHeaders[drive * 14 + 13] =

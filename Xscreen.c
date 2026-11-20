@@ -75,8 +75,8 @@ void scan_patch_chans(w32 oadr)
 	w32 ca;
 	w32 ce, cc;
 
-	ce = ReadLong(0x2807c); /* table top */
-	ca = ReadLong(0x28078);
+	ce = ReadLong(ql_sysvars + 0x7c); /* table top */
+	ca = ReadLong(ql_sysvars + 0x78);
 
 	for (; ca <= ce; ca += 4) {
 		cc = ReadLong(ca);
@@ -212,7 +212,7 @@ void init_xscreen()
 	int j;
 
 	/* get ch#0 */
-	ca = ReadLong(0x28078);
+	ca = ReadLong(ql_sysvars + 0x78);
 	ca = ReadLong(ca);
 	/* driver addr */
 	ca = ReadLong(ca + 4);
@@ -223,14 +223,18 @@ void init_xscreen()
 	orig_close = ReadLong(cdrv + 12);
 	orig_cdrv = cdrv;
 
-	DEVPEFIO_OCODE = ReadWord(orig_io);
+	/* the ROM is not wiped by a Minerva soft reset (F3 at boot): when we
+	 * get here again it is already patched, do not save our own code */
+	if ((uw16)ReadWord(orig_io) != DEVPEF_CMD_CODE)
+		DEVPEFIO_OCODE = ReadWord(orig_io);
 	WW((Ptr)memBase + orig_io, DEVPEF_CMD_CODE);
 
 	qlux_table[DEVPEF_CMD_CODE] = devpefio_cmd;
 
 	scan_patch_chans(orig_cdrv);
 
-	DEVPEFO_OCODE = ReadWord(orig_open);
+	if ((uw16)ReadWord(orig_open) != DEVPEFO_CMD_CODE)
+		DEVPEFO_OCODE = ReadWord(orig_open);
 	WW((Ptr)memBase + orig_open, DEVPEFO_CMD_CODE);
 	qlux_table[DEVPEFO_CMD_CODE] = devpefo_cmd;
 }

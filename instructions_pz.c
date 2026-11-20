@@ -4,6 +4,7 @@
 
 #include "QL68000.h"
 #include "mmodes.h"
+#include "QL_config.h"
 
 #ifdef DEBUG
 extern int trace_rts;
@@ -28,7 +29,9 @@ void reset(void)
 		nInst2 = nInst;
 		nInst = 0;
 		pc--;
+		return;
 	}
+	RearmRomInit();
 }
 
 void rol_m(void)
