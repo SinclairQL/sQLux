@@ -422,6 +422,11 @@ int speed = 0;
  * instructions: F10 toggles between the configured speed and unlimited
  * speed. */
 extern uint64_t ql_frame_end;     // iexl_general.c
+/* Cycle at which the current frame begins. The 68008 only stops between two
+ * instructions, so the frame interrupt is raised a few cycles later, but the
+ * ZX8301 (its lines, its chunks and the beam) starts the frame at this exact
+ * cycle: on a QL they never move with respect to the clock of the CPU. */
+uint64_t ql_frame_origin = 0;
 extern void hw_trace_vsync_late(uint64_t late);   // general.c
 SDL_atomic_t speed_toggle_request;
 /* CPU_HOG = 0: QDOS is idle, run the rest of the frame at once (xqlmouse.c) */
@@ -438,6 +443,7 @@ int QLRun(void *data)
     // accounted for automatically.
     uint64_t frame_budget = zx8301_frame_budget(speed);
     uint64_t frame_start = ql_cycles;
+    bool synced = false;        // the host tick of this frame has been waited
 
 exec:
 
@@ -445,6 +451,7 @@ exec:
         SDL_AtomicSet(&speed_toggle_request, 0);
         speed = speed ? 0 : speed_cfg;
         frame_start = ql_cycles;
+        synced = false;
         if (speed)
             printf("SPEED = %g\n", speed / 20.0);
         else
@@ -452,24 +459,36 @@ exec:
         fflush(stdout);
     }
 
-    // QDOS is idle (CPU_HOG = 0): the rest of the frame passes at once, as
+    // With a cycle budget the frame of the 68008 is executed in one go and
+    // then the emulator waits for the host clock. It waits where the picture
+    // has just been completed (the end of the last visible line), not at
+    // the frame interrupt: the lines of vertical blanking that follow are
+    // executed when the host tick arrives, just before the interrupt. The
+    // keys pressed during the wait enter the keyboard matrix there, so the
+    // 8049 has scanned them when QDOS polls it in the interrupt, and what
+    // they change is in the picture completed in this same go.
+    frame_budget = zx8301_frame_budget(speed);   // may be changed by emu_speed()
+    uint64_t sync_point = frame_budget *
+                          (zx8301_first_visible() + ZX_VISIBLE_LINES) /
+                          zx8301_lines();
+    // where the 68008 stops next: the wait, or the end of the frame
+    uint64_t limit = (speed && !synced) ? sync_point : frame_budget;
+
+    // QDOS is idle (CPU_HOG = 0): the time up to there passes at once, as
     // for STOP, instead of sleeping with the emulated time stopped.
     if (qdos_idle_request) {
         qdos_idle_request = 0;
         if (speed) {
-            long budget = (long)zx8301_frame_budget(speed) -
-                          (long)(ql_cycles - frame_start);
+            long budget = (long)limit - (long)(ql_cycles - frame_start);
             if (budget > 0)
                 idle_advance(budget);
         }
     }
 
-    // The CPU is stopped: let time run for the rest of the frame. If an
-    // interrupt is raised meanwhile, the CPU wakes up immediately.
+    // The CPU is stopped: let time run up to there. If an interrupt is
+    // raised meanwhile, the CPU wakes up immediately.
     if (stopped) {
-        frame_budget = zx8301_frame_budget(speed);
-        long budget = speed ? (long)frame_budget -
-                              (long)(ql_cycles - frame_start)
+        long budget = speed ? (long)limit - (long)(ql_cycles - frame_start)
                             : MDV_IDLE_TURBO_BUDGET;
         if (budget > 0)
             idle_advance(budget);
@@ -477,16 +496,46 @@ exec:
             goto exec;
     }
 
-    // Either in STOP state or time to sync frame (Normal Speed mode)
-    frame_budget = zx8301_frame_budget(speed);   // may be changed by emu_speed()
-    if (stopped || (sem50Hz && speed &&
-                    ql_cycles - frame_start >= frame_budget)) {
+    if (speed && sem50Hz) {
+        uint64_t elapsed = ql_cycles - frame_start;
 
-        // Exactly when the SDL Timer triggers (50Hz stable).
+        if (!synced && elapsed >= sync_point) {
+            // The picture is complete: wait for the host tick (50 Hz stable)
+            SDL_SemWait(sem50Hz);
+            while (SDL_SemTryWait(sem50Hz) == 0) {
+                // Consume accumulated ticks
+            }
+            synced = true;
+        } else if (elapsed >= frame_budget) {
+            // New frame. The excess of the previous frame (the last chunk
+            // may overrun by a few instructions) is deducted from the next
+            // one.
+            uint64_t carry = elapsed - frame_budget;
+            hw_trace_vsync_late(carry);
+            if (carry > zx8301_speed_unit()) carry = zx8301_speed_unit();
+            frame_start = ql_cycles - carry;
+            ql_frame_origin = frame_start;
+            synced = false;
+
+            // The frame interrupt: it also wakes the QL from STOP
+            dosignal();
+            ProcessInterrupts();
+        } else {
+            // Normal Mode: the chunk stops at the wait or at the end of
+            // the frame
+            uint64_t before = ql_cycles;
+            ql_frame_end = frame_start + limit;
+            ExecuteChunk(300);
+            // If nothing was executed (e.g. odd PC), charge part of the
+            // frame so that the loop does not spin without waiting.
+            if (ql_cycles == before)
+                frame_start -= zx8301_speed_unit();
+        }
+    }
+    // Unlimited speed: the host tick is the frame
+    else if (stopped) {
         if (sem50Hz) {
             SDL_SemWait(sem50Hz);
-
-            // Safety drain:
             while (SDL_SemTryWait(sem50Hz) == 0) {
                 // Consume accumulated ticks
             }
@@ -494,41 +543,18 @@ exec:
             // Fallback in case the semaphore is missing (should not happen)
             SDL_Delay(20);
         }
+        frame_start = ql_cycles;
+        ql_frame_origin = frame_start;
+        synced = false;
 
-        // New frame. The excess of the previous frame (the last chunk may
-        // overrun by a few instructions) is deducted from the next one.
-        if (speed) {
-            uint64_t used = ql_cycles - frame_start;
-            uint64_t carry = (used > frame_budget) ? used - frame_budget : 0;
-            hw_trace_vsync_late(carry);
-            if (carry > zx8301_speed_unit()) carry = zx8301_speed_unit();
-            frame_start = ql_cycles - carry;
-        } else {
-            frame_start = ql_cycles;
-        }
-
-        // IMPORTANT: This fixes the STOP bug.
-        // Upon exiting the Wait, we guarantee that interrupts are processed
-        // IMMEDIATELY, which will wake the QL from the 'stopped' state.
+        // Upon exiting the Wait, interrupts are processed IMMEDIATELY,
+        // which wakes the QL from the 'stopped' state.
         dosignal();
         ProcessInterrupts();
-    }
-    // Normal execution
-    else {
-        if (!speed) {
-            // Turbo mode (w/o wait)
-            ql_frame_end = UINT64_MAX;
-            ExecuteChunk(3000);
-        } else {
-            // Normal Mode: the chunk stops at the end of the frame
-            uint64_t before = ql_cycles;
-            ql_frame_end = frame_start + frame_budget;
-            ExecuteChunk(300);
-            // If nothing was executed (e.g. odd PC), charge part of the
-            // frame so that the loop does not spin without waiting.
-            if (ql_cycles == before)
-                frame_start -= zx8301_speed_unit();
-        }
+    } else {
+        // Turbo mode (w/o wait)
+        ql_frame_end = UINT64_MAX;
+        ExecuteChunk(3000);
     }
 
 #ifdef UX_WAIT

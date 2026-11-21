@@ -78,11 +78,14 @@ typedef struct {
 
 static MDVDrive drives[MDV_MAX_DRIVES];
 
+static MDVDrive *mdv_selected_drive(void);
+
 // ZX8302 registers
 static uint8_t mdv_sel = 0;
 static uint8_t mctrl = 0;
 static uint8_t irq_mask = 0;
 static bool    gap_irq = false;
+static bool    gap_irq_in = false;   // GAP and its mask bit, as last seen
 extern void    ql_trigger_gap_interrupt(void);
 
 // Emulated 68008 clock cycles (iexl_general.c)
@@ -160,6 +163,7 @@ void mdv_reset(void) {
     mctrl = 0;
     irq_mask = 0;
     gap_irq = false;
+    gap_irq_in = false;
 
     for (int i = 0; i < MDV_MAX_DRIVES; i++) {
         mdv_reset_tape_state(&drives[i]);
@@ -225,6 +229,32 @@ void mdv_set_reverse(int drive, bool reverse) {
     if (drive >= 0 && drive < MDV_MAX_DRIVES) {
         drives[drive].reverse = reverse;
     }
+}
+
+// The GAP line of the ZX8302: the gap of the tape of the selected drive, and
+// a permanent gap when that drive is empty or no drive is selected (mdv.v:
+// "a gap is permanently present if no mdv is inserted").
+static bool mdv_gap_line(void) {
+    MDVDrive *d = mdv_selected_drive();
+
+    return !(d && d->present && d->mdv_end != 0) || d->mdv_gap;
+}
+
+// The gap interrupt is raised by the rising edge of (GAP and its mask bit),
+// as in zx8302.v: by a gap that starts while it is enabled, and also by
+// enabling it while GAP is high ("toggling the mask will also trigger
+// irqs"). The latter is how QDOS finds out that a drive is empty: GAP never
+// goes low there, so no gap ever starts, and the interrupt comes when QDOS
+// enables it. Called whenever the gap, the selection or the mask may have
+// changed.
+static void mdv_update_gap_irq(void) {
+    bool in = mdv_gap_line() && (irq_mask & 0x01);
+
+    if (in && !gap_irq_in) {
+        gap_irq = true;
+        ql_trigger_gap_interrupt();
+    }
+    gap_irq_in = in;
 }
 
 int mdv_is_selected(void) {
@@ -300,8 +330,9 @@ static void mdv_step_ce(MDVDrive *d, int drive_index, bool selected) {
                            !(d->mdv_gap_state && (d->mdv_gap_cnt > 7) && (d->mdv_gap_cnt < 12));
 
     if (d->mem_addr > d->mdv_end) {
-        // End of the tape loop: back to the start
+        // End of the tape loop: back to the start, in a gap
         mdv_reset_tape_state(d);
+        mdv_update_gap_irq();
 
 #if MDV_DEBUG_REVOLUTIONS
         static uint32_t last_rev_time[MDV_MAX_DRIVES] = {0};
@@ -338,6 +369,7 @@ static void mdv_step_ce(MDVDrive *d, int drive_index, bool selected) {
                 d->mdv_gap_active = 0;
                 d->mdv_gap_state = !d->mdv_gap_state;
                 d->mdv_gap = 0;
+                mdv_update_gap_irq();
             }
         } else {
             d->mem_addr++;
@@ -348,22 +380,14 @@ static void mdv_step_ce(MDVDrive *d, int drive_index, bool selected) {
                 d->mdv_gap_active = 1;
                 d->mdv_gap = 1;
                 mdv_block_end(d, 0);   // end of header
-
-                if (selected && (irq_mask & 0x01)) {
-                    gap_irq = true;
-                    ql_trigger_gap_interrupt();
-                }
+                mdv_update_gap_irq();
             } else if (d->mdv_gap_state && old_gap_cnt == 328) {
                 // End of the data block words: a gap starts
                 d->mdv_gap_cnt = 0;
                 d->mdv_gap_active = 1;
                 d->mdv_gap = 1;
                 mdv_block_end(d, 1);   // end of data block
-
-                if (selected && (irq_mask & 0x01)) {
-                    gap_irq = true;
-                    ql_trigger_gap_interrupt();
-                }
+                mdv_update_gap_irq();
 
                 if (d->reverse) {
                     if (d->mem_addr == 343)
@@ -420,13 +444,19 @@ void mdv_write_control(uint8_t val) {
 
     if (old_clk && !new_clk) {
         mdv_sel = ((mdv_sel << 1) | data_bit) & 0xFF;
+        mdv_update_gap_irq();   // another drive, or none: another GAP
     }
 }
 
 void mdv_write_int(uint8_t val) {
     irq_mask = (val >> 5) & 0x07;
     if (val & 0x01) {
+        // Acknowledge: it clears the interrupt and, in zx8302.v, has
+        // priority over an edge caused by the mask bit in the same write
         gap_irq = false;
+        gap_irq_in = mdv_gap_line() && (irq_mask & 0x01);
+    } else {
+        mdv_update_gap_irq();
     }
 }
 
