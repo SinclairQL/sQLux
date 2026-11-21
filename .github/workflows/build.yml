@@ -123,13 +123,6 @@ jobs:
               shell: bash,
             }
           - {
-              os: mingw32,
-              image: windows-2022,
-              pkg: mingw,
-              arch: i686,
-              shell: "msys2 {0}",
-            }
-          - {
               os: mingw64,
               image: windows-2022,
               pkg: mingw,
