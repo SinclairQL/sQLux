@@ -33,19 +33,21 @@
 void InitialSetup(void);
 extern int qsound_mapped; /* memaccess.c */
 
+static sds emulatorRomPath(const char *romDir, const char *romName)
+{
+	if (romDir[0] == '~' && romDir[1] == '/')
+		return sdscatprintf(sdsnew(""), "%s/%s/%s", homedir,
+				    romDir + 2, romName);
+
+	return sdscatprintf(sdsnew(""), "%s/%s", romDir, romName);
+}
+
 int emulatorLoadRom(const char *romDir, const char *romName, uint32_t addr,
 		    size_t size)
 {
 	struct stat romStat;
 	int ret, romFile;
-	sds romPath;
-
-	if (romDir[0] == '~') {
-		romPath = sdscatprintf(sdsnew(""), "%s/%s/%s", homedir,
-				       romDir + 1, romName);
-	} else {
-		romPath = sdscatprintf(sdsnew(""), "%s/%s", romDir, romName);
-	}
+	sds romPath = emulatorRomPath(romDir, romName);
 
 	ret = stat(romPath, &romStat);
 	if (ret < 0) {
@@ -210,7 +212,10 @@ void emulatorInit()
 	mdv_init();
 
 	/* Low level IPC: the 8049 with its original firmware */
-	ipc_lle_init(emulatorOptionString("ipc_rom"));
+	const char *ipc_rom = emulatorOptionString("ipc_rom");
+	sds ipc_rom_path = ipc_rom && *ipc_rom ? emulatorRomPath(romdir, ipc_rom) : NULL;
+	ipc_lle_init(ipc_rom_path);
+	sdsfree(ipc_rom_path);
 
 	const char *mdv1_path = emulatorOptionString("mdv1");
 	if (strlen(mdv1_path)) {
