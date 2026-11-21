@@ -30,15 +30,13 @@ uint8_t ipc_lle_status(void);                   /* $18020 bits 7 and 6 */
 void    ipc_lle_set_baud(uint8_t ctrl);         /* write to $18002 */
 
 /* Keyboard matrix. The host keyboard handling queues every change of a key
- * (QL key code 0-63; SHIFT, CTRL and ALT are codes 0, 1 and 2 of row 7)
- * together with the host time at which it happened. The emulator runs each
- * frame in a single burst and then waits for the next one, so the host time
- * of every change is mapped onto the next frame of the IPC clock (one frame
- * of latency): the 8049 sees each key held for as long as it really was, and
- * never two changes in the same scan, which the original firmware ignores.
- * Consecutive changes are kept at least IPC_KEY_MIN_SPACING_MS apart (enough
- * for the firmware to tell a modifier from the key that follows it). */
-#define IPC_KEY_MIN_SPACING_MS  2
+ * (QL key code 0-63; SHIFT, CTRL and ALT are codes 0, 1 and 2 of row 7).
+ * The changes made while the emulator waits for the host clock enter the
+ * matrix as soon as the 8049 runs again, in order and at least
+ * IPC_KEY_MIN_SPACING_MS apart: the firmware only accepts a key that has been
+ * the only one held (besides SHIFT, CTRL and ALT) for several scans in a row,
+ * about 2.5 ms for the Sinclair IPC and 6-8 ms for Hermes. */
+#define IPC_KEY_MIN_SPACING_MS  10
 void    ipc_lle_key(int code, int pressed);     /* host thread */
 
 /* Vertical sync. The IPC has its own clock (11 MHz crystal): every frame

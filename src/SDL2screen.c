@@ -1043,10 +1043,14 @@ int usegrfstate = 0;
 /*
  * Low level IPC: the 8049 scans the keyboard matrix itself. Every change of
  * a key is queued for it in order (ipc_lle_key); SHIFT, CTRL and ALT are
- * QL codes 0, 1 and 2. A key translated by the host keyboard handling must
- * appear together with the modifiers of its translation rather than those
- * physically held: they are queued before the key and restored after its
- * release, so the 8049 never sees both change in the same scan.
+ * QL codes 0, 1 and 2, and follow the keys physically held. Only a key
+ * that the host keyboard handling translates into a QL key with other
+ * modifiers (a symbol that is in another place on the QL keyboard) must
+ * appear together with the modifiers of its translation: they are queued
+ * before the key and the physical ones are restored after its release, so
+ * the 8049 never sees both change in the same scan. Any other key leaves
+ * the modifiers alone, so that they can be pressed and released while it is
+ * held, as a game expects.
  */
 static int lle_mods = 0;                /* modifiers queued: ALT 1, CTRL 2, SHIFT 4 */
 static int lle_forced_code = -1;        /* translated key held, -1 = none */
@@ -1105,8 +1109,15 @@ static void SDLQLKeyEvent(int mod, int code, int pressed, int hle_row)
 	if (pressed) {
 		if (code == lle_forced_code)
 			return;         /* key repeat */
-		SDLQLSetMods(mod & 7);
-		lle_forced_code = code;
+		if ((mod & 7) != SDLQLHostMods()) {
+			/* translated key: with the modifiers of its translation */
+			SDLQLSetMods(mod & 7);
+			lle_forced_code = code;
+		} else if (lle_forced_code >= 0) {
+			/* a key with the physical modifiers ends the translation */
+			lle_forced_code = -1;
+			SDLQLSetMods(SDLQLHostMods());
+		}
 		SDLQLKeyrowChg(code, 1);
 	} else {
 		SDLQLKeyrowChg(code, 0);
