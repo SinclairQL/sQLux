@@ -10,6 +10,10 @@
 #include "QL_screen.h"
 #include "SDL2screen.h"
 #include "qsound.h"
+#include "qimsi.h"
+#include "qimi.h"
+#include "ice.h"
+#include "thor.h"
 #include "zx8301.h"
 
 /* A word or long access to an odd address raises an address error, as on the
@@ -68,9 +72,31 @@ static inline int is_qsound(uint32_t addr)
 	       ((addr & 0xFF0000) == 0x0C0000);
 }
 
+// QIMSI registers in the ROM port, only when MOUSE = QIMSI
+static inline int is_qimsi(uint32_t addr)
+{
+	return qimsi_mapped && addr >= QIMSI_REG_BASE && addr < QIMSI_REG_END;
+}
+
 rw8 ReadByte(aw32 addr)
 {
 	addr &= ADDR_MASK;
+
+	if (qimi_is_reg(addr)) {
+		return qimi_read_byte(addr);
+	}
+
+	if (ice_is_reg(addr)) {
+		return ice_read_byte(addr);
+	}
+
+	if (thor_is_reg(addr)) {
+		return thor_read_byte(addr);
+	}
+
+	if (is_qimsi(addr)) {
+		return qimsi_read_byte(addr);
+	}
 
 	// QSound register read hook
 	if (is_qsound(addr)) {
@@ -106,6 +132,17 @@ rw16 ReadWord(aw32 addr)
 
 	addr &= ADDR_MASK;
 
+	if (qimi_is_reg(addr) || qimi_is_reg(addr + 1) ||
+	    ice_is_reg(addr) || ice_is_reg(addr + 1) ||
+	    thor_is_reg(addr) || thor_is_reg(addr + 1)) {
+		return ((rw16)ReadByte(addr) << 8) | (uint8_t)ReadByte(addr + 1);
+	}
+
+	if (is_qimsi(addr)) {
+		return ((rw16)qimsi_read_byte(addr) << 8) |
+		       qimsi_read_byte(addr + 1);
+	}
+
 	// QSound register read hook
 	if (is_qsound(addr)) {
 		return ((rw16)qsound_read_byte(addr) << 8) | qsound_read_byte(addr + 1);
@@ -139,6 +176,15 @@ rw32 ReadLong(aw32 addr)
 
 	addr &= ADDR_MASK;
 
+	if (is_qimsi(addr) || is_qimsi(addr + 2) ||
+	    qimi_is_reg(addr) || qimi_is_reg(addr + 1) ||
+	    qimi_is_reg(addr + 2) || qimi_is_reg(addr + 3) ||
+	    ice_is_reg(addr + 2) || ice_is_reg(addr + 3) ||
+	    thor_is_reg(addr) || thor_is_reg(addr + 1) ||
+	    thor_is_reg(addr + 2) || thor_is_reg(addr + 3)) {
+		return ((rw32)ReadWord(addr) << 16) | (uint16_t)ReadWord(addr + 2);
+	}
+
 	if (is_qsound(addr)) {
 		return ((rw32)ReadWord(addr) << 16) | (uint16_t)ReadWord(addr + 2);
 	}
@@ -162,6 +208,16 @@ rw32 ReadLong(aw32 addr)
 void WriteByte(aw32 addr, aw8 d)
 {
 	addr &= ADDR_MASK;
+
+	if (qimi_is_reg(addr)) {
+		qimi_write_byte(addr, d);
+		return;
+	}
+
+	if (thor_is_reg(addr)) {
+		thor_write_byte(addr, d);
+		return;
+	}
 
 	if (is_qsound(addr)) {
 		qsound_write_byte(addr, d);
@@ -195,6 +251,13 @@ void WriteWord(aw32 addr,aw16 d)
 
 	addr &= ADDR_MASK;
 
+	if (qimi_is_reg(addr) || qimi_is_reg(addr + 1) ||
+	    thor_is_reg(addr) || thor_is_reg(addr + 1)) {
+		WriteByte(addr, (uint8_t)(d >> 8));
+		WriteByte(addr + 1, (uint8_t)d);
+		return;
+	}
+
 	if (is_qsound(addr)) {
 		qsound_write_byte(addr, (uint8_t)(d >> 8));
 		qsound_write_byte(addr + 1, (uint8_t)d);
@@ -221,6 +284,15 @@ void WriteLong(aw32 addr,aw32 d)
 	}
 
 	addr &= ADDR_MASK;
+
+	if (qimi_is_reg(addr) || qimi_is_reg(addr + 1) ||
+	    qimi_is_reg(addr + 2) || qimi_is_reg(addr + 3) ||
+	    thor_is_reg(addr) || thor_is_reg(addr + 1) ||
+	    thor_is_reg(addr + 2) || thor_is_reg(addr + 3)) {
+		WriteWord(addr, (uint16_t)(d >> 16));
+		WriteWord(addr + 2, (uint16_t)d);
+		return;
+	}
 
 	if (is_qsound(addr)) {
 		WriteWord(addr, (uint16_t)(d >> 16));

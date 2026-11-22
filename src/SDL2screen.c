@@ -65,6 +65,10 @@ extern SDL_atomic_t speed_toggle_request;   // unixstuff.c (F10)
 
 extern int display_mode;
 extern uint64_t ql_cycles;
+#include "qimsi.h"
+#include "qimi.h"
+#include "ice.h"
+#include "thor.h"
 
 uint64_t ql_snapshot_at = UINT64_MAX;  // cycle at which to copy the next line
 
@@ -1857,6 +1861,39 @@ static void QLProcessMouse(int x, int y)
 	QLMovePointer(qlx, qly);
 }
 
+static int qimsi_buttons_down;
+
+static void QLQimsiButton(int sdl_button, int press)
+{
+	int bit;
+
+	switch (sdl_button) {
+	case SDL_BUTTON_LEFT:
+		bit = 1;
+		break;
+	case SDL_BUTTON_RIGHT:
+		bit = 2;
+		break;
+	case SDL_BUTTON_MIDDLE:
+		bit = 4;
+		break;
+	default:
+		return;
+	}
+	if (press)
+		qimsi_buttons_down |= bit;
+	else
+		qimsi_buttons_down &= ~bit;
+	if (qimsi_mapped)
+		qimsi_buttons(qimsi_buttons_down);
+	if (qimi_mapped)
+		qimi_buttons(qimsi_buttons_down);
+	if (ice_mapped)
+		ice_buttons(qimsi_buttons_down);
+	if (thor_mapped)
+		thor_buttons(qimsi_buttons_down);
+}
+
 #ifndef SDL_JOYSTICK_DISABLED
 static int QLConvertWhichToIndex(Sint32 which)
 {
@@ -1954,14 +1991,35 @@ void QLSDLProcessEvents(void)
 		return;
 		break;
 	case SDL_MOUSEMOTION:
-		QLProcessMouse(event.motion.x, event.motion.y);
+		if (qimsi_mapped)
+			qimsi_move(event.motion.xrel, event.motion.yrel);
+		else if (qimi_mapped)
+			qimi_move(event.motion.xrel, event.motion.yrel);
+		else if (ice_mapped)
+			ice_move(event.motion.xrel, event.motion.yrel);
+		else if (thor_mapped)
+			thor_move(event.motion.xrel, event.motion.yrel);
+		else
+			QLProcessMouse(event.motion.x, event.motion.y);
 		//inside=1;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		QLButton(event.button.button, 1);
+		if (qimsi_mapped || qimi_mapped || ice_mapped ||
+		    thor_mapped)
+			QLQimsiButton(event.button.button, 1);
+		else
+			QLButton(event.button.button, 1);
 		break;
 	case SDL_MOUSEBUTTONUP:
-		QLButton(event.button.button, 0);
+		if (qimsi_mapped || qimi_mapped || ice_mapped ||
+		    thor_mapped)
+			QLQimsiButton(event.button.button, 0);
+		else
+			QLButton(event.button.button, 0);
+		break;
+	case SDL_MOUSEWHEEL:
+		if (qimsi_mapped)
+			qimsi_scroll(-event.wheel.y);
 		break;
 	case SDL_WINDOWEVENT:
 		if (event.window.windowID == ql_windowid) {
