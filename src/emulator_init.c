@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
@@ -28,6 +29,10 @@
 #include "ipc.h"
 #include "cycles68k.h"
 #include "zx8301.h"
+#include "qimsi.h"
+#include "qimi.h"
+#include "ice.h"
+#include "thor.h"
 
 // TODO: fixup iexl_general.h to not break stuff
 void InitialSetup(void);
@@ -125,6 +130,7 @@ void emulatorInit()
 	const char *sysrom = emulatorOptionString("sysrom");
 	const char *romport = emulatorOptionString("romport");
 	const char *romim = emulatorOptionString("romim");
+	const char *mouse = emulatorOptionString("mouse");
 	const char *iorom1 = emulatorOptionString("iorom1");
 	const char *iorom2 = emulatorOptionString("iorom2");
 	const char *qsrom = emulatorOptionString("qsrom");
@@ -135,7 +141,15 @@ void emulatorInit()
 		exit(ret);
 	}
 
-	if (strlen(romport)) {
+	// The QIMSI registers live in the ROM port: MOUSE = QIMSI takes
+	// precedence over ROMPORT/ROMIM
+	if (!strcasecmp(mouse, "QIMSI")) {
+		if (strlen(romport) || strlen(romim))
+			fprintf(stderr,
+				"SQLUX WARNING: MOUSE = QIMSI and ROMPORT are mutually exclusive, ROMPORT disabled (QIMSI has preference)\n");
+		qimsi_init();
+		printf(">>> [QIMSI] Mouse registers at $FED0-$FEDF\n");
+	} else if (strlen(romport)) {
 		ret = emulatorLoadRom(romdir, romport, QL_ROM_PORT_BASE,
 				      QL_ROM_PORT_SIZE);
 		if (ret < 0) {
@@ -149,6 +163,30 @@ void emulatorInit()
 			fprintf(stderr, "Error Loading romim %s\n", romim);
 			exit(ret);
 		}
+	}
+
+	if (!strcasecmp(mouse, "ICE")) {
+		ice_init();
+		ice_check_rom((strlen(romport) || strlen(romim)) ?
+				      (uint8_t *)memBase + QL_ROM_PORT_BASE : NULL,
+			      QL_ROM_PORT_SIZE);
+		printf(">>> [ICE] Mouse at $FFFE/$FFFF\n");
+	} else if (!strcasecmp(mouse, "THOR")) {
+		// The I/O block is the last 8K of the first megabyte: the RAM
+		// must not reach it
+		if (RTOP >= THOR_IO_BASE) {
+			fprintf(stderr,
+				"SQLUX WARNING: MOUSE = THOR needs RAMTOP below %d (it is %d), mouse disabled\n",
+				THOR_IO_BASE / 1024, RTOP / 1024);
+		} else {
+			thor_init();
+			printf(">>> [THOR] Mouse PIA at $FE040-$FE04F (and every $100 up to $FFF40)\n");
+		}
+	} else if (!strcasecmp(mouse, "QIMI")) {
+		qimi_init();
+		printf(">>> [QIMI] Mouse registers at $1BF9C, $1BFBC and $1BFBE\n");
+	} else if (strlen(mouse) && strcasecmp(mouse, "QIMSI")) {
+		fprintf(stderr, "SQLUX WARNING: unknown MOUSE type %s\n", mouse);
 	}
 
 	if (strlen(iorom1)) {

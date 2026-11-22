@@ -115,6 +115,10 @@ add_executable(
   QL_serial.c
   QL_sound.c
   qsound.c
+  qimsi.c
+  qimi.c
+  ice.c
+  thor.c
   mdv.c
   mcs48.c
   ipc.c

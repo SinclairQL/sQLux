@@ -209,6 +209,58 @@ ROMPORT = tk2_rom
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
+`MOUSE`
+Mouse emulation type: QIMSI, QIMI, ICE or THOR.
+
+QIMSI: the host mouse is exposed as a QIMSI PS/2 mouse interface
+(IntelliMouse with wheel) through read-only registers at 0xFED0-0xFEDF
+(status 0xFEDF, byte 0xFEDD, acknowledge 0xFEDE) instead of being injected
+into the Pointer Environment driver. The registers live in the ROM port, so
+this option conflicts with ROMPORT/ROMIM: if both are set a warning is
+printed and ROMPORT is ignored (QIMSI has preference).
+
+```
+MOUSE = QIMSI
+```
+
+QIMI: the host mouse is exposed as the QJump QIMI interface, which signals
+each step with the ZX8302 external interrupt. Buttons are read at 0x1BF9C,
+movement at 0x1BFBC, and reading or writing 0x1BFBE enables the interrupts.
+It does not use the ROM port, so it can be combined with ROMPORT. The driver
+(e.g. the one in the Pointer Environment ROM or SMSQ/E) must support QIMI.
+
+```
+MOUSE = QIMI
+```
+
+ICE: the Eidersoft mICE bus mouse (three buttons). The mouse is read in the
+last two bytes of the ROM cartridge (0xFFFE and 0xFFFF): bits 0-2 are the
+buttons, bits 4 and 7 the horizontal and bits 5 and 6 the vertical quadrature
+signals. Load the mICE ROM with ROMPORT; a warning is printed if the ROM in
+the port is not the original mICE_21.rom (checked by CRC32).
+
+```
+ROMPORT = mICE_21.rom
+MOUSE = ICE
+```
+
+THOR: the mouse port of the CST Thor, an MC6821 PIA whose registers are at
+0xFE040, 0xFE044, 0xFE048 and 0xFE04C (data/DDR A, control A, data/DDR B,
+control B). The 68008 has no A20-A23 and the I/O decoding ignores A8-A12, so
+the registers are repeated in every 256 byte page of the last 8K of the first
+megabyte (0xFE140, ... 0xFFF40); ICE uses 0xFF40 and 0xFF44 (absolute short
+addresses, sign extended). On the A side, bits 3-5 are the buttons (0 = pressed), and bits 6
+and 7 the X and Y direction, latched when the pulse of the axis arrives at
+CA1 (X) or CA2 (Y): PA6 = 1 is left and PA7 = 1 is down. IRQA is the ZX8302
+external interrupt. The directions and the addresses were taken from the ICE
+file manager, which works on a real Thor; which button is which is not known. As the I/O block
+sits in the last 8K of the first megabyte, THOR is only enabled if RAMTOP is
+below 1016 (KB); otherwise a warning is printed and the mouse is disabled.
+
+```
+MOUSE = THOR
+```
+
 `IOROM1`
 The IOROM1 specifies the rom to be loaded at 0x10000.
 

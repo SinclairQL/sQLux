@@ -25,6 +25,8 @@
 #include "mdv.h"
 #include "ipc.h"
 #include "zx8301.h"
+#include "qimi.h"
+#include "thor.h"
 
 extern int display_mode;
 extern volatile bool is_display_blank;
@@ -370,6 +372,8 @@ void WriteInt(uint8_t d)
 	// clear interrupts: the interrupt line drops when nothing is pending
 	theInt &= ~d;
 	ql_update_ipl();
+	qimi_int_acked();
+	thor_int_acked();
 }
 
 uint8_t IntRead(void)
