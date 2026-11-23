@@ -250,7 +250,7 @@ w32 PhysicalDefBlock(void)
 	w32 pdb; /* physical definition block pointer */
 
 	driveID = ReadByte(*aReg + 0x1d);
-	pdb = ReadLong(0x28100 + ((w32)driveID << 2));
+	pdb = ReadLong(ql_sysvars + 0x100 + ((w32)driveID << 2));
 	return pdb;
 }
 
@@ -293,7 +293,7 @@ int file_reopen(struct mdvFile *f, int frk)
 	drive = *((char *)f + 5 - (0x1e - 0x18));
 	key = *((char *)f + 4 - (0x1e - 0x18));
 
-	drive = ReadByte(pdb = ReadLong(0x28100 + drive * 4) + 20);
+	drive = ReadByte(pdb = ReadLong(ql_sysvars + 0x100 + drive * 4) + 20);
 
 	if (frk)
 		next = GET_NEXT(f);
@@ -854,7 +854,7 @@ void MdvClose(void)
 	d = ReadByte(pdb + 0x22);
 	WriteByte(pdb + 0x22, d - 1); /* decrement number of open files */
 	(*aReg) += 0x18;
-	aReg[1] = 0x28140;
+	aReg[1] = ql_sysvars + 0x140;
 	QLvector(0xd4, 20000l); /* unlink file from list */
 	(*aReg) -= 0x18;
 	QLvector(0xc2, 20000l); /* release channel block memory */

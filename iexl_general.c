@@ -402,7 +402,7 @@ void ExceptionProcessing()
 	{
 	  extraFlag=exception<3 || (exception>9 &&
 				    exception<32) || exception>47;
-	  if(!extraFlag) extraFlag=ReadLong(0x28050l)==0;
+	  if(!extraFlag) extraFlag=ReadLong(ql_sysvars + 0x50)==0;
 	  if(extraFlag)
 	    {
 	      UpdateNowRegisters();
