@@ -13,9 +13,8 @@ roms/*
 docs/uqlx.html
 docs/socket.html
 
-# ignore eventual builds, but not the directory itself
-build/*
-!build/.gitkeep
+# ignore builds
+build*
 
 # Visual studio
 .vscode/*
