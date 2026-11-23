@@ -269,7 +269,7 @@ void btrap3(void)
 void trap4(void)
 {	w32 a;
 
-	a=ReadLong(ReadLong(0x28064))+0x16;
+	a=ReadLong(ReadLong(ql_sysvars + 0x64))+0x16;
 	WriteByte(a,ReadByte(a)|0x80);
 }
 #endif
