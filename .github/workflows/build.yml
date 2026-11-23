@@ -16,11 +16,10 @@ jobs:
     name: Get Release Name
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Define Release Name
         id: DefineName
@@ -37,7 +36,7 @@ jobs:
     outputs:
       RELEASE_NAME: ${{ steps.DefineName.outputs.RELEASE_NAME }}
 
-  #### Prepare buildable source
+  #### Prepare buildable soure
   zip_source:
     name: Zip Complete Source
     runs-on: ubuntu-24.04
@@ -47,11 +46,10 @@ jobs:
       RELEASE_NAME: ${{ needs.get_release_name.outputs.RELEASE_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies
         run: |
@@ -76,11 +74,10 @@ jobs:
     env:
       RELEASE_NAME: ${{needs.get_release_name.outputs.RELEASE_NAME}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies
         run: |
@@ -139,11 +136,10 @@ jobs:
     env:
       RELEASE_NAME: ${{needs.get_release_name.outputs.RELEASE_NAME}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies - apt
         if: ${{ matrix.pkg == 'apt' }}
