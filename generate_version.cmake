@@ -1,5 +1,5 @@
 # Git executable is extracted from parameters.
-execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --always --exclude="latest"
+execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --always --exclude=latest
     OUTPUT_VARIABLE GIT_REPO_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 execute_process(COMMAND date +%Y-%m-%d
