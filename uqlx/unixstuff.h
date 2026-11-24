@@ -5,13 +5,16 @@ extern int QLdone;
 extern char *homedir;
 extern char *ux_bname;
 extern int ux_boot;
-extern int uqlxSpeed;
+extern int speed;
 
 void cleanup(int err);
 void set_rtc_emu(void);
 void SetHome(void);
 void uqlxInit(void);
-int QLRun(void);
+int QLRun(void *data);
+void QLRunInit(void);
+int QLRunStep(void);
+void QLRunTick(void);
 long ql2uxtime(long t);
 long ux2qltime(long t);
 int qm_fork(void (*cleanup)(), unsigned long id);

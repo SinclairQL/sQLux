@@ -75,12 +75,41 @@ void qaddpath(char *mount, char *name, int maxnlen)
 		return (void)addpath(mount, name, maxnlen);
 	strncat(mount, name, maxnlen - strlen(mount));
 }
+/* Remove a file, or a directory with no files in it. The ".-UQLX-" header
+ * file does not count as a file. */
 static int qunlinkfile(char *mount, char *name, int maxnlen)
 {
 	int res, q = strlen(mount);
+	struct stat st;
+
 	qaddpath(mount, name, maxnlen);
 
-	res = unlink(mount);
+	if (stat(mount, &st) == 0 && S_ISDIR(st.st_mode)) {
+		DIR *dirp = opendir(mount);
+		struct dirent *dp;
+		int empty = 1;
+
+		while (dirp && (dp = readdir(dirp)))
+			if (strcmp(dp->d_name, ".") && strcmp(dp->d_name, "..") &&
+			    strcmp(dp->d_name, ".-UQLX-"))
+				empty = 0;
+		if (dirp)
+			closedir(dirp);
+
+		if (!empty) {
+			errno = ENOTEMPTY;
+			res = -1;
+		} else {
+			char hdr[4300];
+
+			strncpy(hdr, mount, sizeof(hdr) - 16);
+			hdr[sizeof(hdr) - 16] = 0;
+			qaddpath(hdr, ".-UQLX-", sizeof(hdr) - 1);
+			unlink(hdr);
+			res = rmdir(mount);
+		}
+	} else
+		res = unlink(mount);
 
 	mount[q] = 0;
 	return res;
@@ -843,7 +872,11 @@ int HDelete(int drive, int dir, unsigned char *name, struct mdvFile *f,
 		return -7;
 
 	/*printf("calling HDelete %s\n",name+2);*/
-	qunlinkfile(mount, mname, 400);
+	if (qunlinkfile(mount, mname, 400)) {
+		if (errno == ENOTEMPTY || errno == EEXIST)
+			return QERR_IU; /* directory with files in it */
+		return qmaperr();
+	}
 
 	return 0;
 }
@@ -1008,8 +1041,23 @@ int rename_file(struct mdvFile *f, int fd, char *qln, int qlen, int fstype)
 		}
 		qaddpath(ren, mname, 320);
 		/* printf("rename file %s, %.*s %s\n", mount, qlen, qln, ren); */
-		res = rename(mount, ren);
-		res = (res) ? qmaperr() : 0;
+		{
+			/* Windows refuses to rename a file this process holds
+			 * open: close the channel's handle around the rename and
+			 * reopen the file (its new name on success, the old one
+			 * otherwise) at the same position. */
+			off_t cpos = lseek(fd, 0, SEEK_CUR);
+			close(fd);
+			res = rename(mount, ren);
+			res = (res) ? qmaperr() : 0;
+			fd = open(res == 0 ? ren : mount, O_RDWR | O_BINARY);
+			if (fd < 0)
+				fd = open(res == 0 ? ren : mount,
+					  O_RDONLY | O_BINARY);
+			SET_HFILE(f, fd);
+			if (fd >= 0 && cpos > 0)
+				lseek(fd, cpos, SEEK_SET);
+		}
 		if (res == 0) {
 			WW(NAME_REF(f), qlen);
 			strncpy(NAME_REF(f) + 2, temp,
@@ -1350,6 +1398,15 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 		}
 		/*printf(" MAKEDIR %s \n",GET_FCB(f)->uxname);*/
 
+		/* Windows refuses to unlink a file this process still holds
+		 * open, and mkdir then fails on the leftover placeholder: release
+		 * the channel's own handle first. On success the channel now
+		 * names a directory and keeps fd -1 (FSClose ignores a bad fd);
+		 * on failure the placeholder is recreated so the channel stays
+		 * usable, as before. */
+		close(fd);
+		fd = -1;
+		SET_HFILE(f, -1);
 		if (GET_FILESYS(f) < 0) {
 			unlink(GET_FCB(f)->uxname);
 #ifdef __WIN32__
@@ -1357,8 +1414,12 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 #else
 			i = mkdir(GET_FCB(f)->uxname, 0777);
 #endif
-			if (i != 0)
+			if (i != 0) {
 				*reg = QERR_NF;
+				fd = open(GET_FCB(f)->uxname,
+					  O_RDWR | O_CREAT | O_BINARY, 0666);
+				SET_HFILE(f, fd);
+			}
 		} else {
 			char mount[400];
 
@@ -1372,9 +1433,11 @@ int QHostIO(struct mdvFile *f, int op, int fstype)
 #else
 			i = mkdir(mount, 0777);
 #endif
-			if (i != 0)
+			if (i != 0) {
 				*reg = QERR_NF;
-			if (fstype == 2)
+				fd = open(mount, O_RDWR | O_CREAT | O_BINARY, 0666);
+				SET_HFILE(f, fd);
+			} else if (fstype == 2)
 				rename_all_files(
 					f,
 					qdevs[GET_FILESYS(f)]

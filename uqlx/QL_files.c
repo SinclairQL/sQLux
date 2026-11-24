@@ -250,7 +250,7 @@ w32 PhysicalDefBlock(void)
 	w32 pdb; /* physical definition block pointer */
 
 	driveID = ReadByte(*aReg + 0x1d);
-	pdb = ReadLong(0x28100 + ((w32)driveID << 2));
+	pdb = ReadLong(ql_sysvars + 0x100 + ((w32)driveID << 2));
 	return pdb;
 }
 
@@ -293,7 +293,7 @@ int file_reopen(struct mdvFile *f, int frk)
 	drive = *((char *)f + 5 - (0x1e - 0x18));
 	key = *((char *)f + 4 - (0x1e - 0x18));
 
-	drive = ReadByte(pdb = ReadLong(0x28100 + drive * 4) + 20);
+	drive = ReadByte(pdb = ReadLong(ql_sysvars + 0x100 + drive * 4) + 20);
 
 	if (frk)
 		next = GET_NEXT(f);
@@ -608,6 +608,18 @@ void MdvOpen(void)
 		key = ReadByte(*aReg + 0x1c);
 
 		reg[0] = mdv_doopen(f, filesys, drive, key, aReg[1]);
+		/*
+		 * The OS returns from a failed open with A2 pointing at the
+		 * device driver block. TK2 trusts A2 to be the pointer it
+		 * had before the trap and, for DELETE, tests the word it points
+		 * to to end the list of alternative names. That is the high
+		 * word of the next driver here, never zero, so DELETE of a
+		 * missing file looped for ever. Give the OS a pointer to a zero
+		 * word (the high word of the initial PC in the vector table)
+		 * to be restored in A2.
+		 */
+		if (reg[0] < 0 && key < 0)
+			WriteLong(aReg[7] + 12, 4);
 	}
 noBlock:
 	rts();
@@ -668,6 +680,70 @@ void CloseAllMdvFiles(short drive, int filesys)
 	qdevs[filesys].FileList[drive] = nil;
 	qdevs[filesys].fcbList[drive] = nil;
 	qdevs[filesys].OpenFiles[drive] = 0;
+}
+
+/*
+ * Reset of the QL: close on the host every file that the QL left open on the
+ * directory devices (WIN, FLP, MDV...), write what the disk images still
+ * hold in their buffers and forget where the drivers were linked, so that
+ * InitFileDrivers() can link them again when the ROM starts.
+ *
+ * The lists of open files run through the channel blocks, in the memory of
+ * the QL, which may hold anything at this point (a reset often follows a
+ * crash): every block is checked before it is used, and the walk stops at
+ * the first one that is not what it should be.
+ */
+extern void QDiskReset(void); /* QDisk.c */
+
+void ResetFileDrivers(void)
+{
+	int fs, dr, n;
+	struct mdvFile *f;
+	struct HF_FCB *fcb, *nfcb;
+
+	for (fs = 0; fs < MAXDEV; fs++) {
+		if (!qdevs[fs].qname)
+			continue;
+		for (dr = 0; dr < 8; dr++) {
+			f = qdevs[fs].FileList[dr];
+			for (n = 0; f != nil && n < 4096; n++) {
+				uintptr_t off = (uintptr_t)f - (uintptr_t)memBase;
+				int isdisk;
+
+				if ((off & 1) || off < 131072 ||
+				    off > (uintptr_t)RTOP - mdvFile_len ||
+				    GET_ID(f) != MDV_ID)
+					break;
+				isdisk = GET_ISDISK(f);
+				/* files in disk images are closed with the
+				 * image, by QDiskReset() */
+				if (GET_OPEN(f) && (isdisk == 0 || isdisk == 2)) {
+					/* the block of a host file is in the
+					 * list kept on the host side */
+					for (fcb = qdevs[fs].fcbList[dr]; fcb;
+					     fcb = fcb->next)
+						if (fcb == GET_FCB(f))
+							break;
+					if (fcb)
+						FSClose(GET_HFILE(f));
+				}
+				SET_OPEN(f, false);
+				SET_ID(f, 0);
+				f = GET_NEXT(f);
+			}
+			for (fcb = qdevs[fs].fcbList[dr]; fcb; fcb = nfcb) {
+				nfcb = fcb->next;
+				free(fcb);
+			}
+			qdevs[fs].FileList[dr] = nil;
+			qdevs[fs].fcbList[dr] = nil;
+			qdevs[fs].OpenFiles[dr] = 0;
+		}
+		qdevs[fs].ref = 0;
+	}
+
+	QDiskReset();
+	StopMotor();
 }
 
 void CloseAllFiles(void)
@@ -778,7 +854,7 @@ void MdvClose(void)
 	d = ReadByte(pdb + 0x22);
 	WriteByte(pdb + 0x22, d - 1); /* decrement number of open files */
 	(*aReg) += 0x18;
-	aReg[1] = 0x28140;
+	aReg[1] = ql_sysvars + 0x140;
 	QLvector(0xd4, 20000l); /* unlink file from list */
 	(*aReg) -= 0x18;
 	QLvector(0xc2, 20000l); /* release channel block memory */
@@ -855,7 +931,7 @@ void MdvFormat(void)
 				/* set header flag, sector and random number */
 				mdvHeaders[drive * 14] = 0xff;
 				mdvHeaders[drive * 14 + 1] = 0;
-				a6 = 0x28000;
+				a6 = ql_sysvars;
 				mdvHeaders[drive * 14 + 12] =
 					*((uw8 *)memBase + a6 + 0x2e);
 				mdvHeaders[drive * 14 + 13] =

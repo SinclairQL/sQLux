@@ -65,6 +65,11 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
 	(void)appstate;
 	(void)result;
+
+	QLdone = 1;
+	if (emuThread)
+		SDL_WaitThread(emuThread, NULL);
+
 	QLSDLExit();
 
 	CleanRAMDev();
@@ -86,7 +91,28 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 {
 	(void)appstate;
 
-	QLRun();
+#if __EMSCRIPTEN__
+	/*
+	 * The browser cannot block: run the emulation until it has to wait
+	 * for the host clock, and go on once the tick has arrived, for at
+	 * most a few ms per call.
+	 */
+	static bool waiting = false;
+	Uint64 end = SDL_GetTicks() + 15;
+
+	while (SDL_GetTicks() < end) {
+		if (waiting) {
+			if (!SDL_TryWaitSemaphore(sem50Hz))
+				break;
+			while (SDL_TryWaitSemaphore(sem50Hz))
+				;
+			QLRunTick();
+			waiting = false;
+		}
+		if (QLRunStep())
+			waiting = true;
+	}
+#endif
 
 	return SDL_APP_CONTINUE;
 }
@@ -146,7 +172,16 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 	}
 	initSound(emulatorOptionInt("sound"));
 
-	uqlxSpeed = (int)(atof(emulatorOptionString("speed")) * 20.0);
+#if __EMSCRIPTEN__
+	QLRunInit();
+#else
+	/*
+	 * The emulator thread runs the QL; the callbacks only handle the
+	 * events, including the screen refresh, so iterate on events only.
+	 */
+	SDL_SetHint(SDL_HINT_MAIN_CALLBACK_RATE, "waitevent");
+	emuThread = SDL_CreateThread(QLRun, "sQLux Emulator", NULL);
+#endif
 
 	return SDL_APP_CONTINUE;
 }
