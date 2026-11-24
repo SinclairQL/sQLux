@@ -117,8 +117,9 @@ sQLux has switched to using cmake as its build system
 ## Building a universal macOS app
 
 This builds `sQLux.app`, a single bundle that runs natively on both Apple
-Silicon and Intel Macs (macOS 11 or later). SDL2 is built from source as a
-universal static library, so the app has no Homebrew runtime dependencies.
+Silicon and Intel Macs (macOS 11 or later). cmake downloads SDL2 and builds
+it as a universal static library, so the app has no Homebrew runtime
+dependencies.
 
 1. Install the build tools
 

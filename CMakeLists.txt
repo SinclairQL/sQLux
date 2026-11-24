@@ -9,6 +9,10 @@ if(APPLE)
   # Must be set before project(). arm64 requires macOS 11 or later anyway.
   set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
     "Minimum macOS version")
+  if(MACOS_APP_BUNDLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING
+      "Architectures of the app bundle")
+  endif()
 endif()
 
 project(sqlux C)
@@ -71,6 +75,43 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   execute_process(COMMAND qltools ${CMAKE_CURRENT_BINARY_DIR}/default_win1.win
     -w ${mdv1_files})
   configure_file(sqlux_wrapper_sample.html index.html COPYONLY)
+elseif(APPLE AND MACOS_APP_BUNDLE)
+  # Static SDL2 built from source for the bundle's architectures, so the
+  # app does not depend on a Homebrew SDL2 at runtime
+  include(ExternalProject)
+  if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+  endif()
+  set(SDL2_VERSION 2.32.10)
+  set(SDL2_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/sdl2)
+  string(REPLACE ";" "$<SEMICOLON>" SDL2_ARCHS "${CMAKE_OSX_ARCHITECTURES}")
+  ExternalProject_Add(sdl2
+    URL https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz
+    URL_HASH SHA256=5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165
+    INSTALL_DIR ${SDL2_PREFIX}
+    CMAKE_ARGS
+      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+      -DCMAKE_OSX_ARCHITECTURES=${SDL2_ARCHS}
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+      -DCMAKE_C_FLAGS=-ffile-prefix-map=${CMAKE_CURRENT_BINARY_DIR}/=
+      -DCMAKE_OBJC_FLAGS=-ffile-prefix-map=${CMAKE_CURRENT_BINARY_DIR}/=
+      -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TEST=OFF
+    BUILD_BYPRODUCTS ${SDL2_PREFIX}/lib/libSDL2.a)
+
+  file(MAKE_DIRECTORY ${SDL2_PREFIX}/include/SDL2)
+  add_library(SDL2::SDL2 STATIC IMPORTED)
+  set_target_properties(SDL2::SDL2 PROPERTIES
+    IMPORTED_LOCATION ${SDL2_PREFIX}/lib/libSDL2.a
+    INTERFACE_INCLUDE_DIRECTORIES
+      "${SDL2_PREFIX}/include;${SDL2_PREFIX}/include/SDL2"
+    INTERFACE_LINK_LIBRARIES "m;-framework CoreVideo;-framework Cocoa;\
+-framework IOKit;-framework ForceFeedback;-framework Carbon;\
+-framework CoreAudio;-framework AudioToolbox;-framework AVFoundation;\
+-framework Foundation;-weak_framework GameController;\
+-weak_framework Metal;-weak_framework QuartzCore;\
+-weak_framework CoreHaptics")
+  add_dependencies(SDL2::SDL2 sdl2)
 else()
   find_package(SDL2 REQUIRED)
 endif()

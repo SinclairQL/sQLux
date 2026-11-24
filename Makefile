@@ -19,10 +19,8 @@ wasm : ${TARGETS}
 
 # Universal (arm64 + x86_64) sQLux.app with a statically linked SDL2
 macos :
-	./macos/build-sdl2-universal.sh
 	cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DMACOS_APP_BUNDLE=ON \
-		-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-		-DCMAKE_PREFIX_PATH=$(CURDIR)/deps/macos -B build-macos
+		-B build-macos
 	cmake --build build-macos
 
 install :
