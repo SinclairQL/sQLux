@@ -69,15 +69,16 @@ void MouseReset(void); /* xqlmouse.c */
 static uint8_t *rom_image = NULL;
 static uint8_t *qsrom_image = NULL;
 
-/* The 68008 leaves reset. Minerva tests the RAM unless it is entered through
- * its warm start at $186 with bit 0 of D1 set and the top of the RAM in the
- * rest of D1, which is what FAST_STARTUP asks for; the other ROMs are
+/* The 68008 leaves reset. Minerva is entered through its warm start at $186
+ * with bit 0 of D1 set and the top of the RAM in the rest of D1: it skips
+ * its RAM test, which would find the RAM up to RAMTOP and take for itself
+ * the memory given to a larger screen (RESOLUTION); the other ROMs are
  * patched by LoadMainRom(). */
 static void emulatorStartCPU(void)
 {
 	InitialSetup();
 
-	if (isMinerva && emulatorOptionInt("fast_startup")) {
+	if (isMinerva) {
 		reg[1] = (RTOP & ~16383) | 1;
 		SetPC(0x186);
 	}
@@ -485,7 +486,7 @@ void emulatorReset(void)
 	/* The warm start of Minerva skips the RAM test and expects the RAM
 	 * as the test leaves it; FastStartup() does the same for the other
 	 * ROMs. */
-	if (isMinerva && emulatorOptionInt("fast_startup"))
+	if (isMinerva)
 		memset((char *)memBase + 131072, 0, RTOP - 131072);
 
 	emulatorStartCPU();

@@ -258,6 +258,7 @@ typedef enum {
 	KEY_GB_CH,
 	KEY_ES,
 	KEY_IT,
+	KEY_PT,
 } KeyboardType;
 
 typedef enum {
@@ -636,17 +637,22 @@ void QLSDLScreen(void)
 		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
 		       sdl_mode.w, sdl_mode.h);
 
-	/* Fix the aspect ratio to more like real hardware
-	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
-	int aspect = emulatorOptionInt("fixaspect");
-	if (aspect == 1) {
-		ql_screen_ratio = (3.0 / 2.0);
-	} else if (aspect == 2) {
-		ql_screen_ratio = 1.355;
-	} else if (aspect == 3) {
-		ql_screen_ratio = 2.0;
-	} else {
+	/* only allow fixaspect on QL screen modes */
+	if (qlscreen.xres != 512 || qlscreen.yres != 256) {
 		ql_screen_ratio = 1.0;
+	} else {
+		/* Fix the aspect ratio to more like real hardware
+	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
+		int aspect = emulatorOptionInt("fixaspect");
+		if (aspect == 1) {
+			ql_screen_ratio = (3.0 / 2.0);
+		} else if (aspect == 2) {
+			ql_screen_ratio = 1.355;
+		} else if (aspect == 3) {
+			ql_screen_ratio = 2.0;
+		} else {
+			ql_screen_ratio = 1.0;
+		}
 	}
 
 	/* Ensure width and height are always initialised to sane values */
@@ -1346,6 +1352,61 @@ static struct SDLQLMap_f sdlqlmap_IT[] = {
 	{ 0x0, 0x0, 0x0 }
 };
 
+// For the Portuguese ROM, which has its own dead keys: ' is acute, £ is grave,
+// shift £ is tilde and shift 6 is circumflex, followed by the letter or SPACE.
+// Host keysyms are those of the macOS and Windows Portuguese layouts.
+#define SDL_DEADKEY_TILDE 126
+
+static struct SDLQLMap_f sdlqlmap_PT[] = {
+	{ MOD_SHIFT, SDLK_2, QL_QUOTE }, // "
+	{ MOD_SHIFT, SDLK_6, QL_7 }, // &
+	{ MOD_SHIFT, SDLK_7, (SWAP_SHIFT | QL_SLASH) }, // /
+	{ MOD_SHIFT, SDLK_8, QL_9 }, // (
+	{ MOD_SHIFT, SDLK_9, QL_0 }, // )
+	{ MOD_SHIFT, SDLK_0, (SWAP_SHIFT | QL_EQUAL) }, // =
+	{ MOD_NONE, SDLK_QUOTE, QL_QUOTE }, // ' (dead acute, then SPACE)
+	{ MOD_SHIFT, SDLK_QUOTE, QL_SLASH }, // ?
+	{ MOD_NONE, SDLK_PLUS, (SWAP_SHIFT | QL_EQUAL) }, // +
+	{ MOD_SHIFT, SDLK_PLUS, QL_8 }, // *
+	{ MOD_NONE, SDL_DEADKEY_2, QL_QUOTE }, // dead acute
+	{ MOD_SHIFT, SDL_DEADKEY_2, (SWAP_SHIFT | QL_POUND) }, // dead grave
+	{ MOD_NONE, SDL_DEADKEY_TILDE, (SWAP_SHIFT | QL_POUND) }, // dead tilde
+	{ MOD_SHIFT, SDL_DEADKEY_TILDE, QL_6 }, // dead circumflex
+	{ MOD_NONE, 231, (SWAP_SHIFT | SWAP_CNTRL | QL_9) }, // ç
+	{ MOD_SHIFT, 231, (SWAP_CNTRL | QL_H) }, // Ç
+	{ MOD_NONE, 186, (SWAP_SHIFT | SWAP_CNTRL | QL_Z) }, // º
+	{ MOD_SHIFT, 186, (SWAP_CNTRL | QL_Z) }, // º as no ª
+	{ MOD_NONE, 171, (SWAP_SHIFT | SWAP_CNTRL | QL_X) }, // « (Windows)
+	{ MOD_SHIFT, 171, (SWAP_CNTRL | QL_Y) }, // » (Windows)
+	{ MOD_NONE, 167, (SWAP_SHIFT | SWAP_CNTRL | QL_V) }, // § (macOS)
+	{ MOD_NONE, SDLK_LESS, (SWAP_SHIFT | QL_COMMA) }, // <
+	{ MOD_SHIFT, SDLK_LESS, QL_PERIOD }, // >
+	{ MOD_SHIFT, SDLK_COMMA, (SWAP_SHIFT | QL_SEMICOLON) }, // ;
+	{ MOD_SHIFT, SDLK_PERIOD, QL_SEMICOLON }, // :
+	{ MOD_NONE, SDLK_KP_PLUS, (SWAP_SHIFT | QL_EQUAL) },
+	{ MOD_NONE, SDLK_KP_MULTIPLY, (SWAP_SHIFT | QL_8) },
+#if defined(__APPLE__) && defined(__MACH__)
+	// macOS ("Option"-based)
+	{ MOD_ALT, SDLK_2, (SWAP_ALT | SWAP_SHIFT | QL_2) }, // @
+	{ MOD_ALT, SDLK_8, (SWAP_ALT | QL_LBRACKET) }, // [
+	{ MOD_ALT, SDLK_9, (SWAP_ALT | QL_RBRACKET) }, // ]
+	{ MOD_ALT | MOD_SHIFT, SDLK_8, (SWAP_ALT | QL_LBRACKET) }, // {
+	{ MOD_ALT | MOD_SHIFT, SDLK_9, (SWAP_ALT | QL_RBRACKET) }, // }
+	{ MOD_ALT, SDLK_QUOTE, (SWAP_ALT | SWAP_SHIFT | SWAP_CNTRL | QL_V) }, // §
+	{ MOD_ALT, SDLK_x, (SWAP_ALT | SWAP_SHIFT | SWAP_CNTRL | QL_X) }, // «
+	{ MOD_ALT | MOD_SHIFT, SDLK_x, (SWAP_ALT | SWAP_CNTRL | QL_Y) }, // »
+#else
+	// Windows and Linux (Alt-GR-based)
+	{ MOD_GRF, SDLK_2, (SWAP_SHIFT | QL_2) }, // @
+	{ MOD_GRF, SDLK_4, (SWAP_SHIFT | SWAP_CNTRL | QL_V) }, // §
+	{ MOD_GRF, SDLK_7, (SWAP_SHIFT | QL_LBRACKET) }, // {
+	{ MOD_GRF, SDLK_8, QL_LBRACKET }, // [
+	{ MOD_GRF, SDLK_9, QL_RBRACKET }, // ]
+	{ MOD_GRF, SDLK_0, (SWAP_SHIFT | QL_RBRACKET) }, // }
+#endif
+	{ 0x0, 0x0, 0x0 }
+};
+
 static struct SDLQLMap sdlqlmap_default[] = { { SDLK_LEFT, QL_LEFT },
 					      { SDLK_UP, QL_UP },
 					      { SDLK_RIGHT, QL_RIGHT },
@@ -1587,6 +1648,14 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 		if ((keyboard == KEY_ES) && (keysym->sym == SDLK_4)) {
 			keysym->sym = SDL_DEADKEY_2;
 		}
+		// Portuguese dead keys right of + and right of º
+		if (keyboard == KEY_PT) {
+			if (keysym->scancode == SDL_SCANCODE_RIGHTBRACKET)
+				keysym->sym = SDL_DEADKEY_2;
+			else if ((keysym->scancode == SDL_SCANCODE_BACKSLASH) ||
+				 (keysym->scancode == SDL_SCANCODE_NONUSHASH))
+				keysym->sym = SDL_DEADKEY_TILDE;
+		}
 	}
 #endif
 
@@ -1740,6 +1809,11 @@ void QLSDProcessKey(SDL_Keysym *keysym, int pressed)
 						code &= ~SWAP_CNTRL;
 						mod ^= (0x1 << 1);
 					}
+					/* Code requires a change in alt state? */
+					if (SWAP_ALT & code) {
+						code &= ~SWAP_ALT;
+						mod ^= 0x1;
+					}
 					if (pressed) {
 						queueKey(mod, code, 0);
 					}
@@ -1811,6 +1885,14 @@ static void setKeyboardLayout(void)
 		usegrfstate = 1;
 		if (V1)
 			printf("Using IT keymap.\n");
+	} else if (!strncasecmp("PT", kbd_string, 2)) {
+		sdlqlmap = sdlqlmap_PT;
+		keyboard = KEY_PT;
+#if !(defined(__APPLE__) && defined(__MACH__))
+		usegrfstate = 1;
+#endif
+		if (V1)
+			printf("Using PT keymap.\n");
 	} else if (!strncasecmp("US", kbd_string, 2)) {
 		if (V1)
 			printf("Using US keymap.\n");

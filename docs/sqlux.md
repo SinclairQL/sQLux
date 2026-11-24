@@ -185,7 +185,7 @@ CPU_HOG = 1
 ```
 
 `FAST_STARTUP`
-Set to 1 if you want to skip the usual RAM test (default), or set it to 0 if you want to enjoy the RAM test pattern. With Minerva, 1 enters it through its warm start, which skips the RAM test, and 0 lets it test the RAM as on a real QL
+Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern. Has no effect with the Minerva ROM
 
 ```
 FAST_STARTUP = 1
@@ -432,7 +432,22 @@ FIXASPECT = 1
 ```
 
 `KBD`
-Select the keyboard language. Valid options are `GB`, `GB_ch`, `DE`, `ES`, `IT` and `US`. Defaults to `US`.
+Select the keyboard language. Valid options are `GB`, `GB_ch`, `DE`, `ES`, `IT`, `PT` and `US`. Defaults to `US`.
+
+`PT` is for a Portuguese host keyboard with a Portuguese QL ROM. The ROM starts in English
+mode: press ALT CAPSLOCK (Option Caps Lock on macOS) to switch it to Portuguese mode, and again
+to switch back. In Portuguese mode the ROM composes accented characters with its own dead keys,
+so press the accent key followed by the letter, or by SPACE for the accent itself:
+
+| Host key | QL key | Accent | Then a | e | i | o | u | c | SPACE |
+|----------|--------|--------|--------|---|---|---|---|---|-------|
+| `´` or `'` | `'` | acute | á | é | í | ó | ú | ç | `'` |
+| `` ` `` (shift `´`) | `£` | grave | à | | | º | | | `£` |
+| `~` | shift `£` | tilde | ã | | | õ | | | `~` |
+| `^` (shift `~`) | shift `6` | circumflex | â | ê | | ô | | | `^` |
+
+`ç`, `Ç`, `º`, `«`, `»` and `§` are typed directly. On macOS `@`, `[`, `]`, `{` and `}` are on
+Option 2, 8, 9 and Option shift 8, 9; on Windows and Linux they are on AltGr 2, 8, 9, 7 and 0.
 
 ```
 KBD = DE
