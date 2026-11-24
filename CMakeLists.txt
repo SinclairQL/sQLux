@@ -133,6 +133,7 @@ add_executable(
   ${sds_SOURCE_DIR}/sds.c
   src/SDL3main.c
   src/SDL3screen.c
+  src/SDL3shader.c
   src/emulator_init.c
   src/emulator_options.c
   src/sqlux_hexdump.c

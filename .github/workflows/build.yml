@@ -168,7 +168,7 @@ jobs:
           brew install sdl3
       - name: Configure with cmake
         run: |
-          cmake -B build/ -DCMAKE_BUILD_TYPE=Release -DSUPPORT_SHADERS=True
+          cmake -B build/ -DCMAKE_BUILD_TYPE=Release
       - name: Build with cmake
         run: |
           cmake --build build/ --parallel 4

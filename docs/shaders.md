@@ -1,64 +1,35 @@
 # sQLux Shader support
 
 ## Introduction
-sQLux optionally supports OpenGL Shader Language (GLSL) shaders. These shaders run on the GPU and introduce display artifacts similar to those seen when using a BBQL with a 1980s CRT monitor. Artifacts that can be emulated include:
+sQLux can draw the QL screen through a GPU shader that introduces display artifacts similar to those seen when using a BBQL with a 1980s CRT monitor. Artifacts that can be emulated include:
 + Scan lines
 + Shadow mask
 + Bloom
 + Screen curvature
++ Grey, amber and green monitors
 
-Support for shaders has to be enabled at run time. OpenGL or OpenGL ES libraries must to be installed. Shader support is realised through the use of [sdl-gpu](https://github.com/grimfang4/sdl-gpu) which is statically linked into sQLux. The code for sdl-gpu is included in the sQLux repository.  
+The shader is a fragment shader of the SDL3 GPU renderer, so it needs sQLux built with SDL 3.4 or later and a GPU supported by SDL: Metal on macOS, Vulkan on Linux and Windows. No other libraries are needed and nothing has to be enabled at build time.
+If the GPU renderer cannot be used, sQLux falls back to the normal display without the shader.
 As shaders run on the GPU, the speed of the emulator is not impacted.
 
----
-# Building
-In all cases, first follow the steps to build sQLux without shader support, as described in the [README](../README.md). Then update submodules
-
-```
-git submodule update --init --recursive
-```
-
-## Building linux
-```
-cd build
-cmake -DSUPPORT_SHADERS=TRUE ..
-make
-```
-## Building MinGW on Linux
-```
-cd mingw
-cmake -DCMAKE_TOOLCHAIN_FILE=../mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=/usr/local/x86_64-w64-mingw32 -DSUPPORT_SHADERS=TRUE ..
-make
-```
-## Building MinGW on Windows
-```
-cd mingw
-cmake.exe -G "MinGW Makefiles" -DSUPPORT_SHADERS=TRUE ..
-mingw32-make
-```
 # Shader parameters in sqlux.ini
-`SHADER`  Selects shader support. 0 disables shaders (default). The value is a bit field:
+`SHADER`  Selects the shader. 0 disables it (default). The value is a bit field:
 
 | Bits | Meaning |
 |---|---|
 | 0-1 | Shape: 1 = "flat" shader, 2 = shader including emulated barrel distortion, 0 = colour change only (no scanlines, mask or curvature) |
 | 6-7 | Colour: 0 = normal, 64 = grey, 128 = amber, 192 = green |
 
-For example, 66 is a curved shader with a grey display. The shadow mask type is set with `MASK_TYPE` in the shader file.
+For example, 66 is a curved shader with a grey display.
 
 ```
 SHADER = 2
 ```
 
-`SHADER_FILE`
-The path to the GPU shader (written in OpenGL Shading Language) that is loaded when `SHADER` is not 0.
+# Changing the shader
+The shader is `src/shaders/crt-pi.frag`, written in Vulkan GLSL (version 450). It is compiled into SPIR-V (Vulkan) and MSL (Metal), which are included in sQLux as C headers: after editing it, run `src/shaders/make-shaders.sh` and rebuild sQLux. The script needs `glslang` and `spirv-cross`; if `shadercross` (from [SDL_shadercross](https://github.com/libsdl-org/SDL_shadercross)) is installed it also writes DXIL, so that Direct3D 12 can be used on Windows.
 
-```
-SHADER_FILE = ../shaders/crt-pi.glsl
-```
-# Configuration
-## The supplied shader
-The supplied shader `crt-pi.glsl` works "out of the box". However, optionally, it can be edited to modify the following attributes:
+The following attributes can be modified in the shader file:
 ### `MASK_TYPE`
 The type of emulated CRT shadow mask.  
 0 = none, 1 = standard mask, 2 = trinitron like. Default = 1
@@ -78,48 +49,18 @@ Input value for gamma correction. Applied prior to calculating other effects. De
 Output value for gamma correction. Inverse applied after calculating other effects. Default = 2.2
 ### `SHARPER`
 By default the shader uses linear blending horizontally. If this is too blurry, enable `SHARPER`
-### `CURVATURE_X`
-Simulated curvature to be applied in the x dimension, if `SHADER = 2` in `sqlux.ini`. Default = 0.06
-### `CURVATURE_Y`
-Simulated curvature to be applied in the y dimension, if `SHADER = 2` in `sqlux.ini`. Default = 0.12
-## Older Raspberry Pis
-By default, when using the Raspberry Pi OS Bullseye edition, hardware graphics acceleration may not be enabled for Pi0 to Pi3. This can impact shader performance.
 
-To enable hardware acceleration, run the configuration tool:
+The amount of curvature, `CURVATURE_X` (0.06) and `CURVATURE_Y` (0.12), is set in `src/SDL3shader.c`, which also uses it to adjust the mouse position to the curved screen.
 
-`sudo raspi-config`
-
-Select the options to enable glamor (A8) and GL Driver (A2), under the advanced options sub-menu, and reboot.
-
-**Note:** Hardware graphics acceleration *should* be enabled by default for the Pi4, so this change should *not* be needed for the Pi4.
-
-# Creating your own shader
-Examples of shaders which can be modified to use within sQLux can be found at e.g. [libretro shaders](https://github.com/libretro/glsl-shaders/tree/master/crt/shaders).  
-A single file is used for both the vertex and fragment shader. It is compiled twice to generate the two shader types, once with `#define VERTEX` prepended to the start of the file, and once with `#define FRAGMENT`  
-MacOS no longer supports versions of shader files prior to GLSL version 1.5. (OpenGL 3.2). Many Raspberry Pi models do not support versions of shader files later then GLSL version 1.2 (or the equivalent GLSL ES version 1.0). Therefore compatibility `#defines` are needed to ensure one shader file can support multiple targets. See `crt-pi.glsl` for an example.  
-sQLux prepends the version required to the file before it is compiled.
-## Variables sQLux makes available within a shader
-The following variables are used to pass information to the shader.
-### `attribute vec2 VertexCoord`
-Vertex coordinate
-### `attribute vec2 TexCoord`
-Coordinate of pixel in texture
-### `gl_Color`
-See OpenGL description.
-### `uniform mat4 MVPMatrix`
-The combined model, view and projection matrix
-### `uniform sampler2D TEX0`
-The input texture, i.e. the image of the QL screen to display.
-### `uniform vec2 TextureSize`
+## Variables sQLux makes available within the shader
+The shader receives from the vertex shader of the SDL GPU renderer the colour (`location = 0`) and the texture coordinate (`location = 1`). The QL screen is the sampler at `set = 2, binding = 0`. These values are in the uniform block at `set = 3, binding = 0`:
+### `vec2 TextureSize`
 The size of the input texture (i.e. the original size in pixels of the QL display)
-### `uniform vec2 u_resolution`
-The output size of the image to be displayed
-## Support for curvature
-If `SHADER` is set to 2 in `sqlux.ini` then `#define CURVATURE` is prepended to the file prior to compilation.
-### Mouse support
-The mouse position has to be adjusted to reflect simulated curvature. Within the shader file it is assumed that the amount of curvature is defined by
-```
-#define CURVATURE_X a.aa
-#define CURVATURE_Y b.bb
-```
-where a.aa and b.bb are floats defining the curvature in the x and y direction. sQLux parses these values and uses them to adjust the reported mouse position.
+### `vec2 OutputSize`
+The size, in window pixels, at which the QL display is drawn
+### `vec2 Curvature`
+The barrel distortion in x and y; 0 for a flat screen
+### `float MonoMode`
+0 = normal colour, 1 = grey, 2 = amber, 3 = green
+### `float ColourOnly`
+1 if only the colour has to be changed (no scanlines, mask or curvature)

@@ -17,6 +17,7 @@
 #include "QL_hardware.h"
 #include "QL68000.h"
 #include "SDL3screen.h"
+#include "SDL3shader.h"
 #include "qlkeys.h"
 #include "qlmouse.h"
 #include "QL_screen.h"
@@ -668,7 +669,10 @@ int QLSDLScreen(void)
 	/* Initialize keyboard table (doesn't belong here, but was convenient...) */
 	setKeyboardLayout();
 
-	ql_renderer = SDL_CreateRenderer(ql_window, NULL);
+	ql_renderer = QLShaderCreateRenderer(ql_window,
+					     emulatorOptionInt("shader"));
+	if (ql_renderer == NULL)
+		ql_renderer = SDL_CreateRenderer(ql_window, NULL);
 
 	if (ql_renderer == NULL) {
 		SDL_LogError(EMU_LOG_SCREEN, "Failed to Create Renderer %s\n",
@@ -869,7 +873,9 @@ void QLSDLRenderScreen(void)
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
 	if (!snapshot_blank) {
+		QLShaderBegin(ql_renderer, qlscreen.xres, qlscreen.yres);
 		SDL_RenderTexture(ql_renderer, ql_texture, NULL, &dest_rect);
+		QLShaderEnd(ql_renderer);
 	}
 
 	SDL_RenderPresent(ql_renderer);
@@ -1728,43 +1734,23 @@ static void setKeyboardLayout(void)
 	}
 }
 
-static void QLSDLProcessMouse(int *qlx, int *qly, int x, int y)
+/* From window coordinates to a pixel of the QL screen */
+static void QLSDLProcessMouse(int *qlx, int *qly, float x, float y)
 {
-	*qlx = 0;
-	*qly = 0;
-	float x_ratio, y_ratio;
+	float fx, fy;
 
-	if (SDL_GetWindowFlags(ql_window) & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
-		x *= 2;
-		y *= 2;
-	}
+	SDL_RenderCoordinatesFromWindow(ql_renderer, x, y, &x, &y);
+	fx = (x - dest_rect.x) / dest_rect.w;
+	fy = (y - dest_rect.y) / dest_rect.h;
+	QLShaderDistort(&fx, &fy);
 
-	if (x < dest_rect.x) {
-		*qlx = 0;
-	} else if (x > (dest_rect.w + dest_rect.x)) {
-		*qlx = qlscreen.xres - 1;
-	} else {
-		x_ratio = (float)dest_rect.w / (float)qlscreen.xres;
-
-		x -= dest_rect.x;
-
-		*qlx = ((float)x / x_ratio);
-	}
-
-	if (y < dest_rect.y) {
-		*qly = 0;
-	} else if (y > (dest_rect.h + dest_rect.y)) {
-		*qly = qlscreen.yres - 1;
-	} else {
-		y_ratio = (float)dest_rect.h / (float)qlscreen.yres;
-
-		y -= dest_rect.y;
-
-		*qly = ((float)y / y_ratio);
-	}
+	*qlx = (int)(fx * qlscreen.xres);
+	*qly = (int)(fy * qlscreen.yres);
+	*qlx = SDL_clamp(*qlx, 0, qlscreen.xres - 1);
+	*qly = SDL_clamp(*qly, 0, qlscreen.yres - 1);
 }
 
-static void QLProcessMouse(int x, int y)
+static void QLProcessMouse(float x, float y)
 {
 	int qlx = 0, qly = 0;
 
@@ -1913,7 +1899,7 @@ int QLSDLProcessEvents(SDL_Event *event)
 		else if (thor_mapped)
 			thor_move(dx, dy);
 		else
-			QLProcessMouse((int)event->motion.x, (int)event->motion.y);
+			QLProcessMouse(event->motion.x, event->motion.y);
 		//inside=1;
 		break;
 	}
@@ -1984,4 +1970,5 @@ void QLSDLExit(void)
 #endif
 
 	active_metronome = 0; // <-- Detiene el bucle del hilo suavemente
+	QLShaderQuit();
 }
