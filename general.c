@@ -487,8 +487,12 @@ void WriteHWByte(aw32 addr, aw8 d)
 	switch (addr) {
 	case 0x018063: /* Display control */
         display_mode = (d & 8) ? 8 : 4;
-        qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
-        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
+        /* bit 7 shows screen 0 ($20000) or 1 ($28000); a larger screen
+         * (RESOLUTION) stays where it was placed */
+        if (qlscreen.qm_len <= 0x8000) {
+            qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
+            qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
+        }
 				// Bit 1 a 1 = Disabled display (Blank)
 				// Bit 1 a 0 = Enabled display
 		is_display_blank = (d & 0x02) ? true : false;
