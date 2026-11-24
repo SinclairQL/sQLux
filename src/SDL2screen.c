@@ -636,17 +636,22 @@ void QLSDLScreen(void)
 		printf("Video Driver %s xres %d yres %d\n", sdl_video_driver,
 		       sdl_mode.w, sdl_mode.h);
 
-	/* Fix the aspect ratio to more like real hardware
-	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
-	int aspect = emulatorOptionInt("fixaspect");
-	if (aspect == 1) {
-		ql_screen_ratio = (3.0 / 2.0);
-	} else if (aspect == 2) {
-		ql_screen_ratio = 1.355;
-	} else if (aspect == 3) {
-		ql_screen_ratio = 2.0;
-	} else {
+	/* only allow fixaspect on QL screen modes */
+	if (qlscreen.xres != 512 || qlscreen.yres != 256) {
 		ql_screen_ratio = 1.0;
+	} else {
+		/* Fix the aspect ratio to more like real hardware
+	   Note 1.355 is the ratio used in QL Roms (see Minerva disassembly) */
+		int aspect = emulatorOptionInt("fixaspect");
+		if (aspect == 1) {
+			ql_screen_ratio = (3.0 / 2.0);
+		} else if (aspect == 2) {
+			ql_screen_ratio = 1.355;
+		} else if (aspect == 3) {
+			ql_screen_ratio = 2.0;
+		} else {
+			ql_screen_ratio = 1.0;
+		}
 	}
 
 	/* Ensure width and height are always initialised to sane values */
