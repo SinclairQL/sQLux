@@ -26,8 +26,10 @@
 #include "unix.h"
 
 #include "unixstuff.h"
+extern int qdos_idle_request;            /* unixstuff.c */
 
 #include "util.h"
+#include "mdv.h"
 
 /*extern int schedCount;*/
 extern int inside;
@@ -110,8 +112,20 @@ void print_mousepos()
 
 w32 getSCRdriver()
 {
-	return ReadLong(ReadLong(ReadLong(0x28078)) +
+	return ReadLong(ReadLong(ReadLong(ql_sysvars + 0x78)) +
 			4); /* :HIER: abs. sysref raus */
+}
+
+/* Reset of the QL: the pointer environment that was found is gone with the
+ * memory of the QL, and the mouse must not be written into it any more. It
+ * is looked for again once the ROM has started (SchedInit). */
+void MouseReset(void)
+{
+#ifdef MOUSE
+	HasPTR = 0;
+	ptrscrdrv = 0;
+	iscrdrv = 0;
+#endif
 }
 
 /* link in scheduler task */
@@ -370,15 +384,23 @@ void SchedulerCmd()
 	MouseTask();
 #endif
 
-	if (emulatorOptionInt("cpu_hog") == 0 && schedCount++ > min_idle) /* QDOS running idle */
+	if (emulatorOptionInt("cpu_hog") == 0 && !mdv_is_selected() &&
+	    schedCount++ > min_idle) /* QDOS running idle */
 	{
 		/*printf(".");fflush(stdout);*/
 		/*printf("schedCount %d\n",schedCount);*/
+		if (speed) {
+			/* QDOS is idle: QLRun runs the rest of the frame at once,
+			 * as for STOP, so emulated time keeps its pace */
+			qdos_idle_request = 1;
+			nInst = 0;      /* end the chunk: QLRun takes over */
+		} else {
 		SDL_Delay(20);
 		if (nInst > 5) {
 			nInst2 = nInst;
 			nInst = 5;
 		}
+	}
 	}
 	restore_regs(saved_regs);
 

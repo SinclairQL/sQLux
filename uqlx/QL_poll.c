@@ -14,6 +14,7 @@
 #include "QInstAddr.h"
 #include "QL_hardware.h"
 #include "unix.h"
+#include "ipc.h"
 
 /*extern int schedCount;*/
 extern volatile int poll_req;
@@ -63,7 +64,10 @@ void PollCmd()
   poll_req=0;
 #endif
 
-  if (isMinerva)
+  /* Keyboard of the high level IPC emulation for Minerva: with the real
+   * IPC (IPC_ROM) the keys come from the 8049, as on a QL, and passing them
+   * here as well would deliver each key twice */
+  if (isMinerva && !ipc_lle_active())
     MReadKbd();
 
   rts();

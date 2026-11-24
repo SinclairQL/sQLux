@@ -9,8 +9,7 @@ void abcd(void)
 {
 	w8 s, d, r;
 	w8 *dx;
-	uw16 abcd_lo, abcd_hi, abcd_res;
-	int abcd_carry;
+	uw8 ss, bc, dc, corf, rr;
 
 	if ((code & 8) != 0) {
 		s = GetFromEA_b_m4();
@@ -21,22 +20,17 @@ void abcd(void)
 		s = (w8)reg[code & 7];
 	}
 
-	abcd_lo = (s & 0xF) + (d & 0xF) + (xflag ? 1 : 0);
-	abcd_hi = (s & 0xF0) + (d & 0xF0);
+	ss = (uw8)d + (uw8)s + (xflag ? 1 : 0);
+	bc = (((uw8)d & (uw8)s) | (~ss & (uw8)d) | (~ss & (uw8)s)) & 0x88;
+	dc = ((((uw16)ss + 0x66) ^ ss) & 0x110) >> 1;
+	corf = (bc | dc) - ((bc | dc) >> 2);
+	rr = ss + corf;
 
-	abcd_res = abcd_hi + abcd_lo;
-	if (abcd_lo > 9) {
-		abcd_res += 6;
-	}
-	abcd_carry = (abcd_res & 0x3F0) > 0x90;
-	if (abcd_carry)
-		abcd_res += 0x60;
-
-	r = abcd_res;
-
-	xflag = carry = abcd_carry ? 1 : 0;
-	zero = (zero ? 1 : 0) & (r ? 0 : 1);
-	negative = (r < 0) ? 1 : 0;
+	xflag = carry = (((bc | (ss & ~rr)) & 0x80) != 0);
+	overflow = ((~ss & rr & 0x80) != 0);
+	zero = zero && (rr == 0);
+	negative = (rr & 0x80) != 0;
+	r = (w8)rr;
 
 	if ((code & 8) != 0)
 		RewriteEA_b(r);
@@ -594,8 +588,8 @@ void andi_to_ccr(void)
 void andi_to_sr(void)
 {
 	register w16 d;
-	d = (w16)RW(pc++);
 	if (supervisor) {
+		d = (w16)RW(pc++);
 		d &= GetSR();
 		PutSR(d);
 	} else {
@@ -603,6 +597,7 @@ void andi_to_sr(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -826,19 +821,19 @@ void bra_s(void)
 
 void bchg_d(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
-	bit = reg[code >> 9];
+	bit = reg[code >> 9 & 7];
 	if (EAmode != 0) {
-		mask <<= (short)reg[code >> 9] & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		RewriteEA_b(d ^ (w8)mask);
+		mask <<= (bit & 7);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		RewriteEA_b((w8)(d ^ (uw8)mask));
 	} else {
-		mask <<= (short)reg[code >> 9] & 31;
+		mask <<= (bit & 31);
 		zero = (reg[code & 7] & mask) == 0;
 		reg[code & 7] ^= mask;
 	}
@@ -846,17 +841,17 @@ void bchg_d(void)
 
 void bchg_s(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
 	bit = RW(pc++);
 	if (EAmode != 0) {
 		mask <<= bit & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		RewriteEA_b(d ^ (w8)mask);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		RewriteEA_b((w8)(d ^ (uw8)mask));
 	} else {
 		mask <<= bit & 31;
 		zero = (reg[code & 7] & mask) == 0;
@@ -866,47 +861,43 @@ void bchg_s(void)
 
 void bclr_d(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
-	bit = reg[code >> 9];
+	bit = reg[(code >> 9) & 7];
 	if (EAmode != 0) {
-		mask <<= (short)reg[code >> 9] & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		if (!zero)
-			d ^= (w8)mask;
-		RewriteEA_b(d);
+		mask <<= (bit & 7);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		d &= ~(uw8)mask;
+		RewriteEA_b((w8)d);
 	} else {
-		mask <<= (short)reg[code >> 9] & 31;
+		mask <<= (bit & 31);
 		zero = (reg[code & 7] & mask) == 0;
-		if (!zero)
-			reg[code & 7] ^= mask;
+		reg[code & 7] &= ~mask;
 	}
 }
 
 void bclr_s(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
 	bit = RW(pc++);
 	if (EAmode != 0) {
 		mask <<= bit & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		if (!zero)
-			d ^= (w8)mask;
-		RewriteEA_b(d);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		d &= ~(uw8)mask;
+		RewriteEA_b((w8)d);
 	} else {
 		mask <<= bit & 31;
 		zero = (reg[code & 7] & mask) == 0;
-		if (!zero)
-			reg[code & 7] ^= mask;
+		reg[code & 7] &= ~mask;
 	}
 }
 
@@ -930,76 +921,72 @@ void bsr(void)
 
 void bset_d(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
-	bit = reg[code >> 9];
+	bit = reg[(code >> 9) & 7];
 	if (EAmode != 0) {
-		mask <<= (short)reg[code >> 9] & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		if (zero)
-			d |= (w8)mask;
-		RewriteEA_b(d);
+		mask <<= (bit & 7);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		d |= (uw8)mask;
+		RewriteEA_b((w8)d);
 	} else {
-		mask <<= (short)reg[code >> 9] & 31;
+		mask <<= (bit & 31);
 		zero = (reg[code & 7] & mask) == 0;
-		if (zero)
-			reg[code & 7] |= mask;
+		reg[code & 7] |= mask;
 	}
 }
 
 void bset_s(void)
 {
-	w32 mask = 1;
-	w8 d;
+	uw32 mask = 1;
+	uw8 d;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
 	bit = RW(pc++);
 	if (EAmode != 0) {
 		mask <<= bit & 7;
-		d = ModifyAtEA_b(EAmode, code & 7);
-		zero = (d & (w8)mask) == 0;
-		if (zero)
-			d |= (w8)mask;
-		RewriteEA_b(d);
+		d = (uw8)ModifyAtEA_b(EAmode, code & 7);
+		zero = (d & (uw8)mask) == 0;
+		d |= (uw8)mask;
+		RewriteEA_b((w8)d);
 	} else {
 		mask <<= bit & 31;
 		zero = (reg[code & 7] & mask) == 0;
-		if (zero)
-			reg[code & 7] |= mask;
+		reg[code & 7] |= mask;
 	}
 }
 
 void btst_d(void)
 {
-	w32 mask = 1;
+	uw32 mask = 1;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
-	bit = reg[code >> 9];
+	bit = reg[(code >> 9) & 7];
 	if (EAmode != 0) {
-		mask <<= (short)reg[code >> 9] & 7;
-		zero = (GetFromEA_b[EAmode]() & mask) == 0;
+		mask <<= bit & 7;
+		zero = ((uw8)GetFromEA_b[EAmode]() & (uw8)mask) == 0;
 	} else {
-		mask <<= (short)reg[code >> 9] & 31;
+		mask <<= bit & 31;
 		zero = (reg[code & 7] & mask) == 0;
 	}
 }
 
 void btst_s(void)
 {
-	w32 mask = 1;
+	uw32 mask = 1;
 	short EAmode;
 	short bit;
 	EAmode = (code >> 3) & 7;
 	bit = RW(pc++);
-	if (EAmode) {
+	if (EAmode != 0) {
 		mask <<= bit & 7;
-		zero = (GetFromEA_b[EAmode]() & mask) == 0;
+		zero = ((uw8)GetFromEA_b[EAmode]() & (uw8)mask) == 0;
 	} else {
 		mask <<= bit & 31;
 		zero = (reg[code & 7] & mask) == 0;
@@ -1012,6 +999,11 @@ void chk(void)
 	w16 ea;
 	d = (w16 *)(((Ptr)reg) + ((code >> 7) & 0x1c) + RWO);
 	ea = GetFromEA_w[(code >> 3) & 7]();
+	if (exception)
+		return;
+	/* Z, V, C (undocumented) */
+	zero = *d == 0;
+	overflow = carry = false;
 	if (*d < 0) {
 		negative = true;
 		exception = 6;
@@ -1029,9 +1021,46 @@ void chk(void)
 	}
 }
 
+/*
+ * CLR on a memory operand: the 68000 reads the operand before writing it,
+ * although it does not need its value. The read is performed here so that it
+ * pays its contention (and reads a hardware register if it points to one),
+ * as on a QL. The address is computed once, so (An)+ and -(An) move the
+ * pointer only once.
+ */
+static w32 clr_ea(short mode, short r, short size)
+{
+	w32 ea;
+
+	switch (mode) {
+	case 2:
+		ea = aReg[r];
+		break;
+	case 3:
+		ea = aReg[r];
+		aReg[r] += (size == 1 && r == 7) ? 2 : size;
+		break;
+	case 4:
+		aReg[r] -= (size == 1 && r == 7) ? 2 : size;
+		ea = aReg[r];
+		break;
+	default:
+		ea = ARCALL(GetEA, mode, r);
+		break;
+	}
+	return ea;
+}
+
 void clr_b(void)
 {
-	ARCALL(PutToEA_b, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 1);
+		ReadByte(ea);
+		WriteByte(ea, 0);
+	} else
+		ARCALL(PutToEA_b, mode, r, 0);
 	/*((void (*)(short,w8)REGP2)PutToEA_b[(code>>3)&7])(code&7,0);*/
 	/*PUT_TOEA_B((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
@@ -1040,7 +1069,15 @@ void clr_b(void)
 
 void clr_w(void)
 {
-	ARCALL(PutToEA_w, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 2);
+		ReadWord(ea);           /* raises the address error if odd */
+		if ((ea & 1) == 0)
+			WriteWord(ea, 0);
+	} else
+		ARCALL(PutToEA_w, mode, r, 0);
 	/*PUT_TOEA_W((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
 	zero = true;
@@ -1048,7 +1085,15 @@ void clr_w(void)
 
 void clr_l(void)
 {
-	ARCALL(PutToEA_l, (code >> 3) & 7, code & 7, 0);
+	short mode = (code >> 3) & 7, r = code & 7;
+
+	if (mode >= 2) {
+		w32 ea = clr_ea(mode, r, 4);
+		ReadLong(ea);           /* raises the address error if odd */
+		if ((ea & 1) == 0)
+			WriteLong(ea, 0);
+	} else
+		ARCALL(PutToEA_l, mode, r, 0);
 	/*PUT_TOEA_L((code>>3)&7,code&7,0);*/
 	negative = overflow = carry = false;
 	zero = true;
@@ -1325,6 +1370,7 @@ void dbcc(void)
 #endif
 
 			if ((uintptr_t)pc & 1) {
+				saved_sr = GetSR();
 				exception = 3;
 				extraFlag = true;
 				nInst2 = nInst;
@@ -1351,6 +1397,7 @@ void dbf(void)
 #endif
 #endif
 		if ((uintptr_t)pc & 1) {
+			saved_sr = GetSR();
 			exception = 3;
 			extraFlag = true;
 			nInst2 = nInst;
@@ -1369,18 +1416,29 @@ void divs(void)
 	w16 s;
 	d = (w32 *)((Ptr)reg + ((code >> 7) & 28));
 	s = GetFromEA_w[(code >> 3) & 7]();
+	if (exception)
+		return;
+
 	if (s != 0) {
-		r = *d / s;
-		if (r < -32768 || r > 32767)
+		if (*d == (w32)0x80000000 && s == -1) {
 			overflow = true;
-		else {
-			zero = r == 0;
-			negative = r < 0;
-			overflow = carry = false;
-			*((w16 *)((Ptr)d + UW_RWO)) = *d - r * s;
-			*((w16 *)((Ptr)d + RWO)) = (w16)r;
+			carry = false;
+		} else {
+			r = *d / s;
+			if (r < -32768 || r > 32767) {
+				overflow = true;
+				carry = false;
+			} else {
+				zero = (w16)r == 0;
+				negative = (w16)r < 0;
+				overflow = carry = false;
+				*((w16 *)((Ptr)d + UW_RWO)) = (w16)(*d - r * s);
+				*((w16 *)((Ptr)d + RWO)) = (w16)r;
+			}
 		}
 	} else {
+		/* division by zero: N, Z, V and C cleared */
+		negative = zero = overflow = carry = false;
 		exception = 5;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -1395,18 +1453,24 @@ void divu(void)
 	uw16 s;
 	d = (uw32 *)((Ptr)reg + ((code >> 7) & 28));
 	s = GetFromEA_w[(code >> 3) & 7]();
+	if (exception)
+		return;
+
 	if (s != 0) {
 		r = *d / s;
-		if (r > 65535)
+		if (r > 65535) {
 			overflow = true;
-		else {
-			zero = r == 0;
-			negative = (w32)r < 0;
+			carry = false;
+		} else {
+			zero = (uw16)r == 0;
+			negative = (r & 0x8000) != 0;
 			overflow = carry = false;
-			*((uw16 *)((Ptr)d + UW_RWO)) = *d - r * s;
+			*((uw16 *)((Ptr)d + UW_RWO)) = (uw16)(*d - r * s);
 			*((uw16 *)((Ptr)d + RWO)) = (uw16)r;
 		}
 	} else {
+		/* division by zero: N, Z, V and C cleared */
+		negative = zero = overflow = carry = false;
 		exception = 5;
 		extraFlag = true;
 		nInst2 = nInst;
@@ -1504,14 +1568,15 @@ void eori_to_ccr(void)
 void eori_to_sr(void)
 {
 	register w16 d;
-	d = (w16)RW(pc++);
 	if (supervisor) {
+		d = (w16)RW(pc++);
 		PutSR(GetSR() ^ d);
 	} else {
 		exception = 8;
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -1590,7 +1655,17 @@ void jsr(void)
 	w32 ea;
 
 	ea = ARCALL(GetEA, (code >> 3) & 7, (code & 7));
-	/* ea=GET_EA((code>>3)&7,(code&7));*/
+	if ((ea & 1) != 0) {
+		saved_sr = GetSR();
+		exception = 3;
+		extraFlag = true;
+		nInst2 = nInst;
+		nInst = 0;
+		readOrWrite = 16;
+		badAddress = ea;
+		badCodeAddress = true;
+		return;
+	}
 	WriteLong((*m68k_sp) -= 4, (w32)((Ptr)pc - (Ptr)memBase));
 #ifdef BACKTRACE
 	SetPCB(ea, JSR);
@@ -1617,7 +1692,8 @@ void link_ins(void)
 {
 	register w32 *r;
 	r = &(aReg[code & 7]);
-	WriteLong((*m68k_sp) -= 4, *r);
+	(*m68k_sp) -= 4;
+	WriteLong(*m68k_sp, *r);
 	*r = (*m68k_sp);
 	(*m68k_sp) += (w16)RW(pc++);
 }
@@ -1785,14 +1861,15 @@ void move_to_ccr(void)
 void move_to_sr(void)
 {
 	register w16 x;
-	x = GetFromEA_w[(code >> 3) & 7]();
-	if (supervisor)
+	if (supervisor) {
+		x = GetFromEA_w[(code >> 3) & 7]();
 		PutSR(x);
-	else {
+	} else {
 		exception = 8;
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -1811,6 +1888,7 @@ void move_to_usp(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -1823,6 +1901,7 @@ void move_from_usp(void)
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 
@@ -1935,6 +2014,8 @@ void movem_load_w(void)
 				ea += 2;
 			}
 		}
+		/* the 68000 reads one more word after the last register */
+		ReadWord(ea);
 		if (eaMode == 3)
 			aReg[eaReg] = ea;
 	}
@@ -1960,6 +2041,8 @@ void movem_load_l(void)
 				ea += 4;
 			}
 		}
+		/* the 68000 reads one more word after the last register */
+		ReadWord(ea);
 		if (eaMode == 3)
 			aReg[eaReg] = ea;
 	}
@@ -2109,27 +2192,20 @@ void mulu(void)
 void nbcd(void)
 {
 	w8 d, r;
-	uw16 nbcd_lo, nbcd_hi, nbcd_res;
-	int nbcd_carry;
+	uw8 dd, bc, corf, rr;
 
 	d = ModifyAtEA_b((code >> 3) & 7, code & 7);
-	nbcd_lo = -(d & 0xF) - (xflag ? 1 : 0);
-	nbcd_hi = -(d & 0xF0);
 
-	if (nbcd_lo > 9) {
-		nbcd_lo -= 6;
-	}
-	nbcd_res = nbcd_hi + nbcd_lo;
-	nbcd_carry = (nbcd_res & 0x1F0) > 0x90;
-	if (nbcd_carry)
-		nbcd_res -= 0x60;
+	dd = 0 - (uw8)d - (xflag ? 1 : 0);
+	bc = ((uw8)d | dd) & 0x88;
+	corf = bc - (bc >> 2);
+	rr = dd - corf;
 
-	r = nbcd_res & 0xFF;
-
-	/* Set the flags */
-	zero = (zero ? 1 : 0) & (r ? 0 : 1);
-	negative = r < 0 ? 1 : 0;
-	xflag = carry = nbcd_carry ? 1 : 0;
+	xflag = carry = (((bc | (~dd & rr)) & 0x80) != 0);
+	overflow = ((dd & ~rr & 0x80) != 0);
+	zero = zero && (rr == 0);
+	negative = (rr & 0x80) != 0;
+	r = (w8)rr;
 
 	RewriteEA_b(r);
 }
@@ -2367,14 +2443,15 @@ void ori_to_ccr(void)
 void ori_to_sr(void)
 {
 	register w16 d;
-	d = (w16)RW(pc++);
 	if (supervisor) {
+		d = (w16)RW(pc++);
 		PutSR(GetSR() | d);
 	} else {
 		exception = 8;
 		extraFlag = true;
 		nInst2 = nInst;
 		nInst = 0;
+		pc--;
 	}
 }
 

@@ -133,6 +133,7 @@ add_executable(
   ${sds_SOURCE_DIR}/sds.c
   src/SDL3main.c
   src/SDL3screen.c
+  src/SDL3shader.c
   src/emulator_init.c
   src/emulator_options.c
   src/sqlux_hexdump.c
@@ -155,16 +156,25 @@ add_executable(
   uqlx/QLtraps.c
   uqlx/QVFS.c
   uqlx/Xscreen.c
+  uqlx/cycles68k.c
   uqlx/dummies.c
   uqlx/general.c
+  uqlx/ice.c
   uqlx/iexl_general.c
   uqlx/instructions_ao.c
   uqlx/instructions_pz.c
+  uqlx/ipc.c
+  uqlx/mcs48.c
+  uqlx/mdv.c
   uqlx/memaccess.c
   uqlx/mmodes.c
   uqlx/pty.c
+  uqlx/qimi.c
+  uqlx/qimsi.c
   uqlx/qmtrap.c
+  uqlx/qsound.c
   uqlx/sqlux_bdi.c
+  uqlx/thor.c
   uqlx/trace.c
   uqlx/unixstuff.c
   uqlx/util.c
@@ -172,6 +182,7 @@ add_executable(
   uqlx/xc68.c
   uqlx/xcodes.c
   uqlx/xqlmouse.c
+  uqlx/zx8301.c
 )
 
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c

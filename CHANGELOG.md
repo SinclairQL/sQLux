@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Sub-directories on the native disk images (`.img`, QL5A/QL5B) and on QXL.WIN files (`.win`) with TK2 or any level 2 driver: `MAKE_DIR` (FS.MKDIR), `RENAME` (FS.RENAME, also moving a file or a directory with its contents to another directory), and `DELETE` of empty directories. Files can be created in nested directories of floppies, which only worked in the root before, and the floppy file numbers are kept in the directory entry like a level 2 system does
+- `MOUSE = THOR` option: CST Thor mouse port, an MC6821 PIA at $FE040 (registers every 4 bytes, repeated in every 256 byte page of the last 8K, so $FF40 as used by ICE works; PA6 = 1 is left, PA7 = 1 is down) with three buttons, pulse and direction signals for each axis and the ZX8302 external interrupt, following the Thor expansion board schematic. Only enabled if RAMTOP is below 1016
+- `MOUSE = ICE` option: Eidersoft mICE bus mouse (3 buttons, quadrature signals) read at $FFFE/$FFFF of the ROM port cartridge. ROMPORT is kept; a warning is printed if the ROM is not the original mICE_21.rom
+- `MOUSE = QIMI` option: QJump QIMI mouse interface (buttons $1BF9C, movement $1BFBC, interrupt enable $1BFBE), signalling each step with the ZX8302 external interrupt. Replaces the Pointer Environment mouse injection
+- `MOUSE = QIMSI` option: QIMSI PS/2 mouse (with wheel) emulated through the read-only registers at $FED0-$FEDF, based on qimsi.js from QLRun. It replaces the Pointer Environment mouse injection and takes precedence over `ROMPORT`, which is disabled with a warning
+- QSound with more than 768K of RAM: the 16K block (8K ROM + I/O) is moved to the first free block between RAMTOP and the end of the reserved memory above it, with a warning, instead of disabling the card
+- `QLIONT_AY` option: AY-3-8910 sound chip of the QLIONT, the QSound emulation without ROM, with the control register at $80002A, the data register at $800028 and a 2.5 MHz clock
+- Cycle counted CPU timing: every instruction charges its real 68008 cycle cost, and `SPEED = 1` is now the 7.5 MHz clock of an original QL
+- Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
+- `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
+- `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
+- Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
+- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 32 lines after the frame interrupt, measured on a real QL (`ZX8301_VSYNC_LINES` option)
+- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, at `SPEED = 1`, following the MiSTer QL core timing by Marcel Kilgus and Daniele Terdina. The ZX8301 keeps 32 chunks of 12 cycles busy in a visible line and 8 in the others (DRAM refresh), measured on a real QL by timing a copy loop line by line through the frame. Reads of the peripheral registers wait for it too
+- `NTSC` option: 60 Hz frame interrupt and 262 lines per frame
+- `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
+- F12 resets the QL: the 68008 and the IPC start again and the ROM boots, with the files and channels of the emulator's devices closed and its drivers and BASIC extensions linked again
+- `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware: keyboard matrix scanning, speaker output and the serial link with the ZX8302
+
+### Changed
+- The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions
+- The emulator waits for the host clock at the end of the last visible line instead of at the frame interrupt, so the keys pressed while it waits are seen in the next frame interrupt: one frame less of input lag (from a key press to the picture, 9.4 ms on average instead of 14.7 ms). The speed of the QL does not change
+- `IPC_ROM`: the keyboard matrix holds the keys really held, and changes that reach the 8049 together are kept 10 ms apart, so that fast typing does not lose keys that a QL would accept
+- `IPC_ROM`: SHIFT, CTRL and ALT follow the physical keys while another key is held (a game can read them together with a direction); only a symbol that the host keymap translates to a QL key with other modifiers changes them
+
+### Fixed
+- QXL.WIN: a file created in a directory that already existed (made by a real QL) was put in the root, and was not found afterwards when it came after the directory in the root
+- With TK2, `DELETE` of a file that does not exist hung the emulator: TK2 reads A2 after the failed trap and the OS left there the pointer to the device driver, whose first word is never zero. A2 now comes back pointing at a zero word
+- Host directories (`DEVICE` without `qdos-fs`): `DELETE` removes empty directories and reports a directory with files in it as in use instead of ignoring the error
+- The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
+- CPU: exact flags, checked against the 68000 tests: undocumented V flag of ABCD, SBCD and NBCD; undocumented Z, V and C of CHK; DIVS and DIVU on overflow and division by zero; ASL.b with a count of 8; ROXL and ROXR with a count of 0 and in .l; LINK A7 and UNLK A7
+- CPU: word and long accesses to odd addresses raise an address error, as on the 68000, and the PC stacked is the one after the instruction, so that QDOS goes on (the Quantum Leap demo froze at the end of its wipe effect). The rest of the exception frame is not exact yet
+- The ZX8301 starts each frame at its exact cycle instead of at the end of the instruction during which the frame interrupt arrives, so its lines and chunks do not move from frame to frame with respect to the CPU
+- The frame interrupt no longer writes to $280A0, a QDOS system variable that is also on screen 1 (a 2 byte glitch in demos that draw on screen 1)
+- `FAST_STARTUP = 0` lets Minerva test the RAM, as on a real QL: Minerva was always entered through its warm start
+- QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
+- Microdrives: an empty drive, or none selected, keeps the GAP line of the ZX8302 high, and the gap interrupt is raised by the rising edge of GAP and its mask bit, as in zx8302.v. QDOS can tell that a drive is empty: a program that looked into an empty `mdv2_` (La Abadia del Crimen) hung waiting for a gap
+- Minerva: F3 at the boot menu (dual screen, soft reset) no longer loses the drivers, the WIN_ units and the keyboard. The system variables move (to $30000) and the ROM init hook was already consumed: it is armed again by the `reset` instruction, and the base of the system variables is taken from MT.INF instead of being fixed at $28000
 
 ## 1.1.1 - 2025-03-12
 ### Changed
@@ -56,6 +95,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.0.5] - 2022-05-02
 
-[Unreleased]: https://github.com/SinclairQL/sQLux/
-[1.0.6]: https://github.com/SinclairQL/sQLux/compare/v1.0.5...v1.0.6
-[1.0.5]: https://github.com/SinclairQL/sQLux/releases/tag/v1.0.5
+## [Unreleased]
+### Added
+- Cycle counted CPU timing: every instruction charges its real 68008 cycle cost, and `SPEED = 1` is now the 7.5 MHz clock of an original QL
+- Exact DIVU and DIVS timing when the divisor is a register, following the algorithm by Jorge Cwik
+- `CPU_TIMING` option to use 68000 (16 bit bus) instruction timings
+- `tools/validate_cycles.py` to check the 68000 timing table against the Tom Harte ProcessorTests
+- Bit level microdrive emulation through the ZX8302 registers ($18020-$18023), translated from the MiSTer QL core. New options `MDV1`, `MDV2` (cartridge images) and `MDV_REVERSE`
+- Beam position counted in emulated clock cycles from each vertical sync, with lines of 64 us (63.2 us NTSC), used by the line by line screen capture and the memory contention. The first visible line is 41 lines after the frame interrupt, 6 lines of vertical sync and 35 of top border (`ZX8301_VSYNC_LINES` option)
+- `ZX8301_CONTENTION` option: wait states for CPU accesses to the internal RAM while the ZX8301 fetches the screen or refreshes the DRAM, following the slot mechanism of the MiSTer QL core by Marcel Kilgus and Daniele Terdina, calibrated against a real QL (28 busy slots of 40 in the visible lines, 27 in the others). It applies at any speed except unlimited, scaled to the real time of the ZX8301
+- `NTSC` option: 262 lines per frame (60.39 Hz)
+- `tools/timing_tests_bas`: SuperBASIC timing tests to compare a real QL with the emulator
+- `IPC_ROM` option: low level emulation of the IPC (Intel 8049) running its original firmware (Intel HEX or raw 2K binary): keyboard matrix scanning, speaker output, the serial link with the ZX8302 and BAUDx4, with its own 11 MHz clock, independent of `SPEED`
+- F10 toggles between the configured speed and unlimited speed
+- `HW_TRACE` option: hardware activity per second, to debug timing problems
+
+### Changed
+- The speed limiter counts the emulated clock cycles actually executed instead of fixed chunks of instructions
+- A frame is a whole number of lines: 312 lines of 480 cycles (50.08 Hz) with PAL, 262 lines of 474 cycles (60.39 Hz) with NTSC
+- Interrupt lines are levels, as on the ZX8302: an interrupt stays pending until its bit in $18021 is cleared, and it is taken right after the instruction that lowers the mask
+- The display mode and blank bit are stored for each screen line, so mode changes in the middle of the screen are shown
+
+### Fixed
+- The main thread waits for SDL events instead of polling them in a busy loop, which kept a whole CPU core busy
+- QSound: tone and noise generators follow jt49: a null period mutes the generator instead of producing the highest frequency, and the noise output has the polarity of the real chip
+- The frame interrupt is raised at the cycle of the vertical sync: it was raised up to one chunk of 300 instructions late, and frames could be cut short when the host was late
+- `CLR` reads its operand before writing it, and `MOVEM` from memory reads one more word, as on a 68000, so both pay their memory contention
+- CPU writes to the screen line being scanned are shown in the same frame if the ZX8301 has not fetched those words yet
+- With `CPU_HOG = 0` the emulated time no longer stops while QDOS is idle
+- QSound is only mapped when `QSROM` is set, and it is disabled with a warning if the RAM overlaps its address space at $C0000: with more than 768K the RAM test of the JS ROM failed (white screen)
+- With `IPC_ROM`, a key press delivered late by the host (seen with sdl2-compat on Wayland) could be missed by the IPC firmware: every key now stays in the keyboard matrix for at least 40 ms
+- With Minerva and `IPC_ROM`, each key was delivered twice: by the 8049 and by the keyboard of the high level IPC emulation

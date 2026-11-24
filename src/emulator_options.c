@@ -13,8 +13,7 @@
 #include "unixstuff.h"
 #include "version.h"
 
-
-static const char * const helpTextInit = "\n\
+static const char *const helpTextInit = "\n\
 Usage: sqlux [OPTIONS] [args...]\n\
 \n\
 Positionals:\n\
@@ -24,15 +23,10 @@ Options:\n\
   -h,--help                   Print this help message and exit\n\
   -f,--config [sqlux.ini]     Read an ini file\n";
 
-static const char * const helpTextTail = "\
+static const char *const helpTextTail = "\
   --version                   version number\n";
 
-
-enum emuOptsType {
-	EMU_OPT_INT,
-	EMU_OPT_CHAR,
-	EMU_OPT_DEV
-};
+enum emuOptsType { EMU_OPT_INT, EMU_OPT_CHAR, EMU_OPT_DEV };
 
 struct emuOpts {
 	char *option;
@@ -44,45 +38,110 @@ struct emuOpts {
 };
 
 struct emuOpts emuOptions[] = {
-{"bdi1", "", "file exposed by the BDI interface", EMU_OPT_CHAR, 0 , NULL},
-{"boot_cmd", "b", "command to run on boot (executed in basic)", EMU_OPT_CHAR, 0, NULL},
-{"boot_device", "d", "device to load BOOT file from", EMU_OPT_CHAR, 0, "mdv1"},
-{"cpu_hog", "", "1 = use all cpu, 0 = sleep when idle", EMU_OPT_INT, 1, NULL},
-{"device", "", "QDOS_name,path,flags (may be used multiple times", EMU_OPT_DEV, 0, NULL},
-{"fast_startup", "", "1 = skip ram test (does not affect Minerva)", EMU_OPT_INT, 0, NULL},
-{"filter", "", "enable bilinear filter when zooming", EMU_OPT_INT, 0, NULL},
-{"fixaspect", "", "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels", EMU_OPT_INT, 0, NULL},
-{"iorom1", "", "rom in 1st IO area (Minerva only 0x10000 address)", EMU_OPT_CHAR, 0, NULL},
-{"iorom2", "", "rom in 2nd IO area (Minerva only 0x14000 address)", EMU_OPT_CHAR, 0, NULL},
-{"joy1", "", "1-8 SDL joystick index", EMU_OPT_INT, 0, NULL},
-{"joy2", "", "1-8 SDL joystick index", EMU_OPT_INT, 0, NULL},
-{"kbd", "", "keyboard language DE, GB, ES, IT, US", EMU_OPT_CHAR, 0, "US"},
-{"no_patch", "n", "disable patching the rom", EMU_OPT_INT, 0, NULL},
-{"palette", "", "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display", EMU_OPT_INT, 0, NULL},
-{"print", "", "command to use for print jobs", EMU_OPT_CHAR, 0, "lpr"},
-{"ramtop", "r", "The memory space top (128K + QL ram, not valid if ramsize set)", EMU_OPT_INT, 256, NULL},
-{"ramsize", "", "The size of ram", EMU_OPT_INT, 0, NULL},
-{"resolution", "g", "resolution of screen in mode 4", EMU_OPT_CHAR, 0, "512x256"},
-{"romdir", "", "path to the roms", EMU_OPT_CHAR, 0, "roms"},
-{"romport", "", "rom in QL rom port (0xC000 address)", EMU_OPT_CHAR, 0, NULL},
-{"romim", "", "rom in QL rom port (0xC000 address, legacy alias for romport)", EMU_OPT_CHAR, 0, NULL},
-{"ser1", "", "device for ser1", EMU_OPT_CHAR, 0, NULL},
-{"ser2", "", "device for ser2", EMU_OPT_CHAR, 0, NULL},
-{"ser3", "", "device for ser3", EMU_OPT_CHAR, 0, NULL},
-{"ser4", "", "device for ser4", EMU_OPT_CHAR, 0, NULL},
-{"shader", "", "0 = Disabled, 1 = Use flat shader, 2 = Use curved shader", EMU_OPT_INT, 0, NULL},
-{"shader_file", "", "Path to shader file to use if SHADER is 1 or 2", EMU_OPT_CHAR, 0, "shader.glsl"},
-{"skip_boot", "", "1 = skip f1/f2 screen, 0 = show f1/f2 screen", EMU_OPT_INT, 1, NULL},
-{"sound", "", "volume in range 1-8, 0 to disable", EMU_OPT_INT, 0, NULL},
-{"speed", "", "speed in factor of BBQL speed, 0.0 for full speed", EMU_OPT_CHAR, 0, "0.0"},
-{"strict_lock", "", "enable strict file locking", EMU_OPT_INT, 0, NULL},
-{"sysrom", "", "system rom", EMU_OPT_CHAR, 0, "MIN198.rom"},
-{"win_size", "w", "window size 1x, 2x, 3x, max, full", EMU_OPT_CHAR, 0, "1x"},
-{"verbose", "v", "verbosity level 0-3", EMU_OPT_INT, 1, NULL},
-{NULL},
+	{ "bdi1", "", "file exposed by the BDI interface", EMU_OPT_CHAR, 0,
+	  NULL },
+	{ "boot_cmd", "b", "command to run on boot (executed in basic)",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "boot_device", "d", "device to load BOOT file from", EMU_OPT_CHAR, 0,
+	  "mdv1" },
+	{ "cpu_hog", "", "1 = use all cpu, 0 = sleep when idle", EMU_OPT_INT, 1,
+	  NULL },
+	{ "device", "", "QDOS_name,path,flags (may be used multiple times",
+	  EMU_OPT_DEV, 0, NULL },
+	{ "fast_startup", "", "1 = skip ram test (does not affect Minerva)",
+	  EMU_OPT_INT, 0, NULL },
+	{ "filter", "", "enable bilinear filter when zooming", EMU_OPT_INT, 0,
+	  NULL },
+	{ "fixaspect", "",
+	  "0 = 1:1 pixel mapping, 1 = 2:3 non square pixels, 2 = BBQL aspect non square pixels",
+	  EMU_OPT_INT, 0, NULL },
+	{ "iorom1", "", "rom in 1st IO area (Minerva only 0x10000 address)",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "iorom2", "", "rom in 2nd IO area (Minerva only 0x14000 address)",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "joy1", "", "1-8 SDL joystick index", EMU_OPT_INT, 0, NULL },
+	{ "joy2", "", "1-8 SDL joystick index", EMU_OPT_INT, 0, NULL },
+	{ "kbd", "", "keyboard language DE, GB, ES, IT, US", EMU_OPT_CHAR, 0,
+	  "US" },
+	{ "no_patch", "n", "disable patching the rom", EMU_OPT_INT, 0, NULL },
+	{ "palette", "",
+	  "0 = Full colour, 1 = Unsaturated colours (slightly more CRT like), 2 =  Enable grayscale display",
+	  EMU_OPT_INT, 0, NULL },
+	{ "print", "", "command to use for print jobs", EMU_OPT_CHAR, 0,
+	  "lpr" },
+	{ "ramtop", "r",
+	  "The memory space top (128K + QL ram, not valid if ramsize set)",
+	  EMU_OPT_INT, 256, NULL },
+	{ "ramsize", "", "The size of ram", EMU_OPT_INT, 0, NULL },
+	{ "resolution", "g", "resolution of screen in mode 4", EMU_OPT_CHAR, 0,
+	  "512x256" },
+	{ "romdir", "", "path to the roms", EMU_OPT_CHAR, 0, "roms" },
+	{ "romport", "", "rom in QL rom port (0xC000 address)", EMU_OPT_CHAR, 0,
+	  NULL },
+	{ "romim", "",
+	  "rom in QL rom port (0xC000 address, legacy alias for romport)",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "mouse", "",
+	  "mouse emulation type: QIMSI = QIMSI PS/2 mouse registers in the ROM port ($FED0-$FEDF), disables ROMPORT; QIMI = QJump QIMI mouse interface ($1BF9C-$1BFBE). ICE = Eidersoft mICE bus mouse in the ROM port cartridge ($FFFE/$FFFF). THOR = CST Thor mouse port (MC6821 PIA at $FE040-$FE04F, repeated every $100 up to $FFF40). All replace the Pointer Environment mouse",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "qsrom", "",
+	  "rom in QSound expansion space (0xC0000, or the first free 16K block above RAMTOP)",
+	  EMU_OPT_CHAR, 0, NULL }, // <--- ¡ QSOUND !
+	{ "qsfreq", "", "QSound frequency in hz", EMU_OPT_INT, 0,
+	  NULL }, // <--- ¡ QSOUND !
+	{ "qsstereo", "",
+	  "QSound stereo mode: 0 = Mono, 1 = Stereo ABC, 2 = Stereo ACB",
+	  EMU_OPT_INT, 1, NULL },
+	{ "qliont_ay", "",
+	  "QLIONT AY-3-8910 sound chip (1 = on, 0 = off): QSound without ROM, control register at $80002A and data at $800028, 2.5 MHz clock. Replaces QSROM",
+	  EMU_OPT_INT, 0, NULL },
+	{ "mdv1", "", "MDV1 cartridge image file (.mdv)", EMU_OPT_CHAR, 0,
+	  NULL },
+	{ "mdv2", "", "MDV2 cartridge image file (.mdv)", EMU_OPT_CHAR, 0,
+	  NULL },
+	{ "mdv_reverse", "", "Read MDV sectors in reverse order", EMU_OPT_INT,
+	  0, NULL },
+	{ "ipc_rom", "",
+	  "IPC firmware (Intel HEX) for the low level 8049 emulation",
+	  EMU_OPT_CHAR, 0, NULL },
+	{ "hw_trace", "",
+	  "1 = print hardware activity every second, 2 = also the IPC sound orders, 3 = also a supervisor mode profile (debugging aid)",
+	  EMU_OPT_INT, 0, NULL },
+	{ "ser1", "", "device for ser1", EMU_OPT_CHAR, 0, NULL },
+	{ "ser2", "", "device for ser2", EMU_OPT_CHAR, 0, NULL },
+	{ "ser3", "", "device for ser3", EMU_OPT_CHAR, 0, NULL },
+	{ "ser4", "", "device for ser4", EMU_OPT_CHAR, 0, NULL },
+	{ "shader", "",
+	  "CRT shader, 0 = Disabled, bits 0-1: 1 = flat, 2 = curved, 0 = colour only; bits 6-7: 64 = grey, 128 = amber, 192 = green",
+	  EMU_OPT_INT, 0, NULL },
+	{ "skip_boot", "", "1 = skip f1/f2 screen, 0 = show f1/f2 screen",
+	  EMU_OPT_INT, 1, NULL },
+	{ "sound", "", "volume in range 1-8, 0 to disable", EMU_OPT_INT, 0,
+	  NULL },
+	{ "speed", "", "speed in factor of BBQL speed, 0.0 for full speed",
+	  EMU_OPT_CHAR, 0, "0.0" },
+	{ "cpu_timing", "",
+	  "CPU timing model: 68008 (original QL, default) or 68000 (16 bit bus)",
+	  EMU_OPT_INT, 68008, NULL },
+	{ "zx8301_contention", "",
+	  "Emulate ZX8301 video RAM contention at SPEED 1 (1 = on, 0 = off)",
+	  EMU_OPT_INT, 1, NULL },
+	{ "ntsc", "",
+	  "NTSC video timing: 60 Hz, 262 lines (1) instead of PAL 50 Hz, 312 lines (0)",
+	  EMU_OPT_INT, 0, NULL },
+	{ "zx8301_vsync_lines", "",
+	  "Lines from the frame interrupt to the first visible line (-1 = default: 32 PAL, 4 NTSC)",
+	  EMU_OPT_INT, -1, NULL },
+	{ "strict_lock", "", "enable strict file locking", EMU_OPT_INT, 0,
+	  NULL },
+	{ "sysrom", "", "system rom", EMU_OPT_CHAR, 0, "MIN198.rom" },
+	{ "win_size", "w", "window size 1x, 2x, 3x, max, full", EMU_OPT_CHAR, 0,
+	  "1x" },
+	{ "verbose", "v", "verbosity level 0-3", EMU_OPT_INT, 1, NULL },
+	{ NULL },
 };
 
-static ArgParser* parser;
+static ArgParser *parser;
 
 static bool match(const char *name, const char *option)
 {
@@ -98,13 +157,15 @@ static void toupperStr(sds lower)
 	}
 }
 
-static sds replaceX(sds fileString) {
+static sds replaceX(sds fileString)
+{
 	if (strstr(fileString, "%x")) {
 		sds *split;
 		int count;
 		sds pidStr;
 
-		split = sdssplitlen(fileString, sdslen(fileString), "%x", 2, &count);
+		split = sdssplitlen(fileString, sdslen(fileString), "%x", 2,
+				    &count);
 
 		if (count > 2) {
 			fprintf(stderr, "WARNING: Only one %%x allowed\n");
@@ -113,7 +174,8 @@ static sds replaceX(sds fileString) {
 		sdsfree(fileString);
 		fileString = sdsnew("");
 
-		fileString = sdscatprintf(fileString, "%s%x%s", split[0], getpid(), split[1]);
+		fileString = sdscatprintf(fileString, "%s%x%s", split[0],
+					  getpid(), split[1]);
 
 		sdsfreesplitres(split, count);
 	}
@@ -272,14 +334,15 @@ void deviceInstall(sds *device, int count)
 	}
 }
 
-static int iniHandler(void* user, const char* section, const char* name,
-                   const char* value)
+static int iniHandler(void *user, const char *section, const char *name,
+		      const char *value)
 {
 	int i;
 
 	if (match(name, "device")) {
 		int count;
-		sds *splitDevice = sdssplitlen(value, strlen(value), ",", 1, &count);
+		sds *splitDevice =
+			sdssplitlen(value, strlen(value), ",", 1, &count);
 		deviceInstall(splitDevice, count);
 		sdsfreesplitres(splitDevice, count);
 		return 0;
@@ -321,21 +384,24 @@ int emulatorOptionParse(int argc, char **argv)
 		int j;
 		sds helpItem = sdsempty();
 
-		if(strlen(emuOptions[i].alias)) {
-			helpItem = sdscatprintf(helpItem, "  -%s,", emuOptions[i].alias);
+		if (strlen(emuOptions[i].alias)) {
+			helpItem = sdscatprintf(helpItem, "  -%s,",
+						emuOptions[i].alias);
 		} else {
 			helpItem = sdscatprintf(helpItem, "  ");
 		}
 		helpItem = sdscatprintf(helpItem, "--%s", emuOptions[i].option);
 
 		if (emuOptions[i].type == EMU_OPT_INT) {
-			helpItem = sdscatprintf(helpItem, " [%d]", emuOptions[i].intVal);
+			helpItem = sdscatprintf(helpItem, " [%d]",
+						emuOptions[i].intVal);
 		} else if (emuOptions[i].type == EMU_OPT_CHAR) {
 			if (emuOptions[i].charVal != NULL) {
-				helpItem = sdscatprintf(helpItem, " [%s]", emuOptions[i].charVal);
+				helpItem = sdscatprintf(helpItem, " [%s]",
+							emuOptions[i].charVal);
 			}
 		}
-		for (j = sdslen(helpItem); j < 30; j++){
+		for (j = sdslen(helpItem); j < 30; j++) {
 			helpItem = sdscat(helpItem, " ");
 		}
 
@@ -362,8 +428,8 @@ int emulatorOptionParse(int argc, char **argv)
 
 		if (strlen(emuOptions[i].alias)) {
 			optItem = sdscatprintf(optItem, "%s %s",
-				emuOptions[i].option,
-				emuOptions[i].alias);
+					       emuOptions[i].option,
+					       emuOptions[i].alias);
 		} else {
 			optItem = sdscat(optItem, emuOptions[i].option);
 		}
@@ -385,8 +451,10 @@ int emulatorOptionParse(int argc, char **argv)
 
 	for (i = 0; i < ap_count(parser, "device"); i++) {
 		int count;
-		const char *device = ap_get_str_value_at_index(parser, "device", i);
-		sds *splitDevice = sdssplitlen(device, strlen(device), ",", 1, &count);
+		const char *device =
+			ap_get_str_value_at_index(parser, "device", i);
+		sds *splitDevice =
+			sdssplitlen(device, strlen(device), ",", 1, &count);
 		deviceInstall(splitDevice, count);
 		sdsfreesplitres(splitDevice, count);
 	}
@@ -415,9 +483,9 @@ char *emulatorOptionString(const char *name)
 
 	i = 0;
 	while (emuOptions[i].option != NULL) {
-		if ((strcmp(emuOptions[i].option, name) == 0)
-			&& (emuOptions[i].type == EMU_OPT_CHAR)
-			&& (emuOptions[i].charVal != NULL)) {
+		if ((strcmp(emuOptions[i].option, name) == 0) &&
+		    (emuOptions[i].type == EMU_OPT_CHAR) &&
+		    (emuOptions[i].charVal != NULL)) {
 			return emuOptions[i].charVal;
 		}
 		i++;

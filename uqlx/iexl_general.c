@@ -10,6 +10,13 @@
 #include "memaccess.h"
 #include "mmodes.h"
 #include "unixstuff.h"
+#include "mdv.h"
+#include "ipc.h"
+#include "cycles68k.h"
+#include "zx8301.h"
+extern unsigned hw_trace_irq_taken[8];   /* general.c, HW_TRACE */
+extern void ql_irq_accepted(int level);  /* general.c */
+extern void hw_trace_sample(void);       /* general.c, HW_TRACE >= 3 */
 
 void    (**qlux_table)(void);
 
@@ -18,6 +25,8 @@ int trace_rts=0;
 #endif
 
 int extInt=0;
+extern uint64_t ql_snapshot_at;
+extern void QLSDLSnapshotLine(void);
 
 #ifdef DEBUG
 #define TRR  {trace_rts=20;}
@@ -83,6 +92,26 @@ gshort    code;
 int      nInst;
 #endif
 
+uint64_t ql_total_instructions = 0;
+uint64_t ql_cycles = 0;            /* emulated 68008 clock cycles */
+
+/* Dynamic part of the cost: evaluated BEFORE the instruction is executed,
+ * while flags, registers and the extension word are still unchanged. */
+static unsigned cycles_extra(uw16 op)
+{
+  int cond = 0;
+  switch (cyc_kind[op]) {
+  case CYC_K_BCC:
+  case CYC_K_DBCC:
+  case CYC_K_SCC:
+    cond = ConditionTrue[(op >> 8) & 15]() ? 1 : 0;
+    break;
+  default:
+    break;
+  }
+  return cycles_dynamic(op, cond, (const int32_t *)reg, (uint16_t)RW(pc));
+}
+
 Cond    trace,supervisor,xflag,negative,zero,overflow,carry;    /*flags */
 char    iMask;                          /* SR interrupt mask */
 Cond    stopped;                        /* processor status */
@@ -99,6 +128,7 @@ w32             RTOP;                           /* QL ram top address */
 short   exception;                      /* pending exception */
 w32             badAddress;                     /* bad address address */
 w16             readOrWrite;            /* bad address action */
+rw16            saved_sr;
 w32             dummy;                          /* free 4 bytes for who care */
 Ptr             dest;                           /* Mac address for
 read+write operations */
@@ -140,13 +170,16 @@ void ProcessInterrupts(void)
 	  usp=(*m68k_sp);
 	  (*m68k_sp)=ssp;
 	}
+      ql_cycles += cyc_interrupt;
+      hw_trace_irq_taken[pendingInterrupt & 7]++;
       ExceptionIn(24+pendingInterrupt);
       WriteLong((*m68k_sp)-4,(Ptr)pc-(Ptr)memBase);
       (*m68k_sp)-=6;
       WriteWord(*m68k_sp,GetSR());
       SetPCX(24+pendingInterrupt);
       iMask=pendingInterrupt;
-      pendingInterrupt=0;
+      /* the request stays while its source is pending (level 2 and 5) */
+      ql_irq_accepted(iMask);
       supervisor=true;
       trace=false;
       stopped=false;
@@ -173,7 +206,11 @@ void REGP1 PutSR(aw16 sr)
   Cond oldSuper;
   oldSuper=supervisor;
   trace=(sr&0x8000)!=0;
-  extraFlag=doTrace || trace || exception!=0;
+  iMask=(char)(sr>>8)&7;
+  /* A pending interrupt is taken right after the instruction that lowers
+   * the mask (MOVE to SR, ANDI to SR, RTE), not at the end of the chunk */
+  extraFlag=doTrace || trace || exception!=0 || pendingInterrupt==7 ||
+    pendingInterrupt>iMask;
   if(extraFlag)
     {
       nInst2=nInst;
@@ -185,7 +222,6 @@ void REGP1 PutSR(aw16 sr)
   zero=(sr&0x0004)!=0;
   overflow=(sr&0x0002)!=0;
   carry=(sr&0x0001)!=0;
-  iMask=(char)(sr>>8)&7;
   if(oldSuper!=supervisor)
     {
       if(supervisor)
@@ -205,7 +241,8 @@ void REGP1 PutSR(aw16 sr)
 rw16 REGP1 BusErrorCode(aw16 dataOrCode)
 {
   if(supervisor) dataOrCode+=4;
-  return dataOrCode+readOrWrite+8;
+  if(badCodeAddress) dataOrCode+=8;
+  return (code&0xffe0)+dataOrCode+readOrWrite;
 }
 
 
@@ -226,6 +263,7 @@ void REGP1 SetPCX(int i)
 
   if(((char)(uintptr_t)pc&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -246,6 +284,7 @@ void SetPCB(w32 addr, int type)
 
   if(((char)addr&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -271,6 +310,7 @@ void REGP1 SetPC(w32 addr)
 
   if(((char)addr&1)!=0)
     {
+      saved_sr=GetSR();
       exception=3;
       extraFlag=true;
       nInst2=nInst;
@@ -362,7 +402,7 @@ void ExceptionProcessing()
 	{
 	  extraFlag=exception<3 || (exception>9 &&
 				    exception<32) || exception>47;
-	  if(!extraFlag) extraFlag=ReadLong(0x28050l)==0;
+	  if(!extraFlag) extraFlag=ReadLong(ql_sysvars + 0x50)==0;
 	  if(extraFlag)
 	    {
 	      UpdateNowRegisters();
@@ -378,7 +418,7 @@ void ExceptionProcessing()
       ExceptionIn(exception);
       (*m68k_sp)-=6;
       WriteLong((*m68k_sp)+2,(uintptr_t)pc-(uintptr_t)memBase);
-      WriteWord((*m68k_sp),GetSR());
+      WriteWord((*m68k_sp),(exception==3)? saved_sr : GetSR());
       SetPCX(exception);
       if(exception==3) /* address error */
 	{
@@ -387,8 +427,13 @@ void ExceptionProcessing()
 	  WriteLong((*m68k_sp)+2,badAddress);
 	  WriteWord((*m68k_sp),BusErrorCode(badCodeAddress? 2:1));
 	  badCodeAddress=false;
-	  if(nInst) exception=0;
-	} else exception=0; /* allow interrupts */
+	  xflag = (saved_sr & 16) != 0;
+	  negative = (saved_sr & 8) != 0;
+	  zero = (saved_sr & 4) != 0;
+	  overflow = (saved_sr & 2) != 0;
+	  carry = (saved_sr & 1) != 0;
+	}
+      exception=0; /* allow interrupts */
       extraFlag=false;
       supervisor=true;
       trace=false;
@@ -434,19 +479,57 @@ rw32 AREGP GetEA_mBad(ashort r)
   return 0;
 }
 
+/* Cycle at which the current frame ends (vertical sync), set by QLRun.
+ * Execution stops at the instruction that reaches it, so the frame interrupt
+ * is raised on time, as on a QL; UINT64_MAX at unlimited speed. */
+uint64_t ql_frame_end = UINT64_MAX;
+
 void ExecuteLoop(void)  /* fetch and dispatch loop */
 {
   while(--nInst>=0)
     {
+      ql_total_instructions++; // Continuous monotonic instruction counter
 
 #ifdef TRACE
       if (pc>tracelo) DoTrace();
 #endif
 
-      qlux_table[code=RW(pc++)&0xffff]();
+      uint64_t t0 = ql_cycles;
+      code = RW(pc++) & 0xffff;
+      ql_cycles += cyc_table[code];
+      if (cyc_kind[code])
+        ql_cycles += cycles_extra((uw16)code);
+      if (zx_contention)
+        zx8301_insn(t0, (uint32_t)((Ptr)pc - (Ptr)memBase) - 2, cyc_pw[code]);
+      qlux_table[code]();
+
+      if (ql_cycles >= ql_snapshot_at) {
+          ql_snapshot_at = UINT64_MAX;
+          QLSDLSnapshotLine();
+      }
+
+      // Vertical sync: stop here, QLRun raises the frame interrupt. A
+      // pending exception is still processed below, but no more
+      // instructions are executed in this frame.
+      if (ql_cycles >= ql_frame_end) {
+          nInst = 0;
+          nInst2 = 0;
+      }
+
+      // The tape advances continuously, not only when the CPU accesses its
+      // registers, so the gap edge raises its interrupt in time.
+      if ((ql_total_instructions & 15) == 0) {
+        mdv_sync();
+        ipc_lle_sync();
+        hw_trace_sample();
+      }
     }
 
-  if (SDL_GetAtomicInt(&doPoll)) dosignal();
+  /* With a cycle budget (SPEED > 0) the frame is closed by QLRun when the
+   * 68008 has executed all its cycles; firing the frame interrupt here, when
+   * the host tick arrives, would cut the frame short. Only at unlimited speed
+   * is the host tick the time reference. */
+  if (!speed && SDL_GetAtomicInt(&doPoll)) dosignal();
 
   if(extraFlag)
     {

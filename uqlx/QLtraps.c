@@ -13,6 +13,7 @@
 #include "QDOS.h"
 #include "QL_screen.h"
 #include "unixstuff.h"
+#include "ipc.h"
 
 /*extern int schedCount;*/
 extern int HasPTR;
@@ -55,6 +56,11 @@ void trap1(void)
 
 	/*	if ((op>3 && op<6) || (op>7 && op<0xc))*/
 	DECR_SC(); /*schedCount--;*/
+
+	/* With the low level IPC, MT.IPCOM and MT.BAUD are left to QDOS, which
+	 * talks to the 8049 itself */
+	if (ipc_lle_active() && (op == 0x11 || op == 0x12))
+		goto doTrap;
 
 	if (op >= 0x11 && op <= 0x15) /* Gestione dell'hardware */
 	{
@@ -263,7 +269,7 @@ void btrap3(void)
 void trap4(void)
 {	w32 a;
 
-	a=ReadLong(ReadLong(0x28064))+0x16;
+	a=ReadLong(ReadLong(ql_sysvars + 0x64))+0x16;
 	WriteByte(a,ReadByte(a)|0x80);
 }
 #endif

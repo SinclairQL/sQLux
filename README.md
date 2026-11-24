@@ -176,7 +176,7 @@ need to set RAMTOP = 256
 sQLux supports additional parameters over those used for uqlxrc. See the [Documentation](docs/sqlux.md) for more details.
 
 # Shader support
-sQLux has support for GPU shaders, to emulate the effects seen when using a CRT display. See the [Shader documentation](docs/shaders.md) for more details on how to build and run sQLux with GPU shaders.
+sQLux has support for GPU shaders, to emulate the effects seen when using a CRT display. See the [Shader documentation](docs/shaders.md) for more details.
 
 ## Developers notes
 

@@ -318,9 +318,52 @@ ddier:
 	BlockMoveData(savedRegs, aReg, 4 * sizeof(w32));
 }
 
+/*
+ * Reset of the QL: close the channels of these drivers that the QL left
+ * open, as their host side (files, sockets, pipes) would otherwise stay open
+ * for ever, and forget where the drivers were linked. The memory of the QL
+ * may hold anything at this point (a reset often follows a crash), so every
+ * address read from it is checked before it is used.
+ */
+void ResetDrivers(void)
+{
+	uw32 base = ReadLong(ql_sysvars + 0x78); /* sv_chbas */
+	uw32 top = ReadLong(ql_sysvars + 0x7c); /* sv_chtop */
+	struct DRV *p;
+	uw32 ca;
+
+	if (!(base & 3) && base >= 131072 && top > base && top <= RTOP &&
+	    top - base <= 4 * 4096) {
+		for (ca = base; ca + 4 <= top; ca += 4) {
+			uw32 cc = ReadLong(ca);
+			char *f;
+
+			if ((cc & 1) || cc < 131072 || cc > RTOP - 130)
+				continue;
+			f = (char *)memBase + cc;
+			if (DGET_ID(f) != DRV_ID)
+				continue;
+			for (p = Drivers; p->open != NULL; p++) {
+				if (p->ref && p->ref == (w32)RL(f + 4)) {
+					(*(p->close))(p - Drivers,
+						      DGET_PRIV(f));
+					DSET_ID(f, 0);
+					break;
+				}
+			}
+		}
+	}
+
+	for (p = Drivers; p->open != NULL; p++)
+		p->ref = 0;
+	num_drivers = 0;
+}
+
 void InitDrivers()
 {
 	struct DRV *p = Drivers;
+
+	num_drivers = 0;
 
 	DEV_IO_ADDR = 0x1C020;
 	DEV_CLOSE_ADDR = 0x1C022;
