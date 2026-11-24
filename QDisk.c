@@ -147,6 +147,7 @@ static uw8 format_table_dd[36] = { 0,	 3,    6,    0x80, 0x83, 0x86, 1, 4,
 				   0x85, 0x88, 0,    6,	   12,	 1,    7, 13,
 				   2,	 8,    14,   3,	   9,	 15,   4, 10,
 				   16,	 5,    11,   17 };
+static const uw8 format_table_ss[9] = { 0, 3, 6, 1, 4, 7, 2, 5, 8 };
 static uw8 format_table_hd[36] = {
 	0,    2,    4,	  6,	8,    10,   12,	  14,	16,   0x80, 0x82, 0x84,
 	0x86, 0x88, 0x8a, 0x8c, 0x8e, 0x90, 1,	  3,	5,    7,    9,	  11,
@@ -155,6 +156,7 @@ static uw8 format_table_hd[36] = {
 
 struct FLP_FCB {
 	struct qDiscHeader *qdh;
+	int imageSectorsPerCylinder;
 	struct sectorInfo *si /*[NPOOL]*/;
 	char *buffer /*[512*NPOOL]*/;
 	int bufcount;
@@ -178,7 +180,7 @@ struct FLP_FCB *curr_flpfcb;
 
 static OSErr DiskRead(long, Ptr, long, long);
 static OSErr LoadLogSector(int, Ptr);
-static void FixLogical(uw8 *, Cond);
+static void FixLogical(uw8 *, Cond, Cond);
 static OSErr WriteLogSector(int, Ptr);
 static OSErr WriteBlock0(void);
 w32 qfLen(FileNum);
@@ -315,6 +317,7 @@ static OSErr LoadSector0(void)
 {
 	OSErr e;
 	int i;
+	Cond singleSided = false;
 	char buffer[512];
 
 	e = DiskRead(curr_flpfcb->refNum, buffer, 512, 0);
@@ -338,11 +341,29 @@ static OSErr LoadSector0(void)
 		if (curr_flpfcb->DiskType == qlwa)
 			curr_flpfcb->fatSectors = QWA_SPM(buffer);
 		else {
-			/* **FIXME**,plain wrong also fixlogoical!! */
+			struct stat image;
+			int sectorsPerTrack = QDH_SPT(buffer);
+			int fatBytes;
+
+			if (QDH_SPB(buffer) == 0)
+				return QERR_NI;
+
+			singleSided = curr_flpfcb->DiskType == floppyDD &&
+				      sectorsPerTrack == 9 &&
+				      QDH_SPC(buffer) == sectorsPerTrack;
+			curr_flpfcb->imageSectorsPerCylinder = QDH_SPC(buffer);
+			/* A full raw image still has a slot for the unused side. */
+			if (singleSided &&
+			    fstat(curr_flpfcb->refNum, &image) == 0 &&
+			    S_ISREG(image.st_mode) &&
+			    image.st_size == (long)QDH_TRACKS(buffer) *
+						     sectorsPerTrack * 2 * 512)
+				curr_flpfcb->imageSectorsPerCylinder *= 2;
+
+			fatBytes = 96 + 3 * (QDH_TOTAL(buffer) / QDH_SPB(buffer));
+			/* Include the final partial allocation-map sector on SS disks. */
 			curr_flpfcb->fatSectors =
-				(3 * QDH_TOTAL(buffer) / QDH_SPB(buffer) + 96) /
-				512;
-			/* printf("guessing %d sectors FAT length\n",curr_flpfcb->fatSectors); */
+				(fatBytes + (singleSided ? 511 : 0)) / 512;
 		}
 
 		curr_flpfcb->bufcount =
@@ -364,7 +385,8 @@ static OSErr LoadSector0(void)
 			if (curr_flpfcb->DiskType == floppyHD)
 				curr_flpfcb->fatSectors <<= 1;
 			FixLogical(QDH_LTP(curr_flpfcb->qdh),
-				   curr_flpfcb->DiskType == floppyDD);
+				   curr_flpfcb->DiskType == floppyDD,
+				   singleSided);
 		}
 
 		InitDiskTables();
@@ -542,12 +564,12 @@ static OSErr DiskWrite(long fref, Ptr dest, long count, long offset)
 static OSErr LoadPhySector(uw8 side, uw16 track, uw16 sector, Ptr p)
 {
 	OSErr e;
+	long abs;
 
 	if (curr_flpfcb->buffer != nil) {
-		e = DiskRead(curr_flpfcb->refNum, p, 512,
-			     ((long)track * QDH_SPC(curr_flpfcb->qdh) + sector +
-			      side * QDH_SPT(curr_flpfcb->qdh))
-				     << 9);
+		abs = (long)track * curr_flpfcb->imageSectorsPerCylinder +
+		      sector + side * QDH_SPT(curr_flpfcb->qdh);
+		e = DiskRead(curr_flpfcb->refNum, p, 512, abs << 9);
 	} else
 		e = ERR_UNINITIALIZED_DISK;
 	return e;
@@ -584,7 +606,7 @@ static OSErr WritePhySector(uw8 side, uw16 track, uw16 sector, Ptr p)
 	long abs;
 
 	if (curr_flpfcb->buffer != nil) {
-		abs = (long)track * QDH_SPC(curr_flpfcb->qdh) + sector +
+		abs = (long)track * curr_flpfcb->imageSectorsPerCylinder + sector +
 		      side * QDH_SPT(curr_flpfcb->qdh);
 		QDH_SET_UPDTS(curr_flpfcb->qdh,
 			      QDH_UPDTS(curr_flpfcb->qdh) + 1);
@@ -2369,19 +2391,20 @@ void QDiskClose(struct mdvFile *f)
 
 /* check and fix logical to physical translation table */
 
-static void FixLogical(uw8 *ltp, Cond ql5a)
+static void FixLogical(uw8 *ltp, Cond ql5a, Cond singleSided)
 {
 	Cond t[36];
 	short s, n, i, x;
 	Cond error;
 
-	n = (s = ql5a ? 9 : 18) << 1; /* wow! what a nice cunning expression */
+	s = ql5a ? 9 : 18;
+	n = singleSided ? s : 2 * s;
 	for (i = 0; i < n; i++)
 		t[i] = false;
 	error = false;
 	for (i = 0; i < n; i++) {
 		x = ltp[i] & 127;
-		if (x >= s) {
+		if (x >= s || (singleSided && (ltp[i] & 0x80))) {
 			error = true;
 			break;
 		}
@@ -2393,7 +2416,9 @@ static void FixLogical(uw8 *ltp, Cond ql5a)
 		}
 		t[x] = true;
 	}
-	if (error)
+	if (error && singleSided)
+		memcpy(ltp, format_table_ss, sizeof(format_table_ss));
+	else if (error)
 		BlockMoveData(ql5a ? format_table_dd : format_table_hd, ltp,
 			      36);
 }
