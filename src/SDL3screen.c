@@ -663,6 +663,10 @@ int QLSDLScreen(void)
 			     SDL_GetError());
 		return 1;
 	}
+	ql_windowid = SDL_GetWindowID(ql_window);
+
+	/* Initialize keyboard table (doesn't belong here, but was convenient...) */
+	setKeyboardLayout();
 
 	ql_renderer = SDL_CreateRenderer(ql_window, NULL);
 
