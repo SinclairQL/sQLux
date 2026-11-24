@@ -24,13 +24,14 @@
 
 /*#include "QTimer.h"
 #include "QColor.h"
-#include "QSound.h"
+#include "qsound.h"
 #include "QDisk.h"
 #include "QSerial.h" */
 #include <string.h>
 /*#include "ConfigDialog.h"*/
 #include "QFilesPriv.h"
 #include "xqlmouse.h"
+#include "ipc.h"
 #include "Xscreen.h"
 
 static short ramItem = -1;
@@ -39,9 +40,19 @@ extern int do_update;
 static Cond qemlPatch = false;
 
 int isMinerva = 0;
+/* Minerva moves the sysvars when the screens are doubled (F3 at boot) */
+uw32 ql_sysvars = 0x28000;
 uw32 orig_kbenc;
 
 int testMinervaVersion(char *ver);
+
+/* True if a .mdv image is configured (mdv1 or mdv2): the original ROM
+ * microdrive driver, which drives $18020-$18023, is then kept */
+static bool mdv_images_configured(void)
+{
+	return strlen(emulatorOptionString("mdv1")) ||
+	       strlen(emulatorOptionString("mdv2"));
+}
 
 bool LookFor(uint32_t *a, uint32_t w, int nMax)
 {
@@ -220,7 +231,8 @@ int LoadMainRom(void) /* load and modify QL ROM */
 		if (!isMinerva) {
 			if (p)
 				p = PatchFind();
-			if (p) {
+			/* With the low level IPC the ROM talks to the 8049 itself */
+			if (p && !ipc_lle_active()) {
 				WW((((Ptr)memBase + IPC_CMD_ADDR)),
 				   IPC_CMD_CODE);
 				WW((((Ptr)memBase + IPCR_CMD_ADDR)),
@@ -230,18 +242,23 @@ int LoadMainRom(void) /* load and modify QL ROM */
 			}
 		}
 
-		WW((((Ptr)memBase + 0x4000 +
-		     RW((uw16 *)((Ptr)memBase + 0x124)))),
-		   MDVR_CMD_CODE); /* read mdv sector */
-		WW((((Ptr)memBase + 0x4000 +
-		     RW((uw16 *)((Ptr)memBase + 0x126)))),
-		   MDVW_CMD_CODE); /* write mdv sector */
-		WW(((uw16 *)((Ptr)memBase + 0x4000 +
-			     RW((uw16 *)((Ptr)memBase + 0x128)))),
-		   MDVV_CMD_CODE); /* verify mdv sector */
-		WW(((uw16 *)((Ptr)memBase + 0x4000 +
-			     RW((uw16 *)((Ptr)memBase + 0x12a)))),
-		   MDVH_CMD_CODE); /* read mdv sector header */
+		// Only patch low-level sector drivers if no .mdv image is configured
+		// (mdv1 or mdv2).
+		// If an .mdv cartridge is present, preserve the original ROM 68008 code that reads $18020/$18022.
+		if (!mdv_images_configured()) {
+			WW((((Ptr)memBase + 0x4000 +
+			     RW((uw16 *)((Ptr)memBase + 0x124)))),
+			   MDVR_CMD_CODE); /* read mdv sector */
+			WW((((Ptr)memBase + 0x4000 +
+			     RW((uw16 *)((Ptr)memBase + 0x126)))),
+			   MDVW_CMD_CODE); /* write mdv sector */
+			WW(((uw16 *)((Ptr)memBase + 0x4000 +
+				     RW((uw16 *)((Ptr)memBase + 0x128)))),
+			   MDVV_CMD_CODE); /* verify mdv sector */
+			WW(((uw16 *)((Ptr)memBase + 0x4000 +
+				     RW((uw16 *)((Ptr)memBase + 0x12a)))),
+			   MDVH_CMD_CODE); /* read mdv sector header */
+		}
 
 		if (!isMinerva && emulatorOptionInt("fast_startup"))
 			WW(((uw16 *)((Ptr)memBase + RL(&memBase[1]))),
@@ -295,6 +312,17 @@ void restore_regs(void *p)
 
 extern int tracetrap;
 
+/* Minerva soft reset (F1-F4 at the boot menu, or CALL 390): the ROM scan runs
+ * again with memory wiped, so hook it once more */
+void RearmRomInit(void)
+{
+	if (!isMinerva || !qemlPatch)
+		return;
+	if (RW((Ptr)memBase + ROMINIT_CMD_ADDR) == ROMINIT_CMD_CODE)
+		return;
+	WW((Ptr)memBase + ROMINIT_CMD_ADDR, ROMINIT_CMD_CODE);
+}
+
 void InitROM(void)
 {
 	w32 saved_regs[16];
@@ -315,6 +343,10 @@ void InitROM(void)
 
 	save_regs(saved_regs);
 
+	/* A6 is not the sysvars here, MT.INF returns them in A0 */
+	QLtrap(1, 0, 20000l);
+	ql_sysvars = aReg[0];
+
 	do_update = 1; /* flip in screen RAM */
 
 #ifdef OLD_PATCH
@@ -331,8 +363,10 @@ void InitROM(void)
 	ZeroKeyboardBuffer();
 #endif
 
-	/* delete old MDV drivers (for optical reasons) */
-	WriteLong(0x28048, 0);
+	/* delete old MDV drivers (for optical reasons) only if no physical .mdv is loaded */
+	if (!mdv_images_configured()) {
+		WriteLong(ql_sysvars + 0x48, 0);
+	}
 
 	InitFileDrivers();
 	InitDrivers();
@@ -386,9 +420,9 @@ void InitROM(void)
 	if (reg[0] == 0) {
 		if (V3)
 			printf("Initialising TK2 device defaults\n");
-		WriteLong(0x28070 + 0x3c, aReg[0]);
-		WriteLong(0x28070 + 0x40, 32 + aReg[0]);
-		WriteLong(0x28070 + 0x44, 64 + aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x3c, aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x40, 32 + aReg[0]);
+		WriteLong(ql_sysvars + 0x70 + 0x44, 64 + aReg[0]);
 		WriteWord(aReg[0], strlen(DATAD));
 		strcpy((char *)((Ptr)memBase + aReg[0] + 2), DATAD);
 		WriteWord(aReg[0] + 32, strlen(PROGD));
@@ -399,7 +433,7 @@ void InitROM(void)
 
 	/* link in Minerva keyboard handling */
 #if 1
-	if (isMinerva) {
+	if (isMinerva && !ipc_lle_active()) {
 		reg[1] = 8;
 		reg[2] = 0;
 		QLtrap(1, 0x18, 200000);

@@ -298,7 +298,7 @@ void MReadKbd()
       reg[2]=mod;
 
 
-      aReg[2]=ReadLong(0x2804c);
+      aReg[2]=ReadLong(ql_sysvars+0x4c);
       /* printf("calling subr %d\n",((w16)(uw16)ReadWord(0x150))+0x4000);*/
       QLsubr(ReadWord(0x150)+0x4000,2000000);
       /*printf("result: %d\n",reg[0]);*/
@@ -306,7 +306,7 @@ void MReadKbd()
 
   if (gKeyDown)
     {
-      aReg[2]=ReadLong(0x2804c);
+      aReg[2]=ReadLong(ql_sysvars+0x4c);
       reg[5]=-1;/*(gKeyDown!=0)<<4;*/
 
       QLsubr(ReadWord(0x152)+0x4000,2000000);
@@ -316,7 +316,7 @@ void MReadKbd()
 #if 0
 void MEndRep()
 {
-      aReg[2]=ReadLong(0x2804c);
+      aReg[2]=ReadLong(ql_sysvars+0x4c);
       reg[5]=0;/*(gKeyDown!=0)<<4;*/
 
       QLsubr(ReadWord(0x152)+0x4000,2000000);

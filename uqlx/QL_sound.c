@@ -5,6 +5,10 @@
 #include "debug.h"
 #include "QL68000.h"
 #include "QL_sound.h"
+#include "qsound.h"
+extern int qliont_ay_mapped; /* memaccess.c */
+#include "ipc.h"
+#include "emulator_options.h"
 
 /*
  * Structures only used in this file
@@ -52,6 +56,7 @@ static SDL_AudioSpec have;
 static sound_data sound;
 static current_sound c_sound;
 
+
 /*
  * Local functions
  */
@@ -66,8 +71,8 @@ static void randomAdjust();
 static void fuzzAdjust();
 
 static int pitchToHalfSampleCount(int pitch);
-static void populateBuffer(int start, int samples, Sint8* buffer, int len);
-static void silenceBuffer(int start, Sint8* buffer, int len);
+static void populateBuffer(int start, int samples, Sint16* buffer, int len);
+static void silenceBuffer(int start, Sint16* buffer, int len);
 
 /*
  * Local definitions
@@ -75,11 +80,13 @@ static void silenceBuffer(int start, Sint8* buffer, int len);
 #define UNUSED(x) (void)(x)
 #define TICK_8049 22917		// Number of IPC ticks per second
 
-#define FREQUENCY 24000		// Requested sampling frequency
-#define SAMPLES 256		// Number of samples in a callback
+#define FREQUENCY 44100		// Requested sampling frequency
+#define SAMPLES 512		// Number of samples in a callback
 #define MAX_IPC_PARAMS 16 	// For the case where all 16 slots yield 8 bits
 
 void initSound(int volume) {
+
+
 	if ((volume != 0) && (!sound_enabled)) {
 		// Create the sound driver
 		if(!SDL_Init(SDL_INIT_AUDIO)) {
@@ -91,8 +98,8 @@ void initSound(int volume) {
 
 		SDL_zero(have);
 		have.freq = FREQUENCY;
-		have.format = SDL_AUDIO_S8;
-		have.channels = 1;
+		have.format = SDL_AUDIO_S16;
+		have.channels = 2; // Open SDL audio device in stereo
 
 		// SDL3 converts our buffers to the device format via the stream,
 		// so we always generate at the requested FREQUENCY.
@@ -106,10 +113,9 @@ void initSound(int volume) {
 			}
 			return;
 		}
-
-		// The device is opened paused; start it running.
-		SDL_ResumeAudioStreamDevice(QLSDLStream);
-
+		if (V1) {
+			printf("Audio frequency: %d Hz\n", have.freq);
+		}
 		sound.mutex = SDL_CreateMutex();
 
 		if (!sound.mutex) {
@@ -123,6 +129,17 @@ void initSound(int volume) {
 		sound.in_use = -1; 		// index in use by callback (-1 = none)
 		sound.last_written = -1;	// index last written by by BeepSound (-1 = None)
 		sound_enabled = true;
+
+		/* Initialize QSound */
+		int qsfreq = emulatorOptionInt("qsfreq");
+		if (qliont_ay_mapped && qsfreq <= 0)
+			qsfreq = QLIONT_AY_CLOCK;
+		const int qsstereo = emulatorOptionInt("qsstereo");
+		qsound_init(qsfreq, have.freq, qsstereo);
+		ipc_lle_audio_init(have.freq);
+
+		// The device is opened paused; start it running.
+		SDL_ResumeAudioStreamDevice(QLSDLStream);
 	}
 	return;
 }
@@ -261,22 +278,23 @@ void KillSound() {
  * SDL3 audio stream callback. SDL asks us for `additional_amount` bytes of
  * data; we generate it in SAMPLES-sized chunks using the existing
  * audioCallback() (which fills a buffer SDL2-style) and feed it to the stream.
- * The format is signed 8-bit mono, so one byte == one sample.
+ * The format is signed 16-bit stereo, so a sample frame is 4 bytes.
  */
 static void SDLCALL QLAudioStreamCallback(void* userdata, SDL_AudioStream* stream,
 					  int additional_amount, int total_amount)
 {
 	UNUSED(total_amount);
 
-	Sint8 buffer[SAMPLES];
+	Sint16 buffer[SAMPLES * 2];
+	const int frame = 2 * sizeof(Sint16);
 
 	while (additional_amount > 0) {
-		int len = (additional_amount < (int)sizeof(buffer))
-				  ? additional_amount
-				  : (int)sizeof(buffer);
+		// Whole sample frames only
+		int len = ((additional_amount + frame - 1) / frame) * frame;
 
-		// Default to silence; audioCallback only writes when playing.
-		SDL_memset(buffer, 0, len);
+		if (len > (int)sizeof(buffer))
+			len = (int)sizeof(buffer);
+
 		audioCallback(userdata, (Uint8*)buffer, len);
 		SDL_PutAudioStreamData(stream, buffer, len);
 
@@ -287,6 +305,13 @@ static void SDLCALL QLAudioStreamCallback(void* userdata, SDL_AudioStream* strea
 void audioCallback(void* userdata, Uint8* stream, int len) {
 	UNUSED(userdata);
 
+	/* Clear 16-bit audio buffer */
+	memset(stream, 0, len);
+	
+	Sint16* buffer = (Sint16*)stream;
+	// In stereo (16-bit x 2 channels = 4 bytes per frame), total time frames is:
+	int total_samples = len / (2 * sizeof(Sint16)); // 16-bit sample count
+    
 	int written = 0;		// Total samples written this callback
 	int to_write = 0;		// Samples to write in next iteration
 
@@ -324,19 +349,17 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 	}
 
 	if ((c_sound.left < 0) || (sound.in_use == -1)){
-		// Nothing to play: the stream buffer is pre-filled with
-		// silence by QLAudioStreamCallback, so just leave it.
 		soundOn = false;
 	}
 	else {
 		do {
 			if (c_sound.pitch_left == 0) {
 				// Play one note forever
-				to_write = len - written;
+				to_write = total_samples - written;
 			}
-			else if (c_sound.pitch_left > (len - written)) {
+			else if (c_sound.pitch_left > (total_samples - written)) {
 				// Can fill buffer with current note
-				to_write = len - written;
+				to_write = total_samples - written;
 				c_sound.pitch_left -= to_write;
 				if (c_sound.left) {
 					c_sound.left -= to_write;
@@ -356,10 +379,10 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 				c_sound.pitch_left = -1;
 			}
 
-			populateBuffer(written, to_write, (Sint8*)stream, len);
+			populateBuffer(written, to_write, buffer, total_samples);
 			written += to_write;
 
-			if (written < len) {
+			if (written < total_samples) {
 				// Reached the end of the pitch
 				// New pitch, or silence?
 				if (c_sound.left >= 0) {
@@ -367,14 +390,19 @@ void audioCallback(void* userdata, Uint8* stream, int len) {
 					setPitchDuration();
 				}
 				else {
-					silenceBuffer(written, (Sint8*)stream, len);
-					written = len;
+					silenceBuffer(written, buffer, total_samples);
+					written = total_samples;
 				}
 			}
 		}
-		while (written < len);
+		while (written < total_samples);
 	}
+	/* Mix 16-bit QSound audio in stereo */
+	qsound_render_mix_s16((int16_t *)stream, total_samples);
+	/* Speaker driven by the low level IPC */
+	ipc_lle_audio_mix((int16_t *)stream, total_samples);
 }
+
 
 static void getNewPitch() {
 	int change = sound.beep[sound.in_use].grd_y;
@@ -491,7 +519,7 @@ static int pitchToHalfSampleCount(int pitch)
 	return (int)((have.freq * b / TICK_8049) + 0.5f);
 }
 
-static void populateBuffer(int start, int samples, Sint8* buffer, int len)
+static void populateBuffer(int start, int samples, Sint16* buffer, int len)
 {
 	if (!c_sound.wave_state){
 		c_sound.wave_state = -1;
@@ -501,7 +529,11 @@ static void populateBuffer(int start, int samples, Sint8* buffer, int len)
 	int buffer_pos = start;
 
 	while (buffer_pos < (samples + start)) {
-		buffer[buffer_pos++] = audio_volume * c_sound.wave_state;
+		Sint16 val = (Sint16)(audio_volume * 256 * c_sound.wave_state);
+		// Write beeper sample to both channels (Left and Right)
+		buffer[buffer_pos * 2]     = val;
+		buffer[buffer_pos * 2 + 1] = val;
+		buffer_pos++;
 		++c_sound.cycle_point;
 
 		if (c_sound.cycle_point >= (c_sound.half_cycle)) {
@@ -512,11 +544,13 @@ static void populateBuffer(int start, int samples, Sint8* buffer, int len)
 	}
 }
 
-static void silenceBuffer(int start, Sint8* buffer, int len)
+static void silenceBuffer(int start, Sint16* buffer, int len)
 {
 	int buffer_pos = start;
 	while (buffer_pos < len) {
-		buffer[buffer_pos++] = 0;
+		buffer[buffer_pos * 2]     = 0;
+		buffer[buffer_pos * 2 + 1] = 0;
+		buffer_pos++;
 	}
 	c_sound.wave_state = 0;
 	c_sound.cycle_point = 0;

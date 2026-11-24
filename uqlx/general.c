@@ -10,6 +10,7 @@
 #define STATIC
 #define INLINE
 
+#include <string.h>
 #include "QL68000.h"
 #include "sqlux_bdi.h"
 #include "dummies.h"
@@ -19,12 +20,24 @@
 #include <time.h>
 
 #include "sqlux_debug.h"
+#include "QL_screen.h"
+#include "SDL3screen.h"
+#include "mdv.h"
+#include "ipc.h"
+#include "zx8301.h"
+#include "qimi.h"
+#include "thor.h"
+
+extern int display_mode;
+extern volatile bool is_display_blank;
 
 volatile bool is_display_blank = false; // Display active by default (bit 1 set to 0)
 void debug(char *);
 void debug2(char *, long);
 
 extern void vmMarkScreen(uw32 /*addr*/);
+extern int speed;                              // unixstuff.c
+extern uint64_t ql_cycles;                     // iexl_general.c
 
 #ifdef DEBUG
 int trace_rts = 0;
@@ -37,6 +50,7 @@ void WriteHWWord(aw32 addr, aw16 d);
 
 #include "memaccess.h"
 #include "mmodes.h"
+#include "emulator_options.h"
 
 INLINE rw32 GetEA_m2(ashort) AREGP;
 INLINE rw32 GetEA_m5(ashort) AREGP;
@@ -143,23 +157,240 @@ w8 ReadRTClock(w32 addr)
 	return (w8)t;
 }
 
+/*
+ * HW_TRACE (debugging aid): hardware activity per second of emulated time,
+ * printed on the console: interrupts accepted by level, interrupts cleared
+ * in $18021 by source, accesses to the ZX8302 registers and IPC traffic.
+ */
+unsigned hw_trace_irq_taken[8];
+static int hw_trace = -1;
+static unsigned hwt_frames, hwt_ack[5], hwt_r18020, hwt_w18002, hwt_w18003,
+		hwt_w18022;
+static uint64_t hwt_cycles0, hwt_wait0;
+static uint64_t hwt_late_sum, hwt_late_max;
+static unsigned hwt_late_n;
+
+/* Cycles by which the frame ran past its end before the frame interrupt */
+void hw_trace_vsync_late(uint64_t late)
+{
+	hwt_late_sum += late;
+	if (late > hwt_late_max)
+		hwt_late_max = late;
+	hwt_late_n++;
+}
+
+/* HW_TRACE >= 3: cycles spent in supervisor mode, by 4K page of the PC,
+ * sampled every 16 instructions */
+#define HWT_PAGES 4096
+static uint64_t hwt_prof_last, hwt_user, hwt_super, hwt_page[HWT_PAGES];
+
+void hw_trace_sample(void)
+{
+	uint64_t d;
+
+	if (hw_trace < 3)
+		return;
+	d = ql_cycles - hwt_prof_last;
+	hwt_prof_last = ql_cycles;
+	if (supervisor) {
+		uint32_t a = (uint32_t)((char *)pc - (char *)memBase);
+		hwt_super += d;
+		hwt_page[(a >> 12) % HWT_PAGES] += d;
+	} else {
+		hwt_user += d;
+	}
+}
+
+static void hw_trace_profile(void)
+{
+	uint64_t total = hwt_user + hwt_super;
+	int i, k;
+
+	if (!total)
+		return;
+	printf("HW: supervisor %.1f %% (%llu cycles/frame) | top:",
+	       100.0 * (double)hwt_super / (double)total,
+	       (unsigned long long)(hwt_super / hwt_frames));
+	for (k = 0; k < 6; k++) {
+		int best = -1;
+		for (i = 0; i < HWT_PAGES; i++)
+			if (hwt_page[i] && (best < 0 || hwt_page[i] > hwt_page[best]))
+				best = i;
+		if (best < 0)
+			break;
+		printf(" $%05X %.1f%%", best << 12,
+		       100.0 * (double)hwt_page[best] / (double)total);
+		hwt_page[best] = 0;
+	}
+	printf("\n");
+	memset(hwt_page, 0, sizeof(hwt_page));
+	hwt_user = hwt_super = 0;
+}
+extern uint64_t zx8301_wait_total;       /* zx8301.c */
+extern volatile bool is_display_blank;
+
+static void hw_trace_frame(void)
+{
+	unsigned bits = 0, notes = 0, ipc_ms = 0, host_ms = 0;
+
+	if (hw_trace < 0) {
+		hw_trace = emulatorOptionInt("hw_trace");
+		ipc_lle_set_trace(hw_trace);
+	}
+	if (!hw_trace)
+		return;
+	if (++hwt_frames < (unsigned)zx8301_hz())
+		return;
+	if (ipc_lle_active())
+		ipc_lle_trace(&bits, &notes, &ipc_ms, &host_ms);
+	{
+		uint64_t cyc = ql_cycles - hwt_cycles0;
+		uint64_t wait = zx8301_wait_total - hwt_wait0;
+
+		printf("HW: frames %u | IRQ L2 %u L5 %u L7 %u | ack frame %u gap %u "
+		       "interface %u transmit %u external %u | r18020 %u w18002 %u "
+		       "w18003 %u w18022 %u | IPC bits %u notes %u time %u ms "
+		       "(host %u ms) | CPU %llu cycles, contention %.1f %%%s | "
+		       "VSYNC late avg %llu max %llu cycles\n",
+		       hwt_frames, hw_trace_irq_taken[2], hw_trace_irq_taken[5],
+		       hw_trace_irq_taken[7], hwt_ack[3], hwt_ack[0], hwt_ack[1],
+		       hwt_ack[2], hwt_ack[4], hwt_r18020, hwt_w18002, hwt_w18003,
+		       hwt_w18022, bits, notes, ipc_ms, host_ms,
+		       (unsigned long long)cyc,
+		       cyc ? 100.0 * (double)wait / (double)cyc : 0.0,
+		       is_display_blank ? " (display off)" : "",
+		       (unsigned long long)(hwt_late_n ? hwt_late_sum / hwt_late_n : 0),
+		       (unsigned long long)hwt_late_max);
+		hwt_late_sum = hwt_late_max = 0;
+		hwt_late_n = 0;
+		hwt_cycles0 = ql_cycles;
+		hwt_wait0 = zx8301_wait_total;
+	}
+	if (hw_trace >= 3)
+		hw_trace_profile();
+	fflush(stdout);
+	hwt_frames = hwt_r18020 = hwt_w18002 = hwt_w18003 = hwt_w18022 = 0;
+	memset(hwt_ack, 0, sizeof(hwt_ack));
+	memset(hw_trace_irq_taken, 0, sizeof(hw_trace_irq_taken));
+}
+
+/*
+ * Interrupt request lines of the 68008, as in zx8302.v of the MiSTer QL core.
+ * IPL0 and IPL2 are tied together; the IPC drives them through P2.2, and
+ * IPL1 through P2.3. The ZX8302 also pulls IPL1 low while any interrupt is
+ * pending in $18021, so the level is 2 for as long as a pending bit has not
+ * been cleared (a level, not an event), 5 or 7 when the IPC asks for them.
+ * Level 7 (non maskable) is edge triggered: it is taken once per assertion.
+ */
+static int ipc_ipl_lines = 3;           /* bit 0 = P2.2, bit 1 = P2.3; 1 = inactive */
+static int nmi_taken = 0;
+
+void ql_update_ipl(void)
+{
+	int ipl0 = ipc_ipl_lines & 1;
+	int ipl1 = ((ipc_ipl_lines >> 1) & 1) && !(theInt & 0x1f);
+	int level = (ipl0 ? 0 : 5) + (ipl1 ? 0 : 2);
+
+	if (level != 7)
+		nmi_taken = 0;
+	else if (nmi_taken)
+		level = 0;
+	pendingInterrupt = level;
+
+	/* taken after the current instruction if the mask allows it */
+	if (level == 7 || level > iMask) {
+		extraFlag = true;
+		if (nInst > 0) {
+			nInst2 = nInst;
+			nInst = 0;
+		}
+	}
+}
+
+/* Reset of the QL, ZX8302 side: no interrupt pending, the IPC link idle and
+ * the IPC itself (the 8049, or the high level one) started again. The ZX8301
+ * has no reset: its display register keeps its value until the ROM writes
+ * it, and the frame goes on. */
+static void ipc_hle_reset(void);
+extern void ipc_lle_reset(void);        /* ipc.c */
+
+void ql_hw_reset(void)
+{
+	theInt = 0;
+	nmi_taken = 0;
+	ipc_ipl_lines = 3;
+	ipc_hle_reset();
+	ipc_lle_reset();
+	ql_update_ipl();
+}
+
+/* The IPC changed its interrupt lines (P2.2 and P2.3) */
+void ql_set_ipc_ipl(int lines)
+{
+	ipc_ipl_lines = lines & 3;
+	ql_update_ipl();
+}
+
+/* The CPU has just accepted an interrupt of this level */
+void ql_irq_accepted(int level)
+{
+	if (level == 7)
+		nmi_taken = 1;
+	ql_update_ipl();
+}
+
 void FrameInt(void)
 {
-	theInt = 8;
-	pendingInterrupt = 2;
-	*((uw8 *)memBase + 0x280a0l) = 16;
-	extraFlag = true;
-	nInst2 = nInst;
-	nInst = 0;
+	hw_trace_frame();
+	/* the frame interrupt is latched on the rising edge of VSYNC */
+	if ((theInt & 8) == 0) {
+		theInt |= 8;
+		ql_update_ipl();
+	}
+
+	// Real vertical sync (50 Hz PAL / 60 Hz NTSC): from here the beam
+	// position is counted in emulated cycles. At SPEED = 1 a frame lasts
+	// 7.5 MHz / hz cycles; at unlimited speed (speed = 0) the screen is
+	// copied at once.
+	extern void QLSDLFrameStart(uint64_t now, uint64_t frame_len);
+	extern uint64_t ql_frame_origin;        // unixstuff.c
+	uint64_t frame_cycles = speed ? zx8301_frame_budget(speed) : 0;
+	// The frame of the ZX8301 begins at its exact cycle, not at the end
+	// of the instruction that was running (up to a hundred cycles or so
+	// later, and different in every frame): otherwise its lines and its
+	// chunks would move a little in every frame with respect to the CPU,
+	// which on a QL they never do. Only the interrupt waits for the end
+	// of the instruction.
+	uint64_t origin = ql_cycles;
+	if (speed && ql_frame_origin <= ql_cycles &&
+	    ql_cycles - ql_frame_origin <= zx8301_speed_unit())
+		origin = ql_frame_origin;
+	zx8301_frame(origin, speed);
+	ipc_lle_frame(frame_cycles, zx8301_frame_cycles());
+	QLSDLFrameStart(origin, frame_cycles);
+}
+
+void ql_trigger_gap_interrupt(void) {
+    theInt |= 0x01;        // Bit 0: ZX8302 GAP interrupt pending
+    ql_update_ipl();
 }
 
 void WriteInt(uint8_t d)
 {
+	int i;
+
+	for (i = 0; i < 5; i++)
+		if (d & (1 << i))
+			hwt_ack[i]++;
+
 	// remove the mask bits
 	d &= 0x1F;
 
-	// clear interrupts
+	// clear interrupts: the interrupt line drops when nothing is pending
 	theInt &= ~d;
+	ql_update_ipl();
+	qimi_int_acked();
+	thor_int_acked();
 }
 
 uint8_t IntRead(void)
@@ -174,6 +405,15 @@ static int ipc_return;
 static int ipc_count = 0;
 static int ipc_return;
 static uint32_t ipc_read;
+
+static void ipc_hle_reset(void)
+{
+	ipc_wait = 1;
+	ipc_rcvd = 1;
+	ipc_previous = 0x10;
+	ipc_count = 0;
+	ipc_read = 0;
+}
 
 void ipc_exec(int command)
 {
@@ -246,6 +486,9 @@ void WriteHWByte(aw32 addr, aw8 d)
 
 	switch (addr) {
 	case 0x018063: /* Display control */
+        display_mode = (d & 8) ? 8 : 4;
+        qlscreen.qm_lo = (d & 0x80) ? 0x00028000 : 0x00020000;
+        qlscreen.qm_hi = qlscreen.qm_lo + qlscreen.qm_len;
 				// Bit 1 a 1 = Disabled display (Blank)
 				// Bit 1 a 0 = Enabled display
 		is_display_blank = (d & 0x02) ? true : false;
@@ -254,10 +497,12 @@ void WriteHWByte(aw32 addr, aw8 d)
 	case 0x018000:
 	case 0x018001:
 		/* ignore write to real-time clock registers */
-	case 0x018023:
-		/* ignore write to no reg */
 		break;
 	case 0x018002:
+		hwt_w18002++;
+		/* bits 0-2 select the baud rate, which also sets BAUDx4 (IPC T1) */
+		if (ipc_lle_active())
+			ipc_lle_set_baud(d);
 		if (d != 16) {
 			debug2("Write to transmit control >", d);
 			debug2("at pc-2 ", (Ptr)pc - (Ptr)memBase - 2);
@@ -267,16 +512,27 @@ void WriteHWByte(aw32 addr, aw8 d)
 	case 0x018003:
 		DEBUG_PRINT("Write to IPC link > %d\n", d);
 		DEBUG_PRINT("at (PC-2) %8.8x\n", (Ptr)pc - (Ptr)memBase - 2);
+		hwt_w18003++;
+		if (ipc_lle_active())
+			ipc_lle_write_comdata(d);
+		else
 		ipc_write(d);
 		break;
 	case 0x018020:
-		WriteMdvControl(d); /*TRR;*/
+		mdv_sync();
+		mdv_write_control(d);
 		break;
 	case 0x018021:
+		mdv_sync();
+		mdv_write_int(d);
 		WriteInt(d);
 		break;
 	case 0x018022:
+		hwt_w18022++;
 		debug2("Write to MDV/RS232 data >", d); /*TRR;*/
+		break;
+	case 0x018023:
+		/* ignore write to no reg */
 		break;
 	case 0x018100:
 		SQLUXBDISelect(d);
@@ -311,28 +567,33 @@ rw8 ReadHWByte(aw32 addr)
 	case 0x018002:
 	case 0x018003:
 		return res = ReadRTClock(addr);
-	case 0x018020:
-		debug("Read from MDV/RS232 status");
-		debug2("PC-2=", (Ptr)pc - (Ptr)memBase - 2);
-		//DEBUG_PRINT("020 read %x\n", m68k_get_reg(NULL, M68K_REG_PC));
+
+	case 0x018020: /* Read MDV / IPC status */
+		hwt_r18020++;
+		if (ipc_lle_active()) {
+			mdv_sync();
+			return (mdv_read_status() & 0x3f) | ipc_lle_status();
+		}
 		if (ipc_read) {
 			ret_byte = ipc_read & 0xff;
 			ipc_read >>= 8;
 			if (ipc_read == 0xa5) {
 				ipc_read = 0;
 			}
-			DEBUG_PRINT("020 ret_byte %x\n", ret_byte);
 			return ret_byte;
 		}
-		return 2;
-		break;
-	case 0x018021:
-		/*printf("reading $18021 at pc=%x\n",(Ptr)pc-(Ptr)memBase-2);*/
-		res = IntRead();
-	case 0x018022: /*debug("Read from MDV track 1");*/
-		break;
-	case 0x018023: /*debug("Read from MDV track 2");*/
-		break;
+
+		mdv_sync();
+		return mdv_read_status();
+
+	case 0x018021: /* Interrupt status */
+		mdv_sync();
+		return mdv_read_int() | IntRead();
+
+	case 0x018022: /* MDV track 1 data */
+	case 0x018023: /* MDV track 2 data */
+		mdv_sync();
+		return mdv_read_data();
 	case 0x018102:
 		res = SQLUXBDIStatus();
 		break;

@@ -1,0 +1,35 @@
+100 REMark sQLux timing tests: compare a real QL and the emulator
+110 REMark Needs expansion RAM (RESPR must return memory above $40000)
+120 REMark The routine masks interrupts (except T5), syncs to the ZX8302
+130 REMark clock and counts blocks of 2048 inner loop iterations in s secs
+140 s=10: c=RESPR(128): b=RESPR(16400): r=RESPR(4)
+150 IF b<262144 THEN PRINT "Expansion RAM required": STOP
+160 RESTORE 1000
+170 FOR i=0 TO 31: READ w: POKE_W c+2*i,w
+180 DIM n$(8,24),k(8)
+190 RESTORE 1100
+200 PRINT "9 tests of ";s;" s each. The screen is used as a buffer."
+210 FOR t=0 TO 8
+220   READ n$(t),i1,i2,m,a0,a1,d5,d7
+230   IF a0=-1 THEN a0=b: a1=b+8192
+240   POKE_W c+36,i1: POKE_W c+38,i2
+250   CALL c,s,m,0,0,d5,0,d7,a0,a1,r
+260   k(t)=PEEK_L(r)
+270 END FOR t
+280 MODE 4
+290 PRINT "Test";TO 26;"Blocks";TO 35;"Cycles/iteration"
+300 FOR t=0 TO 8
+310   PRINT n$(t);TO 26;k(t);TO 35;INT(10*s*7500000/(k(t)*2048)+.5)/10
+320 END FOR t
+1000 DATA 19074,26374,20032,124,1792,18425,1,-32768,10259,-18285,26620
+1010 DATA 10259,-10111,30208,10312,10825,12348,2047,20081,20081,20936,-6
+1020 DATA 21123,-18285,26346,9347,19074,26372,636,-9985,28672,20085
+1100 DATA "T0 CPU only",20081,20081,1,0,0,0,0
+1110 DATA "T1 copy internal RAM",10972,20081,1,131072,139264,0,0
+1120 DATA "T2 read internal RAM",19100,20081,1,131072,139264,0,0
+1130 DATA "T3 write internal RAM",10950,20081,1,131072,139264,0,0
+1140 DATA "T4 copy expansion RAM",10972,20081,1,-1,0,0,0
+1150 DATA "T5 copy, interrupts on",10972,20081,0,131072,139264,0,0
+1160 DATA "T6 MULU D5=0",-13115,20081,1,0,0,0,0
+1170 DATA "T7 MULU D5=$FFFF",-13115,20081,1,0,0,65535,0
+1180 DATA "T8 DIVU 100000/7",11271,-29499,1,0,0,7,100000

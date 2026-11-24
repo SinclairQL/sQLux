@@ -45,6 +45,210 @@ extern volatile bool is_display_blank; // Boolean to handle bit 1 of port $18063
 SDL_AtomicInt doPoll;
 
 SDL_Semaphore *sem50Hz = NULL;
+extern SDL_AtomicInt speed_toggle_request;   // unixstuff.c (F10)
+extern void emulatorRequestReset(void);     // unixstuff.c (F12)
+
+/* =============================================================== */
+/*   LINE BY LINE SCREEN CAPTURE IN EMULATED TIME                  */
+/*                                                                 */
+/*   On a real QL line L is fetched when the beam reaches it. Here */
+/*   every line is copied when it starts, counting lines of 64 us  */
+/*   (480 cycles at SPEED = 1) from the vertical sync: see         */
+/*   zx8301_line_time(). One buffer is filled while the renderer   */
+/*   draws the other one.                                          */
+/* =============================================================== */
+
+// PAL/NTSC frame geometry: see zx8301.c
+#include "zx8301.h"
+#include "ipc.h"
+#define QL_ACTIVE_LINES ZX_VISIBLE_LINES
+
+extern int display_mode;
+extern uint64_t ql_cycles;
+#include "qimsi.h"
+#include "qimi.h"
+#include "ice.h"
+#include "thor.h"
+
+uint64_t ql_snapshot_at = UINT64_MAX;  // cycle at which to copy the next line
+
+static uint8_t *snap_buf[2] = { NULL, NULL };
+static uint32_t snap_buf_len = 0;
+// Display mode and blank bit of $18063 when each line was captured, so that
+// programs that change them in the middle of the screen are drawn as on a QL
+/* The line the beam is scanning: its memory, as QL addresses, and the cycle
+ * at which it starts. The ZX8301 fetches its words one by one as the beam
+ * reaches them, so a write by the CPU to a word not fetched yet still shows
+ * in this frame (memaccess.c calls QLSDLScreenWrite). */
+uint32_t snap_hot_lo = 0, snap_hot_hi = 0;
+static uint32_t snap_hot_off = 0;       /* offset of the line in snap_buf */
+static int snap_hot_line = -1;
+static uint64_t snap_hot_t0 = 0;
+static uint8_t *snap_mode[2] = { NULL, NULL };
+static uint8_t *snap_blank[2] = { NULL, NULL };
+static int snap_lines = 0;
+static volatile int snap_front = -1;   // buffer drawn by the renderer (-1 = none)
+static int snap_back = 0;              // buffer being filled
+static int snap_line = 0;              // next line to copy
+static bool snap_active = false;       // a frame capture is in progress
+static uint64_t snap_base = 0;         // cycle of the frame interrupt
+static uint64_t snap_frame_len = 0;    // cycles per frame (0 = unlimited speed)
+static bool snapshot_blank = false;
+static int snapshot_mode = 4;
+
+static uint64_t snap_time_for_line(int line)
+{
+	// With larger resolutions the lines are spread over the 256 active ones.
+	unsigned vline = (unsigned)((uint64_t)line * QL_ACTIVE_LINES / qlscreen.yres);
+	return zx8301_line_time(snap_base, snap_frame_len, vline) + 1;
+}
+
+static bool snap_ensure_buffers(void)
+{
+	if (snap_buf_len == qlscreen.qm_len)
+		return true;
+
+	snap_front = -1;
+	for (int i = 0; i < 2; i++) {
+		free(snap_buf[i]);
+		free(snap_mode[i]);
+		free(snap_blank[i]);
+		snap_buf[i] = calloc(1, qlscreen.qm_len);
+		snap_mode[i] = calloc(1, qlscreen.yres);
+		snap_blank[i] = calloc(1, qlscreen.yres);
+	}
+	if (!snap_buf[0] || !snap_buf[1] || !snap_mode[0] || !snap_mode[1] ||
+	    !snap_blank[0] || !snap_blank[1]) {
+		for (int i = 0; i < 2; i++) {
+			free(snap_buf[i]);
+			free(snap_mode[i]);
+			free(snap_blank[i]);
+			snap_buf[i] = snap_mode[i] = snap_blank[i] = NULL;
+		}
+		snap_buf_len = 0;
+		snap_lines = 0;
+		return false;
+	}
+	snap_buf_len = qlscreen.qm_len;
+	snap_lines = qlscreen.yres;
+	return true;
+}
+
+static void snap_copy_line(int line)
+{
+	uint32_t off = (uint32_t)line * qlscreen.linel;
+
+	if (off + qlscreen.linel > snap_buf_len || line >= snap_lines)
+		return;
+	memcpy(snap_buf[snap_back] + off,
+	       (uint8_t *)memBase + qlscreen.qm_lo + off, qlscreen.linel);
+	snap_mode[snap_back][line] = (uint8_t)display_mode;
+	snap_blank[snap_back][line] = is_display_blank;
+
+	// From now on the beam scans this line
+	snap_hot_line = line;
+	snap_hot_t0 = snap_time_for_line(line);
+	snap_hot_lo = qlscreen.qm_lo + off;
+	snap_hot_hi = snap_hot_lo + qlscreen.linel;
+	snap_hot_off = off;
+}
+
+/* The CPU wrote n bytes at addr, in the line the beam is scanning: the
+ * words the ZX8301 has not fetched yet take the new value. Each word covers
+ * 8 pixel clocks (8 pixels in MODE 4, 4 double pixels in MODE 8). */
+void QLSDLScreenWrite(uint32_t addr, unsigned n)
+{
+	unsigned i;
+
+	if (snap_hot_line < 0 || !snap_buf[snap_back])
+		return;
+	for (i = 0; i < n; i++) {
+		uint32_t a = addr + i;
+		uint64_t word, fetch;
+
+		if (a < snap_hot_lo || a >= snap_hot_hi)
+			continue;
+		word = (a - snap_hot_lo) >> 1;
+		fetch = snap_hot_t0 + zx8301_px_cycles(snap_frame_len,
+			(uint64_t)zx8301_fetch_px + 8 * word);
+		/* relative to the line as it was copied: the screen base may have
+		 * changed since (double buffering, $18063 bit 7) */
+		if (ql_cycles < fetch &&
+		    snap_hot_off + (a - snap_hot_lo) < snap_buf_len)
+			snap_buf[snap_back][snap_hot_off + (a - snap_hot_lo)] =
+				*((uint8_t *)memBase + a);
+	}
+}
+
+static void snap_present(void)
+{
+	snap_hot_lo = snap_hot_hi = 0;
+	snap_hot_line = -1;
+	// The whole screen is hidden only if every line was blanked
+	bool all_blank = snap_lines > 0;
+	for (int i = 0; i < snap_lines && all_blank; i++)
+		all_blank = snap_blank[snap_back][i] != 0;
+	snapshot_blank = all_blank;
+	snapshot_mode = display_mode;
+	snap_front = snap_back;
+	snap_back ^= 1;
+	snap_active = false;
+
+	if (renderer_idle) {
+		SDL_Event event;
+		event.type = SDL_EVENT_USER;
+		event.user.type = SDL_EVENT_USER;
+		event.user.code = USER_CODE_SCREENREFRESH;
+		event.user.data1 = NULL;
+		event.user.data2 = NULL;
+		SDL_PushEvent(&event);
+	}
+}
+
+// Called from FrameInt (emulation thread): a new frame starts.
+void QLSDLFrameStart(uint64_t now, uint64_t frame_len)
+{
+	if (!snap_ensure_buffers()) {
+		ql_snapshot_at = UINT64_MAX;
+		return;
+	}
+
+	// If the previous frame was not completed (the CPU was stopped and
+	// time did not advance), copy the remaining lines: video memory does
+	// not change while the CPU is stopped.
+	if (snap_active) {
+		while (snap_line < qlscreen.yres)
+			snap_copy_line(snap_line++);
+		snap_present();
+	}
+
+	snap_line = 0;
+	snap_active = true;
+	snap_base = now;
+	snap_frame_len = frame_len;
+	ql_snapshot_at = snap_time_for_line(0);
+}
+
+// Called from ExecuteLoop when ql_cycles >= ql_snapshot_at.
+// Copies every line whose time has come.
+void QLSDLSnapshotLine(void)
+{
+	if (!snap_active) {
+		ql_snapshot_at = UINT64_MAX;
+		return;
+	}
+
+	while (snap_line < qlscreen.yres &&
+	       snap_time_for_line(snap_line) <= ql_cycles)
+		snap_copy_line(snap_line++);
+
+	if (snap_line >= qlscreen.yres) {
+		snap_present();
+		ql_snapshot_at = UINT64_MAX;
+	} else {
+		ql_snapshot_at = snap_time_for_line(snap_line);
+	}
+}
 
 typedef enum {
 	KEY_US,
@@ -367,14 +571,17 @@ extern int schedCount;
 int Pulse50Thread(void *ptr)
 {
 	Uint64 frequency = SDL_GetPerformanceFrequency();
-	Uint64 ticks_por_frame = frequency / 50; // Exactamente 20ms
-	Uint64 next_trigger = SDL_GetPerformanceCounter();
+	// A frame is a whole number of lines: 19.968 ms PAL (50.08 Hz),
+	// 16.558 ms NTSC (60.39 Hz)
+	Uint64 ticks_por_frame = frequency * zx8301_frame_cycles() / ZX_CPU_HZ;
+
+	Uint64 next_frame = SDL_GetPerformanceCounter();
 
 	while (active_metronome) {
 		Uint64 Now = SDL_GetPerformanceCounter();
 
-		// FRAME TRIGGER?
-		if (Now >= next_trigger) {
+		// VSYNC EDGE (ULA Line 271): Triggers CPU interrupt
+		if (Now >= next_frame) {
 			SDL_SetAtomicInt(&doPoll, 1);
 			schedCount = 0;
 
@@ -384,36 +591,26 @@ int Pulse50Thread(void *ptr)
 				}
 			}
 
-			// Screen Refresh
-			if (renderer_idle) {
-				SDL_Event event;
-				event.user.type = SDL_EVENT_USER;
-				event.user.code = USER_CODE_SCREENREFRESH;
-				event.user.data1 = NULL;
-				event.user.data2 = NULL;
-				event.type = SDL_EVENT_USER;
-				SDL_PushEvent(&event);
-			}
-
-			// PREPARE NEXT FRAME (DRIFT CORRECTION)
-			// We add 20ms to the PREVIOUS target time.
-			// This automatically corrects 49Hz to a rock-solid 50Hz.
-			next_trigger += ticks_por_frame;
-
-			// Watchdog protection (reset if lag exceeds 1 sec)
-			if (Now > next_trigger + frequency) {
-				next_trigger = Now + ticks_por_frame;
+			// Next frame at 20ms
+			next_frame += ticks_por_frame;
+			if (Now > next_frame + frequency) {
+				next_frame = Now + ticks_por_frame;
 			}
 		}
 
+		// The screen refresh is no longer triggered here: it is triggered
+		// by the line by line capture in emulated time (QLSDLSnapshotLine).
+
 		Now = SDL_GetPerformanceCounter();
-		if (Now < next_trigger) {
-			Uint64 remaining_ticks = next_trigger - Now;
+		Uint64 target = next_frame;
+
+		if (Now < target) {
+			Uint64 remaining_ticks = target - Now;
 			double ms_remaining =
 				((double)remaining_ticks * 1000.0) / frequency;
 
-			// If more than 1.5ms remain, sleep to save CPU cycles
-			if (ms_remaining > 1.5) {
+			// If more than 1.2ms remain, sleep to save CPU cycles
+			if (ms_remaining > 1.2) {
 				SDL_Delay((Uint32)(ms_remaining - 1.0));
 			} else {
 				// If remaining time is very short, use busy-wait for maximum precision
@@ -553,17 +750,39 @@ static int curframe = 0;
 
 static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 					uint8_t *emulatorScreenPtr,
-					uint8_t *emulatorScreenPtrEnd)
+					uint8_t *emulatorScreenPtrEnd,
+					const uint8_t *line_mode,
+					const uint8_t *line_blank)
 {
-	int curpix = 0;
+	int line = 0;
+
+	while (emulatorScreenPtr < emulatorScreenPtrEnd) {
+		// Each line is decoded with the mode it had when captured
+		uint8_t *lineEnd = emulatorScreenPtr + qlscreen.linel;
+		int mode = line_mode ? line_mode[line] : snapshot_mode;
+		bool blank = line_blank ? line_blank[line] != 0 : false;
 	uint32_t flashbg = 0;
 	int flashon = 0;
 
-	while (emulatorScreenPtr < emulatorScreenPtrEnd) {
+		if (lineEnd > emulatorScreenPtrEnd)
+			lineEnd = emulatorScreenPtrEnd;
+
+		if (blank) {
+			// A blanked line is black, whatever the mode
+			while (emulatorScreenPtr < lineEnd) {
+				emulatorScreenPtr += 2;
+				for (int i = 0; i < 8; i++)
+					*pixelPtr32++ = SDLcolors[0];
+			}
+			line++;
+			continue;
+		}
+
+		while (emulatorScreenPtr < lineEnd) {
 		uint8_t t1 = *emulatorScreenPtr++;
 		uint8_t t2 = *emulatorScreenPtr++;
 
-		switch (display_mode) {
+			switch (mode) {
 		case 8:
 			for (int i = 6; i > -2; i -= 2) {
 				uint8_t p1 = (t1 >> i) & 0x03;
@@ -581,7 +800,8 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 				*pixelPtr32++ = x;
 				*pixelPtr32++ = x;
 
-				// flash happens after the pixel
+					// flash happens after the pixel; it ends
+					// at the end of the line
 				if (flashbit) {
 					if (flashon == 0) {
 						flashbg = x;
@@ -590,20 +810,11 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 						flashon = 0;
 					}
 				}
-
-				// Handle flash end of line
-				// stride is fixed at 256 because mode 8
-				// is fixed at that size on QL and Q68
-				curpix++;
-				curpix %= 256;
-				if (curpix == 0) {
-					flashbg = 0;
-					flashon = 0;
-				}
 			}
 			break;
 		case 1:
 		case 4:
+			default:
 			for (int i = 7; i > -1; i--) {
 				uint8_t p1 = (t1 >> i) & 0x01;
 				uint8_t p2 = (t2 >> i) & 0x01;
@@ -618,6 +829,8 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 			break;
 		}
 	}
+		line++;
+	}
 
 	// frame counter for flash
 	curframe++;
@@ -626,15 +839,20 @@ static void emulatorUpdatePixelBufferQL(uint32_t *pixelPtr32,
 
 static void QLSDLUpdatePixelBuffer()
 {
+	int front = snap_front;
+	if (front < 0)
+		return;
+	uint8_t *emulatorScreenPtr = snap_buf[front];
+	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + snap_buf_len;
+
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_LockSurface(ql_screen);
 	}
 
-	uint8_t *emulatorScreenPtr = (uint8_t *)memBase + qlscreen.qm_lo;
-	uint8_t *emulatorScreenPtrEnd = emulatorScreenPtr + qlscreen.qm_len;
 
 	emulatorUpdatePixelBufferQL(ql_screen->pixels, emulatorScreenPtr,
-				    emulatorScreenPtrEnd);
+				    emulatorScreenPtrEnd, snap_mode[front],
+				    snap_blank[front]);
 
 	if (SDL_MUSTLOCK(ql_screen)) {
 		SDL_UnlockSurface(ql_screen);
@@ -646,7 +864,7 @@ void QLSDLRenderScreen(void)
 	SDL_UpdateTexture(ql_texture, NULL, ql_screen->pixels,
 			  ql_screen->pitch);
 	SDL_RenderClear(ql_renderer);
-	if (!is_display_blank) {
+	if (!snapshot_blank) {
 		SDL_RenderTexture(ql_renderer, ql_texture, NULL, &dest_rect);
 	}
 
@@ -733,16 +951,92 @@ unsigned int sdl_keyrow[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 int sdl_shiftstate, sdl_controlstate, sdl_altstate, sdl_grfstate;
 int usegrfstate = 0;
 
+/*
+ * Low level IPC: the 8049 scans the keyboard matrix itself. Every change of
+ * a key is queued for it in order (ipc_lle_key); SHIFT, CTRL and ALT are
+ * QL codes 0, 1 and 2, and follow the keys physically held. Only a key
+ * that the host keyboard handling translates into a QL key with other
+ * modifiers (a symbol that is in another place on the QL keyboard) must
+ * appear together with the modifiers of its translation: they are queued
+ * before the key and the physical ones are restored after its release, so
+ * the 8049 never sees both change in the same scan. Any other key leaves
+ * the modifiers alone, so that they can be pressed and released while it is
+ * held, as a game expects.
+ */
+static int lle_mods = 0;                /* modifiers queued: ALT 1, CTRL 2, SHIFT 4 */
+static int lle_forced_code = -1;        /* translated key held, -1 = none */
+
+static int SDLQLHostMods(void)
+{
+	return sdl_altstate | (sdl_controlstate << 1) | (sdl_shiftstate << 2);
+}
+
+static void SDLQLSetMods(int mods)
+{
+	static const struct { int bit, code; } m[3] = { { 4, 0 }, { 2, 1 }, { 1, 2 } };
+	int i;
+
+	for (i = 0; i < 3; i++)
+		if ((mods ^ lle_mods) & m[i].bit)
+			ipc_lle_key(m[i].code, mods & m[i].bit);
+	lle_mods = mods;
+}
+
 static void SDLQLKeyrowChg(int code, int press)
 {
 	code &= 0xff; // Make sure that array bounds are not exceeded
 	int row = 7 - code / 8;
 	int col = 0x1 << (code % 8);
+	int was = (sdl_keyrow[row] & col) != 0;
 
 	if (press)
 		sdl_keyrow[row] |= col;
 	else
 		sdl_keyrow[row] &= ~col;
+
+	if (ipc_lle_active() && was != (press != 0))
+		ipc_lle_key(code, press);
+}
+
+/* Called when a physical modifier changes */
+static void SDLQLModsChanged(void)
+{
+	if (ipc_lle_active() && lle_forced_code < 0)
+		SDLQLSetMods(SDLQLHostMods());
+}
+
+/*
+ * A key translated into a QL key code with modifiers. With the high level
+ * IPC only the keyrow state is updated (if hle_row); with the low level IPC
+ * the modifiers and the key are queued in the right order.
+ */
+static void SDLQLKeyEvent(int mod, int code, int pressed, int hle_row)
+{
+	if (!ipc_lle_active()) {
+		if (hle_row)
+			SDLQLKeyrowChg(code, pressed);
+		return;
+	}
+	if (pressed) {
+		if (code == lle_forced_code)
+			return;         /* key repeat */
+		if ((mod & 7) != SDLQLHostMods()) {
+			/* translated key: with the modifiers of its translation */
+			SDLQLSetMods(mod & 7);
+			lle_forced_code = code;
+		} else if (lle_forced_code >= 0) {
+			/* a key with the physical modifiers ends the translation */
+			lle_forced_code = -1;
+			SDLQLSetMods(SDLQLHostMods());
+		}
+		SDLQLKeyrowChg(code, 1);
+	} else {
+		SDLQLKeyrowChg(code, 0);
+		if (code == lle_forced_code) {
+			lle_forced_code = -1;
+			SDLQLSetMods(SDLQLHostMods());
+		}
+	}
 }
 
 // Adjust for Windows and X11 generating different scan codes for dead keys
@@ -1050,12 +1344,16 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 	//	sdl_grfstate); fflush(stdout);
 
 	/* Handle key pad entries that require shift - with the US keyboard */
-	if ((sym == SDLK_KP_MULTIPLY) && pressed && !sdlqlmap) {
+	if ((sym == SDLK_KP_MULTIPLY) && !sdlqlmap) {
+		if (pressed)
 		queueKey(1 << 2, QL_8, 0);
+		SDLQLKeyEvent(1 << 2, QL_8, pressed, 0);
 		return;
 	}
-	if ((sym == SDLK_KP_PLUS) && pressed && !sdlqlmap) {
+	if ((sym == SDLK_KP_PLUS) && !sdlqlmap) {
+		if (pressed)
 		queueKey(1 << 2, QL_EQUAL, 0);
+		SDLQLKeyEvent(1 << 2, QL_EQUAL, pressed, 0);
 		return;
 	}
 
@@ -1099,38 +1397,52 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 
 	/* Handle extended cursor keys */
 	/* backspace maps to control left */
-	if ((sym == SDLK_BACKSPACE) && pressed) {
+	if (sym == SDLK_BACKSPACE) {
+		if (pressed)
 		queueKey(1 << 1, 49, 0);
+		SDLQLKeyEvent(1 << 1, 49, pressed, 0);
 		return;
 	}
 	/* Delete maps to control right */
-	if ((sym == SDLK_DELETE) && pressed) {
+	if (sym == SDLK_DELETE) {
+		if (pressed)
 		queueKey(1 << 1, 52, 0);
+		SDLQLKeyEvent(1 << 1, 52, pressed, 0);
 		return;
 	}
 	/* Home maps to alt left */
-	if ((sym == SDLK_HOME) && pressed) {
+	if (sym == SDLK_HOME) {
+		if (pressed)
 		queueKey(1 << 0, 49, 0);
+		SDLQLKeyEvent(1 << 0, 49, pressed, 0);
 		return;
 	}
 	/* End maps to alt right */
-	if ((sym == SDLK_END) && pressed) {
+	if (sym == SDLK_END) {
+		if (pressed)
 		queueKey(1 << 0, 52, 0);
+		SDLQLKeyEvent(1 << 0, 52, pressed, 0);
 		return;
 	}
 	/* Insert maps to shift F4 */
-	if ((sym == SDLK_INSERT) && pressed) {
+	if (sym == SDLK_INSERT) {
+		if (pressed)
 		queueKey(1 << 2, 56, 0);
+		SDLQLKeyEvent(1 << 2, 56, pressed, 0);
 		return;
 	}
 	/* Page Up maps to shift down */
-	if ((sym == SDLK_PAGEUP) && pressed) {
+	if (sym == SDLK_PAGEUP) {
+		if (pressed)
 		queueKey(1 << 2, 50, 0);
+		SDLQLKeyEvent(1 << 2, 50, pressed, 0);
 		return;
 	}
 	/* Page Down maps to shift down */
-	if ((sym == SDLK_PAGEDOWN) && pressed) {
+	if (sym == SDLK_PAGEDOWN) {
+		if (pressed)
 		queueKey(1 << 2, 55, 0);
+		SDLQLKeyEvent(1 << 2, 55, pressed, 0);
 		return;
 	}
 
@@ -1138,10 +1450,12 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 	case SDLK_LSHIFT:
 	case SDLK_RSHIFT:
 		sdl_shiftstate = pressed;
+		SDLQLModsChanged();
 		return;
 	case SDLK_LCTRL:
 	case SDLK_RCTRL:
 		sdl_controlstate = pressed;
+		SDLQLModsChanged();
 		return;
 	case SDLK_RALT:
 		if (usegrfstate) {
@@ -1151,11 +1465,24 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 		// else drop through
 	case SDLK_LALT:
 		sdl_altstate = pressed;
+		SDLQLModsChanged();
 		return;
 	case SDLK_F11:
 		if (pressed)
 			SDLQLFullScreen();
 		return;
+	case SDLK_F10:          /* toggle configured speed / unlimited speed */
+		if (pressed)
+			SDL_SetAtomicInt(&speed_toggle_request, 1);
+		return;
+	case SDLK_F12: {        /* reset the QL (once per press) */
+		static int f12_down = 0;
+
+		if (pressed && !f12_down)
+			emulatorRequestReset();
+		f12_down = pressed;
+		return;
+	}
 	}
 
 #ifndef __WIN32__
@@ -1318,7 +1645,7 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 					if (pressed) {
 						queueKey(mod, code, 0);
 					}
-					SDLQLKeyrowChg(code, pressed);
+					SDLQLKeyEvent(mod, code, pressed, 1);
 					return; // Only one key can be mapped
 				}
 				i++;
@@ -1341,7 +1668,7 @@ void QLSDProcessKey(SDL_Keycode sym, SDL_Scancode scancode, int pressed)
 			if (pressed) {
 				queueKey(mod, code, 0);
 			}
-			SDLQLKeyrowChg(code, pressed);
+			SDLQLKeyEvent(mod, code, pressed, 1);
 			return; // Only one key can be mapped
 		}
 		i++;
@@ -1442,6 +1769,52 @@ static void QLProcessMouse(int x, int y)
 	QLMovePointer(qlx, qly);
 }
 
+static int qimsi_buttons_down;
+
+/* SDL3 gives the relative motion in fractions of a pixel: keep the rest */
+static void QLMouseRel(float xrel, float yrel, int *dx, int *dy)
+{
+	static float rx, ry;
+
+	rx += xrel;
+	ry += yrel;
+	*dx = (int)rx;
+	*dy = (int)ry;
+	rx -= *dx;
+	ry -= *dy;
+}
+
+static void QLQimsiButton(int sdl_button, int press)
+{
+	int bit;
+
+	switch (sdl_button) {
+	case SDL_BUTTON_LEFT:
+		bit = 1;
+		break;
+	case SDL_BUTTON_RIGHT:
+		bit = 2;
+		break;
+	case SDL_BUTTON_MIDDLE:
+		bit = 4;
+		break;
+	default:
+		return;
+	}
+	if (press)
+		qimsi_buttons_down |= bit;
+	else
+		qimsi_buttons_down &= ~bit;
+	if (qimsi_mapped)
+		qimsi_buttons(qimsi_buttons_down);
+	if (qimi_mapped)
+		qimi_buttons(qimsi_buttons_down);
+	if (ice_mapped)
+		ice_buttons(qimsi_buttons_down);
+	if (thor_mapped)
+		thor_buttons(qimsi_buttons_down);
+}
+
 #ifndef SDL_JOYSTICK_DISABLED
 static int QLConvertWhichToIndex(Sint32 which)
 {
@@ -1523,16 +1896,49 @@ int QLSDLProcessEvents(SDL_Event *event)
 	case SDL_EVENT_QUIT:
 		return 0;
 		break;
-	case SDL_EVENT_MOUSE_MOTION:
-		QLProcessMouse((int)event->motion.x, (int)event->motion.y);
+	case SDL_EVENT_MOUSE_MOTION: {
+		int dx, dy;
+
+		QLMouseRel(event->motion.xrel, event->motion.yrel, &dx, &dy);
+		if (qimsi_mapped)
+			qimsi_move(dx, dy);
+		else if (qimi_mapped)
+			qimi_move(dx, dy);
+		else if (ice_mapped)
+			ice_move(dx, dy);
+		else if (thor_mapped)
+			thor_move(dx, dy);
+		else
+			QLProcessMouse((int)event->motion.x, (int)event->motion.y);
 		//inside=1;
 		break;
+	}
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
-		QLButton(event->button.button, 1);
+		if (qimsi_mapped || qimi_mapped || ice_mapped ||
+		    thor_mapped)
+			QLQimsiButton(event->button.button, 1);
+		else
+			QLButton(event->button.button, 1);
 		break;
 	case SDL_EVENT_MOUSE_BUTTON_UP:
-		QLButton(event->button.button, 0);
+		if (qimsi_mapped || qimi_mapped || ice_mapped ||
+		    thor_mapped)
+			QLQimsiButton(event->button.button, 0);
+		else
+			QLButton(event->button.button, 0);
 		break;
+	case SDL_EVENT_MOUSE_WHEEL: {
+		static float wheel;
+		int dz;
+
+		/* SDL3 gives fractions of a step too: keep the rest */
+		wheel += event->wheel.y;
+		dz = (int)wheel;
+		wheel -= dz;
+		if (qimsi_mapped && dz)
+			qimsi_scroll(-dz);
+		break;
+	}
 	case SDL_EVENT_WINDOW_MOUSE_ENTER:
 		if (event->window.windowID == ql_windowid)
 			SDL_HideCursor();

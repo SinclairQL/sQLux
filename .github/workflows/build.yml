@@ -16,17 +16,16 @@ jobs:
     name: Get Release Name
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Define Release Name
         id: DefineName
         run: |
           if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            echo "RELEASE_NAME=$GITHUB_REFNAME" >> "$GITHUB_OUTPUT"
+            echo "RELEASE_NAME=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
           elif [[ "$GITHUB_REF_NAME" == "master" ]]; then
             echo "RELEASE_NAME=latest" >> "$GITHUB_OUTPUT"
             git tag -f latest
@@ -37,7 +36,7 @@ jobs:
     outputs:
       RELEASE_NAME: ${{ steps.DefineName.outputs.RELEASE_NAME }}
 
-  #### Prepare buildable source
+  #### Prepare buildable soure
   zip_source:
     name: Zip Complete Source
     runs-on: ubuntu-24.04
@@ -47,11 +46,10 @@ jobs:
       RELEASE_NAME: ${{ needs.get_release_name.outputs.RELEASE_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies
         run: |
@@ -76,11 +74,10 @@ jobs:
     env:
       RELEASE_NAME: ${{needs.get_release_name.outputs.RELEASE_NAME}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies
         run: |
@@ -117,17 +114,10 @@ jobs:
 #            }
           - {
               os: macos,
-              image: macos-15,
+              image: macos-latest,
               pkg: brew,
               arch: aarch64,
               shell: bash,
-            }
-          - {
-              os: mingw32,
-              image: windows-2022,
-              pkg: mingw,
-              arch: i686,
-              shell: "msys2 {0}",
             }
           - {
               os: mingw64,
@@ -146,11 +136,10 @@ jobs:
     env:
       RELEASE_NAME: ${{needs.get_release_name.outputs.RELEASE_NAME}}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
-          filter: "blob:none"
-          fetch-tags: "false"
-          fetch-depth: "1000"
+          fetch-tags: "true"
+          fetch-depth: "0"
           submodules: "true"
       - name: Install Dependencies - apt
         if: ${{ matrix.pkg == 'apt' }}
@@ -218,12 +207,38 @@ jobs:
       - name: list Artifacts
         run: |
           ls -la artifacts/*/*
-      - name: Release ${{ env.RELEASE_NAME }}
-        uses: softprops/action-gh-release@v2
-        if: ${{ (github.ref_type == 'tag') || (github.ref_name == 'master') }}
+      - name: Release RC ${{ env.RELEASE_NAME }}
+        uses: softprops/action-gh-release@v3
+        if: ${{ (github.ref_type == 'tag') && contains(github.ref_name, '-rc') }}
+        with:
+          make_latest: false
+          prerelease: true
+          generate_release_notes: true
+          append_body: false
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.RELEASE_NAME }}
+          files: |
+            artifacts/*/*.zip
+            artifacts/*/*.pdf
+      - name: Release TAG ${{ env.RELEASE_NAME }}
+        uses: softprops/action-gh-release@v3
+        if: ${{ (github.ref_type == 'tag') && !contains(github.ref_name, '-rc') }}
         with:
           make_latest: true
           generate_release_notes: true
+          append_body: false
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.RELEASE_NAME }}
+          files: |
+            artifacts/*/*.zip
+            artifacts/*/*.pdf
+      - name: Release Latest ${{ env.RELEASE_NAME }}
+        uses: softprops/action-gh-release@v3
+        if: ${{ (github.ref_name == 'master') }}
+        with:
+          make_latest: false
+          prerelease: true
+          generate_release_notes: false
           append_body: false
           name: ${{ env.RELEASE_NAME }}
           tag_name: ${{ env.RELEASE_NAME }}

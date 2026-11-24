@@ -129,7 +129,7 @@ SYSROM = js_rom
 
 `ROMDIR`
 
-The directory where ’SYSROM’ (and other ROMS) may be found.
+The directory where `SYSROM` and other ROMs may be found. Use `~/` at the start of the path to refer to your home directory.
 
 ```
 ROMDIR = /ql/ROMS/
@@ -185,7 +185,7 @@ CPU_HOG = 1
 ```
 
 `FAST_STARTUP`
-Set to 1 if you want to skip the usual RAM test(default), or set it to 0 if you want to enjoy the Ram test pattern. Has no effect with the Minerva ROM
+Set to 1 if you want to skip the usual RAM test (default), or set it to 0 if you want to enjoy the RAM test pattern. With Minerva, 1 enters it through its warm start, which skips the RAM test, and 0 lets it test the RAM as on a real QL
 
 ```
 FAST_STARTUP = 1
@@ -209,6 +209,58 @@ ROMPORT = tk2_rom
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
 
+`MOUSE`
+Mouse emulation type: QIMSI, QIMI, ICE or THOR.
+
+QIMSI: the host mouse is exposed as a QIMSI PS/2 mouse interface
+(IntelliMouse with wheel) through read-only registers at 0xFED0-0xFEDF
+(status 0xFEDF, byte 0xFEDD, acknowledge 0xFEDE) instead of being injected
+into the Pointer Environment driver. The registers live in the ROM port, so
+this option conflicts with ROMPORT/ROMIM: if both are set a warning is
+printed and ROMPORT is ignored (QIMSI has preference).
+
+```
+MOUSE = QIMSI
+```
+
+QIMI: the host mouse is exposed as the QJump QIMI interface, which signals
+each step with the ZX8302 external interrupt. Buttons are read at 0x1BF9C,
+movement at 0x1BFBC, and reading or writing 0x1BFBE enables the interrupts.
+It does not use the ROM port, so it can be combined with ROMPORT. The driver
+(e.g. the one in the Pointer Environment ROM or SMSQ/E) must support QIMI.
+
+```
+MOUSE = QIMI
+```
+
+ICE: the Eidersoft mICE bus mouse (three buttons). The mouse is read in the
+last two bytes of the ROM cartridge (0xFFFE and 0xFFFF): bits 0-2 are the
+buttons, bits 4 and 7 the horizontal and bits 5 and 6 the vertical quadrature
+signals. Load the mICE ROM with ROMPORT; a warning is printed if the ROM in
+the port is not the original mICE_21.rom (checked by CRC32).
+
+```
+ROMPORT = mICE_21.rom
+MOUSE = ICE
+```
+
+THOR: the mouse port of the CST Thor, an MC6821 PIA whose registers are at
+0xFE040, 0xFE044, 0xFE048 and 0xFE04C (data/DDR A, control A, data/DDR B,
+control B). The 68008 has no A20-A23 and the I/O decoding ignores A8-A12, so
+the registers are repeated in every 256 byte page of the last 8K of the first
+megabyte (0xFE140, ... 0xFFF40); ICE uses 0xFF40 and 0xFF44 (absolute short
+addresses, sign extended). On the A side, bits 3-5 are the buttons (0 = pressed), and bits 6
+and 7 the X and Y direction, latched when the pulse of the axis arrives at
+CA1 (X) or CA2 (Y): PA6 = 1 is left and PA7 = 1 is down. IRQA is the ZX8302
+external interrupt. The directions and the addresses were taken from the ICE
+file manager, which works on a real Thor; which button is which is not known. As the I/O block
+sits in the last 8K of the first megabyte, THOR is only enabled if RAMTOP is
+below 1016 (KB); otherwise a warning is printed and the mouse is disabled.
+
+```
+MOUSE = THOR
+```
+
 `IOROM1`
 The IOROM1 specifies the rom to be loaded at 0x10000.
 
@@ -228,6 +280,70 @@ IOROM2 = tk2_rom
 
 It is assumed that the ROM image can be found in the ROMDIR
 directory.
+
+`QSROM`
+Specifies the QSound expansion ROM to be loaded at 0xC0000. If RAMTOP is above 768K, it is placed in the first free 16K block (8K ROM + I/O) between RAMTOP and the end of the memory reserved above it (RAMTOP + 256K, never crossing a 1M, 2M, 4M, 8M or 16M boundary), with a warning; if there is none (e.g. RAMTOP of 2048K or 4096K), QSound is disabled.
+
+```
+QSROM = qsound.rom
+```
+
+It is assumed that the ROM image can be found in the ROMDIR
+directory.
+
+`QSFREQ`
+The master clock frequency in Hz for the QSound (AY-3-8910 / YM2149) sound chip. Defaults to 750000 (750 kHz, matching physical Sinclair QL hardware).
+
+```
+QSFREQ = 750000
+```
+
+`QSSTEREO`
+Selects the stereo output mode for QSound:
+- `0`: Mono (channels A, B, and C are mixed equally to both Left and Right).
+- `1`: Stereo ABC (Channel A = Left, B = Center, C = Right). Default.
+- `2`: Stereo ACB (Channel A = Left, C = Center, B = Right).
+
+```
+QSSTEREO = 1
+```
+
+`QLIONT_AY`
+Fits the QLIONT AY-3-8910 sound chip when set to 1 (default 0). It is the QSound chip emulation without ROM: the control register (selects the AY register) is at $80002A and the data register (reads and writes it) at $800028. Unless `QSFREQ` is set, the chip clock is 2500000 Hz. `QSSTEREO` applies as in QSound. It is mutually exclusive with `QSROM` (QLIONT_AY has preference, with a warning), and it is disabled with a warning if the RAM reaches $800028. Like QSound, it needs the audio to be enabled (`SOUND`).
+
+```
+QLIONT_AY = 1
+```
+
+`MDV1` and `MDV2`
+Microdrive cartridge images (`.mdv`, 255 sectors of 686 bytes, as used by the MiSTer QL core). When at least one image is configured, the microdrives are emulated at bit level through the ZX8302 registers ($18020-$18023) and the original microdrive driver of the ROM is used, with the real tape timing: a full revolution of the tape loop takes about 8.3 seconds at `SPEED = 1`. The microdrives are then not mapped to host directories.
+
+```
+MDV1 = games.mdv
+```
+
+`MDV_REVERSE`
+Set to 1 for images whose sectors are stored in reverse order.
+
+```
+MDV_REVERSE = 1
+```
+
+`HW_TRACE`
+Debugging aid. 1 prints once per second of emulated time the hardware activity: frame interrupts, interrupts accepted by the CPU by level, interrupts cleared in $18021 by source, accesses to the ZX8302 registers, IPC link traffic and notes started, the time of the IPC clock against the host clock, the 68008 cycles executed and the share lost to ZX8301 contention. 2 also prints the parameters of every sound order sent to the IPC. 3 also prints the share of cycles spent in supervisor mode and the 4K pages of memory where that code runs.
+
+```
+HW_TRACE = 1
+```
+
+`IPC_ROM`
+Firmware of the IPC (the Intel 8049 that scans the keyboard, drives the speaker and talks to the ZX8302), as an Intel HEX file of 2K. When set, the 8049 is emulated at low level with its original firmware: the ROM talks to it through $18003 and $18020 exactly as on a real QL, the keyboard matrix is scanned by the firmware and BEEP is generated by toggling the speaker pin. The ROM patches of the high level IPC emulation are then not installed. Serial reception through the IPC is not emulated yet. When not set, the high level IPC emulation is used.
+
+```
+IPC_ROM = ipc8049.hex
+```
+
+The firmware file is resolved relative to `ROMDIR`.
 
 `NO_PATCH`
 disables patching the ROM, will make a lot of features not work and mainly a debugging feature. 1 to disable patching, 0 to enable patching.
@@ -323,10 +439,40 @@ KBD = DE
 ```
 
 `SPEED`
-Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 approximates to the speed of an original QL. Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
+Sets the execution speed of the emulator. Useful when running software that was written for an original QL. A value of 1 runs the CPU at the 7.5 MHz clock of an original QL, charging each instruction its real cycle cost (see `CPU_TIMING`). Larger values map to multiples of the original QL speed. Specified as a floating point number, so small adjustments can be made if required. Defaults to 0.0 (maximum speed). When running at original speed a faster start-up is achieved by using the JS ROM and setting FAST_START to 1.
+
+The frame interrupt always follows the real video signal: 50 Hz with PAL or 60 Hz with NTSC (see `NTSC`), whatever the speed. Within each frame the beam position is obtained by counting emulated clock cycles from the vertical sync, and the ZX8301 memory contention and the line by line screen capture follow it. The microdrive tape also follows the emulated clock, so at `SPEED = 2` it runs twice as fast.
 
 ```
 SPEED = 1.5
+```
+
+`CPU_TIMING`
+Selects the instruction timing model used to count CPU cycles. `68008` (the default) is the original QL CPU, with its 8 bit data bus: every word access costs two bus cycles. `68000` uses the timings of a 68000 with a 16 bit bus, which executes the same code roughly 1.5 to 2 times faster at the same clock, and is useful for software written for faster QL compatible hardware. The rest of the machine (microdrive, frame interrupt, screen) keeps the timing of the original QL.
+
+```
+CPU_TIMING = 68000
+```
+
+`ZX8301_CONTENTION`
+Emulates the wait states the ZX8301 inserts in CPU accesses to the internal 128K of RAM. Each line is divided into 40 slots of 12 cycles, of which the ZX8301 uses 28 in the visible lines and 27 in the other lines (fitted to measurements on a real QL), and the CPU can only start a RAM access at the beginning of a busy slot. Writes always get at least one wait state. ROM, I/O and expansion RAM are not affected. The slots last the same real time at any speed, so at other speeds they last more or fewer cycles of the CPU. It is not applied at unlimited speed (`SPEED = 0`) or with `CPU_TIMING = 68000`. The slot mechanism follows the `ql_timing` module of the MiSTer QL core by Marcel Kilgus and Daniele Terdina. Enabled by default (1); set to 0 to disable.
+
+```
+ZX8301_CONTENTION = 0
+```
+
+`NTSC`
+Selects NTSC video timing: 60 Hz frame interrupt and 262 lines per frame. The default (0) is PAL: 50 Hz and 312 lines.
+
+```
+NTSC = 1
+```
+
+`ZX8301_VSYNC_LINES`
+Advanced: number of lines from the frame interrupt to the first visible line, used by the line by line screen capture and the memory contention. It also moves the part of the frame where the memory contention is heaviest, so it affects CPU timing too. The default (-1) is 32 lines for PAL, measured on a real QL, and 4 for NTSC (not calibrated).
+
+```
+ZX8301_VSYNC_LINES = 32
 ```
 
 `SOUND`
@@ -376,7 +522,8 @@ and here is the example of an actual sqlux.ini file. You will find more recent v
 ```
 SYSROM = MIN198.rom
 ROMIM = TK232.rom
-RAMTOP = 4096
+QSROM = qsound.rom
+RAMTOP = 768
 PRINT = lpr
 CPU_HOG = 0
 FAST_STARTUP = 1
@@ -390,6 +537,8 @@ WIN_SIZE = max
 FILTER = 1
 FIXASPECT = 1
 SOUND = 2
+QSFREQ = 750000
+QSSTEREO = 1
 SPEED = 0.8
 KBD = GB
 ```
@@ -548,6 +697,13 @@ Pointer Environment is patched when activated to recognise the new screen parame
 
 Screen geometry may be slightly adapted to result in clean x-resolution/sd.linel ratio. Length of screen buffer must always be truncated nearest 32K boundary, therefore some screen sizes may result in a certain waste of memory.
 
+## 5.4.1 Screen Switching (Double Buffering)
+
+sQLux provides full hardware emulation for real-time video screen switching between Screen 0 (`$20000`) and Screen 1 (`$28000`) via bit 7 of the ZX8301 control register (`$18063`).
+
+To prevent visual tearing and flicker, screen buffer transitions are synchronized with the ZX8301 vertical blanking (VBlank) interval (~2.63 ms / 41 scanlines between the frame interrupt at scanline 271 and the start of active display at scanline 0). This provides 100% flicker-free double buffering for demos, 3D graphics, and games.
+
+
 ## 5.5 Keyboard
 
 By default sQLux uses scancodes in SDL2, this means the keymap is based on USA keyboard. This is very close to the QL layout and mainly the closest key in physical position is mapped to the equivalent QL key.
@@ -571,6 +727,16 @@ Many thanks to Silvestor from the QLForum for his detailed disassembly of the QL
 1. In extreme cases (typically low pitch values, or extensive use of Random and Fuzzy) the timing unit of length can increase from 43.64 microseconds. This can impact the length of sounds and decrease the frequency of notes. This is currently not emulated.
 2. The original QL initially generates a square sound wave. This is smoothed by the QL sound hardware. Other resonant frequencies are introduced by the QL case. sQLux only emulates the original square waveform.
 3. The SuperBASIC BEEPING command should return true if the QL is making sound. However, the call to the IPC8049 to check if it is making sound is only made every 50/60 Hz. Therefore a call to BEEPING immediately after a BEEP command is issued may return false. This is more likely at faster emulation speeds, but can be easily reproduced on an original QL. Use of the PAUSE command can workaround this issue.
+
+## 5.6.2 QSound (AY-3-8910 / YM2149)
+
+sQLux features full emulation of the QSound audio expansion card:
+- **I/O Decoding:** Supports both MC6821 PIA bus access (ports `$C2000`–`$C2003`) and direct AY register access (ports `$C3000`–`$C3003`).
+- **Sound Engine:** Accurate tone generators, 32-step logarithmic DAC volume curve, and a 17-bit LFSR pseudo-random noise generator.
+- **Stereo Panning:** Configurable via `QSSTEREO` (Mono, ABC, or ACB stereo panning).
+- **Filtering:** Single-pole analog low-pass filtering simulating the physical output stage.
+
+The same chip is also available as the QLIONT AY (`QLIONT_AY = 1`), without ROM, at `$80002A` (control) and `$800028` (data).
 
 ## 5.7 Joystick
 
@@ -647,6 +813,8 @@ dd if=/dev/fd0 of=DiskImagename
 ```
 
 On Linux anything works, unless you have a very special floppy use `/dev/fd0` as filename.
+
+Sub-directories work on both, with TK2 or any level 2 driver loaded: `MAKE_DIR`, `RENAME` (a file or a directory can be moved to another directory by giving the new complete name), `DELETE` (only empty directories) and `DIR dev_dir_`. As in all QDOS level 2 file systems the entries of a directory hold the complete name, `dir_file`, so the name of a file including its path is limited to 36 characters. Formatting a medium is not supported, use an existing image.
 
 # 7 Other Devices
 
@@ -939,3 +1107,9 @@ An alias for Kill_UQLX, exits the emulator
 **emu_vers$**
 
 An alias for UQLX_RELEASE$ returns the release string.
+
+## Keys
+
+- F10 toggles between the configured `SPEED` and unlimited speed (`SPEED = 0`).
+- F11 toggles full screen.
+- F12 resets the QL, as the reset button of the real machine. The files and channels that the QL had open are closed and the ROM boots again.

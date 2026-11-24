@@ -38,7 +38,7 @@ int tra_conv(char *dest, char *src, int len)
 	if (len == 0)
 		return 0;
 
-	tratab = ReadLong(0x28146);
+	tratab = ReadLong(ql_sysvars + 0x146);
 
 	if (tratab == 0) {
 		memcpy(dest, src, len);
