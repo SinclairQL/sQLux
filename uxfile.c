@@ -625,40 +625,43 @@ typedef union {
 #define FILDES 0
 #define PATH 1
 
+static void FillHeaderFromStat(qdos_file_hdr *h, const struct stat *st,
+			       int seekbase)
+{
+	h->f_length = SDL_SwapBE32(st->st_size - seekbase + 64);
+	h->f_update = SDL_SwapBE32(ux2qltime(st->st_mtime));
+	h->f_type = S_ISDIR(st->st_mode) ? 255 : 0;
+
+	if (h->f_type == 255) {
+		unsigned int name_len = SDL_SwapBE16(h->f_szname);
+
+		if (name_len < sizeof(h->f_name))
+			h->f_name[name_len] = DIR_SEPARATOR;
+	}
+}
+
 void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 {
-	int fd, err, seekbase, curpos, i, j;
+	int fd, curpos;
 	struct stat buf;
 
 	fd = GET_HFILE(f);
-	curpos = lseek(fd, 0, SEEK_CUR);
 
-	err = fstat(fd, &buf);
-	if (err) {
+	if (fstat(fd, &buf) < 0) {
 		perror("QGetHeaderFromFile fstat");
 		h->f_length = 0;
 		h->f_access = 0;
 		h->f_type = 0;
 		h->f_datalen = 0;
 		h->f_reserved = 0;
-	} else {
-
-		seekbase = GET_SEEKBASE(f);
-
-		h->f_length = SDL_SwapBE32((buf.st_size -seekbase) + 64);
-		h->f_update = SDL_SwapBE32(ux2qltime(buf.st_mtime));
-
-		if (buf.st_mode & S_IFDIR)
-			i = 255;
-		else
-			i = 0;
-		h->f_type = i;
-
-		if (i == 255 && ((j = SDL_SwapBE16(h->f_szname)) < 36)) {
-			h->f_name[j] = DIR_SEPARATOR;
-		}
+		return;
 	}
 
+	FillHeaderFromStat(h, &buf, GET_SEEKBASE(f));
+	if (S_ISDIR(buf.st_mode))
+		return;
+
+	curpos = lseek(fd, 0, SEEK_CUR);
 	if (!FillQemulator(fd, h, f))
 		FillXHXtcc(fd, h);
 
@@ -668,12 +671,20 @@ void QGetHeaderFromFile(qdos_file_hdr *h, struct mdvFile *f)
 void QGetHeaderFromPath(qdos_file_hdr *h, char *path, char *mount)
 {
 	int fd;
-	char mpath[4200];
-	struct mdvFile f;
+	char mpath[4001];
+	struct stat buf;
+	struct mdvFile f = {0};
 
-	strncpy(mpath, mount, sizeof(mpath));
+	snprintf(mpath, sizeof(mpath) - 1, "%s", mount);
+	qaddpath(mpath, path, sizeof(mpath) - 1);
 
-	fd = qopenfile(mpath, path, O_RDONLY | O_BINARY, 0, 4000);
+	/* Windows CRT file descriptors cannot be opened for directories. */
+	if (stat(mpath, &buf) == 0 && S_ISDIR(buf.st_mode)) {
+		FillHeaderFromStat(h, &buf, 0);
+		return;
+	}
+
+	fd = open(mpath, O_RDONLY | O_BINARY);
 	if (fd < 0) {
 		perror("QGetHeaderFromPath: open");
 
