@@ -206,6 +206,10 @@ add_executable(
   sds/sds.c
   args/src/args.c
   inih/ini.c)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(args/src/args.c
+    PROPERTIES COMPILE_OPTIONS -Wno-discarded-qualifiers)
+endif()
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c
   PROPERTIES GENERATED TRUE)
 
