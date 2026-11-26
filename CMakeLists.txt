@@ -50,7 +50,7 @@ if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif()
 
 find_package(Git)
