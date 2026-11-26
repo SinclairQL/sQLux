@@ -50,7 +50,7 @@ if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Ofast")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif()
 
 find_package(Git)
@@ -206,6 +206,10 @@ add_executable(
   sds/sds.c
   args/src/args.c
   inih/ini.c)
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(args/src/args.c
+    PROPERTIES COMPILE_OPTIONS -Wno-discarded-qualifiers)
+endif()
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version.c
   PROPERTIES GENERATED TRUE)
 

@@ -318,7 +318,7 @@ void RearmRomInit(void)
 {
 	if (!isMinerva || !qemlPatch)
 		return;
-	if (RW((Ptr)memBase + ROMINIT_CMD_ADDR) == ROMINIT_CMD_CODE)
+	if ((uw16)RW((Ptr)memBase + ROMINIT_CMD_ADDR) == ROMINIT_CMD_CODE)
 		return;
 	WW((Ptr)memBase + ROMINIT_CMD_ADDR, ROMINIT_CMD_CODE);
 }
