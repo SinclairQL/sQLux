@@ -105,7 +105,7 @@ elseif(APPLE AND MACOS_APP_BUNDLE)
     IMPORTED_LOCATION ${SDL2_PREFIX}/lib/libSDL2.a
     INTERFACE_INCLUDE_DIRECTORIES
       "${SDL2_PREFIX}/include;${SDL2_PREFIX}/include/SDL2"
-    INTERFACE_LINK_LIBRARIES "m;-framework CoreVideo;-framework Cocoa;\
+    INTERFACE_LINK_LIBRARIES "-framework CoreVideo;-framework Cocoa;\
 -framework IOKit;-framework ForceFeedback;-framework Carbon;\
 -framework CoreAudio;-framework AudioToolbox;-framework AVFoundation;\
 -framework Foundation;-weak_framework GameController;\
@@ -282,10 +282,14 @@ else()
 endif()
 
 if(APPLE AND MACOS_APP_BUNDLE)
-  file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md SQLUX_RELEASE_LINE
-    REGEX "^## \\[[0-9]+\\.[0-9]+\\.[0-9]+\\]" LIMIT_COUNT 1)
+  # The bundle version must be x.y.z, so take it from the last release tag
+  execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+      --exclude=latest
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE SQLUX_GIT_TAG ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
   string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" SQLUX_BUNDLE_VERSION
-    "${SQLUX_RELEASE_LINE}")
+    "${SQLUX_GIT_TAG}")
   if(NOT SQLUX_BUNDLE_VERSION)
     set(SQLUX_BUNDLE_VERSION "0.0.0")
   endif()
